@@ -65,6 +65,6 @@ repos:
         name: pytest
         entry: uv run --locked pytest -q
         language: system
-        files: ^(app/|tests/|alembic/|alembic\.ini$|pyproject\.toml$|uv\.lock$)
+        files: ^(app/|tests/|scripts/|alembic/|alembic\.ini$|pyproject\.toml$|uv\.lock$)
         pass_filenames: false
         require_serial: true
