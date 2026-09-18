@@ -1,0 +1,38 @@
+from typing import Annotated
+from uuid import UUID
+
+from fastapi import APIRouter, HTTPException, Query
+from sqlalchemy import select
+
+from app.api.dependencies import CurrentUserDep, SessionDep, StaffDep
+from app.models import User
+from app.schemas.user import UserRead
+
+router = APIRouter(prefix="/users", tags=["users"])
+
+
+@router.get("/me", response_model=UserRead)
+async def me(user: CurrentUserDep) -> User:
+    return user
+
+
+@router.get("", response_model=list[UserRead])
+async def list_users(
+    session: SessionDep,
+    staff: StaffDep,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> list[User]:
+    return list(
+        await session.scalars(
+            select(User).order_by(User.created_at, User.id).limit(limit).offset(offset)
+        )
+    )
+
+
+@router.get("/{user_id}", response_model=UserRead)
+async def get_user(user_id: UUID, session: SessionDep, staff: StaffDep) -> User:
+    user = await session.get(User, user_id)
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user

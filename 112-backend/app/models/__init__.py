@@ -1,4 +1,5 @@
 # Import every model here so Alembic sees the complete metadata.
-from app.models.workstation import Workstation
+from app.models.auth_session import AuthSession
+from app.models.user import User
 
-__all__ = ["Workstation"]
+__all__ = ["AuthSession", "User"]
