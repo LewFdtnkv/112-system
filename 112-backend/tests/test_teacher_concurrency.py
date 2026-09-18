@@ -20,6 +20,7 @@ from app.models import (
     GroupMembership,
     IncidentCard,
     Lesson,
+    LessonEvaluation,
     Scenario,
     ScenarioCard,
     ScenarioVersion,
@@ -141,6 +142,9 @@ async def concurrent_teaching():
     finally:
         async with factory() as session:
             lesson_ids = select(Lesson.id).where(Lesson.group_id.in_(group_ids))
+            await session.execute(
+                delete(LessonEvaluation).where(LessonEvaluation.lesson_id.in_(lesson_ids))
+            )
             assignment_ids = select(Assignment.id).where(Assignment.lesson_id.in_(lesson_ids))
             attempt_ids = select(Attempt.id).where(Attempt.assignment_id.in_(assignment_ids))
             for model in (AttemptEvent, ServiceResponse, IncidentCard):

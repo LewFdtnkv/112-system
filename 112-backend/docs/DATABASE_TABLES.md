@@ -1,6 +1,6 @@
 # Полная схема таблиц
 
-Снимок SQLAlchemy-моделей к проекту `0004_teacher_authoring` от 18.09.2026: 31 таблица.
+Снимок SQLAlchemy-моделей к `0005_lesson_evaluations` от 19.09.2026: 32 таблицы.
 
 Объяснение учебного смысла и решений: [DATABASE_SCHEMA.md](DATABASE_SCHEMA.md).
 
@@ -20,6 +20,29 @@ PK — первичный ключ; `NULL` — допустимое отсутс
 | `created_at` | `TIMESTAMP WITH TIME ZONE` | нет | — | `now()` |
 
 - UNIQUE `(code)`.
+
+## `lesson_evaluations`
+
+| Колонка | Тип PostgreSQL | NULL | PK | SQL default |
+| --- | --- | --- | --- | --- |
+| `lesson_id` | `UUID` | нет | — | `—` |
+| `student_id` | `UUID` | нет | — | `—` |
+| `reviewer_id` | `UUID` | нет | — | `—` |
+| `request_id` | `UUID` | нет | — | `—` |
+| `revision` | `INTEGER` | нет | — | `—` |
+| `supersedes_id` | `UUID` | да | — | `—` |
+| `score` | `NUMERIC(10,2)` | нет | — | `—` |
+| `max_score` | `NUMERIC(10,2)` | нет | — | `—` |
+| `comment` | `TEXT` | нет | — | `—` |
+| `id` | `UUID` | нет | да | `—` |
+| `created_at` | `TIMESTAMP WITH TIME ZONE` | нет | — | `now()` |
+
+- FK `lesson_id` → `lessons.id`, `student_id` и `reviewer_id` → `users.id`; DELETE `RESTRICT`.
+- FK `(supersedes_id, lesson_id, student_id)` → `lesson_evaluations.(id, lesson_id, student_id)`; DELETE `RESTRICT`.
+- UNIQUE `(lesson_id, student_id, revision)`, `(lesson_id, student_id, request_id)`, `(id, lesson_id, student_id)`.
+- CHECK `revision > 0`, `score >= 0 AND max_score > 0 AND score <= max_score`.
+- CHECK `length(btrim(comment)) > 0`, `supersedes_id IS NULL OR supersedes_id != id`.
+- INDEX `student_id`, `reviewer_id`, `supersedes_id`.
 
 ## `users`
 

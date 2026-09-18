@@ -12,6 +12,7 @@ from app.models.directory import (
 )
 from app.models.evaluation import AIJob, CriterionEvidence, CriterionResult, Evaluation
 from app.models.incident import IncidentCard, ResponseEvent, ServiceResponse
+from app.models.lesson_evaluation import LessonEvaluation
 from app.models.scenario import AnswerKey, Scenario, ScenarioVersion
 from app.models.telephony import TrainingCall
 from app.models.training import (
@@ -42,6 +43,7 @@ __all__ = [
     "GroupMembership",
     "IncidentCard",
     "Lesson",
+    "LessonEvaluation",
     "ResponseEvent",
     "Scenario",
     "ScenarioCard",
