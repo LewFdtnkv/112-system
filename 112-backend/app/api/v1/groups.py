@@ -1,0 +1,71 @@
+from typing import Annotated
+from uuid import UUID
+
+from fastapi import APIRouter, Query
+from sqlalchemy import select
+
+from app.api.dependencies import SessionDep, TeacherDep
+from app.models import GroupMembership, TrainingGroup, User
+from app.schemas.group import GroupCreate, GroupMemberRead, GroupRead
+from app.schemas.user import UserRead
+from app.services.groups import add_student, owned_group
+
+router = APIRouter(prefix="/groups", tags=["groups"])
+
+
+@router.post("", response_model=GroupRead, status_code=201)
+async def create_group(payload: GroupCreate, session: SessionDep, teacher: TeacherDep):
+    group = TrainingGroup(name=payload.name, teacher_id=teacher.id)
+    session.add(group)
+    await session.commit()
+    await session.refresh(group)
+    return group
+
+
+@router.get("", response_model=list[GroupRead])
+async def list_groups(
+    session: SessionDep,
+    teacher: TeacherDep,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    offset: Annotated[int, Query(ge=0)] = 0,
+):
+    return list(
+        await session.scalars(
+            select(TrainingGroup)
+            .where(TrainingGroup.teacher_id == teacher.id)
+            .order_by(TrainingGroup.created_at, TrainingGroup.id)
+            .limit(limit)
+            .offset(offset)
+        )
+    )
+
+
+@router.get("/{group_id}", response_model=GroupRead)
+async def get_group(group_id: UUID, session: SessionDep, teacher: TeacherDep):
+    return await owned_group(session, group_id, teacher.id)
+
+
+@router.put("/{group_id}/students/{student_id}", response_model=GroupMemberRead)
+async def put_student(group_id: UUID, student_id: UUID, session: SessionDep, teacher: TeacherDep):
+    return await add_student(session, group_id, student_id, teacher.id)
+
+
+@router.get("/{group_id}/students", response_model=list[UserRead])
+async def list_students(
+    group_id: UUID,
+    session: SessionDep,
+    teacher: TeacherDep,
+    limit: Annotated[int, Query(ge=1, le=100)] = 20,
+    offset: Annotated[int, Query(ge=0)] = 0,
+):
+    await owned_group(session, group_id, teacher.id)
+    return list(
+        await session.scalars(
+            select(User)
+            .join(GroupMembership, GroupMembership.user_id == User.id)
+            .where(GroupMembership.group_id == group_id)
+            .order_by(User.username, User.id)
+            .limit(limit)
+            .offset(offset)
+        )
+    )

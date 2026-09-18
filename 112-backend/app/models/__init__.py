@@ -1,5 +1,6 @@
 # Import every model here so Alembic sees the complete metadata.
 from app.models.auth_session import AuthSession
+from app.models.authoring import CardTemplate, CardTemplateRecipient, ScenarioCard
 from app.models.classifier import ClassifierEntry, ClassifierRoute, ClassifierVersion
 from app.models.directory import (
     Service,
@@ -30,6 +31,8 @@ __all__ = [
     "Attempt",
     "AttemptEvent",
     "AuthSession",
+    "CardTemplate",
+    "CardTemplateRecipient",
     "ClassifierEntry",
     "ClassifierRoute",
     "ClassifierVersion",
@@ -41,6 +44,7 @@ __all__ = [
     "Lesson",
     "ResponseEvent",
     "Scenario",
+    "ScenarioCard",
     "ScenarioVersion",
     "Service",
     "ServiceObject",

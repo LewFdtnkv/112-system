@@ -45,6 +45,7 @@ class GroupMembership(CreatedAt, Base):
 class Lesson(UUIDPrimaryKey, CreatedAt, Base):
     __tablename__ = "lessons"
     __table_args__ = (
+        UniqueConstraint("teacher_id", "start_request_id"),
         CheckConstraint(
             "ended_at IS NULL OR (started_at IS NOT NULL AND ended_at >= started_at)",
             name="time_order",
@@ -63,11 +64,21 @@ class Lesson(UUIDPrimaryKey, CreatedAt, Base):
     )
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    scenario_version_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("scenario_versions.id", ondelete="RESTRICT"), index=True
+    )
+    start_request_id: Mapped[UUID | None] = mapped_column()
+    start_fingerprint: Mapped[str | None] = mapped_column(String(64))
 
 
 class Assignment(UUIDPrimaryKey, CreatedAt, Base):
     __tablename__ = "assignments"
     __table_args__ = (
+        ForeignKeyConstraint(
+            ["scenario_card_id", "scenario_version_id"],
+            ["scenario_cards.id", "scenario_cards.scenario_version_id"],
+            ondelete="RESTRICT",
+        ),
         UniqueConstraint("id", "student_id", "scenario_version_id"),
         UniqueConstraint("lesson_id", "student_id", "position"),
         CheckConstraint("position > 0", name="positive_position"),
@@ -86,6 +97,8 @@ class Assignment(UUIDPrimaryKey, CreatedAt, Base):
     )
     mode: Mapped[TrainingMode] = mapped_column(enum_column(TrainingMode, "assignment_mode"))
     position: Mapped[int] = mapped_column(Integer)
+    # Nullable only for pre-authoring assignments created with the original single-card model.
+    scenario_card_id: Mapped[UUID | None] = mapped_column(index=True)
     time_limit_seconds: Mapped[int | None] = mapped_column(Integer)
     hint_delay_seconds: Mapped[int | None] = mapped_column(Integer)
     settings: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default="{}")

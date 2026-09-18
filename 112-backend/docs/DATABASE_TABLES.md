@@ -1,6 +1,6 @@
 # Полная схема таблиц
 
-Снимок SQLAlchemy-моделей к проекту `0003_assignment_position` от 18.09.2026.
+Снимок SQLAlchemy-моделей к проекту `0004_teacher_authoring` от 18.09.2026: 31 таблица.
 
 Объяснение учебного смысла и решений: [DATABASE_SCHEMA.md](DATABASE_SCHEMA.md).
 
@@ -176,6 +176,9 @@ PK — первичный ключ; `NULL` — допустимое отсутс
 | `title` | `VARCHAR(255)` | нет | — | `—` |
 | `teacher_id` | `UUID` | нет | — | `—` |
 | `group_id` | `UUID` | да | — | `—` |
+| `scenario_version_id` | `UUID` | да | — | `—` |
+| `start_request_id` | `UUID` | да | — | `—` |
+| `start_fingerprint` | `VARCHAR(64)` | да | — | `—` |
 | `status` | `VARCHAR(9)` | нет | — | `—` |
 | `started_at` | `TIMESTAMP WITH TIME ZONE` | да | — | `—` |
 | `ended_at` | `TIMESTAMP WITH TIME ZONE` | да | — | `—` |
@@ -184,6 +187,9 @@ PK — первичный ключ; `NULL` — допустимое отсутс
 
 - CHECK `ended_at IS NULL OR (started_at IS NOT NULL AND ended_at >= started_at)`.
 - CHECK `lessons.status IN ('planned', 'active', 'finished', 'cancelled')`.
+- UNIQUE `(teacher_id, start_request_id)`.
+- FK `(scenario_version_id)` → `scenario_versions.id`; DELETE `RESTRICT`.
+- INDEX `(scenario_version_id)`.
 - FK `(group_id)` → `training_groups.id`; DELETE `RESTRICT`.
 - FK `(teacher_id)` → `users.id`; DELETE `RESTRICT`.
 - INDEX `(group_id)`.
@@ -280,6 +286,7 @@ PK — первичный ключ; `NULL` — допустимое отсутс
 | `lesson_id` | `UUID` | нет | — | `—` |
 | `student_id` | `UUID` | нет | — | `—` |
 | `scenario_version_id` | `UUID` | нет | — | `—` |
+| `scenario_card_id` | `UUID` | да | — | `—` |
 | `position` | `INTEGER` | нет | — | `—` |
 | `mode` | `VARCHAR(12)` | нет | — | `—` |
 | `time_limit_seconds` | `INTEGER` | да | — | `—` |
@@ -289,6 +296,8 @@ PK — первичный ключ; `NULL` — допустимое отсутс
 | `created_at` | `TIMESTAMP WITH TIME ZONE` | нет | — | `now()` |
 
 - CHECK `assignments.mode IN ('introduction', 'practice', 'assessment')`.
+- FK `(scenario_card_id, scenario_version_id)` → `scenario_cards.id, scenario_cards.scenario_version_id`; DELETE `RESTRICT`.
+- INDEX `(scenario_card_id)`.
 - CHECK `hint_delay_seconds IS NULL OR hint_delay_seconds > 0`.
 - CHECK `time_limit_seconds IS NULL OR time_limit_seconds > 0`.
 - FK `(lesson_id)` → `lessons.id`; DELETE `RESTRICT`.
@@ -301,6 +310,58 @@ PK — первичный ключ; `NULL` — допустимое отсутс
 
 - CHECK `position > 0`.
 - UNIQUE `(lesson_id, student_id, position)`.
+
+`scenario_card_id` допускает NULL для прежних назначений. Новый API всегда заполняет ссылку.
+
+## `card_templates`
+
+| Колонка | Тип PostgreSQL | NULL | PK | SQL default |
+| --- | --- | --- | --- | --- |
+| `created_by_id` | `UUID` | нет | — | `—` |
+| `title` | `VARCHAR(255)` | нет | — | `—` |
+| `classifier_version_id` | `UUID` | нет | — | `—` |
+| `classifier_entry_id` | `UUID` | нет | — | `—` |
+| `caller_message` | `TEXT` | да | — | `—` |
+| `instructions` | `TEXT` | нет | — | `''` |
+| `data` | `JSONB` | нет | — | `—` |
+| `id` | `UUID` | нет | да | `—` |
+| `created_at` | `TIMESTAMP WITH TIME ZONE` | нет | — | `now()` |
+
+- FK `(created_by_id)` → `users.id`; DELETE `RESTRICT`.
+- FK `(classifier_version_id)` → `classifier_versions.id`; DELETE `RESTRICT`.
+- FK `(classifier_entry_id, classifier_version_id)` → `classifier_entries.id, classifier_entries.classifier_version_id`; DELETE `RESTRICT`.
+- INDEX `(created_by_id)`, `(classifier_version_id)`, `(classifier_entry_id)`.
+
+## `card_template_recipients`
+
+| Колонка | Тип PostgreSQL | NULL | PK | SQL default |
+| --- | --- | --- | --- | --- |
+| `card_template_id` | `UUID` | нет | да | `—` |
+| `service_id` | `UUID` | нет | да | `—` |
+
+- FK `(card_template_id)` → `card_templates.id`; DELETE `RESTRICT`.
+- FK `(service_id)` → `services.id`; DELETE `RESTRICT`.
+- INDEX `(service_id)`.
+
+## `scenario_cards`
+
+| Колонка | Тип PostgreSQL | NULL | PK | SQL default |
+| --- | --- | --- | --- | --- |
+| `scenario_version_id` | `UUID` | нет | — | `—` |
+| `card_template_id` | `UUID` | нет | — | `—` |
+| `position` | `INTEGER` | нет | — | `—` |
+| `snapshot` | `JSONB` | нет | — | `—` |
+| `id` | `UUID` | нет | да | `—` |
+
+- CHECK `position > 0`.
+- UNIQUE `(scenario_version_id, position)` и `(id, scenario_version_id)`.
+- FK `(scenario_version_id)` → `scenario_versions.id`; DELETE `RESTRICT`.
+- FK `(card_template_id)` → `card_templates.id`; DELETE `RESTRICT`.
+- INDEX `(card_template_id)`.
+
+Снимок содержит `title`, `instructions`, `caller_message`, `data`, `classifier_version_id`,
+`classifier_entry_id`, `recipients` (идентификаторы и имена служб). Для оператора 112
+`data` — скрытый образец, для ДДС — исходная готовая карточка.
 
 ## `classifier_routes`
 

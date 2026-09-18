@@ -4,11 +4,17 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import select
 
-from app.api.dependencies import CurrentUserDep, SessionDep, StaffDep
+from app.api.dependencies import AdminDep, CurrentUserDep, SessionDep, StaffDep
 from app.models import User
-from app.schemas.user import UserRead
+from app.schemas.user import UserCreate, UserRead
+from app.services.users import create_user
 
 router = APIRouter(prefix="/users", tags=["users"])
+
+
+@router.post("", response_model=UserRead, status_code=201)
+async def add_user(payload: UserCreate, session: SessionDep, admin: AdminDep) -> User:
+    return await create_user(session, payload)
 
 
 @router.get("/me", response_model=UserRead)
