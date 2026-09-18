@@ -84,9 +84,13 @@ async def replay(
 async def start_lesson(
     session: AsyncSession, teacher_id: UUID, payload: LessonStart
 ) -> tuple[LessonRead, bool]:
+    fingerprint_payload = payload.model_dump(mode="json", exclude={"request_id"})
+    if payload.student_id is None:
+        # Keep fingerprints compatible with launches made before individual targeting existed.
+        fingerprint_payload.pop("student_id")
     fingerprint = hashlib.sha256(
         json.dumps(
-            payload.model_dump(mode="json", exclude={"request_id"}),
+            fingerprint_payload,
             sort_keys=True,
             separators=(",", ":"),
         ).encode()
@@ -129,18 +133,18 @@ async def start_lesson(
     )
     if active_count != len(recipient_ids):
         raise HTTPException(status_code=409, detail="A scenario recipient is inactive")
-    students = list(
-        await session.scalars(
-            select(User)
-            .join(
-                GroupMembership,
-                GroupMembership.user_id == User.id,
-            )
-            .where(GroupMembership.group_id == payload.group_id)
-            .order_by(User.id)
-        )
+    student_query = (
+        select(User)
+        .join(GroupMembership, GroupMembership.user_id == User.id)
+        .where(GroupMembership.group_id == payload.group_id)
+        .order_by(User.id)
     )
+    if payload.student_id is not None:
+        student_query = student_query.where(User.id == payload.student_id)
+    students = list(await session.scalars(student_query))
     if not students:
+        if payload.student_id is not None:
+            raise HTTPException(status_code=404, detail="Student is not a member of this group")
         raise HTTPException(status_code=409, detail="The group has no students")
     if any(not student.is_active or student.is_admin or student.is_teacher for student in students):
         raise HTTPException(

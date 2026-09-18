@@ -129,6 +129,7 @@ class LessonStart(BaseModel):
 
     request_id: UUID
     group_id: UUID
+    student_id: UUID | None = None
     scenario_version_id: UUID
     title: Title | None = None
     mode: TrainingMode = TrainingMode.PRACTICE
