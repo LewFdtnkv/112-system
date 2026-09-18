@@ -6,6 +6,7 @@ from app.api.v1.authoring import router as authoring_router
 from app.api.v1.catalog import router as catalog_router
 from app.api.v1.catalog_admin import router as catalog_admin_router
 from app.api.v1.groups import router as groups_router
+from app.api.v1.student import router as student_router
 from app.api.v1.users import router as users_router
 
 router = APIRouter()
@@ -18,4 +19,5 @@ protected_router.include_router(groups_router)
 protected_router.include_router(authoring_router)
 protected_router.include_router(catalog_router)
 protected_router.include_router(catalog_admin_router)
+protected_router.include_router(student_router)
 router.include_router(protected_router)

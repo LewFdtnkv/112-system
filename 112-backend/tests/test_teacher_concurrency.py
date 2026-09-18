@@ -11,14 +11,20 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from app.models import (
     Assignment,
+    Attempt,
+    AttemptEvent,
     CardTemplate,
     ClassifierEntry,
+    ClassifierRoute,
     ClassifierVersion,
     GroupMembership,
+    IncidentCard,
     Lesson,
     Scenario,
     ScenarioCard,
     ScenarioVersion,
+    Service,
+    ServiceResponse,
     TrainingGroup,
     User,
 )
@@ -56,6 +62,7 @@ async def concurrent_teaching():
             )
             student = await add(User, username=f"student-{uuid4()}", password_hash="unused")
             extra = await add(User, username=f"student-{uuid4()}", password_hash="unused")
+            service = await add(Service, code=f"svc-{uuid4()}", name="Test service")
             approval = dict(
                 status=PublicationStatus.PUBLISHED,
                 approved_by_id=teacher.id,
@@ -87,6 +94,9 @@ async def concurrent_teaching():
                 classifier_entry_id=entry.id,
                 data={},
             )
+            await add(
+                ClassifierRoute, entry_id=entry.id, service_id=service.id, service_name=service.name
+            )
             scenario = await add(Scenario, title="Test", created_by_id=teacher.id)
             version = await add(
                 ScenarioVersion,
@@ -103,7 +113,13 @@ async def concurrent_teaching():
                 scenario_version_id=version.id,
                 card_template_id=template.id,
                 position=1,
-                snapshot={"recipients": []},
+                snapshot={
+                    "title": "Test",
+                    "instructions": "Test",
+                    "caller_message": "Test call",
+                    "data": {},
+                    "recipients": [{"service_id": str(service.id), "name": service.name}],
+                },
             )
             for _ in range(2):
                 group = await add(TrainingGroup, name="Test", teacher_id=teacher.id)
@@ -118,12 +134,18 @@ async def concurrent_teaching():
             teacher_id=teacher.id,
             student_id=student.id,
             extra_id=extra.id,
+            entry_id=entry.id,
             group_ids=group_ids,
             payload=payload,
         )
     finally:
         async with factory() as session:
             lesson_ids = select(Lesson.id).where(Lesson.group_id.in_(group_ids))
+            assignment_ids = select(Assignment.id).where(Assignment.lesson_id.in_(lesson_ids))
+            attempt_ids = select(Attempt.id).where(Attempt.assignment_id.in_(assignment_ids))
+            for model in (AttemptEvent, ServiceResponse, IncidentCard):
+                await session.execute(delete(model).where(model.attempt_id.in_(attempt_ids)))
+            await session.execute(delete(Attempt).where(Attempt.id.in_(attempt_ids)))
             await session.execute(delete(Assignment).where(Assignment.lesson_id.in_(lesson_ids)))
             await session.execute(delete(Lesson).where(Lesson.group_id.in_(group_ids)))
             for model, row_id in reversed(rows):

@@ -57,3 +57,12 @@ async def require_teacher(user: CurrentUserDep) -> User:
 
 AdminDep = Annotated[User, Depends(require_admin)]
 TeacherDep = Annotated[User, Depends(require_teacher)]
+
+
+async def require_student(user: CurrentUserDep) -> User:
+    if user.is_admin or user.is_teacher:
+        raise HTTPException(status_code=403, detail="Student access required")
+    return user
+
+
+StudentDep = Annotated[User, Depends(require_student)]
