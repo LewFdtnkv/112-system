@@ -151,3 +151,10 @@ async def list_assignments(
             .offset(offset)
         )
     )
+
+
+@router.post("/scenarios/{version_id}/versions", response_model=ScenarioRead, status_code=201)
+async def new_scenario_version(
+    version_id: UUID, payload: ScenarioCreate, session: SessionDep, teacher: TeacherDep
+):
+    return await create_scenario(session, teacher.id, payload, previous_id=version_id)

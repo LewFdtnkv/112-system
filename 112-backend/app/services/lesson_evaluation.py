@@ -4,10 +4,11 @@ from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Assignment, Attempt, Lesson, LessonEvaluation, ScenarioCard
+from app.models import Assignment, Attempt, ClassifierEntry, Lesson, LessonEvaluation, ScenarioCard
 from app.models.enums import AttemptStatus, LessonStatus
+from app.schemas.catalog import ClassifierEntryRead
 from app.schemas.lesson_evaluation import AssignmentReview, LessonGradeCreate, LessonWorkReview
-from app.services.student import attempt_read
+from app.services.student import review_attempts
 
 
 async def review_rows(
@@ -43,18 +44,42 @@ async def review_rows(
 async def review_work(session: AsyncSession, lesson_id: UUID, student_id: UUID, teacher_id: UUID):
     _, rows = await review_rows(session, lesson_id, student_id, teacher_id)
     assignments = []
-    for assignment, attempt in rows:
-        source = (
-            await session.get(ScenarioCard, assignment.scenario_card_id)
-            if assignment.scenario_card_id
-            else None
+    sources = {
+        source.id: source
+        for source in await session.scalars(
+            select(ScenarioCard).where(
+                ScenarioCard.id.in_([a.scenario_card_id for a, _ in rows if a.scenario_card_id])
+            )
         )
+    }
+    entries = {
+        str(entry.id): entry
+        for entry in await session.scalars(
+            select(ClassifierEntry).where(
+                ClassifierEntry.id.in_(
+                    [
+                        UUID(source.snapshot["classifier_entry_id"])
+                        for source in sources.values()
+                        if source.snapshot.get("classifier_entry_id")
+                    ]
+                )
+            )
+        )
+    }
+    attempts = await review_attempts(session, [attempt for _, attempt in rows if attempt])
+    for assignment, attempt in rows:
+        source = sources.get(assignment.scenario_card_id) if assignment.scenario_card_id else None
         assignments.append(
             AssignmentReview(
                 assignment_id=assignment.id,
                 position=assignment.position,
                 source_snapshot=source.snapshot if source else None,
-                attempt=await attempt_read(session, attempt) if attempt else None,
+                source_classifier_entry=ClassifierEntryRead.model_validate(
+                    entries[source.snapshot["classifier_entry_id"]]
+                )
+                if source and source.snapshot.get("classifier_entry_id") in entries
+                else None,
+                attempt=attempts.get(attempt.id) if attempt else None,
             )
         )
     evaluations = list(

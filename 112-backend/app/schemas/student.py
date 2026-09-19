@@ -5,6 +5,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, JsonValue
 
 from app.models.enums import AttemptStatus, CardStatus, LessonStatus, TrainingRole
+from app.schemas.catalog import ClassifierEntryRead
 
 
 class DraftData(BaseModel):
@@ -63,6 +64,22 @@ class StudentAttemptRead(BaseModel):
     time_limit_seconds: int | None
     card: StudentCardRead
     notified_services: list[RecipientRead]
+    classifier_entry: ClassifierEntryRead | None = None
+    recipient_services: list[RecipientRead] = Field(default_factory=list)
+    recipient_error: str | None = None
+    norm_seconds: int = 30
+
+
+class JournalCardRead(BaseModel):
+    id: UUID
+    started_at: datetime
+    status: CardStatus
+    address_text: str | None
+    description: str | None
+    caller_name: str | None
+    caller_phone: str | None
+    classifier_entry_id: UUID | None
+    category_name: str | None
 
 
 class StudentAssignmentRead(BaseModel):
@@ -72,6 +89,7 @@ class StudentAssignmentRead(BaseModel):
     role: TrainingRole
     available: bool
     attempt_id: UUID | None
+    card: JournalCardRead | None = None
     status: Literal["pending", "in_progress", "completed", "interrupted"]
 
 

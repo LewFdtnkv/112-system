@@ -51,6 +51,9 @@ class ScenarioVersion(UUIDPrimaryKey, CreatedAt, Base):
     service_profile_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("service_profiles.id", ondelete="RESTRICT"), index=True
     )
+    category: Mapped[str] = mapped_column(String(255), default="", server_default="")
+    duration_minutes: Mapped[int] = mapped_column(Integer, default=15, server_default="15")
+    norm_seconds: Mapped[int] = mapped_column(Integer, default=30, server_default="30")
     difficulty: Mapped[str | None] = mapped_column(String(50))
     instructions: Mapped[str] = mapped_column(Text)
     caller_message: Mapped[str | None] = mapped_column(Text)

@@ -5,6 +5,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, JsonValue, model_validator
 
 from app.schemas.authoring import NonblankText
+from app.schemas.catalog import ClassifierEntryRead
 from app.schemas.student import StudentAttemptRead
 
 
@@ -43,6 +44,7 @@ class AssignmentReview(BaseModel):
     assignment_id: UUID
     position: int
     source_snapshot: dict[str, JsonValue] | None
+    source_classifier_entry: ClassifierEntryRead | None = None
     attempt: StudentAttemptRead | None
 
 

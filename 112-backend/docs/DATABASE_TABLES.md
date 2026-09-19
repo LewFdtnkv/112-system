@@ -230,6 +230,9 @@ PK — первичный ключ; `NULL` — допустимое отсутс
 | `classifier_version_id` | `UUID` | нет | — | `—` |
 | `service_profile_id` | `UUID` | да | — | `—` |
 | `difficulty` | `VARCHAR(50)` | да | — | `—` |
+| `category` | `VARCHAR(255)` | нет | — | `''` |
+| `duration_minutes` | `INTEGER` | нет | — | `15` |
+| `norm_seconds` | `INTEGER` | нет | — | `30` |
 | `instructions` | `TEXT` | нет | — | `—` |
 | `caller_message` | `TEXT` | да | — | `—` |
 | `caller_audio_key` | `TEXT` | да | — | `—` |

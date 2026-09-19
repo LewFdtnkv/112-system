@@ -26,10 +26,12 @@ from app.models.enums import (
     LessonStatus,
     TrainingRole,
 )
+from app.schemas.catalog import ClassifierEntryRead
 from app.schemas.student import (
     CardSubmit,
     DraftData,
     DraftSave,
+    JournalCardRead,
     RecipientRead,
     StudentAssignmentRead,
     StudentAttemptRead,
@@ -62,7 +64,14 @@ async def student_lesson(
 async def lesson_work(session: AsyncSession, lesson: Lesson, student_id: UUID) -> StudentLessonRead:
     rows = (
         await session.execute(
-            select(Assignment, ScenarioVersion, ScenarioCard, Attempt)
+            select(
+                Assignment,
+                ScenarioVersion,
+                ScenarioCard,
+                Attempt,
+                IncidentCard,
+                ClassifierEntry.name,
+            )
             .join(
                 ScenarioVersion,
                 ScenarioVersion.id == Assignment.scenario_version_id,
@@ -72,13 +81,15 @@ async def lesson_work(session: AsyncSession, lesson: Lesson, student_id: UUID) -
                 Attempt,
                 (Attempt.assignment_id == Assignment.id) & (Attempt.number == 1),
             )
+            .outerjoin(IncidentCard, IncidentCard.attempt_id == Attempt.id)
+            .outerjoin(ClassifierEntry, ClassifierEntry.id == IncidentCard.classifier_entry_id)
             .where(Assignment.lesson_id == lesson.id, Assignment.student_id == student_id)
             .order_by(Assignment.position)
         )
     ).all()
     assignments = []
     previous_complete = True
-    for assignment, scenario, source, attempt in rows:
+    for assignment, scenario, source, attempt, card, category_name in rows:
         complete = attempt is not None and attempt.status == AttemptStatus.COMPLETED
         assignments.append(
             StudentAssignmentRead(
@@ -92,6 +103,19 @@ async def lesson_work(session: AsyncSession, lesson: Lesson, student_id: UUID) -
                 and lesson.status == LessonStatus.ACTIVE
                 and scenario.role == TrainingRole.OPERATOR_112,
                 attempt_id=attempt.id if attempt else None,
+                card=JournalCardRead(
+                    id=card.id,
+                    started_at=attempt.started_at,
+                    status=card.status,
+                    address_text=card.address_text,
+                    description=card.description,
+                    caller_name=card.caller_name,
+                    caller_phone=card.caller_phone,
+                    classifier_entry_id=card.classifier_entry_id,
+                    category_name=category_name,
+                )
+                if card
+                else None,
                 status=attempt.status if attempt else "pending",
             )
         )
@@ -112,21 +136,47 @@ async def lesson_work(session: AsyncSession, lesson: Lesson, student_id: UUID) -
     )
 
 
-async def attempt_read(session: AsyncSession, attempt: Attempt) -> StudentAttemptRead:
-    assignment = await session.get(Assignment, attempt.assignment_id)
-    source = await session.get(ScenarioCard, assignment.scenario_card_id)
-    scenario = await session.get(ScenarioVersion, assignment.scenario_version_id)
-    card = await session.scalar(select(IncidentCard).where(IncidentCard.attempt_id == attempt.id))
-    responses = list(
-        await session.scalars(
-            select(ServiceResponse)
-            .where(
-                ServiceResponse.attempt_id == attempt.id,
-            )
-            .order_by(ServiceResponse.service_id)
+async def attempt_read(
+    session: AsyncSession, attempt: Attempt, *, context=None, preview: bool = True
+) -> StudentAttemptRead:
+    if context is None:
+        assignment = await session.get(Assignment, attempt.assignment_id)
+        source = await session.get(ScenarioCard, assignment.scenario_card_id)
+        scenario = await session.get(ScenarioVersion, assignment.scenario_version_id)
+        card = await session.scalar(
+            select(IncidentCard).where(IncidentCard.attempt_id == attempt.id)
         )
-    )
+        responses = list(
+            await session.scalars(
+                select(ServiceResponse)
+                .where(
+                    ServiceResponse.attempt_id == attempt.id,
+                )
+                .order_by(ServiceResponse.service_id)
+            )
+        )
+        entry = (
+            await session.get(ClassifierEntry, card.classifier_entry_id)
+            if card.classifier_entry_id
+            else None
+        )
+    else:
+        assignment, source, scenario, card, entry, responses = context
+    targets = []
+    recipient_error = None
+    if preview and entry and attempt.status == AttemptStatus.IN_PROGRESS:
+        try:
+            targets = [
+                RecipientRead(service_id=item.id, name=item.name)
+                for item in await recipients(session, card)
+            ]
+        except HTTPException as exc:
+            recipient_error = str(exc.detail)
     return StudentAttemptRead(
+        classifier_entry=ClassifierEntryRead.model_validate(entry) if entry else None,
+        recipient_services=targets,
+        recipient_error=recipient_error,
+        norm_seconds=scenario.norm_seconds,
         id=attempt.id,
         assignment_id=attempt.assignment_id,
         status=attempt.status,
@@ -152,6 +202,41 @@ async def attempt_read(session: AsyncSession, attempt: Attempt) -> StudentAttemp
             RecipientRead(service_id=r.service_id, name=r.service_name) for r in responses
         ],
     )
+
+
+async def review_attempts(session: AsyncSession, attempts: list[Attempt]):
+    """Two queries for any number of cards; teacher previews need no route calculation."""
+    if not attempts:
+        return {}
+    ids = [attempt.id for attempt in attempts]
+    rows = (
+        await session.execute(
+            select(
+                Attempt.id, Assignment, ScenarioCard, ScenarioVersion, IncidentCard, ClassifierEntry
+            )
+            .join(Assignment, Assignment.id == Attempt.assignment_id)
+            .join(ScenarioVersion, ScenarioVersion.id == Assignment.scenario_version_id)
+            .join(ScenarioCard, ScenarioCard.id == Assignment.scenario_card_id)
+            .join(IncidentCard, IncidentCard.attempt_id == Attempt.id)
+            .outerjoin(ClassifierEntry, ClassifierEntry.id == IncidentCard.classifier_entry_id)
+            .where(Attempt.id.in_(ids))
+        )
+    ).all()
+    services = {}
+    for response in await session.scalars(
+        select(ServiceResponse)
+        .where(ServiceResponse.attempt_id.in_(ids))
+        .order_by(ServiceResponse.service_id)
+    ):
+        services.setdefault(response.attempt_id, []).append(response)
+    contexts = {row[0]: (*row[1:], services.get(row[0], [])) for row in rows}
+    return {
+        attempt.id: await attempt_read(
+            session, attempt, context=contexts[attempt.id], preview=False
+        )
+        for attempt in attempts
+        if attempt.id in contexts
+    }
 
 
 async def event(
@@ -279,8 +364,17 @@ async def selected_entry(session: AsyncSession, card: IncidentCard) -> Classifie
     return entry
 
 
-async def recipients(session: AsyncSession, card: IncidentCard) -> list[Service]:
-    entry = await selected_entry(session, card)
+async def recipients(
+    session: AsyncSession, card: IncidentCard, entry_id: UUID | None = None
+) -> list[Service]:
+    if entry_id is None:
+        entry = await selected_entry(session, card)
+    else:
+        entry = await session.get(ClassifierEntry, entry_id)
+        if entry is None or entry.classifier_version_id != card.classifier_version_id:
+            raise HTTPException(
+                status_code=422, detail="Choose a code from the assigned classifier"
+            )
     routes = (
         await session.execute(
             select(ClassifierRoute, Service)

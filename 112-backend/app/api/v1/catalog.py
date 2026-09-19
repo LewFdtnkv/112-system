@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import select
 
 from app.api.dependencies import SessionDep, TeacherDep
@@ -25,12 +25,14 @@ async def list_classifiers(
     teacher: TeacherDep,
     limit: Limit = 20,
     offset: Offset = 0,
+    q: str = Query(default="", max_length=200),
 ):
     return list(
         await session.scalars(
             select(ClassifierVersion)
             .where(
                 ClassifierVersion.status == PublicationStatus.PUBLISHED,
+                ClassifierVersion.label.ilike(f"%{q}%"),
             )
             .order_by(ClassifierVersion.label, ClassifierVersion.id)
             .limit(limit)
@@ -46,6 +48,7 @@ async def list_entries(
     teacher: TeacherDep,
     limit: Limit = 20,
     offset: Offset = 0,
+    q: str = Query(default="", max_length=200),
 ):
     await published_classifier(session, version_id)
     return list(
@@ -53,6 +56,7 @@ async def list_entries(
             select(ClassifierEntry)
             .where(
                 ClassifierEntry.classifier_version_id == version_id,
+                (ClassifierEntry.name.ilike(f"%{q}%") | ClassifierEntry.code.ilike(f"%{q}%")),
             )
             .order_by(ClassifierEntry.code, ClassifierEntry.id)
             .limit(limit)
@@ -86,6 +90,7 @@ async def list_services(
     teacher: TeacherDep,
     limit: Limit = 20,
     offset: Offset = 0,
+    q: str = Query(default="", max_length=200),
 ):
     return list(
         await session.scalars(
@@ -108,12 +113,14 @@ async def list_profiles(
     service_id: UUID | None = None,
     limit: Limit = 20,
     offset: Offset = 0,
+    q: str = Query(default="", max_length=200),
 ):
     query = (
         select(ServiceProfile)
         .join(Service)
         .where(
             ServiceProfile.status == PublicationStatus.PUBLISHED,
+            ServiceProfile.name.ilike(f"%{q}%"),
             Service.is_active.is_(True),
         )
     )

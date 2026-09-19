@@ -1,0 +1,97 @@
+"""Bounded page contracts; no hidden scenario answers in student projections."""
+
+from datetime import datetime
+from decimal import Decimal
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict
+
+
+class Page[T](BaseModel):
+    items: list[T]
+    total: int
+    limit: int
+    offset: int
+
+
+class UserItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: UUID
+    username: str
+    first_name: str
+    last_name: str
+    middle_name: str | None
+    email: str | None
+    is_active: bool
+    is_teacher: bool
+    is_admin: bool
+    must_change_password: bool
+    groups: list[str] = []
+
+
+class GroupItem(BaseModel):
+    id: UUID
+    name: str
+    student_count: int
+
+
+class LessonRow(BaseModel):
+    lesson_id: UUID
+    title: str
+    student_id: UUID
+    student_name: str
+    scenario_version_id: UUID
+    scenario_title: str
+    role: str
+    group_name: str | None
+    started_at: datetime | None
+    ended_at: datetime | None
+    status: str
+    work_status: str
+    card_count: int
+    completed_count: int
+    score: Decimal | None
+    max_score: Decimal | None
+    evaluation_revision: int | None
+
+
+class LessonPage(Page[LessonRow]):
+    assigned_count: int
+    in_progress_count: int
+    submitted_count: int
+    graded_count: int
+
+
+class ScenarioItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: UUID
+    scenario_id: UUID
+    version: int
+    title: str
+    category: str
+    difficulty: str | None
+    duration_minutes: int
+    norm_seconds: int
+    role: str
+    status: str
+    classifier_version_id: UUID
+    service_profile_id: UUID | None
+    created_at: datetime
+    card_count: int
+
+
+class AnalyticsRow(BaseModel):
+    scenario_version_id: UUID
+    title: str
+    total: int
+    submitted: int
+    graded: int
+    average_score_percent: float | None
+
+
+class AnalyticsRead(BaseModel):
+    total: int
+    submitted: int
+    graded: int
+    average_score_percent: float | None
+    scenarios: Page[AnalyticsRow]

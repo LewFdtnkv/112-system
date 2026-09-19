@@ -9,6 +9,7 @@ from app.api.v1.groups import router as groups_router
 from app.api.v1.lesson_evaluation import router as lesson_evaluation_router
 from app.api.v1.student import router as student_router
 from app.api.v1.users import router as users_router
+from app.api.v1.views import router as views_router
 
 router = APIRouter()
 router.include_router(auth_router)
@@ -22,4 +23,5 @@ protected_router.include_router(catalog_router)
 protected_router.include_router(catalog_admin_router)
 protected_router.include_router(student_router)
 protected_router.include_router(lesson_evaluation_router)
+protected_router.include_router(views_router)
 router.include_router(protected_router)

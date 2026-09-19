@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import UUID
 
 from pydantic import (
@@ -69,11 +69,24 @@ class CardListItem(BaseModel):
     created_at: datetime
 
 
-class ScenarioCreate(BaseModel):
+class ScenarioMetadata(BaseModel):
+    category: str = Field(default="", max_length=255)
+    difficulty: Literal["basic", "intermediate", "advanced"] = "basic"
+    duration_minutes: int = Field(default=15, ge=1, le=120)
+    norm_seconds: int = Field(default=30, ge=5, le=600)
+
+    @field_validator("difficulty", mode="before")
+    @classmethod
+    def old_difficulty(cls, value):
+        return value or "basic"
+
+
+class ScenarioCreate(ScenarioMetadata):
     model_config = ConfigDict(extra="forbid")
 
     title: Title
     role: TrainingRole
+    status: Literal["draft", "published"] = "published"
     card_ids: list[UUID] = Field(min_length=1, max_length=100)
     service_profile_id: UUID | None = None
     instructions: str = Field(default="", max_length=10000)
@@ -94,7 +107,7 @@ class ScenarioCardRead(BaseModel):
     snapshot: dict[str, JsonValue]
 
 
-class ScenarioRead(BaseModel):
+class ScenarioRead(ScenarioMetadata):
     id: UUID  # This is the version ID used by LessonStart.scenario_version_id.
     scenario_id: UUID
     version: int
@@ -110,7 +123,7 @@ class ScenarioRead(BaseModel):
     cards: list[ScenarioCardRead]
 
 
-class ScenarioListItem(BaseModel):
+class ScenarioListItem(ScenarioMetadata):
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID

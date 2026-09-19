@@ -2,7 +2,7 @@ from datetime import UTC, datetime
 from uuid import UUID
 
 from fastapi import HTTPException
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import (
@@ -169,6 +169,10 @@ async def scenario_read(session: AsyncSession, version: ScenarioVersion) -> Scen
         classifier_version_id=version.classifier_version_id,
         service_profile_id=version.service_profile_id,
         instructions=version.instructions,
+        category=version.category,
+        difficulty=version.difficulty or "basic",
+        duration_minutes=version.duration_minutes,
+        norm_seconds=version.norm_seconds,
         approved_by_id=version.approved_by_id,
         approved_at=version.approved_at,
         created_at=version.created_at,
@@ -177,7 +181,10 @@ async def scenario_read(session: AsyncSession, version: ScenarioVersion) -> Scen
 
 
 async def create_scenario(
-    session: AsyncSession, teacher_id: UUID, payload: ScenarioCreate
+    session: AsyncSession,
+    teacher_id: UUID,
+    payload: ScenarioCreate,
+    previous_id: UUID | None = None,
 ) -> ScenarioRead:
     cards = list(
         await session.scalars(
@@ -224,20 +231,36 @@ async def create_scenario(
             raise HTTPException(
                 status_code=422, detail="Each DDS card must be addressed to the profile service"
             )
-    scenario = Scenario(title=payload.title, created_by_id=teacher_id)
-    session.add(scenario)
-    await session.flush()
+    if previous_id is None:
+        scenario = Scenario(title=payload.title, created_by_id=teacher_id)
+        session.add(scenario)
+        await session.flush()
+        number = 1
+    else:
+        previous = await owned_scenario(session, previous_id, teacher_id)
+        scenario = await session.scalar(
+            select(Scenario).where(Scenario.id == previous.scenario_id).with_for_update()
+        )
+        number = 1 + await session.scalar(
+            select(func.max(ScenarioVersion.version)).where(
+                ScenarioVersion.scenario_id == scenario.id
+            )
+        )
     version = ScenarioVersion(
         scenario_id=scenario.id,
-        version=1,
+        version=number,
         title=payload.title,
         role=payload.role,
         classifier_version_id=classifier_id,
         service_profile_id=payload.service_profile_id,
         instructions=payload.instructions,
-        status=PublicationStatus.PUBLISHED,
-        approved_by_id=teacher_id,
-        approved_at=datetime.now(UTC),
+        category=payload.category,
+        difficulty=payload.difficulty,
+        duration_minutes=payload.duration_minutes,
+        norm_seconds=payload.norm_seconds,
+        status=PublicationStatus(payload.status),
+        approved_by_id=teacher_id if payload.status == "published" else None,
+        approved_at=datetime.now(UTC) if payload.status == "published" else None,
     )
     session.add(version)
     await session.flush()

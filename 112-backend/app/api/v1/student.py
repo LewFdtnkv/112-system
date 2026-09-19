@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Response
+from fastapi import APIRouter, Query, Response
 from sqlalchemy import select
 
 from app.api.dependencies import SessionDep, StudentDep
@@ -80,6 +80,7 @@ async def codes(
     student: StudentDep,
     limit: Limit = 20,
     offset: Offset = 0,
+    q: str = Query(default="", max_length=200),
 ):
     row, _ = await owned_attempt(session, attempt_id, student.id)
     card = await session.scalar(select(IncidentCard).where(IncidentCard.attempt_id == row.id))
@@ -88,6 +89,7 @@ async def codes(
             select(ClassifierEntry)
             .where(
                 ClassifierEntry.classifier_version_id == card.classifier_version_id,
+                (ClassifierEntry.name.ilike(f"%{q}%") | ClassifierEntry.code.ilike(f"%{q}%")),
             )
             .order_by(ClassifierEntry.code, ClassifierEntry.id)
             .limit(limit)
@@ -97,12 +99,17 @@ async def codes(
 
 
 @router.get("/attempts/{attempt_id}/recipients", response_model=list[RecipientRead])
-async def preview(attempt_id: UUID, session: SessionDep, student: StudentDep):
+async def preview(
+    attempt_id: UUID,
+    session: SessionDep,
+    student: StudentDep,
+    classifier_entry_id: UUID | None = None,
+):
     row, _ = await owned_attempt(session, attempt_id, student.id)
     card = await session.scalar(select(IncidentCard).where(IncidentCard.attempt_id == row.id))
     return [
         RecipientRead(service_id=service.id, name=service.name)
-        for service in await recipients(session, card)
+        for service in await recipients(session, card, classifier_entry_id)
     ]
 
 
