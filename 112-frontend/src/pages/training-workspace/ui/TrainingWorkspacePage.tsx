@@ -225,35 +225,6 @@ const TrainingWorkspace = ({ session }: { session: DemoTrainingSession }) => {
 
   return (
     <div className="incident-desk">
-      <header className="incident-desk__topbar">
-        <div className="incident-desk__date">
-          Дежурная смена · учебный режим
-          {" · "}
-          <Link to={routePaths.studentDashboard}>Мои занятия</Link>
-        </div>
-        <div className="incident-desk__tools" aria-label="Инструменты АРМ">
-          <span>Карта</span>
-          <span>Телефония</span>
-          <span>Сообщения</span>
-          <span>Помощь</span>
-        </div>
-        <Button
-          className="incident-desk__create"
-          disabled={callState !== "accepted"}
-          onClick={() => setIsCreateOpen(true)}
-          startIcon={<AddBoxOutlinedIcon />}
-        >
-          Создать новую карточку
-        </Button>
-        <Button
-          className="incident-desk__complete"
-          disabled={callState !== "accepted" || submittedIds.length === 0}
-          onClick={completeTraining}
-        >
-          Завершить занятие
-        </Button>
-      </header>
-
       <TrainingStrip
         scenarioTitle={scenario?.name ?? "Учебное занятие"}
         isSessionActive={Boolean(session)}
@@ -274,6 +245,39 @@ const TrainingWorkspace = ({ session }: { session: DemoTrainingSession }) => {
       />
 
       <IncidentFeed
+        toolbar={
+          <header className="incident-desk__topbar">
+            <div className="incident-desk__date">
+              Дежурная смена · учебный режим
+              {" · "}
+              <Link to={routePaths.studentDashboard}>Мои занятия</Link>
+            </div>
+            <div className="incident-desk__identity">
+              <strong>112</strong>
+              <span>
+                Автоматизированное
+                <br />
+                рабочее место оператора
+              </span>
+            </div>
+
+            <Button
+              className="incident-desk__create"
+              disabled={callState !== "accepted"}
+              onClick={() => setIsCreateOpen(true)}
+              startIcon={<AddBoxOutlinedIcon />}
+            >
+              Создать новую карточку
+            </Button>
+            <Button
+              className="incident-desk__complete"
+              disabled={callState !== "accepted" || submittedIds.length === 0}
+              onClick={completeTraining}
+            >
+              Завершить занятие
+            </Button>
+          </header>
+        }
         incidents={incidents}
         selectedId={selectedId}
         onOpen={openCard}

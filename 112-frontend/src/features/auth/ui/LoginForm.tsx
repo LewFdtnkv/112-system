@@ -28,6 +28,8 @@ export const LoginForm = ({ error, onSubmit }: LoginFormProps) => {
     >
       {error && <Alert severity="error">{error}</Alert>}
       <TextField
+        variant="standard"
+        slotProps={{ inputLabel: { shrink: true } }}
         label="Электронная почта"
         type="email"
         autoComplete="email"
@@ -42,6 +44,8 @@ export const LoginForm = ({ error, onSubmit }: LoginFormProps) => {
         helperText={errors.email?.message}
       />
       <TextField
+        variant="standard"
+        slotProps={{ inputLabel: { shrink: true } }}
         label="Пароль"
         type="password"
         autoComplete="current-password"

@@ -11,6 +11,11 @@ export const AuthLayout = () => {
           <span>Учебный тренажёр ДДС</span>
         </Link>
       </header>
+      <div className="auth-city" aria-hidden="true">
+        {Array.from({ length: 12 }, (_, index) => (
+          <i key={index} />
+        ))}
+      </div>
       <main className="auth-main">
         <Outlet />
       </main>

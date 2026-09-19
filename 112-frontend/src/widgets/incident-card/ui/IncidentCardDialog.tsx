@@ -191,6 +191,7 @@ const IncidentCardForm = ({
     setError(undefined);
   };
 
+  const [mapOpen, setMapOpen] = useState(false);
   const isOverdue = elapsedSeconds >= normSeconds;
   const addressLine = [
     fields.address.street,
@@ -202,13 +203,53 @@ const IncidentCardForm = ({
 
   return (
     <>
-      <DialogTitle>Карточка происшествия № {card.id}</DialogTitle>
+      <DialogTitle>
+        Карточка происшествия № {card.id}
+        <span className="arm-card-title-note">Учебный режим</span>
+      </DialogTitle>
       <DialogContent>
         <div className="incident-card-form">
           <div className="arm-card-summary">
             <div>
               <strong>Учебный вызов</strong>
-              <span>Соединение установлено · канал {card.channel}</span>
+              <span>
+                {isCallAccepted
+                  ? "Соединение установлено"
+                  : "Ожидание приёма вызова"}{" "}
+                · канал {card.channel}
+              </span>
+            </div>
+            <div className="arm-card-phones" aria-label="Телефоны заявителя">
+              <TextField
+                variant="standard"
+                slotProps={{ inputLabel: { shrink: true } }}
+                disabled={isSubmitted || !isCallAccepted}
+                label="АОН"
+                value={fields.phones.callerId}
+                onChange={(event) =>
+                  setPhoneField("callerId", event.target.value)
+                }
+              />
+              <TextField
+                variant="standard"
+                slotProps={{ inputLabel: { shrink: true } }}
+                disabled={isSubmitted || !isCallAccepted}
+                label="Предоставленный"
+                value={fields.phones.provided}
+                onChange={(event) =>
+                  setPhoneField("provided", event.target.value)
+                }
+              />
+              <TextField
+                variant="standard"
+                slotProps={{ inputLabel: { shrink: true } }}
+                disabled={isSubmitted || !isCallAccepted}
+                label="Телефон на месте"
+                value={fields.phones.onSite}
+                onChange={(event) =>
+                  setPhoneField("onSite", event.target.value)
+                }
+              />
             </div>
             <div>
               <strong>Карточка № {card.id}</strong>
@@ -246,6 +287,8 @@ const IncidentCardForm = ({
               <h2 id="card-contact-title">Сведения о заявителе</h2>
               <div className="arm-card-panel__fields">
                 <TextField
+                  variant="standard"
+                  slotProps={{ inputLabel: { shrink: true } }}
                   disabled={isSubmitted || !isCallAccepted}
                   label="Заявитель"
                   value={fields.callerName}
@@ -253,54 +296,13 @@ const IncidentCardForm = ({
                     setField("callerName", event.target.value)
                   }
                 />
-                <TextField
-                  disabled={isSubmitted || !isCallAccepted}
-                  label="Пострадавших"
-                  type="number"
-                  value={fields.victimsCount ?? ""}
-                  onChange={(event) =>
-                    setField(
-                      "victimsCount",
-                      event.target.value === ""
-                        ? null
-                        : Number(event.target.value),
-                    )
-                  }
-                />
-              </div>
-              <div
-                className="arm-card-panel__fields"
-                aria-label="Телефоны заявителя"
-              >
-                <TextField
-                  disabled={isSubmitted || !isCallAccepted}
-                  label="АОН"
-                  value={fields.phones.callerId}
-                  onChange={(event) =>
-                    setPhoneField("callerId", event.target.value)
-                  }
-                />
-                <TextField
-                  disabled={isSubmitted || !isCallAccepted}
-                  label="Предоставленный"
-                  value={fields.phones.provided}
-                  onChange={(event) =>
-                    setPhoneField("provided", event.target.value)
-                  }
-                />
-                <TextField
-                  disabled={isSubmitted || !isCallAccepted}
-                  label="Телефон на месте"
-                  value={fields.phones.onSite}
-                  onChange={(event) =>
-                    setPhoneField("onSite", event.target.value)
-                  }
-                />
               </div>
 
               <h3 className="arm-card-panel__subheading">Адрес происшествия</h3>
               <div className="arm-card-panel__fields arm-card-panel__fields--address">
                 <TextField
+                  variant="standard"
+                  slotProps={{ inputLabel: { shrink: true } }}
                   disabled={isSubmitted || !isCallAccepted}
                   label="Округ"
                   value={fields.address.district}
@@ -309,6 +311,8 @@ const IncidentCardForm = ({
                   }
                 />
                 <TextField
+                  variant="standard"
+                  slotProps={{ inputLabel: { shrink: true } }}
                   disabled={isSubmitted || !isCallAccepted}
                   label="Район"
                   value={fields.address.area}
@@ -317,6 +321,8 @@ const IncidentCardForm = ({
                   }
                 />
                 <TextField
+                  variant="standard"
+                  slotProps={{ inputLabel: { shrink: true } }}
                   disabled={isSubmitted || !isCallAccepted}
                   label="Улица"
                   value={fields.address.street}
@@ -325,6 +331,8 @@ const IncidentCardForm = ({
                   }
                 />
                 <TextField
+                  variant="standard"
+                  slotProps={{ inputLabel: { shrink: true } }}
                   disabled={isSubmitted || !isCallAccepted}
                   label="Дом/Вл"
                   value={fields.address.house}
@@ -333,6 +341,8 @@ const IncidentCardForm = ({
                   }
                 />
                 <TextField
+                  variant="standard"
+                  slotProps={{ inputLabel: { shrink: true } }}
                   disabled={isSubmitted || !isCallAccepted}
                   label="Корпус/Стр"
                   value={fields.address.building}
@@ -341,6 +351,8 @@ const IncidentCardForm = ({
                   }
                 />
                 <TextField
+                  variant="standard"
+                  slotProps={{ inputLabel: { shrink: true } }}
                   disabled={isSubmitted || !isCallAccepted}
                   label="Квартира/офис"
                   value={fields.address.apartment}
@@ -349,6 +361,8 @@ const IncidentCardForm = ({
                   }
                 />
                 <TextField
+                  variant="standard"
+                  slotProps={{ inputLabel: { shrink: true } }}
                   disabled={isSubmitted || !isCallAccepted}
                   label="Подъезд"
                   value={fields.address.entrance}
@@ -357,6 +371,8 @@ const IncidentCardForm = ({
                   }
                 />
                 <TextField
+                  variant="standard"
+                  slotProps={{ inputLabel: { shrink: true } }}
                   disabled={isSubmitted || !isCallAccepted}
                   label="Этаж"
                   value={fields.address.floor}
@@ -366,6 +382,8 @@ const IncidentCardForm = ({
                 />
               </div>
               <TextField
+                variant="standard"
+                slotProps={{ inputLabel: { shrink: true } }}
                 disabled={isSubmitted || !isCallAccepted}
                 label="Описательный адрес"
                 placeholder="Например: за ТЦ, второй подъезд со двора"
@@ -375,10 +393,18 @@ const IncidentCardForm = ({
                 }
               />
 
-              <LocationMap addressLine={addressLine} />
+              <details
+                className="arm-card-map"
+                onToggle={(event) => setMapOpen(event.currentTarget.open)}
+              >
+                <summary>Показать адрес на карте</summary>
+                {mapOpen && <LocationMap addressLine={addressLine} />}
+              </details>
 
               <div className="arm-card-panel__fields">
                 <TextField
+                  variant="standard"
+                  slotProps={{ inputLabel: { shrink: true } }}
                   disabled={isSubmitted || !isCallAccepted}
                   select
                   label="Статус обработки"
@@ -395,7 +421,10 @@ const IncidentCardForm = ({
                 </TextField>
               </div>
               <TextField
+                variant="standard"
+                slotProps={{ inputLabel: { shrink: true } }}
                 disabled={isSubmitted || !isCallAccepted}
+                className="arm-card-message"
                 label="Сообщение со слов заявителя"
                 multiline
                 minRows={5}
@@ -410,8 +439,28 @@ const IncidentCardForm = ({
               className="arm-card-panel"
               aria-labelledby="card-scenario-title"
             >
-              <h2 id="card-scenario-title">Что случилось</h2>
+              <div className="arm-card-victims">
+                {" "}
+                <TextField
+                  variant="standard"
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  disabled={isSubmitted || !isCallAccepted}
+                  label="Пострадавших"
+                  type="number"
+                  value={fields.victimsCount ?? ""}
+                  onChange={(event) =>
+                    setField(
+                      "victimsCount",
+                      event.target.value === ""
+                        ? null
+                        : Number(event.target.value),
+                    )
+                  }
+                />
+              </div>
               <TextField
+                variant="standard"
+                slotProps={{ inputLabel: { shrink: true } }}
                 disabled={isSubmitted || !isCallAccepted}
                 select
                 label="Тип происшествия"
@@ -424,6 +473,7 @@ const IncidentCardForm = ({
                   </MenuItem>
                 ))}
               </TextField>
+              <h2 id="card-scenario-title">Что случилось</h2>
               <div
                 className="arm-card-tags"
                 aria-label="Уточняющие признаки происшествия"
@@ -457,7 +507,10 @@ const IncidentCardForm = ({
                 может изменить их ниже.
               </p>
               <TextField
+                variant="standard"
+                slotProps={{ inputLabel: { shrink: true } }}
                 disabled={isSubmitted || !isCallAccepted}
+                className="arm-card-action"
                 label="Действие оператора"
                 value={fields.operatorAction}
                 placeholder="Например: сообщение принято, дежурная бригада направлена на место"
@@ -483,31 +536,6 @@ const IncidentCardForm = ({
             )}
           </div>
 
-          <div className="arm-card-services" aria-label="Службы реагирования">
-            <span>Службы:</span>
-            {responseServices.map((service) => (
-              <button
-                disabled={isSubmitted || !isCallAccepted}
-                aria-pressed={fields.services.includes(service)}
-                className={
-                  fields.services.includes(service)
-                    ? "arm-card-services__selected"
-                    : undefined
-                }
-                key={service}
-                onClick={() => toggleService(service)}
-                type="button"
-              >
-                {service}
-              </button>
-            ))}
-            <small>
-              {fields.services.length > 0
-                ? `Выбрано служб: ${fields.services.length}`
-                : "Выберите службы реагирования."}
-            </small>
-          </div>
-
           {error && (
             <p className="incident-card-form__error" role="alert">
               {error}
@@ -525,23 +553,55 @@ const IncidentCardForm = ({
           )}
         </div>
       </DialogContent>
-      <DialogActions>
-        <Button startIcon={<CloseIcon />} onClick={onClose}>
-          Закрыть
-        </Button>
-        <Button
-          onClick={commitAction}
-          disabled={isSubmitted || !isCallAccepted}
-        >
-          Зафиксировать действие
-        </Button>
-        <Button
-          variant="contained"
-          onClick={submit}
-          disabled={isSubmitted || !isCallAccepted}
-        >
-          Отправить на проверку
-        </Button>
+      <DialogActions
+        className={
+          isSubmitted
+            ? "arm-card-footer arm-card-footer--submitted"
+            : "arm-card-footer"
+        }
+      >
+        <div className="arm-card-services" aria-label="Службы реагирования">
+          <span>Службы:</span>
+          {responseServices.map((service) => (
+            <button
+              disabled={isSubmitted || !isCallAccepted}
+              aria-pressed={fields.services.includes(service)}
+              className={
+                fields.services.includes(service)
+                  ? "arm-card-services__selected"
+                  : undefined
+              }
+              key={service}
+              onClick={() => toggleService(service)}
+              type="button"
+            >
+              {service}
+            </button>
+          ))}
+          <small>
+            {fields.services.length > 0
+              ? `Выбрано служб: ${fields.services.length}`
+              : "Выберите службы реагирования."}
+          </small>
+        </div>
+        <div className="arm-card-footer__actions">
+          <Button startIcon={<CloseIcon />} onClick={onClose}>
+            Закрыть
+          </Button>
+          <Button
+            onClick={commitAction}
+            disabled={isSubmitted || !isCallAccepted}
+          >
+            Зафиксировать действие
+          </Button>
+          <Button
+            variant="contained"
+            onClick={submit}
+            disabled={isSubmitted || !isCallAccepted}
+          >
+            Отправить на проверку
+          </Button>
+        </div>
       </DialogActions>
     </>
   );

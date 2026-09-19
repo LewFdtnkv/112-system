@@ -13,15 +13,15 @@ export const components: Components<Theme> = {
         fontWeight: 600,
         letterSpacing: 0,
         minHeight: 30,
-        textTransform: "uppercase",
-        fontSize: "0.7rem",
+        textTransform: "none",
+        fontSize: "0.75rem",
       },
     },
     variants: [
       {
         props: { variant: "contained", color: "primary" },
         style: {
-          backgroundColor: "#167aa5",
+          backgroundColor: "#008bc5",
           "&:hover": { backgroundColor: "#115a7a" },
         },
       },
@@ -30,7 +30,7 @@ export const components: Components<Theme> = {
         style: {
           borderColor: "#8b9aa1",
           "&:hover": {
-            borderColor: "#167aa5",
+            borderColor: "#008bc5",
             backgroundColor: "#e7f2f7",
           },
         },

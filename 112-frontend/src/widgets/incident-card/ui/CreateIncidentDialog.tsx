@@ -44,7 +44,13 @@ export const CreateIncidentDialog = ({
     setDraft((current) => ({ ...current, [key]: value }));
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullWidth
+      maxWidth="sm"
+      className="arm-create-dialog"
+    >
       <DialogTitle>Новая учебная карточка</DialogTitle>
       <DialogContent>
         <div className="incident-card-form">

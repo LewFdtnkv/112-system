@@ -6,7 +6,7 @@ export const theme = createTheme({
   components,
   palette: {
     primary: {
-      main: "#167aa5",
+      main: "#008bc5",
       dark: "#115a7a",
       light: "#63a7c5",
       contrastText: "#ffffff",
@@ -15,7 +15,7 @@ export const theme = createTheme({
       main: "#4b5961",
     },
     background: {
-      default: "#e7ebed",
+      default: "#c8cfd3",
       paper: "#ffffff",
     },
     text: {
@@ -24,10 +24,10 @@ export const theme = createTheme({
     },
   },
   shape: {
-    borderRadius: 2,
+    borderRadius: 0,
   },
   typography: {
-    fontFamily: '"Segoe UI", Arial, sans-serif',
+    fontFamily: 'Arial, "Helvetica Neue", sans-serif',
     fontSize: 13,
     h4: {
       fontSize: "1.35rem",
