@@ -26,6 +26,7 @@ from app.schemas.authoring import (
     ScenarioCreate,
     ScenarioRead,
 )
+from app.services.assessment_policy import scenario_policy
 
 
 async def published_classifier(session: AsyncSession, version_id: UUID) -> ClassifierVersion:
@@ -177,6 +178,7 @@ async def scenario_read(session: AsyncSession, version: ScenarioVersion) -> Scen
         approved_at=version.approved_at,
         created_at=version.created_at,
         cards=[ScenarioCardRead.model_validate(card) for card in cards],
+        assessment_policy=await scenario_policy(session, version.id),
     )
 
 
@@ -264,9 +266,17 @@ async def create_scenario(
     )
     session.add(version)
     await session.flush()
-    # A successful explicit authoring request publishes this immutable composition.
-    # No grade or assessment policy is invented: the shared answer key stays unconfigured.
-    session.add(AnswerKey(scenario_version_id=version.id))
+    session.add(
+        AnswerKey(
+            scenario_version_id=version.id,
+            rubric=[
+                {
+                    "kind": "assessment_policy",
+                    "policy": payload.assessment_policy.model_dump(mode="json"),
+                }
+            ],
+        )
+    )
     for position, card_id in enumerate(payload.card_ids, start=1):
         card = by_id[card_id]
         session.add(

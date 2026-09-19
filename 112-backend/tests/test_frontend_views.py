@@ -63,7 +63,7 @@ async def test_journal_draft_classifier_preview_and_latest_grades(exercise):
     )
     await e.complete(1)
     await e.complete(2)
-    for revision, score in [(0, 20), (1, 80)]:
+    for revision, score in [(1, 20), (2, 80)]:
         await e.request(
             "POST",
             f"lessons/{e.lesson['id']}/students/{e.t.accounts['student'].id}/evaluations",

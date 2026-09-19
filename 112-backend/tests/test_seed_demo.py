@@ -41,7 +41,7 @@ async def test_seed_from_admin_only_database_and_repeat(
         (Lesson, 2),
         (Assignment, 4),
         (Attempt, 2),
-        (LessonEvaluation, 1),
+        (LessonEvaluation, 2),
     ]:
         assert await db_session.scalar(select(func.count()).select_from(model)) == expected
     assert stat.S_IMODE(state_path.stat().st_mode) == 0o600

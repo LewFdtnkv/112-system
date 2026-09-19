@@ -1,15 +1,51 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Response
+from fastapi import APIRouter, Query, Response
 from sqlalchemy import select
 
 from app.api.dependencies import SessionDep, StudentDep, TeacherDep
 from app.models import LessonEvaluation
+from app.schemas.audit import AuditPage
 from app.schemas.lesson_evaluation import LessonGradeCreate, LessonGradeRead, LessonWorkReview
-from app.services.lesson_evaluation import grade_lesson, review_work
+from app.services.attempt_audit import assessment_context, audit_page, teacher_attempt
+from app.services.lesson_evaluation import ensure_automatic_grade, grade_lesson, review_work
 from app.services.student import student_lesson
 
 router = APIRouter(tags=["lesson assessment"])
+
+
+@router.post(
+    "/lessons/{lesson_id}/students/{student_id}/automatic-evaluation",
+    response_model=LessonGradeRead | None,
+)
+async def automatic(lesson_id: UUID, student_id: UUID, session: SessionDep, teacher: TeacherDep):
+    return await ensure_automatic_grade(session, lesson_id, student_id, teacher.id)
+
+
+@router.get(
+    "/lessons/{lesson_id}/students/{student_id}/attempts/{attempt_id}/events",
+    response_model=AuditPage,
+)
+async def events(
+    lesson_id: UUID,
+    student_id: UUID,
+    attempt_id: UUID,
+    session: SessionDep,
+    teacher: TeacherDep,
+    after: int = Query(default=0, ge=0),
+    limit: int = Query(default=50, ge=1, le=100),
+    through: int | None = Query(default=None, ge=0),
+):
+    await teacher_attempt(session, lesson_id, student_id, attempt_id, teacher.id)
+    return await audit_page(session, attempt_id, after, limit, through)
+
+
+@router.get("/lessons/{lesson_id}/students/{student_id}/attempts/{attempt_id}/assessment-context")
+async def context(
+    lesson_id: UUID, student_id: UUID, attempt_id: UUID, session: SessionDep, teacher: TeacherDep
+):
+    attempt = await teacher_attempt(session, lesson_id, student_id, attempt_id, teacher.id)
+    return await assessment_context(session, attempt)
 
 
 @router.get("/lessons/{lesson_id}/students/{student_id}/work", response_model=LessonWorkReview)

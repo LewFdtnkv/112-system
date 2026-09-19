@@ -109,6 +109,9 @@ class Evaluation(UUIDPrimaryKey, CreatedAt, Base):
     max_score: Mapped[Decimal | None] = mapped_column(Numeric(10, 2))
     summary: Mapped[str | None] = mapped_column(Text)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    context_snapshot: Mapped[dict[str, Any]] = mapped_column(
+        JSONB, default=dict, server_default="{}"
+    )
 
 
 class CriterionResult(UUIDPrimaryKey, Base):

@@ -5,6 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, JsonValue, model_validator
 
+from app.schemas.assessment import AssessmentDetails
 from app.schemas.authoring import NonblankText
 from app.schemas.catalog import ClassifierEntryRead
 from app.schemas.student import StudentAttemptRead
@@ -32,13 +33,15 @@ class LessonGradeRead(BaseModel):
     id: UUID
     lesson_id: UUID
     student_id: UUID
-    reviewer_id: UUID
+    reviewer_id: UUID | None
     revision: int
     supersedes_id: UUID | None
     score: Decimal
     max_score: Decimal
     comment: str
     created_at: datetime
+    method: Literal["rules", "teacher"]
+    assessment_details: AssessmentDetails | None = None
 
 
 class FieldCheck(BaseModel):

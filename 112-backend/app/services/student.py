@@ -8,7 +8,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import (
     Assignment,
     Attempt,
-    AttemptEvent,
     ClassifierEntry,
     ClassifierRoute,
     IncidentCard,
@@ -38,6 +37,8 @@ from app.schemas.student import (
     StudentCardRead,
     StudentLessonRead,
 )
+from app.services.assessment_policy import scenario_policy
+from app.services.audit import append_event, field_changes
 
 
 async def student_lesson(
@@ -242,23 +243,8 @@ async def review_attempts(session: AsyncSession, attempts: list[Attempt]):
 async def event(
     session: AsyncSession, attempt: Attempt, student_id: UUID, kind: str, payload: dict
 ):
-    sequence = 1 + (
-        await session.scalar(
-            select(func.max(AttemptEvent.sequence)).where(
-                AttemptEvent.attempt_id == attempt.id,
-            )
-        )
-        or 0
-    )
-    session.add(
-        AttemptEvent(
-            attempt_id=attempt.id,
-            sequence=sequence,
-            kind=kind,
-            actor=EventActor.STUDENT,
-            actor_id=student_id,
-            payload=payload,
-        )
+    return await append_event(
+        session, attempt.id, kind, payload, actor=EventActor.STUDENT, actor_id=student_id
     )
 
 
@@ -310,6 +296,9 @@ async def start_attempt(session: AsyncSession, assignment_id: UUID, student_id: 
             "time_limit_seconds": assignment.time_limit_seconds,
             "hint_delay_seconds": assignment.hint_delay_seconds,
             "settings": assignment.settings,
+            "assessment_policy": (await scenario_policy(session, scenario.id)).model_dump(
+                mode="json"
+            ),
         },
     )
     session.add(attempt)
@@ -407,6 +396,10 @@ async def save_card(session: AsyncSession, attempt_id: UUID, student_id: UUID, p
             raise HTTPException(
                 status_code=422, detail="Choose a code from the assigned classifier"
             )
+    before = DraftData.model_validate(card).model_dump(mode="json") | {
+        "classifier_entry_id": str(card.classifier_entry_id) if card.classifier_entry_id else None
+    }
+    before_revision = card.revision
     card.classifier_entry_id = payload.classifier_entry_id
     for key, value in payload.data.model_dump(mode="json").items():
         setattr(card, key, value)
@@ -418,6 +411,16 @@ async def save_card(session: AsyncSession, attempt_id: UUID, student_id: UUID, p
         "card.draft_saved",
         {
             "revision": card.revision,
+            "before_revision": before_revision,
+            "changes": field_changes(
+                before,
+                payload.data.model_dump(mode="json")
+                | {
+                    "classifier_entry_id": str(card.classifier_entry_id)
+                    if card.classifier_entry_id
+                    else None
+                },
+            ),
             "classifier_entry_id": str(card.classifier_entry_id)
             if card.classifier_entry_id
             else None,
@@ -487,5 +490,9 @@ async def submit_card(
     if not remaining:
         lesson.status = LessonStatus.FINISHED
         lesson.ended_at = now
+    from app.services.automatic_assessment import assess_submission
+
+    submitted_read = await attempt_read(session, attempt, preview=False)
+    await assess_submission(session, attempt, lesson, submitted_read)
     await session.commit()
-    return await attempt_read(session, attempt)
+    return submitted_read

@@ -23,7 +23,7 @@ async def test_teacher_reviews_and_grades_entire_lesson(exercise, db_session):
     prefix = f"lessons/{e.lesson['id']}/students/{e.t.accounts['student'].id}"
     payload = {
         "request_id": str(uuid4()),
-        "expected_revision": 0,
+        "expected_revision": 1,
         "score": 4,
         "max_score": 5,
         "comment": "Сведения записаны, адрес можно уточнить",
@@ -42,7 +42,11 @@ async def test_teacher_reviews_and_grades_entire_lesson(exercise, db_session):
     assert review["submitted"] and len(review["assignments"]) == 3
     assert review["assignments"][0]["attempt"]["card"]["data"]["description"] == "Слова ученика"
     grade = await e.request("POST", f"{prefix}/evaluations", payload, actor="teacher", status=201)
-    assert grade["revision"] == 1 and grade["score"] == "4" and grade["supersedes_id"] is None
+    assert (
+        grade["revision"] == 2
+        and grade["score"] == "4"
+        and grade["supersedes_id"] == review["evaluations"][0]["id"]
+    )
     replay = await e.request("POST", f"{prefix}/evaluations", payload, actor="teacher")
     assert replay["id"] == grade["id"]
     await e.request(
@@ -61,19 +65,22 @@ async def test_teacher_reviews_and_grades_entire_lesson(exercise, db_session):
         payload
         | {
             "request_id": str(uuid4()),
-            "expected_revision": 1,
+            "expected_revision": 2,
             "score": 5,
             "comment": "Уточнение допустимо по условию задачи",
         },
         actor="teacher",
         status=201,
     )
-    assert revised["revision"] == 2 and revised["supersedes_id"] == grade["id"]
+    assert revised["revision"] == 3 and revised["supersedes_id"] == grade["id"]
     result = await e.request("GET", f"student/lessons/{e.lesson['id']}/evaluation")
     assert result["id"] == revised["id"]
-    assert await db_session.scalar(select(func.count()).select_from(LessonEvaluation)) == 2
+    assert await db_session.scalar(select(func.count()).select_from(LessonEvaluation)) == 3
     history = (await e.request("GET", f"{prefix}/work", actor="teacher"))["evaluations"]
-    assert [row["comment"] for row in history] == [payload["comment"], revised["comment"]]
+    assert [row["comment"] for row in history if row["method"] == "teacher"] == [
+        payload["comment"],
+        revised["comment"],
+    ]
 
 
 async def test_grading_permissions_and_validation(exercise):
@@ -122,7 +129,9 @@ async def test_concurrent_grades_preserve_history(concurrent_teaching, same_requ
         await submit_card(
             session, attempt.id, d.student_id, CardSubmit(revision=attempt.card.revision)
         )
-    payload = LessonGradeCreate(request_id=uuid4(), score=4, max_score=5, comment="Test grade")
+    payload = LessonGradeCreate(
+        request_id=uuid4(), expected_revision=1, score=4, max_score=5, comment="Test grade"
+    )
     second = payload if same_request else payload.model_copy(update={"request_id": uuid4()})
 
     async def grade(body):

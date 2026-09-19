@@ -54,6 +54,7 @@ class LessonRow(BaseModel):
     score: Decimal | None
     max_score: Decimal | None
     evaluation_revision: int | None
+    evaluation_method: str | None
 
 
 class LessonPage(Page[LessonRow]):

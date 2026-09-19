@@ -7,9 +7,11 @@ from sqlalchemy import (
     ForeignKeyConstraint,
     Integer,
     Numeric,
+    String,
     Text,
     UniqueConstraint,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -37,13 +39,19 @@ class LessonEvaluation(UUIDPrimaryKey, CreatedAt, Base):
         CheckConstraint("score >= 0 AND max_score > 0 AND score <= max_score", name="score_range"),
         CheckConstraint("length(btrim(comment)) > 0", name="comment_required"),
         CheckConstraint("supersedes_id IS NULL OR supersedes_id != id", name="not_own_predecessor"),
+        CheckConstraint("method IN ('rules', 'teacher')", name="method"),
+        CheckConstraint(
+            "(method = 'teacher' AND reviewer_id IS NOT NULL) OR "
+            "(method = 'rules' AND reviewer_id IS NULL)",
+            name="reviewer_method",
+        ),
     )
 
     lesson_id: Mapped[UUID] = mapped_column(ForeignKey("lessons.id", ondelete="RESTRICT"))
     student_id: Mapped[UUID] = mapped_column(
         ForeignKey("users.id", ondelete="RESTRICT"), index=True
     )
-    reviewer_id: Mapped[UUID] = mapped_column(
+    reviewer_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("users.id", ondelete="RESTRICT"), index=True
     )
     request_id: Mapped[UUID] = mapped_column()
@@ -52,3 +60,5 @@ class LessonEvaluation(UUIDPrimaryKey, CreatedAt, Base):
     score: Mapped[Decimal] = mapped_column(Numeric(10, 2))
     max_score: Mapped[Decimal] = mapped_column(Numeric(10, 2))
     comment: Mapped[str] = mapped_column(Text)
+    method: Mapped[str] = mapped_column(String(20), default="teacher", server_default="teacher")
+    assessment_details: Mapped[dict | None] = mapped_column(JSONB(none_as_null=True))

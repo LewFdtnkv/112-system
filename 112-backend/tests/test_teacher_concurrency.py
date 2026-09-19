@@ -17,6 +17,9 @@ from app.models import (
     ClassifierEntry,
     ClassifierRoute,
     ClassifierVersion,
+    CriterionEvidence,
+    CriterionResult,
+    Evaluation,
     GroupMembership,
     IncidentCard,
     Lesson,
@@ -147,7 +150,14 @@ async def concurrent_teaching():
             )
             assignment_ids = select(Assignment.id).where(Assignment.lesson_id.in_(lesson_ids))
             attempt_ids = select(Attempt.id).where(Attempt.assignment_id.in_(assignment_ids))
-            for model in (AttemptEvent, ServiceResponse, IncidentCard):
+            for model in (
+                CriterionEvidence,
+                CriterionResult,
+                Evaluation,
+                AttemptEvent,
+                ServiceResponse,
+                IncidentCard,
+            ):
                 await session.execute(delete(model).where(model.attempt_id.in_(attempt_ids)))
             await session.execute(delete(Attempt).where(Attempt.id.in_(attempt_ids)))
             await session.execute(delete(Assignment).where(Assignment.lesson_id.in_(lesson_ids)))

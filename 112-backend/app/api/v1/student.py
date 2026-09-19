@@ -1,11 +1,12 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Query, Response
+from fastapi import APIRouter, HTTPException, Query, Response
 from sqlalchemy import select
 
 from app.api.dependencies import SessionDep, StudentDep
 from app.api.v1.authoring import Limit, Offset
 from app.models import Assignment, ClassifierEntry, IncidentCard, Lesson
+from app.schemas.audit import ObservationBatch
 from app.schemas.catalog import ClassifierEntryRead
 from app.schemas.student import (
     CardSubmit,
@@ -14,6 +15,7 @@ from app.schemas.student import (
     StudentAttemptRead,
     StudentLessonRead,
 )
+from app.services.attempt_audit import record_observations, reject_command
 from app.services.student import (
     attempt_read,
     lesson_work,
@@ -70,7 +72,11 @@ async def attempt(attempt_id: UUID, session: SessionDep, student: StudentDep):
 
 @router.put("/attempts/{attempt_id}/card", response_model=StudentAttemptRead)
 async def save(attempt_id: UUID, payload: DraftSave, session: SessionDep, student: StudentDep):
-    return await save_card(session, attempt_id, student.id, payload)
+    try:
+        return await save_card(session, attempt_id, student.id, payload)
+    except HTTPException as exc:
+        await reject_command(session, attempt_id, student.id, "save_draft", exc)
+        raise
 
 
 @router.get("/attempts/{attempt_id}/classifier-entries", response_model=list[ClassifierEntryRead])
@@ -115,4 +121,15 @@ async def preview(
 
 @router.post("/attempts/{attempt_id}/submit", response_model=StudentAttemptRead)
 async def submit(attempt_id: UUID, payload: CardSubmit, session: SessionDep, student: StudentDep):
-    return await submit_card(session, attempt_id, student.id, payload)
+    try:
+        return await submit_card(session, attempt_id, student.id, payload)
+    except HTTPException as exc:
+        await reject_command(session, attempt_id, student.id, "submit", exc)
+        raise
+
+
+@router.post("/attempts/{attempt_id}/observations")
+async def observations(
+    attempt_id: UUID, payload: ObservationBatch, session: SessionDep, student: StudentDep
+):
+    return await record_observations(session, attempt_id, student.id, payload)

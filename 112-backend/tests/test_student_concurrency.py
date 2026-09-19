@@ -1,4 +1,6 @@
 import asyncio
+from datetime import UTC, datetime
+from uuid import uuid4
 
 import pytest
 from fastapi import HTTPException
@@ -6,7 +8,9 @@ from sqlalchemy import func, select
 from test_teacher_concurrency import concurrent_teaching as concurrent_teaching
 
 from app.models import Assignment, Attempt, AttemptEvent, ServiceResponse
+from app.schemas.audit import ObservationBatch
 from app.schemas.student import CardSubmit, DraftSave
+from app.services.attempt_audit import record_observations
 from app.services.lessons import start_lesson
 from app.services.student import save_card, start_attempt, submit_card
 
@@ -58,7 +62,27 @@ async def test_concurrent_start_edit_and_submit(concurrent_teaching):
                 session, attempt.id, d.student_id, CardSubmit(revision=revision)
             )
 
-    results = await asyncio.wait_for(asyncio.gather(submit(), submit()), timeout=10)
+    async def observe():
+        async with d.factory() as session:
+            return await record_observations(
+                session,
+                attempt.id,
+                d.student_id,
+                ObservationBatch(
+                    events=[
+                        {
+                            "command_id": uuid4(),
+                            "kind": "ui.card_closed",
+                            "client_occurred_at": datetime.now(UTC),
+                        }
+                    ]
+                ),
+            )
+
+    concurrent = await asyncio.wait_for(
+        asyncio.gather(submit(), observe(), submit(), observe()), timeout=10
+    )
+    results = [concurrent[0], concurrent[2]]
     assert all(row.status == "completed" for row in results)
     async with d.factory() as session:
         for model in (Attempt, ServiceResponse):
@@ -77,5 +101,14 @@ async def test_concurrent_start_edit_and_submit(concurrent_teaching):
                     AttemptEvent.attempt_id == attempt.id,
                 )
             )
-            == 3
+            == 6
         )
+
+        sequences = list(
+            await session.scalars(
+                select(AttemptEvent.sequence)
+                .where(AttemptEvent.attempt_id == attempt.id)
+                .order_by(AttemptEvent.sequence)
+            )
+        )
+        assert sequences == list(range(1, 7))

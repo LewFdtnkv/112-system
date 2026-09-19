@@ -5,9 +5,11 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Assignment, Attempt, ClassifierEntry, Lesson, LessonEvaluation, ScenarioCard
-from app.models.enums import AttemptStatus, LessonStatus
+from app.models.enums import AttemptStatus, EventActor, LessonStatus
 from app.schemas.catalog import ClassifierEntryRead
 from app.schemas.lesson_evaluation import AssignmentReview, LessonGradeCreate, LessonWorkReview
+from app.services.audit import append_event
+from app.services.automatic_assessment import publish_lesson_result
 from app.services.field_evaluation import check_fields, summarize
 from app.services.student import review_attempts
 
@@ -163,5 +165,39 @@ async def grade_lesson(
         comment=payload.comment,
     )
     session.add(evaluation)
+    await session.flush()
+    for _, attempt in rows:
+        await append_event(
+            session,
+            attempt.id,
+            "assessment.teacher_reviewed",
+            {
+                "lesson_evaluation_id": str(evaluation.id),
+                "revision": evaluation.revision,
+                "score": str(evaluation.score),
+                "max_score": str(evaluation.max_score),
+                "comment": evaluation.comment,
+            },
+            actor=EventActor.TEACHER,
+            actor_id=teacher_id,
+        )
     await session.commit()
     return evaluation, True
+
+
+async def ensure_automatic_grade(session, lesson_id, student_id, teacher_id):
+    lesson, rows = await review_rows(session, lesson_id, student_id, teacher_id, lock=True)
+    if lesson.status == LessonStatus.CANCELLED or any(
+        a is None or a.status != AttemptStatus.COMPLETED for _, a in rows
+    ):
+        raise HTTPException(
+            status_code=409, detail="The student must submit every card before grading"
+        )
+    await publish_lesson_result(session, lesson, student_id)
+    await session.commit()
+    return await session.scalar(
+        select(LessonEvaluation)
+        .where(LessonEvaluation.lesson_id == lesson_id, LessonEvaluation.student_id == student_id)
+        .order_by(LessonEvaluation.revision.desc())
+        .limit(1)
+    )

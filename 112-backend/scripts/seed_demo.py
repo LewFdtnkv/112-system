@@ -352,7 +352,14 @@ def run(base_url: str, state_path: Path, prefix: str, admin_password: str) -> di
         f"{review_path}/evaluations",
         {
             "request_id": state.request_id("grade"),
-            "expected_revision": 0,
+            "expected_revision": next(
+                (
+                    item["revision"]
+                    for item in review["evaluations"]
+                    if item.get("method") == "rules"
+                ),
+                0,
+            ),
             "score": 4,
             "max_score": 5,
             "comment": "Тестовая ручная оценка: обе карточки обработаны.",

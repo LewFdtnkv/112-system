@@ -40,6 +40,7 @@ def lesson_rows_query(*, teacher_id: UUID | None = None, student_id: UUID | None
             LessonEvaluation.score,
             LessonEvaluation.max_score,
             LessonEvaluation.revision,
+            LessonEvaluation.method,
             func.row_number()
             .over(
                 partition_by=(LessonEvaluation.lesson_id, LessonEvaluation.student_id),
@@ -85,6 +86,7 @@ def lesson_rows_query(*, teacher_id: UUID | None = None, student_id: UUID | None
             latest.c.score,
             latest.c.max_score,
             latest.c.revision.label("evaluation_revision"),
+            latest.c.method.label("evaluation_method"),
         )
         .select_from(counts)
         .join(Lesson, Lesson.id == counts.c.lesson_id)

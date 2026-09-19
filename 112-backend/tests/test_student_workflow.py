@@ -111,6 +111,8 @@ async def test_sequential_operator_workflow(exercise, db_session):
         "attempt.started",
         "card.draft_saved",
         "card.notified",
+        "assessment.rules_completed",
+        "command.rejected",
     ]
 
 

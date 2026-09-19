@@ -13,6 +13,7 @@ from pydantic import (
 )
 
 from app.models.enums import LessonStatus, PublicationStatus, TrainingMode, TrainingRole
+from app.schemas.assessment import AssessmentPolicy
 from app.schemas.group import Title
 
 NonblankText = Annotated[
@@ -90,6 +91,7 @@ class ScenarioCreate(ScenarioMetadata):
     card_ids: list[UUID] = Field(min_length=1, max_length=100)
     service_profile_id: UUID | None = None
     instructions: str = Field(default="", max_length=10000)
+    assessment_policy: AssessmentPolicy = Field(default_factory=AssessmentPolicy)
 
     @model_validator(mode="after")
     def role_profile(self):
@@ -121,6 +123,7 @@ class ScenarioRead(ScenarioMetadata):
     approved_at: datetime | None
     created_at: datetime
     cards: list[ScenarioCardRead]
+    assessment_policy: AssessmentPolicy
 
 
 class ScenarioListItem(ScenarioMetadata):
