@@ -1,5 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, JsonValue, model_validator
@@ -40,12 +41,37 @@ class LessonGradeRead(BaseModel):
     created_at: datetime
 
 
+class FieldCheck(BaseModel):
+    field: str
+    label: str
+    expected: str
+    actual: str
+    status: Literal["matched", "missing", "different", "needs_review"]
+    scored: bool
+
+
+class AutomaticCheckSummary(BaseModel):
+    method: str = "fields-v1"
+    matched: int
+    missing: int
+    different: int
+    needs_review: int
+    earned_points: int
+    possible_points: int
+    score_percent: float | None
+
+
+class AutomaticCheck(AutomaticCheckSummary):
+    fields: list[FieldCheck]
+
+
 class AssignmentReview(BaseModel):
     assignment_id: UUID
     position: int
     source_snapshot: dict[str, JsonValue] | None
     source_classifier_entry: ClassifierEntryRead | None = None
     attempt: StudentAttemptRead | None
+    automatic_check: AutomaticCheck | None = None
 
 
 class LessonWorkReview(BaseModel):
@@ -54,3 +80,4 @@ class LessonWorkReview(BaseModel):
     submitted: bool
     assignments: list[AssignmentReview]
     evaluations: list[LessonGradeRead]
+    automatic_check: AutomaticCheckSummary

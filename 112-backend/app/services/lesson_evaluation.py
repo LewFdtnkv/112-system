@@ -8,6 +8,7 @@ from app.models import Assignment, Attempt, ClassifierEntry, Lesson, LessonEvalu
 from app.models.enums import AttemptStatus, LessonStatus
 from app.schemas.catalog import ClassifierEntryRead
 from app.schemas.lesson_evaluation import AssignmentReview, LessonGradeCreate, LessonWorkReview
+from app.services.field_evaluation import check_fields, summarize
 from app.services.student import review_attempts
 
 
@@ -69,6 +70,8 @@ async def review_work(session: AsyncSession, lesson_id: UUID, student_id: UUID, 
     attempts = await review_attempts(session, [attempt for _, attempt in rows if attempt])
     for assignment, attempt in rows:
         source = sources.get(assignment.scenario_card_id) if assignment.scenario_card_id else None
+        attempt_read = attempts.get(attempt.id) if attempt else None
+        entry = entries.get(source.snapshot.get("classifier_entry_id")) if source else None
         assignments.append(
             AssignmentReview(
                 assignment_id=assignment.id,
@@ -80,6 +83,11 @@ async def review_work(session: AsyncSession, lesson_id: UUID, student_id: UUID, 
                 if source and source.snapshot.get("classifier_entry_id") in entries
                 else None,
                 attempt=attempts.get(attempt.id) if attempt else None,
+                automatic_check=check_fields(
+                    source.snapshot, attempt_read, f"{entry.code} — {entry.name}" if entry else ""
+                )
+                if source and attempt_read
+                else None,
             )
         )
     evaluations = list(
@@ -98,6 +106,14 @@ async def review_work(session: AsyncSession, lesson_id: UUID, student_id: UUID, 
         submitted=all(attempt and attempt.status == AttemptStatus.COMPLETED for _, attempt in rows),
         assignments=assignments,
         evaluations=evaluations,
+        automatic_check=summarize(
+            [
+                field
+                for assignment in assignments
+                if assignment.automatic_check
+                for field in assignment.automatic_check.fields
+            ]
+        ),
     )
 
 

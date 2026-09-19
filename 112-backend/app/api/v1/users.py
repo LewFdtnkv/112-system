@@ -6,8 +6,8 @@ from sqlalchemy import select
 
 from app.api.dependencies import AdminDep, CurrentUserDep, SessionDep, StaffDep
 from app.models import User
-from app.schemas.user import UserCreate, UserRead
-from app.services.users import create_user
+from app.schemas.user import UserCreate, UserRead, UserUpdate
+from app.services.users import create_user, update_user
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -42,3 +42,10 @@ async def get_user(user_id: UUID, session: SessionDep, staff: StaffDep) -> User:
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
     return user
+
+
+@router.patch("/{user_id}", response_model=UserRead)
+async def edit_user(
+    user_id: UUID, payload: UserUpdate, session: SessionDep, admin: AdminDep
+) -> User:
+    return await update_user(session, user_id, admin.id, payload)

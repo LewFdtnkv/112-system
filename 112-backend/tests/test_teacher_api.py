@@ -223,6 +223,7 @@ async def test_forced_password_change_protects_all_new_writes(teaching, db_clien
     t = teaching
     account = t.accounts["teacher"]
     account.is_admin = True
+    account.is_teacher = False
     account.must_change_password = True
     await db_session.commit()
     for path, payload in [

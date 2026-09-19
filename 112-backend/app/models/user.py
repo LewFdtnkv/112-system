@@ -10,7 +10,14 @@ from app.db.base import Base
 class User(Base):
     __tablename__ = "users"
     __mapper_args__ = {"eager_defaults": True}
-    __table_args__ = (CheckConstraint("username = lower(username)", name="username_lowercase"),)
+    __table_args__ = (
+        CheckConstraint("username = lower(username)", name="username_lowercase"),
+        CheckConstraint("NOT (is_teacher AND is_admin)", name="exclusive_role"),
+    )
+
+    @property
+    def role(self) -> str:
+        return "admin" if self.is_admin else "teacher" if self.is_teacher else "student"
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     username: Mapped[str] = mapped_column(String(50), unique=True)

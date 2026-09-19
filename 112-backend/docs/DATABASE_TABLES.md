@@ -1,6 +1,6 @@
 # Полная схема таблиц
 
-Снимок SQLAlchemy-моделей к `0005_lesson_evaluations` от 19.09.2026: 32 таблицы.
+Снимок SQLAlchemy-моделей к `0007_exclusive_user_role` от 19.09.2026: 32 таблицы.
 
 Объяснение учебного смысла и решений: [DATABASE_SCHEMA.md](DATABASE_SCHEMA.md).
 
@@ -65,6 +65,7 @@ PK — первичный ключ; `NULL` — допустимое отсутс
 | `password_changed_at` | `TIMESTAMP WITH TIME ZONE` | да | — | `—` |
 
 - CHECK `username = lower(username)`.
+- CHECK `NOT (is_teacher AND is_admin)` — одна системная роль; оба флага `false` означают ученика.
 - UNIQUE `(username)`.
 
 ## `auth_sessions`

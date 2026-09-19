@@ -26,6 +26,7 @@ class UserItem(BaseModel):
     is_teacher: bool
     is_admin: bool
     must_change_password: bool
+    last_login_at: datetime | None
     groups: list[str] = []
 
 

@@ -84,9 +84,7 @@ async def test_bootstrap_requires_password_change(db_client: AsyncClient, db_ses
     assert (await login(db_client, password=NEW_PASSWORD))["must_change_password"] is False
 
 
-@pytest.mark.parametrize(
-    "is_admin,is_teacher", [(False, False), (False, True), (True, False), (True, True)]
-)
+@pytest.mark.parametrize("is_admin,is_teacher", [(False, False), (False, True), (True, False)])
 @pytest.mark.anyio
 async def test_access_matrix(db_client, db_session, is_admin, is_teacher):
     user = User(
