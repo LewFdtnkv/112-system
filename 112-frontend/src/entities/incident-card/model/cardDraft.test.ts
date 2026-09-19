@@ -10,6 +10,68 @@ import { emptyCardFields, getMissingCardFields } from "./types";
 
 afterEach(() => localStorage.clear());
 
+it("round-trips reference ARM fields and keeps answers separate by question", () => {
+  writeCardDraft("session-1", "card-1", {
+    ...emptyCardFields,
+    address: {
+      ...emptyCardFields.address,
+      country: "Россия",
+      region: "Москва",
+      locality: "Троицк",
+      object: "Школа",
+      structure: "2",
+      doorCode: "15",
+    },
+    details: {
+      callerStatus: "Очевидец",
+      foreignLanguage: true,
+      blocked: true,
+      clarifications: {
+        "Угроза людям": ["Да"],
+        "Проведена ли газификация": ["Нет"],
+      },
+    },
+  });
+  const restored = readCardDraft("session-1", "card-1");
+  expect(restored?.address).toMatchObject({
+    locality: "Троицк",
+    object: "Школа",
+    structure: "2",
+    doorCode: "15",
+  });
+  expect(restored?.details).toMatchObject({
+    callerStatus: "Очевидец",
+    foreignLanguage: true,
+    blocked: true,
+    clarifications: {
+      "Угроза людям": ["Да"],
+      "Проведена ли газификация": ["Нет"],
+    },
+  });
+});
+
+it("ignores malformed additional fields in saved drafts", () => {
+  localStorage.setItem(
+    cardDraftStorageKey("session-1", "card-1"),
+    JSON.stringify({
+      cardId: "card-1",
+      fields: {
+        ...emptyCardFields,
+        address: { ...emptyCardFields.address, region: 42 },
+        details: {
+          blocked: "true",
+          clarifications: { valid: ["Да"], invalid: [1, {}] },
+        },
+      },
+    }),
+  );
+  expect(readCardDraft("session-1", "card-1")?.details).toMatchObject({
+    blocked: false,
+    clarifications: { valid: ["Да"] },
+  });
+  expect(readCardDraft("session-1", "card-1")?.address.region).toBeUndefined();
+});
+
 it("clears only the submitted card and preserves other cards and sessions", () => {
   writeCardDraft("session-1", "card-1", {
     ...emptyCardFields,

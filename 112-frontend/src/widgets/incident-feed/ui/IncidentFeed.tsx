@@ -1,24 +1,13 @@
-import SearchIcon from "@mui/icons-material/Search";
-import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
-import {
-  Button,
-  IconButton,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TextField,
-} from "@mui/material";
+import "./incident-feed.scss";
 import { Fragment, useMemo, useState, type ReactNode } from "react";
-
 import {
   formatAddress,
   getCategoryName,
   incidentStatusLabels,
   type IncidentCard,
 } from "@/entities/incident-card";
+import { ArmField, ArmIcon, ArmIconButton } from "@/shared/ui/arm";
+import { JournalClock } from "./JournalClock";
 
 interface IncidentFeedProps {
   toolbar?: ReactNode;
@@ -26,248 +15,391 @@ interface IncidentFeedProps {
   selectedId?: string;
   onOpen: (incident: IncidentCard) => void;
 }
-
-interface FeedFilters {
-  type: string;
-  address: string;
-  district: string;
-  status: string;
-}
-
-const emptyFilters: FeedFilters = {
-  type: "",
-  address: "",
-  district: "",
-  status: "",
-};
-
-const statusClassName: Record<string, string> = {
-  in_progress: "incident-status incident-status--warning",
-  not_notified: "incident-status incident-status--alert",
-  closed: "incident-status incident-status--done",
-};
-
+const emptyFilters = { query: "", address: "", district: "", status: "" };
+const sortKey = (card: IncidentCard) =>
+  `${card.createdDate?.split(".").reverse().join("-") ?? ""} ${card.createdAt}`;
 const normalize = (value: string) => value.toLocaleLowerCase("ru-RU").trim();
-
-export const IncidentFeed = ({
+export function IncidentFeed({
   toolbar,
   incidents,
   selectedId,
   onOpen,
-}: IncidentFeedProps) => {
+}: IncidentFeedProps) {
+  const [filters, setFilters] = useState(emptyFilters);
+  const [applied, setApplied] = useState(emptyFilters);
   const [advanced, setAdvanced] = useState(false);
-  const [filters, setFilters] = useState<FeedFilters>(emptyFilters);
-  const [appliedFilters, setAppliedFilters] =
-    useState<FeedFilters>(emptyFilters);
-
-  const setFilter = (key: keyof FeedFilters, value: string) =>
-    setFilters((current) => ({ ...current, [key]: value }));
-
-  const visibleIncidents = useMemo(() => {
-    const applied = {
-      type: normalize(appliedFilters.type),
-      address: normalize(appliedFilters.address),
-      district: normalize(appliedFilters.district),
-      status: normalize(appliedFilters.status),
-    };
-
-    return incidents.filter(({ fields }) => {
-      const categoryName = normalize(getCategoryName(fields.categoryId));
-      const statusLabel = normalize(incidentStatusLabels[fields.status]);
-      const addressLine = formatAddress(fields.address);
-
-      const matchesType = !applied.type || categoryName.includes(applied.type);
-      const matchesAddress =
-        !applied.address ||
-        normalize(`${addressLine} ${fields.description}`).includes(
-          applied.address,
-        );
-      const matchesDistrict =
-        !applied.district ||
-        normalize(`${fields.address.district} ${addressLine}`).includes(
-          applied.district,
-        );
-      const matchesStatus =
-        !applied.status || statusLabel.includes(applied.status);
-
-      return matchesType && matchesAddress && matchesDistrict && matchesStatus;
-    });
-  }, [incidents, appliedFilters]);
-
+  const [collapsed, setCollapsed] = useState(false);
+  const [hiddenDescriptions, setHiddenDescriptions] = useState<string[]>([]);
+  const [status, setStatus] = useState("");
+  const [notifications, setNotifications] = useState(false);
+  const [descending, setDescending] = useState(true);
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const filtered = useMemo(
+    () =>
+      incidents
+        .filter((incident) => {
+          const { fields } = incident;
+          const address = formatAddress(fields.address);
+          const text = [
+            incident.id,
+            getCategoryName(fields.categoryId),
+            address,
+            fields.description,
+            fields.callerName,
+            ...Object.values(fields.phones),
+          ].join(" ");
+          return (
+            (!applied.query ||
+              normalize(text).includes(normalize(applied.query))) &&
+            (!applied.address ||
+              normalize(address).includes(normalize(applied.address))) &&
+            (!applied.district ||
+              normalize(fields.address.district).includes(
+                normalize(applied.district),
+              )) &&
+            (!applied.status ||
+              normalize(incidentStatusLabels[fields.status]).includes(
+                normalize(applied.status),
+              )) &&
+            (!status || fields.status === status) &&
+            (!notifications || fields.status === "not_notified")
+          );
+        })
+        .sort(
+          (a, b) =>
+            (descending ? -1 : 1) * sortKey(a).localeCompare(sortKey(b)),
+        ),
+    [incidents, applied, status, notifications, descending],
+  );
+  const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const safePage = Math.min(page, pages - 1);
+  const shown = filtered.slice(safePage * pageSize, (safePage + 1) * pageSize);
+  const reset = () => {
+    setFilters(emptyFilters);
+    setApplied(emptyFilters);
+    setStatus("");
+    setNotifications(false);
+    setPage(0);
+  };
   return (
     <>
-      <div className="incident-desk__header">
-        <section
-          className="incident-search"
-          aria-labelledby="incident-search-title"
-        >
-          <div className="incident-search__title-row">
-            <h1 id="incident-search-title">Поиск происшествий</h1>
-          </div>
+      <div className="arm-journal-header">
+        <section className="arm-journal-search" aria-label="Поиск происшествий">
+          <h1 className="visually-hidden">Поиск происшествий</h1>
           <form
-            className="incident-search__form"
-            onSubmit={(event) => {
-              event.preventDefault();
-              setAppliedFilters(filters);
+            onSubmit={(e) => {
+              e.preventDefault();
+              setApplied(filters);
+              setPage(0);
             }}
           >
-            <TextField
-              variant="standard"
-              label="Тип происшествия"
-              value={filters.type}
-              onChange={(event) => setFilter("type", event.target.value)}
-            />
-            <IconButton
-              type="submit"
-              aria-label="Искать по параметрам"
-              className="incident-search__submit"
-            >
-              <SearchIcon />
-            </IconButton>
-            {advanced && (
-              <div
-                className="incident-search__advanced"
-                id="incident-search-parameters"
-              >
-                <TextField
-                  variant="standard"
-                  label="По адресу"
-                  value={filters.address}
-                  onChange={(event) => setFilter("address", event.target.value)}
-                />
-                <TextField
-                  variant="standard"
-                  label="По округу"
-                  value={filters.district}
-                  onChange={(event) =>
-                    setFilter("district", event.target.value)
-                  }
-                />
-                <TextField
-                  variant="standard"
-                  label="Статус"
-                  value={filters.status}
-                  onChange={(event) => setFilter("status", event.target.value)}
-                />
-              </div>
-            )}
-            <div className="incident-search__actions">
-              <Button
+            <div className="arm-journal-search__line">
+              <input
+                aria-label="Поиск происшествий"
+                placeholder="Поиск происшествий"
+                value={filters.query}
+                onChange={(e) =>
+                  setFilters({ ...filters, query: e.target.value })
+                }
+              />
+              <ArmIconButton
+                icon="search"
+                label="Искать по параметрам"
+                type="submit"
+              />
+            </div>
+            <div className="arm-journal-search__controls">
+              <button
                 type="button"
                 aria-expanded={advanced}
-                aria-controls="incident-search-parameters"
                 onClick={() => setAdvanced(!advanced)}
               >
-                {advanced ? "−" : "+"} Расширенный поиск
-              </Button>
-              <Button
+                расширенный по параметрам{" "}
+                <ArmIcon name={advanced ? "up" : "down"} />
+              </button>
+              <button
+                className="arm-small-button"
                 type="button"
-                onClick={() => {
-                  setFilters(emptyFilters);
-                  setAppliedFilters(emptyFilters);
-                }}
+                onClick={reset}
               >
-                Сбросить
-              </Button>
+                сбросить
+              </button>
             </div>
+            {advanced && (
+              <div className="arm-journal-search__advanced">
+                {(
+                  [
+                    ["address", "По адресу"],
+                    ["district", "По округу"],
+                    ["status", "Статус"],
+                  ] as const
+                ).map(([key, label]) => (
+                  <ArmField
+                    key={key}
+                    label={label}
+                    value={filters[key]}
+                    onChange={(e) =>
+                      setFilters({ ...filters, [key]: e.target.value })
+                    }
+                  />
+                ))}
+              </div>
+            )}
           </form>
         </section>
-        {toolbar}
+        <aside className="arm-journal-utility">
+          <JournalClock />
+          {toolbar}
+        </aside>
       </div>
-
-      <section className="incident-list" aria-labelledby="incident-list-title">
-        <div className="incident-list__heading">
-          <h2 id="incident-list-title">Список происшествий</h2>
-          <span>{visibleIncidents.length} карточек</span>
-        </div>
-        <TableContainer>
-          <Table size="small" aria-label="Список происшествий">
-            <TableHead>
-              <TableRow>
-                <TableCell aria-label="Карточка" />
-                <TableCell>№ карточки</TableCell>
-                <TableCell>Время</TableCell>
-                <TableCell>Канал</TableCell>
-                <TableCell>Тип происшествия</TableCell>
-                <TableCell>Пострад.</TableCell>
-                <TableCell>Адрес</TableCell>
-                <TableCell>Статус</TableCell>
-                <TableCell aria-label="Открыть карточку" />
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {visibleIncidents.map((incident) => (
-                <Fragment key={incident.id}>
-                  <TableRow
-                    className={
-                      selectedId === incident.id
-                        ? "incident-row--selected"
-                        : undefined
-                    }
-                    onClick={() => onOpen(incident)}
-                    onKeyDown={(event) => {
-                      if (
-                        event.target === event.currentTarget &&
-                        (event.key === "Enter" || event.key === " ")
-                      ) {
-                        event.preventDefault();
-                        onOpen(incident);
-                      }
-                    }}
-                    aria-label={`Карточка ${incident.id}`}
-                    tabIndex={0}
-                  >
-                    <TableCell>
-                      <DescriptionOutlinedIcon fontSize="small" />
-                    </TableCell>
-                    <TableCell>{incident.id}</TableCell>
-                    <TableCell>{incident.createdAt}</TableCell>
-                    <TableCell>{incident.channel}</TableCell>
-                    <TableCell>
-                      <strong>
-                        {getCategoryName(incident.fields.categoryId)}
-                      </strong>
-                    </TableCell>
-                    <TableCell>{incident.fields.victimsCount ?? "—"}</TableCell>
-                    <TableCell>
-                      {formatAddress(incident.fields.address)}
-                    </TableCell>
-                    <TableCell
-                      className={statusClassName[incident.fields.status]}
-                    >
-                      {incidentStatusLabels[incident.fields.status]}
-                    </TableCell>
-                    <TableCell>
-                      <IconButton
-                        aria-label={`Открыть карточку ${incident.id}`}
-                        size="small"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          onOpen(incident);
+      <section
+        className="arm-journal-list"
+        aria-labelledby="incident-list-title"
+      >
+        <header className="arm-journal-list__heading">
+          <h2 id="incident-list-title">
+            <button
+              aria-expanded={!collapsed}
+              onClick={() => setCollapsed(!collapsed)}
+            >
+              Список происшествий <ArmIcon name={collapsed ? "down" : "up"} />
+            </button>
+          </h2>
+          <label className="arm-notifications">
+            <input
+              type="checkbox"
+              checked={notifications}
+              onChange={(e) => {
+                setNotifications(e.target.checked);
+                setPage(0);
+              }}
+            />
+            <ArmIcon name="comment" />
+            уведомления
+          </label>
+          <select
+            aria-label="Какие карточки показать"
+            value={status}
+            onChange={(e) => {
+              setStatus(e.target.value);
+              setPage(0);
+            }}
+          >
+            <option value="">выберите что показать</option>
+            {Object.entries(incidentStatusLabels).map(([key, label]) => (
+              <option key={key} value={key}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </header>
+        {!collapsed && (
+          <>
+            <div className="arm-journal-table-scroll">
+              <table
+                className="arm-journal-table"
+                aria-label="Список происшествий"
+              >
+                <colgroup>
+                  {[32, 30, 32, 32, 32, 54, 44, 76, 76, 80].map((width, i) => (
+                    <col key={i} style={{ width }} />
+                  ))}
+                  <col />
+                  <col style={{ width: 44 }} />
+                  <col className="arm-journal-table__address-col" />
+                  <col style={{ width: 166 }} />
+                  <col style={{ width: 44 }} />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th></th>
+                    <th colSpan={2}>Связи</th>
+                    <th>ЧС</th>
+                    <th></th>
+                    <th>Опер.</th>
+                    <th>АРМ</th>
+                    <th>Номер</th>
+                    <th>
+                      <button onClick={() => setDescending(!descending)}>
+                        Дата <ArmIcon name={descending ? "down" : "up"} />
+                      </button>
+                    </th>
+                    <th>Время</th>
+                    <th>Тип происшествия</th>
+                    <th>Постр.</th>
+                    <th>Адрес</th>
+                    <th>Статус карточки</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {shown.map((incident) => (
+                    <Fragment key={incident.id}>
+                      <tr
+                        className={
+                          selectedId === incident.id ? "is-selected" : ""
+                        }
+                        tabIndex={0}
+                        aria-label={`Карточка ${incident.id}`}
+                        onClick={() => onOpen(incident)}
+                        onKeyDown={(e) => {
+                          if (
+                            e.target === e.currentTarget &&
+                            ["Enter", " "].includes(e.key)
+                          ) {
+                            e.preventDefault();
+                            onOpen(incident);
+                          }
                         }}
                       >
-                        <SearchIcon fontSize="inherit" />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                  <TableRow className="incident-description">
-                    <TableCell colSpan={9}>
-                      {incident.fields.description || "Описание не заполнено"}
-                    </TableCell>
-                  </TableRow>
-                </Fragment>
-              ))}
-              {visibleIncidents.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={9} align="center">
-                    Карточки по заданным параметрам не найдены.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                        <td>
+                          <ArmIconButton
+                            icon={
+                              hiddenDescriptions.includes(incident.id)
+                                ? "right"
+                                : "down"
+                            }
+                            label={`Описание карточки ${incident.id}`}
+                            aria-expanded={
+                              !hiddenDescriptions.includes(incident.id)
+                            }
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setHiddenDescriptions((current) =>
+                                current.includes(incident.id)
+                                  ? current.filter((id) => id !== incident.id)
+                                  : [...current, incident.id],
+                              );
+                            }}
+                          />
+                        </td>
+                        <td></td>
+                        <td>
+                          <ArmIcon name="bookmark" />
+                        </td>
+                        <td>
+                          <ArmIcon name="bolt" />
+                        </td>
+                        <td>
+                          <ArmIcon name="timer" />
+                        </td>
+                        <td className="arm-journal-table__operator">
+                          {incident.operatorNumber ?? "—"}
+                        </td>
+                        <td>{incident.workstation ?? "—"}</td>
+                        <td>{incident.id}</td>
+                        <td>
+                          {incident.createdDate?.replace(
+                            /\.20(\d{2})$/,
+                            ".$1",
+                          ) ?? "—"}
+                        </td>
+                        <td className="arm-journal-table__time">
+                          {incident.createdAt}
+                        </td>
+                        <td className="arm-journal-table__category">
+                          {getCategoryName(incident.fields.categoryId)}
+                        </td>
+                        <td>
+                          {incident.fields.victimsCount
+                            ? incident.fields.victimsCount
+                            : "Нет"}
+                        </td>
+                        <td className="arm-journal-table__address">
+                          {formatAddress(incident.fields.address)}
+                          <span>
+                            <ArmIcon name="pin" />
+                          </span>
+                        </td>
+                        <td>{incidentStatusLabels[incident.fields.status]}</td>
+                        <td>
+                          <ArmIconButton
+                            icon="clipboard"
+                            label={`Открыть карточку ${incident.id}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onOpen(incident);
+                            }}
+                          />
+                        </td>
+                      </tr>
+                      {!hiddenDescriptions.includes(incident.id) && (
+                        <tr className="arm-journal-description">
+                          <td colSpan={15}>
+                            <span>Описание:</span>
+                            <span>
+                              {incident.createdDate} {incident.createdAt} / УМЦ
+                              —{" "}
+                            </span>
+                            {incident.fields.description ||
+                              "Описание не заполнено"}
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  ))}
+                  {!shown.length && (
+                    <tr>
+                      <td colSpan={15}>
+                        Карточки по заданным параметрам не найдены.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <div className="arm-journal-pagination">
+              <label>
+                Страница:{" "}
+                <select
+                  aria-label="Страница"
+                  value={safePage}
+                  onChange={(e) => setPage(Number(e.target.value))}
+                >
+                  {Array.from({ length: pages }, (_, i) => (
+                    <option value={i} key={i}>
+                      {i + 1}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Записей на странице:{" "}
+                <select
+                  aria-label="Записей на странице"
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setPage(0);
+                  }}
+                >
+                  {[10, 25, 50].map((size) => (
+                    <option key={size}>{size}</option>
+                  ))}
+                </select>
+              </label>
+              <strong>
+                {filtered.length ? safePage * pageSize + 1 : 0}-
+                {Math.min((safePage + 1) * pageSize, filtered.length)} из{" "}
+                {filtered.length}
+              </strong>
+              <ArmIconButton
+                icon="left"
+                label="Предыдущая страница"
+                disabled={safePage === 0}
+                onClick={() => setPage(safePage - 1)}
+              />
+              <ArmIconButton
+                icon="right"
+                label="Следующая страница"
+                disabled={safePage >= pages - 1}
+                onClick={() => setPage(safePage + 1)}
+              />
+            </div>
+          </>
+        )}
       </section>
     </>
   );
-};
+}

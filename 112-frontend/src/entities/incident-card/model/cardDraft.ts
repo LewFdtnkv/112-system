@@ -30,6 +30,11 @@ const asAddress = (source: Record<string, unknown>): IncidentAddress => {
   const address = isRecord(source.address) ? source.address : {};
 
   return {
+    ...Object.fromEntries(
+      ["country", "region", "locality", "object", "structure", "doorCode"]
+        .filter((key) => typeof address[key] === "string")
+        .map((key) => [key, address[key]]),
+    ),
     district: asString(address.district, asString(source.district, "")),
     area: asString(address.area, ""),
     street: asString(address.street, ""),
@@ -67,6 +72,32 @@ const asStatus = (value: unknown): IncidentStatus =>
 
 const asFields = (source: Record<string, unknown>): IncidentCardFields => {
   return {
+    ...(isRecord(source.details)
+      ? {
+          details: {
+            buildingFloors: asString(source.details.buildingFloors, ""),
+            classificationDescription: asString(
+              source.details.classificationDescription,
+              "",
+            ),
+            callerStatus: asString(source.details.callerStatus, ""),
+            callerGender: asString(source.details.callerGender, ""),
+            callerAge: asString(source.details.callerAge, ""),
+            foreignLanguage: source.details.foreignLanguage === true,
+            refusedAmbulance: source.details.refusedAmbulance === true,
+            blocked: source.details.blocked === true,
+            clarifications: isRecord(source.details.clarifications)
+              ? Object.fromEntries(
+                  Object.entries(source.details.clarifications).filter(
+                    (entry): entry is [string, string[]] =>
+                      Array.isArray(entry[1]) &&
+                      entry[1].every((value) => typeof value === "string"),
+                  ),
+                )
+              : {},
+          },
+        }
+      : {}),
     categoryId: asString(source.categoryId, emptyCardFields.categoryId),
     address: asAddress(source),
     callerName: asString(source.callerName, emptyCardFields.callerName),

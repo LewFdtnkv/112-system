@@ -38,6 +38,29 @@ export const incidentCategories: readonly IncidentCategory[] = [
   { id: "utility", name: "Коммунальная авария", defaultServices: ["104"] },
   { id: "medical", name: "Медицинский вызов", defaultServices: ["103"] },
   { id: "other", name: "Иное обращение", defaultServices: [] },
+  { id: "wrong_number", name: "Ошибочно набран номер", defaultServices: [] },
+  { id: "gas", name: "104", defaultServices: ["104"] },
+  { id: "person_danger", name: "Человек в опасности", defaultServices: [] },
+  { id: "cancelled", name: "Отмена вызова", defaultServices: [] },
+  { id: "test_call", name: "Тестовый вызов", defaultServices: [] },
+  { id: "shift", name: "Передача дежурства", defaultServices: [] },
+  { id: "consultation", name: "Консультация", defaultServices: [] },
+  { id: "foreign", name: "Вызов на иностранном языке", defaultServices: [] },
+  { id: "reference101", name: "Справка-101", defaultServices: [] },
+];
+
+// The reference ARM's shortcuts; this demonstration list is not an EKP import.
+export const frequentIncidentCategoryIds = [
+  "traffic",
+  "wrong_number",
+  "gas",
+  "person_danger",
+  "cancelled",
+  "test_call",
+  "shift",
+  "consultation",
+  "foreign",
+  "reference101",
 ];
 
 export const getCategoryName = (categoryId: string) =>
@@ -46,17 +69,57 @@ export const getCategoryName = (categoryId: string) =>
 
 const incidentTagGroups: Record<string, readonly IncidentTagGroup[]> = {
   fire: [
-    { label: "Где", options: ["Квартира", "Подъезд", "Улица", "Объект"] },
     {
-      label: "Признак",
+      label: "Где",
       options: [
-        "Открытое пламя",
-        "Дым",
-        "Запах гари",
-        "Сработала сигнализация",
+        "Улица",
+        "Транспорт",
+        "Дом",
+        "Здание / объект",
+        "Опасный объект",
       ],
     },
-    { label: "Угроза людям", options: ["Да", "Нет", "Неизвестно"] },
+    {
+      label: "Признак пожара (дом)",
+      options: [
+        "Открытое пламя / Дым",
+        "Запах гари",
+        "Сработала пожарная сигнализация",
+      ],
+    },
+    { label: "Доступ", options: ["Нет доступа"] },
+    {
+      label: "Дом (пламя, дым)",
+      options: [
+        "Дом многоквартирный",
+        "Дом частный",
+        "Дача",
+        "Сарай / бытовка / хоз. постройка",
+        "Выселенное здание",
+      ],
+    },
+    { label: "Угроза людям", options: ["Да", "Нет"] },
+    {
+      label: "Внутридомовые объекты (пламя, дым)",
+      options: [
+        "Квартира",
+        "Балкон",
+        "Газовая колонка",
+        "Газовая плита",
+        "Лифт",
+        "Мусоропровод",
+        "Подъезд",
+        "Счетчик электричества",
+        "Электрическая проводка",
+        "Электрощит",
+        "Лестничная клетка",
+        "Подвал",
+        "Прочие внутридомовые объекты",
+        "Крыша",
+      ],
+    },
+    { label: "Есть ли перекрытие движения", options: ["Да", "Нет"] },
+    { label: "Проведена ли газификация", options: ["Да", "Нет", "Нет данных"] },
   ],
   traffic: [
     {
@@ -94,6 +157,12 @@ export const getIncidentTagGroups = (categoryId: string) =>
   incidentTagGroups[categoryId] ?? incidentTagGroups.other;
 
 export interface IncidentAddress {
+  country?: string;
+  region?: string;
+  locality?: string;
+  object?: string;
+  structure?: string;
+  doorCode?: string;
   district: string;
   area: string;
   street: string;
@@ -140,7 +209,20 @@ export const emptyIncidentPhones: IncidentPhones = {
   onSite: "",
 };
 
+export interface IncidentCardDetails {
+  buildingFloors?: string;
+  classificationDescription?: string;
+  callerStatus?: string;
+  callerGender?: string;
+  callerAge?: string;
+  foreignLanguage?: boolean;
+  refusedAmbulance?: boolean;
+  blocked?: boolean;
+  clarifications?: Record<string, readonly string[]>;
+}
+
 export interface IncidentCardFields {
+  details?: IncidentCardDetails;
   categoryId: string;
   address: IncidentAddress;
   callerName: string;
@@ -153,6 +235,9 @@ export interface IncidentCardFields {
 }
 
 export interface IncidentCard {
+  createdDate?: string;
+  operatorNumber?: string;
+  workstation?: string;
   id: string;
   createdAt: string;
   channel: string;
@@ -189,7 +274,7 @@ export const getMissingCardFields = (fields: IncidentCardFields) => {
     const value = fields[field];
     if (field === "address") {
       return requiredAddressFields.some(
-        (part) => fields.address[part].trim().length === 0,
+        (part) => (fields.address[part] ?? "").trim().length === 0,
       );
     }
     return typeof value === "string" ? value.trim().length === 0 : false;
@@ -202,14 +287,15 @@ export const getMissingCardFields = (fields: IncidentCardFields) => {
 
 export const countFilledFields = (fields: IncidentCardFields) =>
   Object.entries(fields).filter(([key, value]) => {
+    if (key === "details") return false;
     if (key === "address") {
       return Object.values(value as IncidentAddress).some(
-        (part) => part.trim().length > 0,
+        (part) => typeof part === "string" && part.trim().length > 0,
       );
     }
     if (key === "phones") {
       return Object.values(value as IncidentPhones).some(
-        (part) => part.trim().length > 0,
+        (part) => typeof part === "string" && part.trim().length > 0,
       );
     }
     if (Array.isArray(value)) return value.length > 0;

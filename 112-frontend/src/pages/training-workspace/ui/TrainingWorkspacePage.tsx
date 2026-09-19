@@ -1,4 +1,3 @@
-import AddBoxOutlinedIcon from "@mui/icons-material/AddBoxOutlined";
 import { Button } from "@mui/material";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -21,11 +20,9 @@ import {
 import { useAuthStore } from "@/entities/user";
 import { getTrainingResultPath, routePaths } from "@/shared/config/routes";
 import { EmptyState } from "@/shared/ui/EmptyState";
-import {
-  CreateIncidentDialog,
-  IncidentCardDialog,
-  type NewIncidentDraft,
-} from "@/widgets/incident-card";
+import { IncidentCardDialog } from "@/widgets/incident-card";
+import { LocationMap } from "@/widgets/location-map-placeholder";
+import { ArmIconButton } from "@/shared/ui/arm";
 import { IncidentFeed } from "@/widgets/incident-feed";
 import {
   TrainingStrip,
@@ -98,7 +95,6 @@ const TrainingWorkspace = ({ session }: { session: DemoTrainingSession }) => {
   );
   const [selectedId, setSelectedId] = useState<string>();
   const [activeCard, setActiveCard] = useState<IncidentCard | null>(null);
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [logs, setLogs] = useState<Record<string, readonly string[]>>(
     initialWorkspace.logs,
   );
@@ -163,27 +159,26 @@ const TrainingWorkspace = ({ session }: { session: DemoTrainingSession }) => {
     setActiveCard(card);
   };
 
-  const createCard = (draft: NewIncidentDraft) => {
+  const createCard = () => {
     const card: IncidentCard = {
       id: nextCardId(incidents.length),
       createdAt: currentTime(),
       channel: "112",
       origin: "student",
+      createdDate: new Date().toLocaleDateString("ru-RU"),
+      operatorNumber: "0",
+      workstation: "4",
       fields: {
         ...emptyCardFields,
-        categoryId: draft.categoryId,
         address: {
           ...emptyCardFields.address,
-          street: draft.street.trim() || "Адрес уточняется",
-          house: draft.house.trim(),
+          region: "Москва",
+          country: "",
         },
-        description:
-          draft.description.trim() || "Учебная карточка создана оператором.",
       },
     };
 
     setIncidents((current) => [card, ...current]);
-    setIsCreateOpen(false);
     openCard(card);
   };
 
@@ -246,37 +241,21 @@ const TrainingWorkspace = ({ session }: { session: DemoTrainingSession }) => {
 
       <IncidentFeed
         toolbar={
-          <header className="incident-desk__topbar">
-            <div className="incident-desk__date">
-              Дежурная смена · учебный режим
-              {" · "}
-              <Link to={routePaths.studentDashboard}>Мои занятия</Link>
-            </div>
-            <div className="incident-desk__identity">
-              <strong>112</strong>
-              <span>
-                Автоматизированное
-                <br />
-                рабочее место оператора
-              </span>
-            </div>
-
-            <Button
-              className="incident-desk__create"
+          <div className="arm-journal-actions">
+            <ArmIconButton
+              icon="plus"
+              label="Создать новую карточку"
               disabled={callState !== "accepted"}
-              onClick={() => setIsCreateOpen(true)}
-              startIcon={<AddBoxOutlinedIcon />}
-            >
-              Создать новую карточку
-            </Button>
+              onClick={createCard}
+            />
+            <Link to={routePaths.studentDashboard}>Мои занятия</Link>
             <Button
-              className="incident-desk__complete"
               disabled={callState !== "accepted" || submittedIds.length === 0}
               onClick={completeTraining}
             >
               Завершить занятие
             </Button>
-          </header>
+          </div>
         }
         incidents={incidents}
         selectedId={selectedId}
@@ -284,6 +263,7 @@ const TrainingWorkspace = ({ session }: { session: DemoTrainingSession }) => {
       />
 
       <IncidentCardDialog
+        renderMap={(addressLine) => <LocationMap addressLine={addressLine} />}
         card={activeCard}
         sessionId={sessionId}
         log={logs[activeCard?.id ?? ""] ?? []}
@@ -294,13 +274,6 @@ const TrainingWorkspace = ({ session }: { session: DemoTrainingSession }) => {
         onSubmit={submitCard}
         elapsedSeconds={elapsedSeconds}
         normSeconds={normSeconds}
-      />
-
-      <CreateIncidentDialog
-        disabled={callState !== "accepted"}
-        open={isCreateOpen}
-        onClose={() => setIsCreateOpen(false)}
-        onCreate={createCard}
       />
     </div>
   );

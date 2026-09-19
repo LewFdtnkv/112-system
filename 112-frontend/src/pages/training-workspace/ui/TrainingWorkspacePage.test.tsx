@@ -52,7 +52,7 @@ it("filters, resets and creates incident cards", async () => {
   renderWorkspace();
 
   await user.type(
-    screen.getByRole("textbox", { name: "Тип происшествия" }),
+    screen.getByRole("textbox", { name: "Поиск происшествий" }),
     "пожар",
   );
   await user.click(
@@ -63,7 +63,7 @@ it("filters, resets and creates incident cards", async () => {
   expect(within(table).getByText("Пожар")).toBeVisible();
   expect(within(table).queryByText("ДТП")).not.toBeInTheDocument();
 
-  await user.click(screen.getByRole("button", { name: "Сбросить" }));
+  await user.click(screen.getByRole("button", { name: "сбросить" }));
   expect(within(table).getByText("ДТП")).toBeVisible();
 
   await acceptIncomingCall(user);
@@ -71,7 +71,6 @@ it("filters, resets and creates incident cards", async () => {
   await user.click(
     screen.getByRole("button", { name: "Создать новую карточку" }),
   );
-  await user.click(screen.getByRole("button", { name: "Создать" }));
 
   expect(
     await screen.findByRole("heading", { name: /Карточка происшествия/ }),
@@ -89,6 +88,11 @@ it("records operator actions in the card log", async () => {
   );
 
   const dialog = await screen.findByRole("dialog");
+  await user.click(
+    within(dialog).getByRole("button", {
+      name: "Учебный комментарий и журнал",
+    }),
+  );
   await user.type(
     within(dialog).getByRole("textbox", { name: "Действие оператора" }),
     "Сообщение принято, дежурная бригада направлена на место",
@@ -116,7 +120,9 @@ it("blocks submission until the required fields are filled", async () => {
   const dialog = await screen.findByRole("dialog");
   await user.clear(within(dialog).getByRole("textbox", { name: "Дом/Вл" }));
   await user.click(
-    within(dialog).getByRole("button", { name: "Отправить на проверку" }),
+    await within(dialog).findByRole("button", {
+      name: "Оповестить и сохранить карточку",
+    }),
   );
 
   expect(within(dialog).getByRole("alert")).toHaveTextContent(
@@ -133,13 +139,24 @@ it("blocks submission until the required fields are filled", async () => {
     within(dialog).getByRole("textbox", { name: "Дом/Вл" }),
     "12",
   );
+  await user.click(
+    within(dialog).getByRole("button", {
+      name: "Учебный комментарий и журнал",
+    }),
+  );
   await user.type(
     within(dialog).getByRole("textbox", { name: "Действие оператора" }),
     "Вызов принят",
   );
-  await user.click(within(dialog).getByRole("button", { name: "103" }));
   await user.click(
-    within(dialog).getByRole("button", { name: "Отправить на проверку" }),
+    within(dialog).getByRole("button", { name: "Добавить службы" }),
+  );
+  await user.click(screen.getByRole("button", { name: "103" }));
+  await user.click(screen.getByRole("button", { name: "Сохранить и закрыть" }));
+  await user.click(
+    await within(dialog).findByRole("button", {
+      name: "Оповестить и сохранить карточку",
+    }),
   );
 
   expect(
@@ -149,12 +166,16 @@ it("blocks submission until the required fields are filled", async () => {
     localStorage.getItem(cardDraftStorageKey("demo-session-1", "378879302")),
   ).toBeNull();
   expect(
-    within(dialog).getByRole("button", { name: "Отправить на проверку" }),
-  ).toBeDisabled();
-  expect(within(dialog).getByRole("textbox", { name: "Улица" })).toBeDisabled();
+    within(dialog).queryByRole("button", {
+      name: "Оповестить и сохранить карточку",
+    }),
+  ).not.toBeInTheDocument();
+  expect(
+    within(dialog).queryByRole("textbox", { name: "Улица" }),
+  ).not.toBeInTheDocument();
   expect(
     within(dialog).getByRole("combobox", { name: "Статус обработки" }),
-  ).toHaveTextContent("Завершено");
+  ).toHaveValue("closed");
   await user.click(within(dialog).getByRole("button", { name: "Закрыть" }));
   await user.click(
     await screen.findByRole("button", { name: "Открыть карточку 378879302" }),
@@ -163,8 +184,8 @@ it("blocks submission until the required fields are filled", async () => {
     localStorage.getItem(cardDraftStorageKey("demo-session-1", "378879302")),
   ).toBeNull();
   expect(
-    screen.getByRole("button", { name: "Отправить на проверку" }),
-  ).toBeDisabled();
+    screen.queryByRole("button", { name: "Оповестить и сохранить карточку" }),
+  ).not.toBeInTheDocument();
 });
 
 it("restores an unfinished card from the local draft", async () => {
@@ -282,6 +303,9 @@ it("allows submission after the operator action has already been recorded", asyn
   await user.click(
     screen.getByRole("button", { name: "Открыть карточку 378879302" }),
   );
+  await user.click(
+    screen.getByRole("button", { name: "Учебный комментарий и журнал" }),
+  );
   await user.type(
     screen.getByRole("textbox", { name: "Действие оператора" }),
     "Вызов принят",
@@ -289,9 +313,13 @@ it("allows submission after the operator action has already been recorded", asyn
   await user.click(
     screen.getByRole("button", { name: "Зафиксировать действие" }),
   );
+  await user.click(screen.getByRole("button", { name: "Добавить службы" }));
   await user.click(screen.getByRole("button", { name: "103" }));
+  await user.click(screen.getByRole("button", { name: "Сохранить и закрыть" }));
   await user.click(
-    screen.getByRole("button", { name: "Отправить на проверку" }),
+    await screen.findByRole("button", {
+      name: "Оповестить и сохранить карточку",
+    }),
   );
   expect(
     screen.getByText("Карточка передана на учебную проверку."),
@@ -305,6 +333,9 @@ it("completes the training and creates a result after a submitted card", async (
   await user.click(
     screen.getByRole("button", { name: "Открыть карточку 378879302" }),
   );
+  await user.click(
+    screen.getByRole("button", { name: "Учебный комментарий и журнал" }),
+  );
   await user.type(
     screen.getByRole("textbox", { name: "Действие оператора" }),
     "Вызов принят",
@@ -312,9 +343,13 @@ it("completes the training and creates a result after a submitted card", async (
   await user.click(
     screen.getByRole("button", { name: "Зафиксировать действие" }),
   );
+  await user.click(screen.getByRole("button", { name: "Добавить службы" }));
   await user.click(screen.getByRole("button", { name: "103" }));
+  await user.click(screen.getByRole("button", { name: "Сохранить и закрыть" }));
   await user.click(
-    screen.getByRole("button", { name: "Отправить на проверку" }),
+    await screen.findByRole("button", {
+      name: "Оповестить и сохранить карточку",
+    }),
   );
   await user.click(screen.getByRole("button", { name: "Закрыть" }));
   await waitFor(() =>

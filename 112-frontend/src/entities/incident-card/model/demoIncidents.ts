@@ -3,6 +3,9 @@ import type { IncidentCard } from "./types";
 export const demoIncidents: readonly IncidentCard[] = [
   {
     id: "378879302",
+    createdDate: "17.09.2026",
+    operatorNumber: "0",
+    workstation: "4",
     createdAt: "10:47:36",
     channel: "101",
     origin: "generated",
@@ -34,6 +37,9 @@ export const demoIncidents: readonly IncidentCard[] = [
   },
   {
     id: "378879304",
+    createdDate: "17.09.2026",
+    operatorNumber: "0",
+    workstation: "4",
     createdAt: "10:46:12",
     channel: "101",
     origin: "generated",
@@ -65,6 +71,9 @@ export const demoIncidents: readonly IncidentCard[] = [
   },
   {
     id: "378879308",
+    createdDate: "17.09.2026",
+    operatorNumber: "0",
+    workstation: "4",
     createdAt: "10:44:21",
     channel: "102",
     origin: "generated",
@@ -96,6 +105,9 @@ export const demoIncidents: readonly IncidentCard[] = [
   },
   {
     id: "378879314",
+    createdDate: "17.09.2026",
+    operatorNumber: "0",
+    workstation: "4",
     createdAt: "10:42:04",
     channel: "103",
     origin: "generated",

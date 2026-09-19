@@ -1,7 +1,27 @@
-@use "./arm";
-
 * {
   box-sizing: border-box;
+}
+
+// Interface controls are not selectable; incident text and form inputs are.
+:where(.app-shell, .auth-shell) :is(ul, ol) {
+  list-style: none;
+  padding-left: 0;
+}
+:where(.app-shell, .auth-shell) :is(button, nav, summary, th, [role="tab"]) {
+  user-select: none;
+}
+:where(.app-shell, .auth-shell) :is(button, a, summary):focus-visible {
+  outline: 2px solid #008bc5;
+  outline-offset: 2px;
+}
+.app-sidebar a {
+  transition:
+    background-color 100ms,
+    color 100ms;
+}
+.page-section a:hover {
+  color: #008bc5;
+  text-decoration: underline;
 }
 
 html,

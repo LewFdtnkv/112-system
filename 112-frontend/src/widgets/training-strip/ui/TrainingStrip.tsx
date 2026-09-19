@@ -1,3 +1,4 @@
+import "./training-strip.scss";
 import { Button } from "@mui/material";
 
 import { formatDuration } from "@/shared/lib/formatDuration";

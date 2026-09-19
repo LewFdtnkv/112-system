@@ -1,0 +1,201 @@
+import { emptyIncidentAddress, formatAddress } from "@/entities/incident-card";
+import type { IncidentEditor } from "@/features/incident-editing";
+import {
+  ArmField,
+  ArmIconButton,
+  ArmSelect,
+  ArmTextarea,
+} from "@/shared/ui/arm";
+
+interface Props {
+  editor: IncidentEditor;
+  disabled: boolean;
+  viewing: boolean;
+  onMap: () => void;
+}
+export function CardAddressPanel({ editor, disabled, viewing, onMap }: Props) {
+  const { fields, setField, setDetail, setAddressField } = editor;
+  const address = fields.address;
+  if (viewing)
+    return (
+      <section
+        className="arm-card-left arm-card-left--view"
+        aria-label="Сведения о происшествии"
+      >
+        <div className="arm-applicant">
+          <span>{fields.callerName || "ФИО заявителя"}</span>
+        </div>
+        <div className="arm-address-view">
+          <ArmIconButton
+            icon="map"
+            label="Показать адрес на карте"
+            onClick={onMap}
+          />
+          <strong>
+            {[
+              address.country ?? "Россия",
+              address.region ?? "Москва",
+              formatAddress(address),
+            ]
+              .filter(Boolean)
+              .join(", ")}
+          </strong>
+          <p>{[address.district, address.area].filter(Boolean).join(", ")}</p>
+        </div>
+        <div className="arm-description-view">
+          <p>{fields.description}</p>
+        </div>
+      </section>
+    );
+  return (
+    <section
+      className="arm-card-left"
+      aria-label="Заявитель и адрес происшествия"
+    >
+      <div className="arm-applicant">
+        <ArmField
+          label="Заявитель"
+          inline
+          placeholder="Фамилия и имя заявителя"
+          disabled={disabled}
+          value={fields.callerName}
+          onChange={(e) => setField("callerName", e.target.value)}
+        />
+        <ArmSelect
+          label="Статус заявителя"
+          className="arm-applicant__status"
+          disabled={disabled}
+          value={fields.details?.callerStatus ?? ""}
+          onChange={(e) => setDetail("callerStatus", e.target.value)}
+        >
+          <option value="">Выберите статус</option>
+          <option>Заявитель</option>
+          <option>Очевидец</option>
+          <option>Пострадавший</option>
+        </ArmSelect>
+        <ArmSelect
+          label="Пол заявителя"
+          disabled={disabled}
+          value={fields.details?.callerGender ?? ""}
+          onChange={(e) => setDetail("callerGender", e.target.value)}
+        >
+          <option value=""></option>
+          <option>Мужской</option>
+          <option>Женский</option>
+        </ArmSelect>
+        <ArmField
+          label="Возраст заявителя"
+          inline
+          type="number"
+          min={0}
+          max={120}
+          disabled={disabled}
+          value={fields.details?.callerAge ?? ""}
+          onChange={(e) => setDetail("callerAge", e.target.value)}
+        />
+        <ArmIconButton
+          icon="translate"
+          label="Вызов на иностранном языке"
+          disabled={disabled}
+          aria-pressed={fields.details?.foreignLanguage ?? false}
+          onClick={() =>
+            setDetail("foreignLanguage", !fields.details?.foreignLanguage)
+          }
+        />
+      </div>
+      <div className="arm-address-block">
+        <div className="arm-address-heading">
+          <span>Адрес:</span>
+          <ArmIconButton
+            icon="map"
+            label="Показать адрес на карте"
+            onClick={onMap}
+          />
+        </div>
+        <div className="arm-address-line">
+          {[
+            address.region ?? "Москва",
+            address.locality,
+            formatAddress(address),
+          ]
+            .filter(Boolean)
+            .join(", ") || "Москва"}
+          <ArmIconButton
+            icon="close"
+            label="Очистить адрес"
+            disabled={disabled}
+            onClick={() =>
+              setField("address", {
+                ...emptyIncidentAddress,
+                country: "",
+                region: "Москва",
+              })
+            }
+          />
+        </div>
+        <div className="arm-address-grid">
+          {(
+            [
+              ["country", "Страна", "Россия", "country"],
+              ["region", "Субъект", "Москва", "region"],
+              ["locality", "Населённый пункт", "", "locality"],
+              ["object", "Объект", "", "object"],
+              ["district", "Округ", "", "district"],
+              ["area", "Район", "", "area"],
+              ["street", "Улица", "", "street"],
+              ["house", "Дом/Вл", "", "house"],
+              ["building", "Корпус/Стр", "", "building"],
+              ["structure", "Стр/соор", "", "structure"],
+              ["apartment", "Квартира/офис", "", "apartment"],
+              ["entrance", "Подъезд", "", "entrance"],
+              ["floor", "Этаж", "", "floor"],
+              ["doorCode", "Код", "", "code"],
+            ] as const
+          ).map(([key, label, fallback, area]) => (
+            <ArmField
+              key={key}
+              className={`arm-address-grid__${area}`}
+              label={label}
+              disabled={disabled}
+              value={address[key] ?? fallback}
+              onChange={(e) => setAddressField(key, e.target.value)}
+            />
+          ))}
+        </div>
+        <ArmTextarea
+          label="Описательный адрес"
+          disabled={disabled}
+          rows={2}
+          value={address.description}
+          onChange={(e) => setAddressField("description", e.target.value)}
+        />
+        <button
+          className="arm-small-button arm-address-clear"
+          disabled={disabled}
+          onClick={() =>
+            setField("address", {
+              ...emptyIncidentAddress,
+              country: "",
+              region: "Москва",
+            })
+          }
+        >
+          очистить адрес
+        </button>
+      </div>
+      <div className="arm-description-block">
+        <ArmTextarea
+          label="Описание со слов заявителя"
+          aria-label="Сообщение со слов заявителя"
+          placeholder="введите"
+          disabled={disabled}
+          value={fields.description}
+          maxLength={1999}
+          rows={1}
+          onChange={(e) => setField("description", e.target.value)}
+        />
+        <small>{fields.description.length} / 1999</small>
+      </div>
+    </section>
+  );
+}

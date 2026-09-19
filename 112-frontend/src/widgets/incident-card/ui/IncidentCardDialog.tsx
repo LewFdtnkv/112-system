@@ -1,608 +1,358 @@
-import CloseIcon from "@mui/icons-material/Close";
+import "./incident-card.scss";
+import { Dialog, DialogContent, DialogTitle } from "@mui/material";
+import { useState, type ReactNode } from "react";
 import {
-  Button,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  MenuItem,
-  TextField,
-} from "@mui/material";
-import { useEffect, useState } from "react";
-
-import {
-  getMissingCardFields,
-  incidentCategories,
-  getIncidentTagGroups,
-  incidentStatusLabels,
+  formatAddress,
   incidentStatuses,
-  readCardDraft,
-  responseServices,
-  writeCardDraft,
-  type IncidentAddress,
+  incidentStatusLabels,
   type IncidentCard,
-  type IncidentCardFields,
-  type IncidentPhones,
-  type IncidentStatus,
-  type ResponseService,
 } from "@/entities/incident-card";
-import { formatDuration } from "@/shared/lib/formatDuration";
-import { LocationMap } from "@/widgets/location-map-placeholder";
+import {
+  useIncidentEditor,
+  type IncidentEditorOptions,
+} from "@/features/incident-editing";
+import {
+  ArmField,
+  ArmIconButton,
+  ArmSelect,
+  ArmTextarea,
+} from "@/shared/ui/arm";
+import { CardAddressPanel } from "./CardAddressPanel";
+import { CardClassification } from "./CardClassification";
+import { CardServicesDialog } from "./CardServicesDialog";
+import { CardTelephoneBar } from "./CardTelephoneBar";
 
-interface IncidentCardDialogProps {
+interface IncidentCardDialogProps extends Omit<IncidentEditorOptions, "card"> {
   card: IncidentCard | null;
-  sessionId?: string;
-  log: readonly string[];
-  isSubmitted: boolean;
-  isCallAccepted: boolean;
   elapsedSeconds: number;
-  /** Норматив заполнения карточки, сек (ТЗ §8, по умолчанию 30). */
   normSeconds: number;
   onClose: () => void;
-  /** Зафиксировать действие оператора, не закрывая карточку. */
-  onCommitAction: (fields: IncidentCardFields, action: string) => void;
-  onSubmit: (fields: IncidentCardFields) => void;
+  renderMap?: (address: string) => ReactNode;
 }
-
-const missingFieldLabels: Record<string, string> = {
-  categoryId: "тип происшествия",
-  address: "адрес (улица и дом)",
-  description: "сообщение",
-  operatorAction: "действие оператора",
-  services: "службы реагирования",
-};
-
-export const IncidentCardDialog = ({
+export function IncidentCardDialog({
   card,
-  ...rest
-}: IncidentCardDialogProps) => (
-  <Dialog
-    open={Boolean(card)}
-    onClose={rest.onClose}
-    fullWidth
-    maxWidth="md"
-    fullScreen
-    className="arm-card-dialog"
-  >
-    {/* key сбрасывает состояние формы при смене карточки — без синхронизации в эффекте */}
-    {card && <IncidentCardForm key={card.id} card={card} {...rest} />}
-  </Dialog>
-);
-
-type IncidentCardFormProps = Omit<IncidentCardDialogProps, "card"> & {
-  card: IncidentCard;
-};
-
-const IncidentCardForm = ({
-  card,
-  sessionId,
-  log,
-  isSubmitted,
-  isCallAccepted,
-  elapsedSeconds,
-  normSeconds,
-  onClose,
-  onCommitAction,
-  onSubmit,
-}: IncidentCardFormProps) => {
-  const [fields, setFields] = useState<IncidentCardFields>(() =>
-    isSubmitted
-      ? card.fields
-      : (readCardDraft(sessionId, card.id) ?? card.fields),
+  ...props
+}: IncidentCardDialogProps) {
+  return (
+    <Dialog
+      open={Boolean(card)}
+      onClose={props.onClose}
+      fullScreen
+      className="arm-card-dialog"
+      aria-labelledby="incident-card-title"
+    >
+      {card && <IncidentCardForm key={card.id} card={card} {...props} />}
+    </Dialog>
   );
-  const [error, setError] = useState<string>();
-  const [selectedTags, setSelectedTags] = useState<readonly string[]>([]);
-  const tagGroups = getIncidentTagGroups(fields.categoryId);
-
-  /** Черновик переживает перезагрузку и кратковременный обрыв связи. */
-  useEffect(() => {
-    if (!isSubmitted) writeCardDraft(sessionId, card.id, fields);
-  }, [card.id, fields, isSubmitted, sessionId]);
-
-  const setField = <Key extends keyof IncidentCardFields>(
-    key: Key,
-    value: IncidentCardFields[Key],
-  ) => {
-    setFields((current) => ({ ...current, [key]: value }));
-    setError(undefined);
-  };
-
-  const setAddressField = <Key extends keyof IncidentAddress>(
-    key: Key,
-    value: IncidentAddress[Key],
-  ) => {
-    setFields((current) => ({
-      ...current,
-      address: { ...current.address, [key]: value },
-    }));
-    setError(undefined);
-  };
-
-  const setPhoneField = <Key extends keyof IncidentPhones>(
-    key: Key,
-    value: IncidentPhones[Key],
-  ) => {
-    setFields((current) => ({
-      ...current,
-      phones: { ...current.phones, [key]: value },
-    }));
-    setError(undefined);
-  };
-
-  const toggleService = (service: ResponseService) =>
-    setFields((current) => {
-      const services = current.services.includes(service)
-        ? current.services.filter((item) => item !== service)
-        : [...current.services, service];
-
-      return { ...current, services };
-    });
-
-  const setCategory = (categoryId: string) => {
-    const category = incidentCategories.find((item) => item.id === categoryId);
-    setFields((current) => ({
-      ...current,
-      categoryId,
-      services: category?.defaultServices ?? [],
-    }));
-    setSelectedTags([]);
-    setError(undefined);
-  };
-
-  const toggleTag = (tag: string) =>
-    setSelectedTags((current) =>
-      current.includes(tag)
-        ? current.filter((item) => item !== tag)
-        : [...current, tag],
-    );
-
-  const commitAction = () => {
-    if (isSubmitted || !isCallAccepted) return;
-    const action = fields.operatorAction.trim();
-    if (!action) {
-      setError("Опишите действие оператора, прежде чем фиксировать его.");
-      return;
-    }
-
-    onCommitAction(fields, action);
-    setFields({ ...fields, operatorAction: "" });
-    setError(undefined);
-  };
-
-  const submit = () => {
-    if (isSubmitted || !isCallAccepted) return;
-    const hasRecordedAction = log.some((entry) =>
-      entry.startsWith("Оператор: "),
-    );
-    const missing = getMissingCardFields(fields).filter(
-      (field) => field !== "operatorAction" || !hasRecordedAction,
-    );
-    if (missing.length > 0) {
-      setError(
-        `Заполните: ${missing
-          .map((field) => missingFieldLabels[field] ?? field)
-          .join(", ")}.`,
-      );
-      return;
-    }
-
-    onSubmit(fields);
-    setFields({ ...fields, status: "closed" });
-    setError(undefined);
-  };
-
-  const [mapOpen, setMapOpen] = useState(false);
-  const isOverdue = elapsedSeconds >= normSeconds;
-  const addressLine = [
-    fields.address.street,
-    fields.address.house && `д. ${fields.address.house}`,
-    fields.address.building && `корп. ${fields.address.building}`,
-  ]
-    .filter(Boolean)
-    .join(", ");
-
+}
+function IncidentCardForm(
+  props: Omit<IncidentCardDialogProps, "card"> & { card: IncidentCard },
+) {
+  const {
+    card,
+    onClose,
+    log,
+    isSubmitted,
+    isCallAccepted,
+    elapsedSeconds,
+    normSeconds,
+    renderMap,
+  } = props;
+  const editor = useIncidentEditor(props);
+  const [preview, setPreview] = useState(false);
+  const [servicesOpen, setServicesOpen] = useState(false);
+  const [commentOpen, setCommentOpen] = useState(false);
+  const [activeService, setActiveService] = useState<string>();
+  const [modal, setModal] = useState<
+    "victims" | "map" | "calls" | "sms" | "timing"
+  >();
+  const viewing = preview || isSubmitted;
+  const disabled = viewing || !isCallAccepted;
+  const { fields } = editor;
   return (
     <>
-      <DialogTitle>
+      <DialogTitle id="incident-card-title" className="visually-hidden">
         Карточка происшествия № {card.id}
-        <span className="arm-card-title-note">Учебный режим</span>
       </DialogTitle>
-      <DialogContent>
-        <div className="incident-card-form">
-          <div className="arm-card-summary">
-            <div>
-              <strong>Учебный вызов</strong>
-              <span>
-                {isCallAccepted
-                  ? "Соединение установлено"
-                  : "Ожидание приёма вызова"}{" "}
-                · канал {card.channel}
-              </span>
-            </div>
-            <div className="arm-card-phones" aria-label="Телефоны заявителя">
-              <TextField
-                variant="standard"
-                slotProps={{ inputLabel: { shrink: true } }}
-                disabled={isSubmitted || !isCallAccepted}
-                label="АОН"
-                value={fields.phones.callerId}
-                onChange={(event) =>
-                  setPhoneField("callerId", event.target.value)
-                }
-              />
-              <TextField
-                variant="standard"
-                slotProps={{ inputLabel: { shrink: true } }}
-                disabled={isSubmitted || !isCallAccepted}
-                label="Предоставленный"
-                value={fields.phones.provided}
-                onChange={(event) =>
-                  setPhoneField("provided", event.target.value)
-                }
-              />
-              <TextField
-                variant="standard"
-                slotProps={{ inputLabel: { shrink: true } }}
-                disabled={isSubmitted || !isCallAccepted}
-                label="Телефон на месте"
-                value={fields.phones.onSite}
-                onChange={(event) =>
-                  setPhoneField("onSite", event.target.value)
-                }
-              />
-            </div>
-            <div>
-              <strong>Карточка № {card.id}</strong>
-              <span>Время создания: {card.createdAt}</span>
-            </div>
-            <div>
-              <strong>Источник</strong>
-              <span>
-                {card.origin === "generated"
-                  ? "Сгенерирована системой"
-                  : "Создана обучающимся"}
-              </span>
-            </div>
-            <div
-              className={
-                isOverdue
-                  ? "arm-card-summary__timer arm-card-summary__timer--overdue"
-                  : "arm-card-summary__timer"
+      <CardTelephoneBar
+        card={card}
+        editor={editor}
+        disabled={disabled}
+        accepted={isCallAccepted}
+        elapsedSeconds={elapsedSeconds}
+        normSeconds={normSeconds}
+        viewing={viewing}
+        submitted={isSubmitted}
+        onViewChange={() => setPreview(!preview)}
+        onHistory={setModal}
+      />
+      <div className="arm-card-body" key={viewing ? "view" : "edit"}>
+        <CardAddressPanel
+          editor={editor}
+          disabled={disabled}
+          viewing={viewing}
+          onMap={() => setModal("map")}
+        />
+        <CardClassification
+          editor={editor}
+          disabled={disabled}
+          viewing={viewing}
+          onVictims={() => setModal("victims")}
+        />
+      </div>
+      {editor.error && (
+        <p className="arm-card-notice arm-card-notice--error" role="alert">
+          {editor.error}
+        </p>
+      )}
+      {!isSubmitted && !isCallAccepted && (
+        <p className="arm-card-notice" role="status">
+          Примите учебный вызов, чтобы начать работу с карточкой.
+        </p>
+      )}
+      {isSubmitted && (
+        <p className="arm-card-notice" role="status">
+          Карточка передана на учебную проверку.
+        </p>
+      )}
+      <footer
+        className={`arm-card-footer ${viewing ? "arm-card-footer--view" : ""}`}
+      >
+        <div className="arm-service-tiles">
+          <strong>Службы:</strong>
+          {fields.services.map((service) => (
+            <button
+              key={service}
+              className="arm-service-tile"
+              aria-expanded={activeService === service}
+              onClick={() =>
+                setActiveService(
+                  activeService === service ? undefined : service,
+                )
               }
             >
-              <strong>
-                {isOverdue ? "Норматив превышен" : "Время набора"}
-              </strong>
-              <span aria-label="Время заполнения карточки относительно норматива">
-                {formatDuration(elapsedSeconds)} / {formatDuration(normSeconds)}
-              </span>
-            </div>
-          </div>
-
-          <div className="incident-card-form__columns">
-            <section
-              className="arm-card-panel"
-              aria-labelledby="card-contact-title"
+              <span>⌃</span>
+              <strong>Служба {service}</strong>
+              <small>{isSubmitted ? "Учебная проверка" : "К оповещению"}</small>
+            </button>
+          ))}
+          {!viewing && (
+            <ArmIconButton
+              icon="plus"
+              label="Добавить службы"
+              disabled={disabled}
+              aria-expanded={servicesOpen}
+              onClick={() => setServicesOpen(!servicesOpen)}
+            />
+          )}
+        </div>
+        <div className="arm-footer-tools">
+          {!viewing && (
+            <button
+              className="arm-save"
+              aria-label="Оповестить и сохранить карточку"
+              disabled={disabled}
+              onClick={editor.submit}
             >
-              <h2 id="card-contact-title">Сведения о заявителе</h2>
-              <div className="arm-card-panel__fields">
-                <TextField
-                  variant="standard"
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  disabled={isSubmitted || !isCallAccepted}
-                  label="Заявитель"
-                  value={fields.callerName}
-                  onChange={(event) =>
-                    setField("callerName", event.target.value)
-                  }
-                />
-              </div>
-
-              <h3 className="arm-card-panel__subheading">Адрес происшествия</h3>
-              <div className="arm-card-panel__fields arm-card-panel__fields--address">
-                <TextField
-                  variant="standard"
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  disabled={isSubmitted || !isCallAccepted}
-                  label="Округ"
-                  value={fields.address.district}
-                  onChange={(event) =>
-                    setAddressField("district", event.target.value)
-                  }
-                />
-                <TextField
-                  variant="standard"
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  disabled={isSubmitted || !isCallAccepted}
-                  label="Район"
-                  value={fields.address.area}
-                  onChange={(event) =>
-                    setAddressField("area", event.target.value)
-                  }
-                />
-                <TextField
-                  variant="standard"
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  disabled={isSubmitted || !isCallAccepted}
-                  label="Улица"
-                  value={fields.address.street}
-                  onChange={(event) =>
-                    setAddressField("street", event.target.value)
-                  }
-                />
-                <TextField
-                  variant="standard"
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  disabled={isSubmitted || !isCallAccepted}
-                  label="Дом/Вл"
-                  value={fields.address.house}
-                  onChange={(event) =>
-                    setAddressField("house", event.target.value)
-                  }
-                />
-                <TextField
-                  variant="standard"
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  disabled={isSubmitted || !isCallAccepted}
-                  label="Корпус/Стр"
-                  value={fields.address.building}
-                  onChange={(event) =>
-                    setAddressField("building", event.target.value)
-                  }
-                />
-                <TextField
-                  variant="standard"
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  disabled={isSubmitted || !isCallAccepted}
-                  label="Квартира/офис"
-                  value={fields.address.apartment}
-                  onChange={(event) =>
-                    setAddressField("apartment", event.target.value)
-                  }
-                />
-                <TextField
-                  variant="standard"
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  disabled={isSubmitted || !isCallAccepted}
-                  label="Подъезд"
-                  value={fields.address.entrance}
-                  onChange={(event) =>
-                    setAddressField("entrance", event.target.value)
-                  }
-                />
-                <TextField
-                  variant="standard"
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  disabled={isSubmitted || !isCallAccepted}
-                  label="Этаж"
-                  value={fields.address.floor}
-                  onChange={(event) =>
-                    setAddressField("floor", event.target.value)
-                  }
-                />
-              </div>
-              <TextField
-                variant="standard"
-                slotProps={{ inputLabel: { shrink: true } }}
-                disabled={isSubmitted || !isCallAccepted}
-                label="Описательный адрес"
-                placeholder="Например: за ТЦ, второй подъезд со двора"
-                value={fields.address.description}
-                onChange={(event) =>
-                  setAddressField("description", event.target.value)
-                }
+              сохранить
+            </button>
+          )}
+          {!viewing && (
+            <>
+              <ArmIconButton
+                icon="link"
+                label="Связанные происшествия — недоступно в этом задании"
+                disabled
               />
-
-              <details
-                className="arm-card-map"
-                onToggle={(event) => setMapOpen(event.currentTarget.open)}
-              >
-                <summary>Показать адрес на карте</summary>
-                {mapOpen && <LocationMap addressLine={addressLine} />}
-              </details>
-
-              <div className="arm-card-panel__fields">
-                <TextField
-                  variant="standard"
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  disabled={isSubmitted || !isCallAccepted}
-                  select
-                  label="Статус обработки"
-                  value={fields.status}
-                  onChange={(event) =>
-                    setField("status", event.target.value as IncidentStatus)
-                  }
-                >
-                  {incidentStatuses.map((status) => (
-                    <MenuItem key={status} value={status}>
-                      {incidentStatusLabels[status]}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </div>
-              <TextField
-                variant="standard"
-                slotProps={{ inputLabel: { shrink: true } }}
-                disabled={isSubmitted || !isCallAccepted}
-                className="arm-card-message"
-                label="Сообщение со слов заявителя"
-                multiline
-                minRows={5}
-                value={fields.description}
-                onChange={(event) =>
-                  setField("description", event.target.value)
-                }
+              <ArmIconButton
+                icon="timer"
+                label="Время заполнения карточки"
+                onClick={() => setModal("timing")}
               />
-            </section>
-
-            <section
-              className="arm-card-panel"
-              aria-labelledby="card-scenario-title"
+              <ArmIconButton
+                icon="hand"
+                label="Постобработка вызова — недоступно в этом задании"
+                disabled
+              />
+              <ArmIconButton
+                icon="bell"
+                label="Напоминание — недоступно в этом задании"
+                disabled
+              />
+            </>
+          )}
+          <ArmIconButton
+            icon="comment"
+            label="Учебный комментарий и журнал"
+            aria-expanded={commentOpen}
+            onClick={() => setCommentOpen(!commentOpen)}
+          />
+          <ArmIconButton icon="close" label="Закрыть" onClick={onClose} />
+        </div>
+        {activeService && (
+          <section
+            className="arm-service-history"
+            aria-label={`История службы ${activeService}`}
+          >
+            <h3>
+              Служба {activeService}
+              <ArmIconButton
+                icon="close"
+                label="Закрыть историю службы"
+                onClick={() => setActiveService(undefined)}
+              />
+            </h3>
+            <p>
+              Статус:{" "}
+              {isSubmitted
+                ? "Передана на учебную проверку"
+                : "Выбрана для оповещения"}
+            </p>
+            <p>
+              {isSubmitted
+                ? "Учебная карточка сохранена."
+                : "Служба будет включена в учебное оповещение при сохранении карточки."}
+            </p>
+          </section>
+        )}
+        {commentOpen && (
+          <section
+            className="arm-training-comment"
+            aria-label="Учебный комментарий"
+          >
+            <h3>
+              Учебный комментарий
+              <ArmIconButton
+                icon="close"
+                label="Закрыть учебный комментарий"
+                onClick={() => setCommentOpen(false)}
+              />
+            </h3>
+            <ArmSelect
+              label="Статус обработки"
+              disabled={disabled}
+              value={fields.status}
+              onChange={(e) =>
+                editor.setField(
+                  "status",
+                  e.target.value as typeof fields.status,
+                )
+              }
             >
-              <div className="arm-card-victims">
-                {" "}
-                <TextField
-                  variant="standard"
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  disabled={isSubmitted || !isCallAccepted}
-                  label="Пострадавших"
-                  type="number"
-                  value={fields.victimsCount ?? ""}
-                  onChange={(event) =>
-                    setField(
-                      "victimsCount",
-                      event.target.value === ""
-                        ? null
-                        : Number(event.target.value),
-                    )
-                  }
-                />
-              </div>
-              <TextField
-                variant="standard"
-                slotProps={{ inputLabel: { shrink: true } }}
-                disabled={isSubmitted || !isCallAccepted}
-                select
-                label="Тип происшествия"
-                value={fields.categoryId}
-                onChange={(event) => setCategory(event.target.value)}
+              {incidentStatuses.map((status) => (
+                <option value={status} key={status}>
+                  {incidentStatusLabels[status]}
+                </option>
+              ))}
+            </ArmSelect>
+            <ArmTextarea
+              label="Действие оператора"
+              disabled={disabled}
+              rows={3}
+              value={fields.operatorAction}
+              onChange={(e) =>
+                editor.setField("operatorAction", e.target.value)
+              }
+            />
+            <button
+              className="arm-small-button"
+              disabled={disabled}
+              onClick={editor.commitAction}
+            >
+              Зафиксировать действие
+            </button>
+            {!viewing && (
+              <button
+                className="arm-small-button"
+                onClick={() => {
+                  setPreview(true);
+                  setCommentOpen(false);
+                }}
               >
-                {incidentCategories.map((category) => (
-                  <MenuItem key={category.id} value={category.id}>
-                    {category.name}
-                  </MenuItem>
-                ))}
-              </TextField>
-              <h2 id="card-scenario-title">Что случилось</h2>
-              <div
-                className="arm-card-tags"
-                aria-label="Уточняющие признаки происшествия"
-              >
-                {tagGroups.map((group) => (
-                  <div className="arm-card-tags__group" key={group.label}>
-                    <span>{group.label}</span>
-                    <div>
-                      {group.options.map((tag) => (
-                        <button
-                          aria-pressed={selectedTags.includes(tag)}
-                          className={
-                            selectedTags.includes(tag)
-                              ? "is-selected"
-                              : undefined
-                          }
-                          disabled={isSubmitted || !isCallAccepted}
-                          key={tag}
-                          onClick={() => toggleTag(tag)}
-                          type="button"
-                        >
-                          {tag}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <p className="arm-card-panel__hint">
-                После выбора типа службы подбираются автоматически; оператор
-                может изменить их ниже.
-              </p>
-              <TextField
-                variant="standard"
-                slotProps={{ inputLabel: { shrink: true } }}
-                disabled={isSubmitted || !isCallAccepted}
-                className="arm-card-action"
-                label="Действие оператора"
-                value={fields.operatorAction}
-                placeholder="Например: сообщение принято, дежурная бригада направлена на место"
-                multiline
-                minRows={4}
-                onChange={(event) =>
-                  setField("operatorAction", event.target.value)
-                }
-              />
-            </section>
-          </div>
-
-          <div className="incident-card-form__log">
-            <strong>Журнал действий</strong>
-            {log.length > 0 ? (
+                Просмотр карточки
+              </button>
+            )}
+            <h4>Журнал действий</h4>
+            {log.length ? (
               <ul>
-                {log.map((entry, index) => (
-                  <li key={`${index}-${entry}`}>{entry}</li>
+                {log.map((entry, i) => (
+                  <li key={i}>{entry}</li>
                 ))}
               </ul>
             ) : (
-              <span>Действий пока нет.</span>
+              <p>Действий пока нет.</p>
             )}
-          </div>
-
-          {error && (
-            <p className="incident-card-form__error" role="alert">
-              {error}
-            </p>
-          )}
-          {isSubmitted && (
-            <p className="incident-card-form__success">
-              Карточка передана на учебную проверку.
-            </p>
-          )}
-          {!isSubmitted && !isCallAccepted && (
-            <p className="incident-card-form__error" role="status">
-              Примите учебный вызов, чтобы начать работу с карточкой.
-            </p>
-          )}
-        </div>
-      </DialogContent>
-      <DialogActions
-        className={
-          isSubmitted
-            ? "arm-card-footer arm-card-footer--submitted"
-            : "arm-card-footer"
-        }
+          </section>
+        )}
+      </footer>
+      <CardServicesDialog
+        open={servicesOpen && !viewing}
+        selected={fields.services}
+        onToggle={editor.toggleService}
+        onClose={() => setServicesOpen(false)}
+      />
+      <Dialog
+        open={Boolean(modal)}
+        onClose={() => setModal(undefined)}
+        fullWidth
+        maxWidth={modal === "map" ? "md" : "sm"}
+        className="arm-aux-dialog"
       >
-        <div className="arm-card-services" aria-label="Службы реагирования">
-          <span>Службы:</span>
-          {responseServices.map((service) => (
-            <button
-              disabled={isSubmitted || !isCallAccepted}
-              aria-pressed={fields.services.includes(service)}
-              className={
-                fields.services.includes(service)
-                  ? "arm-card-services__selected"
-                  : undefined
+        <DialogTitle>
+          {modal === "victims"
+            ? "Пострадавшие"
+            : modal === "map"
+              ? "Карта происшествия"
+              : modal === "calls"
+                ? "Записи звонков"
+                : modal === "timing"
+                  ? "Время заполнения карточки"
+                  : "Список SMS"}
+          <ArmIconButton
+            icon="close"
+            label="Закрыть окно"
+            onClick={() => setModal(undefined)}
+          />
+        </DialogTitle>
+        <DialogContent>
+          {modal === "victims" && (
+            <ArmField
+              label="Пострадавших"
+              type="number"
+              min={0}
+              step={1}
+              disabled={disabled}
+              value={fields.victimsCount ?? ""}
+              onChange={(e) =>
+                editor.setField(
+                  "victimsCount",
+                  e.target.value === ""
+                    ? null
+                    : Math.max(0, Number(e.target.value)),
+                )
               }
-              key={service}
-              onClick={() => toggleService(service)}
-              type="button"
-            >
-              {service}
-            </button>
-          ))}
-          <small>
-            {fields.services.length > 0
-              ? `Выбрано служб: ${fields.services.length}`
-              : "Выберите службы реагирования."}
-          </small>
-        </div>
-        <div className="arm-card-footer__actions">
-          <Button startIcon={<CloseIcon />} onClick={onClose}>
-            Закрыть
-          </Button>
-          <Button
-            onClick={commitAction}
-            disabled={isSubmitted || !isCallAccepted}
-          >
-            Зафиксировать действие
-          </Button>
-          <Button
-            variant="contained"
-            onClick={submit}
-            disabled={isSubmitted || !isCallAccepted}
-          >
-            Отправить на проверку
-          </Button>
-        </div>
-      </DialogActions>
+            />
+          )}
+          {modal === "map" &&
+            (renderMap?.(formatAddress(fields.address)) ?? (
+              <p>Карта не подключена.</p>
+            ))}
+          {modal === "calls" && (
+            <p>
+              {isCallAccepted
+                ? `Учебный вызов · ${card.channel}. Аудиозапись в этом задании не предусмотрена.`
+                : "Учебный вызов ещё не принят."}
+            </p>
+          )}
+          {modal === "timing" && (
+            <p>
+              Прошло: {elapsedSeconds} с. Лимит учебного задания: {normSeconds}{" "}
+              с.
+            </p>
+          )}
+          {modal === "sms" && <p>В этом учебном задании SMS отсутствуют.</p>}
+        </DialogContent>
+      </Dialog>
     </>
   );
-};
+}
