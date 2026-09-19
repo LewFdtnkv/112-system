@@ -1,0 +1,120 @@
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+} from "@mui/material";
+import { Link } from "react-router-dom";
+
+import { useDemoScenarioStore } from "@/entities/scenario";
+import { getScorePercent } from "@/entities/evaluation/demoEvaluations";
+import {
+  trainingStatusLabels,
+  useDemoTrainingStore,
+  type DemoTrainingSession,
+} from "@/entities/training-session";
+import { demoUsers, useAuthStore } from "@/entities/user";
+import {
+  getTrainingResultPath,
+  getTrainingSessionPath,
+  getStudentTrainingWorkspacePath,
+} from "@/shared/config/routes";
+import { EmptyState } from "@/shared/ui/EmptyState";
+
+const dateFormatter = new Intl.DateTimeFormat("ru-RU", {
+  dateStyle: "short",
+  timeStyle: "short",
+  timeZone: "Europe/Moscow",
+});
+
+interface SessionTableProps {
+  sessions: readonly DemoTrainingSession[];
+  label: string;
+  emptyTitle?: string;
+}
+
+export const SessionTable = ({
+  sessions,
+  label,
+  emptyTitle = "Занятия не найдены",
+}: SessionTableProps) => {
+  const scenarios = useDemoScenarioStore((state) => state.scenarios);
+  const session = useAuthStore((state) => state.session);
+  const evaluations = useDemoTrainingStore((state) => state.evaluations);
+  const isStaff = session?.roles.some(
+    (role) => role === "teacher" || role === "admin",
+  );
+
+  if (sessions.length === 0) return <EmptyState title={emptyTitle} />;
+
+  return (
+    <TableContainer>
+      <Table size="small" aria-label={label}>
+        <TableHead>
+          <TableRow>
+            <TableCell>Сценарий</TableCell>
+            <TableCell>Ученик</TableCell>
+            <TableCell>Дата (МСК)</TableCell>
+            <TableCell>Статус</TableCell>
+            <TableCell>Результат</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {sessions.map((session) => {
+            const scenario = scenarios.find(
+              (item) => item.id === session.scenarioId,
+            );
+            const student = demoUsers.find(
+              (user) => user.id === session.studentId,
+            );
+            const evaluation = evaluations.find(
+              (item) => item.sessionId === session.id,
+            );
+
+            return (
+              <TableRow key={session.id}>
+                <TableCell component="th" scope="row">
+                  <Link
+                    to={
+                      isStaff
+                        ? getTrainingSessionPath(session.id)
+                        : session.status === "completed"
+                          ? getTrainingResultPath(session.id)
+                          : getStudentTrainingWorkspacePath(session.id)
+                    }
+                  >
+                    {scenario?.name ?? "Сценарий недоступен"}
+                  </Link>
+                </TableCell>
+                <TableCell>
+                  {student?.name ?? "Пользователь недоступен"}
+                </TableCell>
+                <TableCell>
+                  <time dateTime={session.scheduledAt}>
+                    {dateFormatter.format(new Date(session.scheduledAt))}
+                  </time>
+                </TableCell>
+                <TableCell>{trainingStatusLabels[session.status]}</TableCell>
+                <TableCell>
+                  {evaluation ? (
+                    <Link
+                      to={getTrainingResultPath(session.id)}
+                      aria-label={`Результат: ${scenario?.name}, ${student?.name}`}
+                    >
+                      {evaluation.totalScore} / {evaluation.maxScore} (
+                      {getScorePercent(evaluation)}%)
+                    </Link>
+                  ) : (
+                    "Не сформирован"
+                  )}
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  );
+};
