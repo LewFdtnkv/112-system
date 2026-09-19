@@ -11,13 +11,14 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import {
   trainingApi,
-  type CardData,
+  CardDataFields,
   type Grade,
   type WorkReview,
 } from "@/entities/training";
 import { getApiError } from "@/shared/api";
 import { getStudentTrainingWorkspacePath } from "@/shared/config/routes";
 import { QueryState } from "@/shared/ui/QueryState";
+import { AutomaticCheckView } from "./AutomaticCheckView";
 export function StudentResult({ lessonId }: { lessonId: string }) {
   const grade = useQuery({
     queryKey: ["evaluation", lessonId],
@@ -96,6 +97,15 @@ function Review({ data, reload }: { data: WorkReview; reload: () => void }) {
   const latest = data.evaluations.at(-1);
   return (
     <Stack spacing={2}>
+      {data.automatic_check && (
+        <Paper sx={{ p: 2 }}>
+          <AutomaticCheckView
+            check={data.automatic_check}
+            summary
+            submitted={data.submitted}
+          />
+        </Paper>
+      )}
       {data.assignments.map((row) => (
         <Paper key={row.assignment_id} sx={{ p: 2 }}>
           <Typography variant="h6" component="h2">
@@ -141,7 +151,7 @@ function Review({ data, reload }: { data: WorkReview; reload: () => void }) {
                   </p>
                   <details>
                     <summary>Все заполненные поля</summary>
-                    <DataFields data={row.attempt.card.data} />
+                    <CardDataFields data={row.attempt.card.data} />
                   </details>
                 </>
               ) : (
@@ -149,6 +159,9 @@ function Review({ data, reload }: { data: WorkReview; reload: () => void }) {
               )}
             </section>
           </div>
+          {row.automatic_check && (
+            <AutomaticCheckView check={row.automatic_check} />
+          )}
         </Paper>
       ))}
       {latest && <GradeView grade={latest} />}
@@ -248,72 +261,5 @@ function GradeForm({ data, reload }: { data: WorkReview; reload: () => void }) {
         Сохранить оценку
       </Button>
     </Stack>
-  );
-}
-
-const fieldLabels: Record<string, string> = {
-  caller_name: "Заявитель",
-  caller_phone: "Телефон",
-  caller_details: "Телефоны",
-  callerId: "АОН",
-  provided: "Предоставленный",
-  onSite: "На месте",
-  address_text: "Адрес",
-  address_details: "Сведения об адресе",
-  description: "Сообщение",
-  victim_details: "Пострадавшие",
-  features: "Признаки",
-  victimsCount: "Количество пострадавших",
-  additional_fields: "Дополнительные сведения",
-  details: "Уточнения",
-  operatorAction: "Комментарий оператора",
-  country: "Страна",
-  region: "Субъект",
-  locality: "Населённый пункт",
-  object: "Объект",
-  district: "Округ",
-  area: "Район",
-  street: "Улица",
-  house: "Дом",
-  building: "Корпус",
-  structure: "Строение",
-  apartment: "Квартира",
-  entrance: "Подъезд",
-  floor: "Этаж",
-  doorCode: "Код",
-  classificationDescription: "Уточнение типа",
-  callerStatus: "Статус заявителя",
-  callerGender: "Пол",
-  callerAge: "Возраст",
-  foreignLanguage: "Иностранный язык",
-  refusedAmbulance: "Отказ от скорой",
-  blocked: "Заблокированные",
-  clarifications: "Уточняющие признаки",
-  has_victims: "Есть пострадавшие",
-};
-function DataFields({ data }: { data: CardData }) {
-  const flatten = (value: unknown, prefix: string): [string, string][] => {
-    if (value === null || value === undefined || value === "") return [];
-    if (Array.isArray(value)) return [[prefix, value.map(String).join(", ")]];
-    if (typeof value === "object")
-      return Object.entries(value).flatMap(([k, v]) =>
-        flatten(v, [prefix, fieldLabels[k] ?? k].filter(Boolean).join(" / ")),
-      );
-    return [
-      [
-        prefix,
-        typeof value === "boolean" ? (value ? "Да" : "Нет") : String(value),
-      ],
-    ];
-  };
-  return (
-    <dl>
-      {flatten(data, "").map(([label, value]) => (
-        <div key={label}>
-          <dt>{label}</dt>
-          <dd>{value}</dd>
-        </div>
-      ))}
-    </dl>
   );
 }

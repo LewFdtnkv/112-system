@@ -3,6 +3,10 @@ import { isHTTPError, isNetworkError, isTimeoutError } from "ky";
 import type { ApiErrorInfo } from "./types";
 
 const messages: Record<string, string> = {
+  "You cannot disable or demote your own account":
+    "Нельзя отключить собственный аккаунт или изменить его роль. Это может сделать другой администратор.",
+  "The last active administrator must be retained":
+    "Нельзя отключить или сменить роль последнего активного администратора.",
   "Card revision is stale; reload the card":
     "Карточка изменена в другой вкладке. Ваш ввод сохранён в форме. Закройте её и откройте актуальную карточку перед повторным сохранением.",
   "Evaluation revision is stale; reload the result":

@@ -2,12 +2,8 @@ import { useState } from "react";
 import {
   Alert,
   Button,
-  Checkbox,
   Dialog,
-  DialogActions,
-  DialogContent,
   DialogTitle,
-  FormControlLabel,
   MenuItem,
   Stack,
   Table,
@@ -29,13 +25,14 @@ import { getApiError } from "@/shared/api";
 import { useDebounced } from "@/shared/lib/useDebounced";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { PageControls, QueryState } from "@/shared/ui/QueryState";
+import { UserDetailsDialog } from "./UserDetailsDialog";
+import { roleLabels, accountDate } from "../model/accountDisplay";
 const blank: UserCreate = {
   username: "",
   initial_password: "",
   first_name: "",
   last_name: "",
-  is_admin: false,
-  is_teacher: false,
+  role: "student",
 };
 export const UsersPage = () => {
   const [search, setSearch] = useState("");
@@ -126,9 +123,10 @@ export const UsersPage = () => {
                 <TableHead>
                   <TableRow>
                     <TableCell>Имя / логин</TableCell>
-                    <TableCell>Права</TableCell>
+                    <TableCell>Роль</TableCell>
                     <TableCell>Группы</TableCell>
                     <TableCell>Состояние</TableCell>
+                    <TableCell>Последний вход</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -143,13 +141,15 @@ export const UsersPage = () => {
                         </Button>
                       </TableCell>
                       <TableCell>
-                        {[
-                          user.is_teacher && "Преподаватель",
-                          user.is_admin && "Администратор",
-                          !user.is_teacher && !user.is_admin && "Ученик",
-                        ]
-                          .filter(Boolean)
-                          .join(", ")}
+                        {
+                          roleLabels[
+                            user.is_admin
+                              ? "admin"
+                              : user.is_teacher
+                                ? "teacher"
+                                : "student"
+                          ]
+                        }
                       </TableCell>
                       <TableCell>
                         {user.groups.join(", ") || "Не назначена"}
@@ -160,6 +160,11 @@ export const UsersPage = () => {
                           : user.must_change_password
                             ? "Требуется смена пароля"
                             : "Активен"}
+                      </TableCell>
+                      <TableCell>
+                        {user.last_login_at
+                          ? accountDate(user.last_login_at)
+                          : "Ещё не входил"}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -174,17 +179,12 @@ export const UsersPage = () => {
           </>
         )}
       </QueryState>
-      <Dialog open={!!selected} onClose={() => setSelected(null)}>
-        <DialogTitle>{selected && userName(selected)}</DialogTitle>
-        <DialogContent>
-          <p>Логин: {selected?.username}</p>
-          <p>Email: {selected?.email || "Не указан"}</p>
-          <p>Группы: {selected?.groups.join(", ") || "Не назначена"}</p>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setSelected(null)}>Закрыть</Button>
-        </DialogActions>
-      </Dialog>
+      {selected && (
+        <UserDetailsDialog
+          userId={selected.id}
+          onClose={() => setSelected(null)}
+        />
+      )}
       <Dialog
         open={creating}
         onClose={() => {
@@ -245,24 +245,18 @@ export const UsersPage = () => {
             value={form.email ?? ""}
             onChange={(e) => update("email", e.target.value)}
           />
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={form.is_teacher}
-                onChange={(e) => update("is_teacher", e.target.checked)}
-              />
-            }
-            label="Преподаватель"
-          />
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={form.is_admin}
-                onChange={(e) => update("is_admin", e.target.checked)}
-              />
-            }
-            label="Администратор"
-          />
+          <TextField
+            select
+            label="Роль пользователя"
+            value={form.role}
+            onChange={(e) => update("role", e.target.value)}
+          >
+            {Object.entries(roleLabels).map(([value, label]) => (
+              <MenuItem key={value} value={value}>
+                {label}
+              </MenuItem>
+            ))}
+          </TextField>
           {create.error && (
             <Alert severity="error">{getApiError(create.error).message}</Alert>
           )}

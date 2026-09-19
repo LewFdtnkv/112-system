@@ -16,6 +16,22 @@ export interface UserItem {
   is_teacher: boolean;
   must_change_password: boolean;
   groups: string[];
+  last_login_at?: string | null;
+}
+export type UserRole = "student" | "teacher" | "admin";
+export interface UserDetail extends Omit<UserItem, "groups"> {
+  role: UserRole;
+  created_at: string;
+  updated_at: string;
+  password_changed_at: string | null;
+}
+export interface UserUpdate {
+  first_name: string;
+  last_name: string;
+  middle_name: string | null;
+  email: string | null;
+  role: UserRole;
+  is_active: boolean;
 }
 export interface UserCreate {
   username: string;
@@ -24,8 +40,7 @@ export interface UserCreate {
   last_name: string;
   middle_name?: string;
   email?: string;
-  is_admin: boolean;
-  is_teacher: boolean;
+  role: UserRole;
 }
 export interface GroupItem {
   id: string;
@@ -206,10 +221,12 @@ export interface Grade {
   created_at: string;
 }
 export interface WorkReview {
+  automatic_check: Omit<AutomaticCheck, "fields">;
   lesson_id: string;
   student_id: string;
   submitted: boolean;
   assignments: {
+    automatic_check: AutomaticCheck | null;
     assignment_id: string;
     position: number;
     source_classifier_entry?: ClassifierEntry | null;
@@ -222,6 +239,24 @@ export interface WorkReview {
     attempt: Attempt | null;
   }[];
   evaluations: Grade[];
+}
+export interface AutomaticCheck {
+  method: string;
+  fields: {
+    field: string;
+    label: string;
+    expected: string;
+    actual: string;
+    status: "matched" | "missing" | "different" | "needs_review";
+    scored: boolean;
+  }[];
+  matched: number;
+  missing: number;
+  different: number;
+  needs_review: number;
+  earned_points: number;
+  possible_points: number;
+  score_percent: number | null;
 }
 export interface GradeInput {
   request_id: string;

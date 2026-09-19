@@ -23,6 +23,8 @@ import type {
   StudentLesson,
   UserCreate,
   UserItem,
+  UserDetail,
+  UserUpdate,
   WorkReview,
 } from "../model/types";
 export type Params = Record<string, string | number | boolean>;
@@ -34,7 +36,11 @@ const post = <T>(path: string, json: unknown) =>
 export const trainingApi = {
   users: (params: Params, signal?: AbortSignal) =>
     get<Page<UserItem>>("views/users", params, signal),
-  createUser: (body: UserCreate) => post<UserItem>("users", body),
+  createUser: (body: UserCreate) => post<UserDetail>("users", body),
+  user: (userId: string, signal?: AbortSignal) =>
+    get<UserDetail>(`users/${id(userId)}`, {}, signal),
+  updateUser: (userId: string, body: UserUpdate) =>
+    backendApi.patch(`users/${id(userId)}`, { json: body }).json<UserDetail>(),
   groups: (params: Params, signal?: AbortSignal) =>
     get<Page<GroupItem>>("views/groups", params, signal),
   createGroup: (name: string) => post<GroupItem>("groups", { name }),

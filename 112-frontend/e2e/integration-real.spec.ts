@@ -70,11 +70,43 @@ test("real API: authoring, operator drafts, revision conflict, notification and 
     await dialog.getByLabel("Стартовый пароль").fill(initial);
     await dialog.getByLabel("Фамилия", { exact: true }).fill(lastName + suffix);
     await dialog.getByLabel("Имя", { exact: true }).fill("Тест");
-    if (isTeacher)
-      await dialog.getByLabel("Преподаватель", { exact: true }).check();
+    if (isTeacher) {
+      await dialog.getByRole("combobox", { name: "Роль пользователя" }).click();
+      await page
+        .getByRole("option", { name: "Преподаватель", exact: true })
+        .click();
+    }
     await dialog.getByRole("button", { name: "Создать аккаунт" }).click();
     await expect(dialog).not.toBeVisible();
   }
+  // Administration details use the real profile and revoke access on disable.
+  await page
+    .getByRole("button", { name: new RegExp(`\\(${student}\\)`) })
+    .click();
+  let account = page.getByRole("dialog");
+  await expect(
+    account.getByText("Последний вход: Ещё не входил"),
+  ).toBeVisible();
+  await account.getByLabel("Аккаунт активен").uncheck();
+  await account.getByRole("button", { name: "Сохранить изменения" }).click();
+  await expect(account).not.toBeVisible();
+  await expect(
+    page.getByRole("row").filter({ hasText: student }),
+  ).toContainText("Отключён");
+  await page
+    .getByRole("button", { name: new RegExp(`\\(${student}\\)`) })
+    .click();
+  account = page.getByRole("dialog");
+  await account.getByLabel("Аккаунт активен").check();
+  await account
+    .getByLabel("Email", { exact: true })
+    .fill("student@example.test");
+  await account.screenshot({
+    path: info.outputPath("admin-user-details.png"),
+    animations: "disabled",
+  });
+  await account.getByRole("button", { name: "Сохранить изменения" }).click();
+  await expect(account).not.toBeVisible();
   await page.goto("/catalogs");
   await page
     .getByRole("textbox", { name: "Код службы", exact: true })
@@ -140,13 +172,38 @@ test("real API: authoring, operator drafts, revision conflict, notification and 
     .getByLabel("Сообщение заявителя для ученика")
     .fill("На Учебной улице, дом 7, дым из окна. Сообщает Иван Петров.");
   await page.getByLabel("Эталонный адрес").fill("Учебная улица, д. 7");
+  await page.getByLabel("Улица", { exact: true }).fill("Учебная улица");
+  await page.getByLabel("Дом", { exact: true }).fill("7");
+  await page.getByLabel("ФИО заявителя", { exact: true }).fill("Иван Петров");
+  await expect(page.getByLabel("Эталонный адрес")).toHaveValue(
+    "Учебная улица, д. 7",
+  );
   await page.getByLabel("Эталонное сообщение в карточке").fill("Дым из окна");
   await select(page, "Опубликованная версия ЕКП", classifier);
   await select(page, "Тип происшествия (ЕКП)", "Учебный пожар");
+  await page.getByLabel("Улица", { exact: true }).scrollIntoViewIfNeeded();
+  await page.getByRole("dialog").screenshot({
+    path: info.outputPath("template-address.png"),
+    animations: "disabled",
+  });
   await page
     .getByRole("button", { name: "Сохранить карточку", exact: true })
     .click();
   await expect(page.getByRole("dialog")).not.toBeVisible();
+  await page
+    .getByRole("button", { name: `Пожар ${suffix}`, exact: true })
+    .click();
+  await page.getByText("Все поля эталона", { exact: true }).click();
+  await expect(page.getByRole("dialog").locator("dl")).toContainText(
+    "Сведения об адресе / Улица",
+  );
+  await page
+    .getByRole("dialog")
+    .screenshot({
+      path: info.outputPath("template-details.png"),
+      animations: "disabled",
+    });
+  await page.getByRole("button", { name: "Закрыть", exact: true }).click();
   await page.goto("/scenarios/new");
   await page.getByLabel("Название сценария").fill(`Сценарий ${suffix}`);
   await page.getByLabel("Категория", { exact: true }).fill("Пожар");
@@ -286,6 +343,30 @@ test("real API: authoring, operator drafts, revision conflict, notification and 
   await login(page, teacher, final);
   await expect(page).toHaveURL(/teacher$/);
   await page.goto(`/results/${lessonId}?student=${me.id}`);
+  await expect(
+    page.getByRole("heading", {
+      name: "Предварительная автоматическая проверка",
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Предварительный балл: 80 / 100 (8 из 10 полей)", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  const checks = page.getByRole("table", {
+    name: "Автоматическая проверка полей",
+  });
+  await expect(checks).toHaveCount(2);
+  await expect(
+    checks.first().getByRole("row").filter({ hasText: "ФИО заявителя" }),
+  ).toContainText("Расхождение");
+  await expect(
+    checks.nth(1).getByRole("row").filter({ hasText: "ФИО заявителя" }),
+  ).toContainText("Не заполнено");
+  await checks.first().screenshot({
+    path: info.outputPath("automatic-check-fields.png"),
+    animations: "disabled",
+  });
   await page.getByRole("spinbutton", { name: "Балл", exact: true }).fill("85");
   await page
     .getByLabel("Комментарий преподавателя")

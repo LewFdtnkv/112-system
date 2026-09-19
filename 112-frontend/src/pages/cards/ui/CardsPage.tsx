@@ -16,7 +16,9 @@ import {
   TextField,
 } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { trainingApi } from "@/entities/training";
+import { trainingApi, CardDataFields } from "@/entities/training";
+import { emptyIncidentAddress, formatAddress } from "@/entities/incident-card";
+import { TemplateAddress } from "./TemplateAddress";
 import { getApiError } from "@/shared/api";
 import { useDebounced } from "@/shared/lib/useDebounced";
 import { PageHeader } from "@/shared/ui/PageHeader";
@@ -128,6 +130,10 @@ export const CardsPage = () => {
                   <b>Заявитель:</b> {detail.data.data.caller_name || "—"}{" "}
                   {detail.data.data.caller_phone}
                 </p>
+                <details>
+                  <summary>Все поля эталона</summary>
+                  <CardDataFields data={detail.data.data} />
+                </details>
               </Stack>
             )}
           </QueryState>
@@ -138,6 +144,9 @@ export const CardsPage = () => {
   );
 };
 function CardCreate({ onClose }: { onClose: () => void }) {
+  const [address, setAddress] = useState({ ...emptyIncidentAddress });
+  const [victims, setVictims] = useState("");
+  const structuredAddress = formatAddress(address);
   const client = useQueryClient();
   const [version, setVersion] = useState<SelectOption | null>(null);
   const [entry, setEntry] = useState<SelectOption | null>(null);
@@ -172,7 +181,11 @@ function CardCreate({ onClose }: { onClose: () => void }) {
         classifier_entry_id: entry!.id,
         recipient_service_ids: recipients,
         data: {
-          address_text: form.address_text,
+          address_text: structuredAddress || form.address_text,
+          address_details: Object.fromEntries(
+            Object.entries(address).filter(([, value]) => value?.trim()),
+          ),
+          features: victims === "" ? {} : { victimsCount: Number(victims) },
           description: form.description,
           caller_name: form.caller_name,
           caller_phone: form.caller_phone,
@@ -222,10 +235,31 @@ function CardCreate({ onClose }: { onClose: () => void }) {
             key,
           )}
           minRows={key === "caller_message" ? 3 : 1}
-          value={form[key as keyof typeof form]}
+          value={
+            key === "address_text"
+              ? structuredAddress || form.address_text
+              : form[key as keyof typeof form]
+          }
+          slotProps={{
+            input: { readOnly: key === "address_text" && !!structuredAddress },
+          }}
+          helperText={
+            key === "address_text" && structuredAddress
+              ? "Собран из отдельных полей адреса ниже."
+              : undefined
+          }
           onChange={(e) => setForm({ ...form, [key]: e.target.value })}
         />
       ))}
+      <TemplateAddress value={address} onChange={setAddress} />
+      <TextField
+        label="Количество пострадавших в эталоне"
+        type="number"
+        value={victims}
+        onChange={(e) => setVictims(e.target.value)}
+        slotProps={{ htmlInput: { min: 0, max: 100000, step: 1 } }}
+        helperText="Оставьте пустым, если в условии не указано. Ноль означает, что пострадавших нет."
+      />
       <ServerSelect
         label="Опубликованная версия ЕКП"
         queryKey={["classifier-options"]}

@@ -189,9 +189,11 @@ export const emptyIncidentAddress: IncidentAddress = {
 
 export const formatAddress = (address: IncidentAddress) => {
   const parts = [
+    address.locality,
     address.street,
     address.house && `д. ${address.house}`,
     address.building && `корп. ${address.building}`,
+    address.structure && `стр. ${address.structure}`,
     address.apartment && `кв./оф. ${address.apartment}`,
   ].filter(Boolean);
 

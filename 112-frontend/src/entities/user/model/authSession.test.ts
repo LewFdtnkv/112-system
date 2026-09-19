@@ -57,14 +57,13 @@ it("requires a password change without requesting a protected profile", async ()
   expect(useAuthStore.getState().status).toBe("password-required");
   expect(fetch).toHaveBeenCalledTimes(1);
 });
-it("preserves independent teacher and administrator permissions", () => {
+it("rejects combined roles and preserves exclusive permissions", () => {
   expect(sessionFromProfile({ ...testProfile, is_admin: true }).roles).toEqual([
     "admin",
   ]);
-  expect(
-    sessionFromProfile({ ...testProfile, is_admin: true, is_teacher: true })
-      .roles,
-  ).toEqual(["admin", "teacher"]);
+  expect(() =>
+    sessionFromProfile({ ...testProfile, is_admin: true, is_teacher: true }),
+  ).toThrow("несовместимые роли");
 });
 it("refreshes concurrent expired requests only once and retries with the rotated token", async () => {
   saveTokens(testPair);

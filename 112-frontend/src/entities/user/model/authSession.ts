@@ -12,19 +12,25 @@ import {
 } from "./authStore";
 import type { UserProfile } from "./types";
 
-export const sessionFromProfile = (user: UserProfile) => ({
-  userId: user.id,
-  username: user.username,
-  name:
-    [user.last_name, user.first_name, user.middle_name]
-      .filter(Boolean)
-      .join(" ") || user.username,
-  roles: [
-    ...(user.is_admin ? ["admin"] : []),
-    ...(user.is_teacher ? ["teacher"] : []),
-    ...(!user.is_admin && !user.is_teacher ? ["student"] : []),
-  ],
-});
+export const sessionFromProfile = (user: UserProfile) => {
+  if (user.is_admin && user.is_teacher)
+    throw new Error(
+      "Учётная запись содержит несовместимые роли. Обратитесь к администратору.",
+    );
+  return {
+    userId: user.id,
+    username: user.username,
+    name:
+      [user.last_name, user.first_name, user.middle_name]
+        .filter(Boolean)
+        .join(" ") || user.username,
+    roles: [
+      ...(user.is_admin ? ["admin"] : []),
+      ...(user.is_teacher ? ["teacher"] : []),
+      ...(!user.is_admin && !user.is_teacher ? ["student"] : []),
+    ],
+  };
+};
 let refreshing: Promise<void> | undefined;
 let refreshingGeneration = -1;
 export const refreshSession = (): Promise<void> => {
