@@ -1,5 +1,5 @@
 import { test, expect } from "./auth-fixture";
-test("submitted work waits for a teacher and has no automatic score", async ({
+test("legacy submitted work without a persisted grade shows a fallback", async ({
   page,
 }) => {
   page.on("dialog", (d) => void d.accept());
@@ -19,7 +19,7 @@ test("submitted work waits for a teacher and has no automatic score", async ({
   await page.getByRole("button", { name: "Закрыть", exact: true }).click();
   await page.goto("/results/lesson");
   await expect(page.getByRole("alert")).toContainText(
-    "Ожидает проверки преподавателем",
+    "Автоматическая оценка недоступна",
   );
   await expect(page.getByText(/Итог:/)).toHaveCount(0);
   await page.goto("/analytics");

@@ -12,6 +12,7 @@ import {
   attemptCard,
   cardData,
   journalCard,
+  useAttemptAudit,
 } from "@/features/operator-workspace";
 import { getApiError } from "@/shared/api";
 import { getTrainingResultPath, routePaths } from "@/shared/config/routes";
@@ -105,7 +106,7 @@ function Workspace({ lesson }: { lesson: StudentLesson }) {
             </Button>
           }
         >
-          Все карточки отправлены на проверку.
+          Все карточки сданы. Автоматическая оценка доступна в результатах.
         </Alert>
       )}
       <IncidentFeed
@@ -158,6 +159,11 @@ function AttemptEditor({
   const debounced = useDebounced(search);
   const [now, setNow] = useState(() => Date.now());
   const completed = attempt.status === "completed";
+  const audit = useAttemptAudit(
+    attempt.id,
+    attemptCard(initial).fields,
+    !completed,
+  );
   useEffect(() => {
     if (completed) return;
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
@@ -184,6 +190,8 @@ function AttemptEditor({
     enabled: !!selected && !completed,
   });
   const save = async (fields: IncidentCardFields) => {
+    audit.observe(fields);
+    await audit.flush();
     const updated = await trainingApi.saveDraft(
       attempt.id,
       attempt.card.revision,
@@ -211,6 +219,12 @@ function AttemptEditor({
   const error = entries.error || recipients.error;
   return (
     <>
+      {audit.failed && (
+        <Alert severity="warning">
+          Часть наблюдений за вводом пока не отправлена. Сохранение карточки и
+          оповещение фиксируются сервером независимо от них.
+        </Alert>
+      )}
       <IncidentCardDialog
         card={attemptCard(attempt)}
         log={[]}
@@ -229,6 +243,7 @@ function AttemptEditor({
         )}
         normSeconds={attempt.norm_seconds}
         remote={{
+          onFieldsChange: audit.observe,
           categories: (entries.data ?? []).map((e) => ({
             id: e.id,
             name: `${e.code} — ${e.name}`,

@@ -19,6 +19,7 @@ import { getApiError } from "@/shared/api";
 import { getStudentTrainingWorkspacePath } from "@/shared/config/routes";
 import { QueryState } from "@/shared/ui/QueryState";
 import { AutomaticCheckView } from "./AutomaticCheckView";
+import { AuditTrail } from "./AuditTrail";
 export function StudentResult({ lessonId }: { lessonId: string }) {
   const grade = useQuery({
     queryKey: ["evaluation", lessonId],
@@ -43,7 +44,7 @@ export function StudentResult({ lessonId }: { lessonId: string }) {
       ) : (
         <Alert severity="info">
           {lesson.data?.work_status === "submitted"
-            ? "Ожидает проверки преподавателем"
+            ? "Автоматическая оценка недоступна для этой работы. Обратитесь к преподавателю"
             : "Работа ещё не сдана"}
           . Оценка ИИ пока не подключена.
         </Alert>
@@ -58,9 +59,27 @@ function GradeView({ grade }: { grade: Grade }) {
   return (
     <Paper sx={{ p: 2 }}>
       <Typography variant="h6" component="h2">
-        Оценка преподавателя: {grade.score} / {grade.max_score}
+        {grade.method === "rules"
+          ? "Автоматическая оценка"
+          : "Оценка преподавателя"}
+        : {grade.score} / {grade.max_score}
       </Typography>
       <p style={{ whiteSpace: "pre-wrap" }}>{grade.comment}</p>
+      {grade.assessment_details && (
+        <Stack spacing={1}>
+          {grade.assessment_details.criteria.map((criterion) => (
+            <Typography key={criterion.code} variant="body2">
+              {criterion.label}: {criterion.score} / {criterion.max_score}
+            </Typography>
+          ))}
+          <Alert severity="info">
+            Оценены формальные критерии{" "}
+            {grade.assessment_details.evaluated_cards} карточек. Смысловых полей
+            вне оценки: {grade.assessment_details.unverified_fields}. ИИ пока не
+            подключён; итог можно пересмотреть у преподавателя.
+          </Alert>
+        </Stack>
+      )}
       <small>
         Редакция {grade.revision} ·{" "}
         {new Date(grade.created_at).toLocaleString("ru-RU", {
@@ -94,17 +113,38 @@ export function LessonReview({
   );
 }
 function Review({ data, reload }: { data: WorkReview; reload: () => void }) {
+  const calculate = useMutation({
+    mutationFn: () =>
+      trainingApi.automaticGrade(data.lesson_id, data.student_id),
+    onSuccess: reload,
+  });
   const latest = data.evaluations.at(-1);
   return (
     <Stack spacing={2}>
-      {data.automatic_check && (
-        <Paper sx={{ p: 2 }}>
-          <AutomaticCheckView
-            check={data.automatic_check}
-            summary
-            submitted={data.submitted}
-          />
-        </Paper>
+      {latest && <GradeView grade={latest} />}
+      {!latest && data.submitted && (
+        <Stack spacing={1}>
+          <Alert severity="info">
+            Работа завершена до включения автоматического оценивания.
+          </Alert>
+          <Button
+            disabled={calculate.isPending}
+            onClick={() => calculate.mutate()}
+          >
+            Рассчитать автоматическую оценку
+          </Button>
+          {calculate.error && (
+            <Alert severity="error">
+              {getApiError(calculate.error).message}
+            </Alert>
+          )}
+        </Stack>
+      )}
+      {!data.submitted && (
+        <Alert severity="info">
+          Работа ещё не сдана полностью. Итог будет рассчитан автоматически
+          после последней карточки.
+        </Alert>
       )}
       {data.assignments.map((row) => (
         <Paper key={row.assignment_id} sx={{ p: 2 }}>
@@ -162,10 +202,29 @@ function Review({ data, reload }: { data: WorkReview; reload: () => void }) {
           {row.automatic_check && (
             <AutomaticCheckView check={row.automatic_check} />
           )}
+          {row.attempt && (
+            <AuditTrail
+              lessonId={data.lesson_id}
+              studentId={data.student_id}
+              attemptId={row.attempt.id}
+            />
+          )}
         </Paper>
       ))}
-      {latest && <GradeView grade={latest} />}
-      <GradeForm key={latest?.revision ?? 0} data={data} reload={reload} />
+      {data.evaluations.length > 1 && (
+        <details>
+          <summary>История оценок ({data.evaluations.length})</summary>
+          <Stack spacing={1}>
+            {data.evaluations.slice(0, -1).map((grade) => (
+              <GradeView key={grade.id} grade={grade} />
+            ))}
+          </Stack>
+        </details>
+      )}
+      <details>
+        <summary>Пересмотр преподавателем</summary>
+        <GradeForm key={latest?.revision ?? 0} data={data} reload={reload} />
+      </details>
     </Stack>
   );
 }
@@ -191,6 +250,7 @@ function GradeForm({ data, reload }: { data: WorkReview; reload: () => void }) {
       });
       void client.invalidateQueries({ queryKey: ["lessons"] });
       void client.invalidateQueries({ queryKey: ["analytics"] });
+      void client.invalidateQueries({ queryKey: ["attempt-audit"] });
       void client.invalidateQueries({
         queryKey: ["evaluation", data.lesson_id],
       });

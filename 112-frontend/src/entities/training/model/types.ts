@@ -102,6 +102,7 @@ export type CardListItem = Pick<
 >;
 export type CardTemplateInput = Omit<CardTemplate, "id">;
 export interface ScenarioInput {
+  assessment_policy?: AssessmentPolicy;
   title: string;
   category: string;
   difficulty: "basic" | "intermediate" | "advanced";
@@ -133,6 +134,7 @@ export interface ScenarioDetail extends Omit<ScenarioItem, "card_count"> {
   }[];
 }
 export interface LessonRow {
+  evaluation_method?: "rules" | "teacher" | null;
   lesson_id: string;
   title: string;
   student_id: string;
@@ -213,12 +215,59 @@ export interface Attempt {
   recipient_error: string | null;
 }
 export interface Grade {
+  method?: "rules" | "teacher";
+  assessment_details?: {
+    policy_version: string;
+    scope: "formal_fields";
+    criteria: {
+      code: string;
+      label: string;
+      score: number;
+      max_score: number;
+      explanation: string;
+    }[];
+    unverified_fields: number;
+    evaluated_cards: number;
+  } | null;
   id: string;
   score: string;
   max_score: string;
   comment: string;
   revision: number;
   created_at: string;
+}
+
+export interface AssessmentPolicy {
+  version: "weighted-fields-v1";
+  weights: {
+    classification: number;
+    notification: number;
+    address: number;
+    caller: number;
+    victims: number;
+  };
+}
+export interface ClientObservation {
+  command_id: string;
+  kind: "ui.card_opened" | "ui.card_closed" | "ui.field_changed";
+  client_occurred_at: string;
+  field?: string;
+  value?: string | number | boolean | null;
+}
+export interface AuditEvent {
+  id: string;
+  attempt_id: string;
+  sequence: number;
+  kind: string;
+  actor: string;
+  occurred_at: string;
+  client_occurred_at: string | null;
+  payload: Record<string, unknown>;
+}
+export interface AuditPage {
+  items: AuditEvent[];
+  next_sequence: number | null;
+  last_sequence: number;
 }
 export interface WorkReview {
   automatic_check: Omit<AutomaticCheck, "fields">;

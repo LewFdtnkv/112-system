@@ -20,6 +20,7 @@ import { routePaths } from "@/shared/config/routes";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { QueryState } from "@/shared/ui/QueryState";
 import { ServerSelect, type SelectOption } from "@/shared/ui/ServerSelect";
+import { AssessmentPolicyFields } from "./AssessmentPolicyFields";
 export const ScenarioEditorPage = () => {
   const { scenarioId } = useParams();
   const query = useQuery({
@@ -51,6 +52,16 @@ function Editor({ initial }: { initial?: ScenarioDetail }) {
   const client = useQueryClient();
   const [form, setForm] = useState<ScenarioInput>(() => ({
     title: initial?.title ?? "",
+    assessment_policy: initial?.assessment_policy ?? {
+      version: "weighted-fields-v1",
+      weights: {
+        classification: 25,
+        notification: 25,
+        address: 30,
+        caller: 10,
+        victims: 10,
+      },
+    },
     category: initial?.category ?? "",
     difficulty: initial?.difficulty ?? "basic",
     duration_minutes: initial?.duration_minutes ?? 15,
@@ -261,6 +272,12 @@ function Editor({ initial }: { initial?: ScenarioDetail }) {
         <MenuItem value="draft">Черновик</MenuItem>
         <MenuItem value="published">Опубликован</MenuItem>
       </TextField>
+      <AssessmentPolicyFields
+        value={form.assessment_policy!}
+        onChange={(assessment_policy) =>
+          setForm({ ...form, assessment_policy })
+        }
+      />
       {save.error && (
         <Alert severity="error">{getApiError(save.error).message}</Alert>
       )}

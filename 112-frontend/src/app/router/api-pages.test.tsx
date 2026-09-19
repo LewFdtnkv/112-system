@@ -52,7 +52,7 @@ it("shows an empty real student account without fixture lessons", async () => {
     expect.any(AbortSignal),
   );
 });
-it("shows waiting for manual review without generating a score", async () => {
+it("shows a fallback for legacy work without a persisted grade", async () => {
   vi.spyOn(trainingApi, "evaluation").mockResolvedValue(null);
   vi.spyOn(trainingApi, "studentLesson").mockResolvedValue({
     id: "lesson",
@@ -65,7 +65,7 @@ it("shows waiting for manual review without generating a score", async () => {
   });
   renderPage("/results/lesson", "student");
   expect(await screen.findByRole("alert")).toHaveTextContent(
-    "Ожидает проверки преподавателем",
+    "Автоматическая оценка недоступна",
   );
   expect(screen.queryByText(/Итог:/)).not.toBeInTheDocument();
 });

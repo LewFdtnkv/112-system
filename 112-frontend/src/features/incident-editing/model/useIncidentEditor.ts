@@ -23,6 +23,7 @@ export interface RemoteEditor {
   message?: string;
   searching: boolean;
   error?: string;
+  onFieldsChange?: (fields: IncidentCardFields) => void;
 }
 export interface IncidentEditorOptions {
   remote?: RemoteEditor;
@@ -63,6 +64,10 @@ export function useIncidentEditor({
     JSON.stringify(card.fields),
   );
   const tagGroups = remote ? [] : getIncidentTagGroups(fields.categoryId);
+  const onFieldsChange = remote?.onFieldsChange;
+  useEffect(() => {
+    if (!isSubmitted) onFieldsChange?.(fields);
+  }, [fields, isSubmitted, onFieldsChange]);
 
   /** Черновик переживает перезагрузку и кратковременный обрыв связи. */
   useEffect(() => {

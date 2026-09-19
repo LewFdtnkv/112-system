@@ -26,6 +26,8 @@ import type {
   UserDetail,
   UserUpdate,
   WorkReview,
+  AuditPage,
+  ClientObservation,
 } from "../model/types";
 export type Params = Record<string, string | number | boolean>;
 const id = encodeURIComponent;
@@ -34,6 +36,31 @@ const get = <T>(path: string, params: Params = {}, signal?: AbortSignal) =>
 const post = <T>(path: string, json: unknown) =>
   backendApi.post(path, { json }).json<T>();
 export const trainingApi = {
+  automaticGrade: (lessonId: string, studentId: string) =>
+    post<Grade | null>(
+      `lessons/${id(lessonId)}/students/${id(studentId)}/automatic-evaluation`,
+      {},
+    ),
+  observations: (attemptId: string, events: ClientObservation[]) =>
+    backendApi
+      .post(`student/attempts/${id(attemptId)}/observations`, {
+        json: { events },
+        timeout: 5000,
+        retry: 0,
+      })
+      .json<{ accepted: number }>(),
+  audit: (
+    lessonId: string,
+    studentId: string,
+    attemptId: string,
+    after: number,
+    signal?: AbortSignal,
+  ) =>
+    get<AuditPage>(
+      `lessons/${id(lessonId)}/students/${id(studentId)}/attempts/${id(attemptId)}/events`,
+      { after, limit: 30 },
+      signal,
+    ),
   users: (params: Params, signal?: AbortSignal) =>
     get<Page<UserItem>>("views/users", params, signal),
   createUser: (body: UserCreate) => post<UserDetail>("users", body),

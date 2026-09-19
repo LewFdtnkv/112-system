@@ -155,9 +155,16 @@ export function LessonList({
                               {row.score !== null
                                 ? `${row.score} / ${row.max_score}`
                                 : row.work_status === "submitted"
-                                  ? "Ожидает проверки"
+                                  ? "Нет итоговой оценки"
                                   : "Открыть работу"}
                             </Link>
+                            {row.score !== null && (
+                              <small>
+                                {row.evaluation_method === "rules"
+                                  ? "Автоматически"
+                                  : "Преподаватель"}
+                              </small>
+                            )}
                           </TableCell>
                         </TableRow>
                       );

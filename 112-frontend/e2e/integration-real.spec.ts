@@ -197,12 +197,10 @@ test("real API: authoring, operator drafts, revision conflict, notification and 
   await expect(page.getByRole("dialog").locator("dl")).toContainText(
     "Сведения об адресе / Улица",
   );
-  await page
-    .getByRole("dialog")
-    .screenshot({
-      path: info.outputPath("template-details.png"),
-      animations: "disabled",
-    });
+  await page.getByRole("dialog").screenshot({
+    path: info.outputPath("template-details.png"),
+    animations: "disabled",
+  });
   await page.getByRole("button", { name: "Закрыть", exact: true }).click();
   await page.goto("/scenarios/new");
   await page.getByLabel("Название сценария").fill(`Сценарий ${suffix}`);
@@ -213,6 +211,16 @@ test("real API: authoring, operator drafts, revision conflict, notification and 
   await page.getByRole("button", { name: "Добавить карточку" }).click();
   await page.getByLabel("Статус публикации").click();
   await page.getByRole("option", { name: "Опубликован", exact: true }).click();
+  await page
+    .getByText("Автоматическая оценка — веса критериев", { exact: true })
+    .click();
+  await expect(
+    page.getByRole("spinbutton", { name: /Вес: Адрес/ }),
+  ).toHaveValue("30");
+  await page.screenshot({
+    path: info.outputPath("scenario-assessment-policy.png"),
+    fullPage: true,
+  });
   await page.getByRole("button", { name: "Сохранить сценарий" }).click();
   await expect(page).toHaveURL(/scenarios$/);
   await page.goto("/training");
@@ -337,7 +345,15 @@ test("real API: authoring, operator drafts, revision conflict, notification and 
   ).toBeVisible();
   await card.getByRole("button", { name: "Закрыть", exact: true }).click();
   await page.goto(`/results/${lessonId}`);
-  await expect(page.getByRole("alert")).toContainText("Ожидает проверки");
+  await expect(
+    page.getByRole("heading", {
+      name: "Автоматическая оценка: 88.89 / 100.00",
+    }),
+  ).toBeVisible();
+  await page.screenshot({
+    path: info.outputPath("student-automatic-result.png"),
+    fullPage: true,
+  });
   const me = await (await request.get("/api/v1/users/me", { headers })).json();
   await page.getByRole("button", { name: "Выйти", exact: true }).click();
   await login(page, teacher, final);
@@ -345,12 +361,7 @@ test("real API: authoring, operator drafts, revision conflict, notification and 
   await page.goto(`/results/${lessonId}?student=${me.id}`);
   await expect(
     page.getByRole("heading", {
-      name: "Предварительная автоматическая проверка",
-    }),
-  ).toBeVisible();
-  await expect(
-    page.getByText("Предварительный балл: 80 / 100 (8 из 10 полей)", {
-      exact: true,
+      name: "Автоматическая оценка: 88.89 / 100.00",
     }),
   ).toBeVisible();
   const checks = page.getByRole("table", {
@@ -367,6 +378,18 @@ test("real API: authoring, operator drafts, revision conflict, notification and 
     path: info.outputPath("automatic-check-fields.png"),
     animations: "disabled",
   });
+  await page
+    .getByText("Аудит действий ученика", { exact: true })
+    .first()
+    .click();
+  await expect(
+    page.getByRole("table", { name: "Аудит действий", exact: true }),
+  ).toContainText("Действие отклонено");
+  await page.screenshot({
+    path: info.outputPath("teacher-automatic-audit.png"),
+    fullPage: true,
+  });
+  await page.getByText("Пересмотр преподавателем", { exact: true }).click();
   await page.getByRole("spinbutton", { name: "Балл", exact: true }).fill("85");
   await page
     .getByLabel("Комментарий преподавателя")
