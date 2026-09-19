@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./auth-fixture";
 
 // Screenshots are review artifacts, not unverified pixel baselines.
 for (const viewport of [
@@ -11,7 +11,7 @@ for (const viewport of [
   }, testInfo) => {
     await page.setViewportSize(viewport);
     await page.goto("/login");
-    await page.getByLabel("Электронная почта").fill("student1@example.test");
+    await page.getByLabel("Логин").fill("student1");
     await page.getByLabel("Пароль").fill("demo112");
     await page.screenshot({
       path: testInfo.outputPath("login.png"),
@@ -118,6 +118,10 @@ for (const viewport of [
     await card
       .getByRole("button", { name: "Просмотр карточки", exact: true })
       .click();
+    await expect(card.locator(".arm-card-left--view")).toHaveCSS(
+      "user-select",
+      "none",
+    );
     await page.screenshot({
       path: testInfo.outputPath("view.png"),
       fullPage: true,
@@ -141,7 +145,7 @@ for (const viewport of [
 test("teacher dashboard shares the ARM theme", async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1366, height: 768 });
   await page.goto("/login");
-  await page.getByLabel("Электронная почта").fill("teacher@example.test");
+  await page.getByLabel("Логин").fill("teacher");
   await page.getByLabel("Пароль").fill("demo112");
   await page.getByRole("button", { name: "Войти" }).click();
   await expect(page).toHaveURL(/\/teacher$/);
@@ -157,7 +161,7 @@ test("ARM fields, clarification answers and selection UX survive reopening", asy
 }) => {
   await page.setViewportSize({ width: 1366, height: 768 });
   await page.goto("/login");
-  await page.getByLabel("Электронная почта").fill("student1@example.test");
+  await page.getByLabel("Логин").fill("student1");
   await page.getByLabel("Пароль").fill("demo112");
   await page.getByRole("button", { name: "Войти" }).click();
   await expect(page).toHaveURL(/\/student$/);

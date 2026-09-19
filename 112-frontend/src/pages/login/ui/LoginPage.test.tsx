@@ -2,14 +2,19 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { afterEach, expect, it } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
 import { authStorageKey, useAuthStore } from "@/entities/user";
+
+import { authFetch } from "@/entities/user/model/authFixture";
+
+beforeEach(() => vi.stubGlobal("fetch", vi.fn(authFetch)));
 
 import { LoginPage } from "./LoginPage";
 
 afterEach(() => {
   cleanup();
+  vi.unstubAllGlobals();
   localStorage.clear();
   useAuthStore.getState().clearSession();
 });
@@ -26,37 +31,33 @@ const renderLogin = (initialPath = "/login") => {
   );
 };
 
-it("validates the form and stores only the demonstration session", async () => {
+it("validates credentials and uses the server profile", async () => {
   const user = userEvent.setup();
   renderLogin();
 
   await user.click(screen.getByRole("button", { name: "Войти" }));
-  expect(await screen.findByText("Укажите электронную почту.")).toBeVisible();
+  expect(await screen.findByText("Укажите логин.")).toBeVisible();
   expect(screen.getByText("Укажите пароль.")).toBeVisible();
 
-  await user.type(
-    screen.getByRole("textbox", { name: "Электронная почта" }),
-    "student1@example.test",
-  );
+  await user.type(screen.getByRole("textbox", { name: "Логин" }), "student");
   await user.type(screen.getByLabelText("Пароль"), "wrong-password");
   await user.click(screen.getByRole("button", { name: "Войти" }));
   expect(
-    await screen.findByText("Проверьте электронную почту и пароль."),
+    await screen.findByText("Проверьте логин и пароль или войдите заново."),
   ).toBeVisible();
   expect(localStorage.getItem(authStorageKey)).toBeNull();
 
   await user.clear(screen.getByLabelText("Пароль"));
-  await user.type(screen.getByLabelText("Пароль"), "demo112");
+  await user.type(screen.getByLabelText("Пароль"), "valid-password");
   await user.click(screen.getByRole("button", { name: "Войти" }));
   expect(await screen.findByRole("heading", { name: "Главная" })).toBeVisible();
-  expect(useAuthStore.getState().session).toEqual({
-    userId: "demo-student-1",
+  expect(useAuthStore.getState().session).toMatchObject({
+    userId: "test-student",
     roles: ["student"],
   });
 
   const persisted = localStorage.getItem(authStorageKey);
-  expect(persisted).toContain("demo-student-1");
-  expect(persisted).not.toContain("demo112");
+  expect(persisted).toBeNull();
 });
 
 it("rejects an unsafe return path and sends the user home", async () => {
@@ -77,11 +78,8 @@ it("rejects an unsafe return path and sends the user home", async () => {
     </MemoryRouter>,
   );
 
-  await user.type(
-    screen.getByRole("textbox", { name: "Электронная почта" }),
-    "student1@example.test",
-  );
-  await user.type(screen.getByLabelText("Пароль"), "demo112");
+  await user.type(screen.getByRole("textbox", { name: "Логин" }), "student");
+  await user.type(screen.getByLabelText("Пароль"), "valid-password");
   await user.click(screen.getByRole("button", { name: "Войти" }));
 
   expect(await screen.findByRole("heading", { name: "Главная" })).toBeVisible();

@@ -715,7 +715,7 @@
   box-shadow:
     0 0 0 1px #ffffff50,
     0 -5px 18px #0003;
-  user-select: text;
+  user-select: none;
 }
 .arm-service-history h3,
 .arm-training-comment h3 {
@@ -1006,4 +1006,26 @@
   .arm-card-notice {
     bottom: 94px;
   }
+}
+
+/* Static card content is not selectable; editing remains native. */
+.arm-card-dialog {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+.arm-card-dialog :is(input, textarea, [contenteditable="true"]) {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+.arm-card-dialog
+  :is(input[readonly], textarea[readonly], input:disabled, textarea:disabled),
+.arm-card-dialog :is(.arm-card-left--view, .arm-card-right--view) {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }

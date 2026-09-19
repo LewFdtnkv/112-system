@@ -4,7 +4,9 @@ export const apiEndpoints = {
   auth: {
     login: "auth/login",
     logout: "auth/logout",
-    me: "auth/me",
+    me: "users/me",
+    refresh: "auth/refresh",
+    changePassword: "auth/change-password",
   },
   scenarios: {
     list: "scenarios",

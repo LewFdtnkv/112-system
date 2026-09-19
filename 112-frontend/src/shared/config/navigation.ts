@@ -12,7 +12,7 @@ export const navigationGroups = [
       {
         label: "Кабинет преподавателя",
         to: routePaths.teacherDashboard,
-        roles: ["teacher", "admin"],
+        roles: ["teacher"],
       },
       {
         label: "Кабинет администратора",
@@ -27,22 +27,22 @@ export const navigationGroups = [
       {
         label: "Сценарии",
         to: routePaths.scenarios,
-        roles: ["teacher", "admin"],
+        roles: ["teacher"],
       },
       {
         label: "Учебные занятия",
         to: routePaths.training,
-        roles: ["teacher", "admin"],
+        roles: ["teacher"],
       },
       {
         label: "Мониторинг занятий",
         to: routePaths.sessionMonitoring,
-        roles: ["teacher", "admin"],
+        roles: ["teacher"],
       },
       {
         label: "Результаты",
         to: routePaths.results,
-        roles: ["student", "teacher", "admin"],
+        roles: ["student", "teacher"],
       },
     ],
   },
@@ -53,7 +53,7 @@ export const navigationGroups = [
       {
         label: "Аналитика",
         to: routePaths.analytics,
-        roles: ["teacher", "admin"],
+        roles: ["teacher"],
       },
     ],
   },

@@ -1,4 +1,11 @@
-export { api } from "./api";
 export { apiEndpoints } from "./endpoints";
 export { getApiError } from "./errors";
 export type { ApiErrorInfo } from "./types";
+
+export {
+  backendApi,
+  publicBackendApi,
+  configureAuthentication,
+} from "./backendApi";
+
+export { api } from "./api";

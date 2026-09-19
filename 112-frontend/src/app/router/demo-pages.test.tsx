@@ -147,7 +147,7 @@ it.each([
     destination: "/training/demo-session-1",
   },
   {
-    role: "admin" as const,
+    role: "teacher" as const,
     path: "/training",
     table: "Учебные занятия",
     destination: "/training/demo-session-1",
@@ -241,7 +241,7 @@ it("uses the same score in the session list and result details", async () => {
 it("sends anonymous visitors of a guarded route to the login page", async () => {
   const router = renderPage("/scenarios");
 
-  expect(await screen.findByLabelText("Электронная почта")).toBeVisible();
+  expect(await screen.findByLabelText("Логин")).toBeVisible();
   expect(router.state.location.pathname).toBe("/login");
 });
 

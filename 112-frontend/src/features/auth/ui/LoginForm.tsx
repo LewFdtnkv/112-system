@@ -3,7 +3,7 @@ import LoginIcon from "@mui/icons-material/Login";
 import { useForm } from "react-hook-form";
 
 export interface LoginValues {
-  email: string;
+  username: string;
   password: string;
 }
 
@@ -17,7 +17,7 @@ export const LoginForm = ({ error, onSubmit }: LoginFormProps) => {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<LoginValues>({ defaultValues: { email: "", password: "" } });
+  } = useForm<LoginValues>({ defaultValues: { username: "", password: "" } });
 
   return (
     <Stack
@@ -30,18 +30,19 @@ export const LoginForm = ({ error, onSubmit }: LoginFormProps) => {
       <TextField
         variant="standard"
         slotProps={{ inputLabel: { shrink: true } }}
-        label="Электронная почта"
-        type="email"
-        autoComplete="email"
-        {...register("email", {
-          required: "Укажите электронную почту.",
+        label="Логин"
+        type="text"
+        autoComplete="username"
+        {...register("username", {
+          required: "Укажите логин.",
           pattern: {
-            value: /^\S+@\S+\.\S+$/,
-            message: "Введите корректный адрес.",
+            value: /^[A-Za-z0-9_.-]{1,50}$/,
+            message:
+              "Используйте латинские буквы, цифры, точку, дефис или подчёркивание.",
           },
         })}
-        error={Boolean(errors.email)}
-        helperText={errors.email?.message}
+        error={Boolean(errors.username)}
+        helperText={errors.username?.message}
       />
       <TextField
         variant="standard"

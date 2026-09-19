@@ -580,3 +580,42 @@ a:hover {
     margin-top: 8px;
   }
 }
+
+/* The visible navigation tile is one native link, including its padding. */
+.action-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0;
+  list-style: none;
+}
+.action-links > li {
+  display: flex;
+  padding: 0;
+}
+.action-links > li > a {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-height: 42px;
+  padding: 10px 16px;
+  border: 1px solid #aebac0;
+  background: #e6eef1;
+  text-decoration: none;
+  user-select: none;
+}
+.action-links > li > a:hover {
+  background: #d7eaf2;
+  text-decoration: none;
+}
+.app-sidebar li {
+  padding: 0;
+}
+.app-sidebar {
+  min-width: 0;
+}
+.app-sidebar a {
+  box-sizing: border-box;
+  width: 100%;
+  overflow-wrap: anywhere;
+}

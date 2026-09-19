@@ -11,6 +11,15 @@ export const ProtectedRoute = ({ children }: PropsWithChildren) => {
 
   if (status === "checking") return <LoadingScreen />;
 
+  if (status === "password-required")
+    return (
+      <Navigate
+        to={routePaths.changePassword}
+        replace
+        state={{ from: location }}
+      />
+    );
+
   if (status === "anonymous") {
     return (
       <Navigate to={routePaths.login} replace state={{ from: location }} />

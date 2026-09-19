@@ -9,3 +9,13 @@ export {
   userRoleLabels,
 } from "./model/demoUsers";
 export type { DemoUser, DemoUserRole } from "./model/demoUsers";
+
+export type { TokenPair, UserProfile } from "./model/types";
+export {
+  signIn,
+  signOut,
+  changePassword,
+  restoreSession,
+  refreshSession,
+  sessionFromProfile,
+} from "./model/authSession";

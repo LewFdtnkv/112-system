@@ -1,49 +1,42 @@
 import { useState } from "react";
-import { Alert, Stack } from "@mui/material";
-import { useLocation, useNavigate } from "react-router-dom";
-
-import { useAuthStore } from "@/entities/user";
-import {
-  LoginForm,
-  signInWithDemoCredentials,
-  type LoginValues,
-} from "@/features/auth";
+import { Stack } from "@mui/material";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { signIn, useAuthStore } from "@/entities/user";
+import { LoginForm, authErrorMessage, type LoginValues } from "@/features/auth";
 import { routePaths } from "@/shared/config/routes";
+import { safeReturnPath } from "@/shared/lib/safeReturnPath";
 import { PageHeader } from "@/shared/ui/PageHeader";
-
 export const LoginPage = () => {
   const [error, setError] = useState<string>();
-  const setSession = useAuthStore((state) => state.setSession);
+  const status = useAuthStore((state) => state.status);
   const navigate = useNavigate();
   const location = useLocation();
-
-  const submit = async (values: LoginValues) => {
-    const result = await signInWithDemoCredentials(
-      values.email,
-      values.password,
+  if (status === "password-required")
+    return (
+      <Navigate to={routePaths.changePassword} replace state={location.state} />
     );
-
-    if (!result.success) {
-      setError(result.message);
-      return;
+  if (status === "authenticated")
+    return <Navigate to={safeReturnPath(location.state?.from)} replace />;
+  const submit = async (values: LoginValues) => {
+    setError(undefined);
+    try {
+      await signIn({
+        username: values.username.trim().toLowerCase(),
+        password: values.password,
+      });
+      navigate(
+        useAuthStore.getState().status === "password-required"
+          ? routePaths.changePassword
+          : safeReturnPath(location.state?.from),
+        { replace: true, state: location.state },
+      );
+    } catch (error) {
+      setError(authErrorMessage(error));
     }
-
-    setSession(result.session);
-    const from = location.state?.from;
-    const returnPath =
-      typeof from?.pathname === "string" &&
-      from.pathname.startsWith("/") &&
-      !from.pathname.startsWith("//")
-        ? `${from.pathname}${typeof from.search === "string" ? from.search : ""}${typeof from.hash === "string" ? from.hash : ""}`
-        : routePaths.home;
-
-    navigate(returnPath, { replace: true });
   };
-
   return (
     <Stack spacing={2}>
       <PageHeader title="Вход" />
-      <Alert severity="info">Демонстрационный пароль: demo112</Alert>
       <LoginForm error={error} onSubmit={submit} />
     </Stack>
   );

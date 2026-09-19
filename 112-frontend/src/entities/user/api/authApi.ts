@@ -1,20 +1,27 @@
-import { api, apiEndpoints } from "@/shared/api";
-
-import type { DemoUser } from "../model/demoUsers";
-import type { AuthSession } from "../model/types";
-
+import { backendApi, publicBackendApi, apiEndpoints } from "@/shared/api";
+import type { TokenPair, UserProfile } from "../model/types";
 export interface LoginRequest {
-  email: string;
+  username: string;
   password: string;
 }
-
-export interface LoginResponse {
-  session: AuthSession;
+export interface ChangePasswordRequest {
+  current_password: string;
+  new_password: string;
 }
-
 export const authApi = {
   login: (payload: LoginRequest) =>
-    api.post(apiEndpoints.auth.login, { json: payload }).json<LoginResponse>(),
-  logout: () => api.post(apiEndpoints.auth.logout),
-  getCurrentUser: () => api.get(apiEndpoints.auth.me).json<DemoUser>(),
+    publicBackendApi
+      .post(apiEndpoints.auth.login, { json: payload })
+      .json<TokenPair>(),
+  refresh: (refresh_token: string) =>
+    publicBackendApi
+      .post(apiEndpoints.auth.refresh, { json: { refresh_token } })
+      .json<TokenPair>(),
+  changePassword: (payload: ChangePasswordRequest) =>
+    backendApi
+      .post(apiEndpoints.auth.changePassword, { json: payload })
+      .json<TokenPair>(),
+  logout: () => backendApi.post(apiEndpoints.auth.logout),
+  getCurrentUser: () =>
+    backendApi.get(apiEndpoints.auth.me).json<UserProfile>(),
 };

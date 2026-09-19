@@ -1,26 +1,20 @@
 import { afterEach, expect, it } from "vitest";
-
-import { authStorageKey, useAuthStore } from "./authStore";
-
+import {
+  authStorageKey,
+  tokenStorageKey,
+  saveTokens,
+  useAuthStore,
+} from "./authStore";
+import { testPair } from "./authFixture";
 afterEach(() => {
-  localStorage.clear();
   useAuthStore.getState().clearSession();
 });
-
-it("caches and clears only the session", () => {
-  useAuthStore
-    .getState()
-    .setSession({ userId: "demo-student-1", roles: ["student"] });
-
-  expect(localStorage.getItem(authStorageKey)).toBe(
-    JSON.stringify({
-      state: { session: { userId: "demo-student-1", roles: ["student"] } },
-      version: 1,
-    }),
-  );
-
+it("keeps roles in memory and tokens only for the browser tab", () => {
+  saveTokens(testPair);
+  useAuthStore.getState().setSession({ userId: "student", roles: ["student"] });
+  expect(localStorage.getItem(authStorageKey)).toBeNull();
+  expect(sessionStorage.getItem(tokenStorageKey)).toContain("test-refresh");
+  expect(sessionStorage.getItem(tokenStorageKey)).not.toContain("roles");
   useAuthStore.getState().clearSession();
-  expect(localStorage.getItem(authStorageKey)).toBe(
-    JSON.stringify({ state: { session: null }, version: 1 }),
-  );
+  expect(sessionStorage.getItem(tokenStorageKey)).toBeNull();
 });

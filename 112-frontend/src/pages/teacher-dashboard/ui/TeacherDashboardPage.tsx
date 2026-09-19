@@ -2,14 +2,14 @@ import { Stack } from "@mui/material";
 import { Link } from "react-router-dom";
 
 import { useDemoTrainingStore } from "@/entities/training-session";
-import { demoTeacherId, demoUsers } from "@/entities/user";
+import { demoTeacherId, useAuthStore } from "@/entities/user";
 import { routePaths } from "@/shared/config/routes";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { PageSection } from "@/shared/ui/PageSection";
 import { SessionTable } from "@/widgets/session-monitor";
 
 export const TeacherDashboardPage = () => {
-  const teacher = demoUsers.find((user) => user.id === demoTeacherId);
+  const teacher = useAuthStore((state) => state.session);
   const allSessions = useDemoTrainingStore((state) => state.sessions);
   const sessions = allSessions.filter(
     (session) => session.teacherId === demoTeacherId,
@@ -19,7 +19,7 @@ export const TeacherDashboardPage = () => {
     <Stack spacing={2}>
       <PageHeader title="Кабинет преподавателя" description={teacher?.name} />
       <nav aria-label="Работа преподавателя">
-        <ul>
+        <ul className="action-links">
           <li>
             <Link to={routePaths.scenarios}>Сценарии</Link>
           </li>

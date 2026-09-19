@@ -1,36 +1,56 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
-
-import type { AuthSession, AuthState } from "./types";
-
-interface AuthActions {
-  startChecking: () => void;
-  setSession: (session: AuthSession) => void;
-  clearSession: () => void;
-}
+import type { AuthSession, AuthState, TokenPair } from "./types";
 
 export const authStorageKey = "dds112-auth";
-
-export const useAuthStore = create<AuthState & AuthActions>()(
-  persist(
-    (set) => ({
-      status: "anonymous",
+export const tokenStorageKey = "dds112-tokens-v1";
+// The prototype's persisted roles must never authorize a real account.
+localStorage.removeItem(authStorageKey);
+const readTokens = (): TokenPair | null => {
+  try {
+    const data = JSON.parse(sessionStorage.getItem(tokenStorageKey) ?? "null");
+    return data &&
+      typeof data.access_token === "string" &&
+      typeof data.refresh_token === "string" &&
+      typeof data.must_change_password === "boolean"
+      ? data
+      : null;
+  } catch {
+    return null;
+  }
+};
+let tokens = readTokens();
+let generation = 0;
+export const getTokens = () => tokens;
+export const getAuthGeneration = () => generation;
+export const saveTokens = (value: TokenPair) => {
+  tokens = value;
+  sessionStorage.setItem(tokenStorageKey, JSON.stringify(value));
+};
+interface AuthActions {
+  initializationError?: string;
+  startChecking: () => void;
+  setSession: (session: AuthSession) => void;
+  requirePassword: () => void;
+  clearSession: () => void;
+}
+export const useAuthStore = create<AuthState & AuthActions>()((set) => ({
+  status: tokens ? "checking" : "anonymous",
+  session: null,
+  startChecking: () =>
+    set({ status: "checking", session: null, initializationError: undefined }),
+  setSession: (session) =>
+    set({ status: "authenticated", session, initializationError: undefined }),
+  requirePassword: () =>
+    set({
+      status: "password-required",
       session: null,
-      startChecking: () => set({ status: "checking", session: null }),
-      setSession: (session) => set({ status: "authenticated", session }),
-      clearSession: () => set({ status: "anonymous", session: null }),
+      initializationError: undefined,
     }),
-    {
-      name: authStorageKey,
-      version: 1,
-      partialize: (state) => ({ session: state.session }),
-      merge: (persistedState, currentState) => {
-        const session = (persistedState as Partial<AuthState>).session ?? null;
-
-        return session
-          ? { ...currentState, status: "authenticated", session }
-          : currentState;
-      },
-    },
-  ),
-);
+  clearSession: () => {
+    generation++;
+    tokens = null;
+    sessionStorage.removeItem(tokenStorageKey);
+    localStorage.removeItem(authStorageKey);
+    set({ status: "anonymous", session: null, initializationError: undefined });
+  },
+}));

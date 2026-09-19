@@ -3,20 +3,12 @@ import { expect, it } from "vitest";
 import { incidentCardsApi } from "@/entities/incident-card";
 import { scenariosApi } from "@/entities/scenario";
 import { resultsApi, trainingSessionsApi } from "@/entities/training-session";
-import { authApi, usersApi } from "@/entities/user";
+import { usersApi } from "@/entities/user";
 import { analyticsApi } from "@/entities/evaluation/demoEvaluations";
 
 import { apiEndpoints } from "./endpoints";
 
 it("serves every temporary API resource through its fake URL contract", async () => {
-  await expect(
-    authApi.login({ email: "student1@example.test", password: "demo112" }),
-  ).resolves.toMatchObject({ session: { userId: "demo-student-1" } });
-  await expect(authApi.getCurrentUser()).resolves.toMatchObject({
-    id: "demo-student-1",
-  });
-  await expect(authApi.logout()).resolves.toBeDefined();
-
   const scenarios = await scenariosApi.list();
   const createdScenario = await scenariosApi.create({
     name: "Контрактный сценарий",

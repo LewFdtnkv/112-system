@@ -2,6 +2,7 @@ import type { RouteObject } from "react-router-dom";
 
 import { ForbiddenPage } from "@/pages/forbidden";
 import { HomePage } from "@/pages/home";
+import { ChangePasswordPage } from "@/pages/change-password";
 import { LoginPage } from "@/pages/login";
 import { NotFoundPage } from "@/pages/not-found";
 import { ServerErrorPage } from "@/pages/server-error";
@@ -152,6 +153,9 @@ export const routes: RouteObject[] = [
   {
     Component: AuthLayout,
     ErrorBoundary: RouteErrorBoundary,
-    children: [{ path: routePaths.login, Component: LoginPage }],
+    children: [
+      { path: routePaths.login, Component: LoginPage },
+      { path: routePaths.changePassword, Component: ChangePasswordPage },
+    ],
   },
 ];

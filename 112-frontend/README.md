@@ -17,8 +17,8 @@ npm test
 npm run test:watch
 ```
 
-The app starts without a backend or an environment file. `VITE_API_URL` is
-optional and defaults to `/api`. `.env.example` lists the configuration;
+Authentication requires the backend. `VITE_API_URL` is
+optional and defaults to `/api/v1`. `.env.example` lists the configuration;
 local `.env` files are ignored by Git. Vite exposes `VITE_*` values to the
 browser, so these values must not contain secrets.
 
@@ -46,7 +46,8 @@ Unused business folders are still reserved with `.gitkeep` files.
 ## Routes and UI
 
 - `/`: redirects to the signed-in user's dashboard, or to sign-in for guests.
-- `/login`: demonstration sign-in form.
+- `/login`: backend sign-in by username and password.
+- `/change-password`: mandatory initial password replacement.
 - `/student`, `/teacher`, `/admin`: demonstration dashboards.
 - `/student/sessions/:sessionId`: the student's assigned or active training workspace.
 - `/scenarios`: searchable scenario list; `/scenarios/new` and
@@ -95,41 +96,32 @@ intact; define actual request/response types only after the backend contract is 
 
 ## Authentication
 
-`entities/user` exposes `useAuthStore`: `anonymous`, `checking`, or
-`authenticated`. Actions are `startChecking`, `setSession` and `clearSession`.
-The store persists only the `AuthSession` in browser `localStorage` under
-`dds112-auth`; it contains a user ID and roles, never a password. It has a
-version so a future incompatible session shape can be replaced safely.
+Authentication uses the real FastAPI contract: login, refresh, password change,
+logout and `GET /api/v1/users/me`. The login identifier is `username`, not email.
+There is no demonstration password or mock-auth fallback in the application.
 
-`/login` validates email and password, then signs in one of the demonstration
-accounts. The current demonstration password is `demo112`; its value is visible
-only to make the prototype usable and must be removed with the mock login code.
-On success the form returns to the guarded location when its internal path is
-safe, otherwise it opens the home page. The header identifies the active account
-and its exit action clears the cached session.
+The access/refresh token pair lives in `sessionStorage` for the browser tab;
+passwords are never persisted. The user profile and roles stay in memory. Reload
+checks the server profile before rendering protected pages. Old `dds112-auth`
+localStorage sessions are discarded. Logout revokes the backend session and
+clears local credentials and the query cache. A rejected refresh signs out;
+a temporary server/network error offers retry without discarding the session.
 
-`ProtectedRoute` waits during a session check and redirects guests to `/login`,
-preserving the requested location in `state.from`. `RoleRoute` first requires
-authentication and then accepts any matching role from its `allowedRoles` prop;
-otherwise it redirects to `/403`. An empty allowed-role list denies access.
+Initial passwords require replacement before accessing business routes. Teacher
+and administrator permissions are independent; administrators do not inherit
+teaching rights. Authentication does not connect the demonstration business
+screens to the lesson/user-management API.
 
-Business routes use role guards: students access their dashboard and workspace;
-teachers and administrators access scenarios, training, monitoring and analytics;
-only administrators access users and administration. Results require sign-in and
-are filtered to the student's own sessions. Navigation follows the same roles.
-There is no real token, refresh flow or HTTP 401 policy. These
-depend on the authentication contract. When that contract exists, replace the
-demonstration credential check in `features/auth`, map the response to frontend
-state and clear the QueryClient cache on account changes. Access control also
-belongs on the server.
+See [the integration contract and Docker checks](docs/AUTH.md).
 
 ## API Integration
 
 `shared/api` exposes `api`, `getApiError` and `ApiErrorInfo`.
 The ky client has a URL prefix, a 10-second timeout and no automatic retries;
 TanStack Query owns retry policy. Creating the client does not send requests.
-No screen currently calls the API. Error normalization does not assume a backend
-error payload format.
+Authentication calls `backendApi`, which always uses the real backend. The older
+`api` client still serves demonstration business resources when
+`VITE_USE_FAKE_API=true`; this switch cannot enable mock authentication.
 
 This project uses ky 2 and its `prefix` option; examples using the older
 `prefixUrl` option do not apply. See the [ky release notes](https://github.com/sindresorhus/ky/releases).
@@ -150,7 +142,7 @@ and page reloads work with browser history routing.
 
 ## Next Development Steps
 
-1. Agree on backend contracts for authentication, session ownership, incident
+1. Connect the remaining backend contracts for session ownership, incident
    cards, action logs and submission. Persist the complete session state and
    enforce role and record access on the server.
 2. Connect the training flow from accepting a call through submission to a saved

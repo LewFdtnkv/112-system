@@ -8,6 +8,8 @@ export const HomePage = () => {
   const { status, session } = useAuthStore();
 
   if (status === "checking") return <LoadingScreen />;
+  if (status === "password-required")
+    return <Navigate replace to={routePaths.changePassword} />;
   if (!session) return <Navigate replace to={routePaths.login} />;
 
   const destination = session.roles.includes("admin")

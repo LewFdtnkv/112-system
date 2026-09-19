@@ -3,7 +3,6 @@ import { demoScenarios } from "@/entities/scenario/model/demoScenarios";
 import { demoResults, demoSessions } from "@/entities/training-session";
 import { demoUsers } from "@/entities/user/model/demoUsers";
 
-const fakePassword = "demo112";
 const scenarios = structuredClone(demoScenarios);
 const sessions = structuredClone(demoSessions);
 const results = structuredClone(demoResults);
@@ -17,8 +16,6 @@ const json = (body: unknown, status = 200) =>
     status,
     headers: { "Content-Type": "application/json" },
   });
-
-const empty = (status = 204) => new Response(null, { status });
 
 const requestBody = async <T>(request: Request) => (await request.json()) as T;
 
@@ -37,21 +34,6 @@ export const fakeFetch: typeof fetch = async (input, init) => {
   const url = new URL(request.url, "https://api.dds112.test");
   const path = url.pathname.replace(/^\/(?:api\/)?(?:v1\/)?/, "");
   const method = request.method.toUpperCase();
-
-  if (method === "POST" && path === "auth/login") {
-    const { email, password } = await requestBody<{
-      email: string;
-      password: string;
-    }>(request);
-    const user = demoUsers.find(
-      (item) => item.email.toLowerCase() === email.trim().toLowerCase(),
-    );
-    return user && password === fakePassword
-      ? json({ session: { userId: user.id, roles: [user.role] } })
-      : json({ message: "Invalid credentials" }, 401);
-  }
-  if (method === "POST" && path === "auth/logout") return empty();
-  if (method === "GET" && path === "auth/me") return json(demoUsers[0]);
 
   if (method === "GET" && path === "scenarios") return json(scenarios);
   if (method === "POST" && path === "scenarios") {

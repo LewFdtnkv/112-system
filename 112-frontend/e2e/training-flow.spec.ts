@@ -1,10 +1,10 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./auth-fixture";
 
 test("student completes a training session and receives an automatic result", async ({
   page,
 }) => {
   await page.goto("/login");
-  await page.getByLabel("Электронная почта").fill("student1@example.test");
+  await page.getByLabel("Логин").fill("student1");
   await page.getByLabel("Пароль").fill("demo112");
   await page.getByRole("button", { name: "Войти" }).click();
   await expect(page).toHaveURL(/\/student$/);
@@ -44,7 +44,7 @@ test("a student cannot open teacher and administrator routes", async ({
   page,
 }) => {
   await page.goto("/login");
-  await page.getByLabel("Электронная почта").fill("student1@example.test");
+  await page.getByLabel("Логин").fill("student1");
   await page.getByLabel("Пароль").fill("demo112");
   await page.getByRole("button", { name: "Войти" }).click();
 

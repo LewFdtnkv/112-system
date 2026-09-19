@@ -3,6 +3,7 @@ import { generatePath } from "react-router-dom";
 export const routePaths = {
   home: "/",
   login: "/login",
+  changePassword: "/change-password",
   studentDashboard: "/student",
   teacherDashboard: "/teacher",
   adminDashboard: "/admin",
