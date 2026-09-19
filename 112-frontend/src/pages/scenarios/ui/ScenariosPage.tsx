@@ -1,129 +1,112 @@
 import { useState } from "react";
 import {
-  Alert,
   Button,
   MenuItem,
   Stack,
   Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
   TextField,
 } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
-import { Link, useLocation } from "react-router-dom";
-
-import {
-  scenarioDifficultyLabels,
-  scenarioStatusLabels,
-  useDemoScenarioStore,
-} from "@/entities/scenario";
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
+import { trainingApi } from "@/entities/training";
 import { getScenarioEditPath, routePaths } from "@/shared/config/routes";
-import { EmptyState } from "@/shared/ui/EmptyState";
+import { useDebounced } from "@/shared/lib/useDebounced";
 import { PageHeader } from "@/shared/ui/PageHeader";
-
+import { QueryState, PageControls } from "@/shared/ui/QueryState";
 export const ScenariosPage = () => {
-  const scenarios = useDemoScenarioStore((state) => state.scenarios);
-  const [search, setSearch] = useState("");
+  const [q, setQ] = useState("");
+  const search = useDebounced(q);
   const [status, setStatus] = useState("all");
-  const location = useLocation();
-  const query = search.trim().toLocaleLowerCase("ru-RU");
-  const filtered = scenarios.filter(
-    (scenario) =>
-      (status === "all" || scenario.status === status) &&
-      `${scenario.name} ${scenario.category}`
-        .toLocaleLowerCase("ru-RU")
-        .includes(query),
-  );
-
+  const [page, setPage] = useState(0);
+  const query = useQuery({
+    queryKey: ["scenarios", search, status, page],
+    queryFn: ({ signal }) =>
+      trainingApi.scenarios({ q: search, status, offset: page * 20 }, signal),
+  });
   return (
     <Stack spacing={2}>
-      <PageHeader
-        title="Сценарии"
-        actions={
-          <Button
-            component={Link}
-            to={routePaths.scenarioCreate}
-            startIcon={<AddIcon />}
-          >
-            Новый сценарий
-          </Button>
-        }
-      />
-      {location.state?.scenarioSaved === true && (
-        <Alert severity="success">
-          Сценарий сохранён в демонстрационных данных.
-        </Alert>
-      )}
-      <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+      <PageHeader title="Сценарии" />
+      <Button component={Link} to={routePaths.scenarioCreate}>
+        Создать сценарий
+      </Button>
+      <Stack direction="row" spacing={2}>
         <TextField
           label="Поиск сценария"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          type="search"
+          value={q}
+          onChange={(e) => {
+            setQ(e.target.value);
+            setPage(0);
+          }}
         />
         <TextField
           select
-          label="Статус"
+          label="Публикация"
           value={status}
-          onChange={(event) => setStatus(event.target.value)}
+          onChange={(e) => {
+            setStatus(e.target.value);
+            setPage(0);
+          }}
         >
-          <MenuItem value="all">Все статусы</MenuItem>
-          {Object.entries(scenarioStatusLabels).map(([value, label]) => (
-            <MenuItem key={value} value={value}>
-              {label}
-            </MenuItem>
-          ))}
+          <MenuItem value="all">Все</MenuItem>
+          <MenuItem value="draft">Черновики</MenuItem>
+          <MenuItem value="published">Опубликованы</MenuItem>
         </TextField>
       </Stack>
-      {filtered.length > 0 ? (
-        <TableContainer>
-          <Table size="small" aria-label="Сценарии">
-            <TableHead>
-              <TableRow>
-                <TableCell>Название</TableCell>
-                <TableCell>Категория</TableCell>
-                <TableCell>Сложность</TableCell>
-                <TableCell>Минуты</TableCell>
-                <TableCell>Статус</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {filtered.map((scenario) => (
-                <TableRow key={scenario.id}>
-                  <TableCell component="th" scope="row">
-                    <Link to={getScenarioEditPath(scenario.id)}>
-                      {scenario.name}
-                    </Link>
-                  </TableCell>
-                  <TableCell>{scenario.category}</TableCell>
-                  <TableCell>
-                    {scenarioDifficultyLabels[scenario.difficulty]}
-                  </TableCell>
-                  <TableCell>{scenario.durationMinutes}</TableCell>
-                  <TableCell>{scenarioStatusLabels[scenario.status]}</TableCell>
+      <QueryState
+        pending={query.isPending}
+        error={query.error}
+        retry={() => void query.refetch()}
+      >
+        {query.data && (
+          <>
+            <Table aria-label="Сценарии">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Сценарий</TableCell>
+                  <TableCell>Категория</TableCell>
+                  <TableCell>Роль</TableCell>
+                  <TableCell>Карточек</TableCell>
+                  <TableCell>Статус</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      ) : (
-        <EmptyState
-          title="Сценарии не найдены"
-          action={
-            <Button
-              onClick={() => {
-                setSearch("");
-                setStatus("all");
-              }}
-            >
-              Сбросить фильтры
-            </Button>
-          }
-        />
-      )}
+              </TableHead>
+              <TableBody>
+                {query.data.items.map((s) => (
+                  <TableRow key={s.id}>
+                    <TableCell>
+                      <Link
+                        className="table-block-link"
+                        to={getScenarioEditPath(s.id)}
+                      >
+                        {s.title}
+                        <small className="block-detail">
+                          Версия {s.version}
+                        </small>
+                      </Link>
+                    </TableCell>
+                    <TableCell>{s.category || "—"}</TableCell>
+                    <TableCell>
+                      {s.role === "operator_112" ? "Оператор 112" : "ДДС"}
+                    </TableCell>
+                    <TableCell>{s.card_count}</TableCell>
+                    <TableCell>
+                      {s.status === "published" ? "Опубликован" : "Черновик"}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            <PageControls
+              total={query.data.total}
+              page={page}
+              onPage={setPage}
+            />
+          </>
+        )}
+      </QueryState>
     </Stack>
   );
 };

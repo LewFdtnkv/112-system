@@ -12,14 +12,27 @@ import {
   type IncidentPhones,
   type ResponseService,
 } from "@/entities/incident-card";
+import { getApiError } from "@/shared/api";
+export interface RemoteEditor {
+  categories: { id: string; name: string }[];
+  categoryName: string;
+  services: { id: string; name: string }[];
+  search: (value: string) => void;
+  select: (id: string) => void;
+  onSave: (fields: IncidentCardFields) => Promise<void>;
+  message?: string;
+  searching: boolean;
+  error?: string;
+}
 export interface IncidentEditorOptions {
+  remote?: RemoteEditor;
   card: IncidentCard;
   sessionId?: string;
   log: readonly string[];
   isSubmitted: boolean;
   isCallAccepted: boolean;
   onCommitAction: (fields: IncidentCardFields, action: string) => void;
-  onSubmit: (fields: IncidentCardFields) => void;
+  onSubmit: (fields: IncidentCardFields) => void | Promise<void>;
 }
 const missingFieldLabels: Record<string, string> = {
   categoryId: "тип происшествия",
@@ -30,6 +43,7 @@ const missingFieldLabels: Record<string, string> = {
 };
 export function useIncidentEditor({
   card,
+  remote,
   sessionId,
   log,
   isSubmitted,
@@ -38,17 +52,22 @@ export function useIncidentEditor({
   onSubmit,
 }: IncidentEditorOptions) {
   const [fields, setFields] = useState<IncidentCardFields>(() =>
-    isSubmitted
+    isSubmitted || remote
       ? card.fields
       : (readCardDraft(sessionId, card.id) ?? card.fields),
   );
   const [error, setError] = useState<string>();
-  const tagGroups = getIncidentTagGroups(fields.categoryId);
+  const [pending, setPending] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [savedFields, setSavedFields] = useState(() =>
+    JSON.stringify(card.fields),
+  );
+  const tagGroups = remote ? [] : getIncidentTagGroups(fields.categoryId);
 
   /** Черновик переживает перезагрузку и кратковременный обрыв связи. */
   useEffect(() => {
-    if (!isSubmitted) writeCardDraft(sessionId, card.id, fields);
-  }, [card.id, fields, isSubmitted, sessionId]);
+    if (!isSubmitted && !remote) writeCardDraft(sessionId, card.id, fields);
+  }, [card.id, fields, isSubmitted, sessionId, remote]);
 
   const setField = <Key extends keyof IncidentCardFields>(
     key: Key,
@@ -56,6 +75,7 @@ export function useIncidentEditor({
   ) => {
     setFields((current) => ({ ...current, [key]: value }));
     setError(undefined);
+    setSaved(false);
   };
 
   const setAddressField = <Key extends keyof IncidentAddress>(
@@ -67,6 +87,7 @@ export function useIncidentEditor({
       address: { ...current.address, [key]: value },
     }));
     setError(undefined);
+    setSaved(false);
   };
 
   const setPhoneField = <Key extends keyof IncidentPhones>(
@@ -78,6 +99,7 @@ export function useIncidentEditor({
       phones: { ...current.phones, [key]: value },
     }));
     setError(undefined);
+    setSaved(false);
   };
 
   const toggleService = (service: ResponseService) =>
@@ -90,14 +112,16 @@ export function useIncidentEditor({
     });
 
   const setCategory = (categoryId: string) => {
+    remote?.select(categoryId);
     const category = incidentCategories.find((item) => item.id === categoryId);
     setFields((current) => ({
       ...current,
       categoryId,
-      services: category?.defaultServices ?? [],
+      services: remote ? [] : (category?.defaultServices ?? []),
       details: { ...current.details, clarifications: {} },
     }));
     setError(undefined);
+    setSaved(false);
   };
 
   const setDetail = <Key extends keyof IncidentCardDetails>(
@@ -137,10 +161,39 @@ export function useIncidentEditor({
     onCommitAction(fields, action);
     setFields({ ...fields, operatorAction: "" });
     setError(undefined);
+    setSaved(false);
   };
 
-  const submit = () => {
-    if (isSubmitted || !isCallAccepted) return;
+  const saveDraft = async () => {
+    if (!remote || pending || isSubmitted) return;
+    setPending(true);
+    setError(undefined);
+    setSaved(false);
+    try {
+      await remote.onSave(fields);
+      setSavedFields(JSON.stringify(fields));
+      setSaved(true);
+    } catch (e) {
+      setError(getApiError(e).message);
+    } finally {
+      setPending(false);
+    }
+  };
+
+  const submit = async () => {
+    if (isSubmitted || !isCallAccepted || pending) return;
+    if (remote) {
+      setPending(true);
+      setError(undefined);
+      try {
+        await onSubmit(fields);
+      } catch (e) {
+        setError(getApiError(e).message);
+      } finally {
+        setPending(false);
+      }
+      return;
+    }
     const hasRecordedAction = log.some((entry) =>
       entry.startsWith("Оператор: "),
     );
@@ -159,10 +212,18 @@ export function useIncidentEditor({
     onSubmit(fields);
     setFields({ ...fields, status: "closed" });
     setError(undefined);
+    setSaved(false);
   };
 
   return {
-    fields,
+    fields: remote
+      ? { ...fields, services: remote.services.map((s) => s.id) }
+      : fields,
+    remote,
+    pending,
+    dirty: JSON.stringify(fields) !== savedFields,
+    saved,
+    saveDraft,
     error,
     tagGroups,
     setField,

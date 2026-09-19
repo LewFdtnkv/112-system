@@ -1,52 +1,33 @@
 import { Stack } from "@mui/material";
 import { Link } from "react-router-dom";
-
-import { useDemoTrainingStore } from "@/entities/training-session";
-import { demoTeacherId, useAuthStore } from "@/entities/user";
-import { routePaths } from "@/shared/config/routes";
 import { PageHeader } from "@/shared/ui/PageHeader";
-import { PageSection } from "@/shared/ui/PageSection";
-import { SessionTable } from "@/widgets/session-monitor";
-
+import { useAuthStore } from "@/entities/user";
+import { LessonList } from "@/widgets/lesson-list";
 export const TeacherDashboardPage = () => {
-  const teacher = useAuthStore((state) => state.session);
-  const allSessions = useDemoTrainingStore((state) => state.sessions);
-  const sessions = allSessions.filter(
-    (session) => session.teacherId === demoTeacherId,
-  );
-
+  const user = useAuthStore((state) => state.session);
   return (
     <Stack spacing={2}>
-      <PageHeader title="Кабинет преподавателя" description={teacher?.name} />
+      <PageHeader title="Кабинет преподавателя" description={user?.name} />
       <nav aria-label="Работа преподавателя">
         <ul className="action-links">
           <li>
-            <Link to={routePaths.scenarios}>Сценарии</Link>
+            <Link to="/scenarios">Сценарии</Link>
           </li>
           <li>
-            <Link to={routePaths.sessionMonitoring}>Мониторинг занятий</Link>
+            <Link to="/cards">Карточки</Link>
           </li>
           <li>
-            <Link to={routePaths.analytics}>Аналитика</Link>
+            <Link to="/groups">Группы</Link>
+          </li>
+          <li>
+            <Link to="/training">Запуск занятий</Link>
+          </li>
+          <li>
+            <Link to="/analytics">Аналитика</Link>
           </li>
         </ul>
       </nav>
-      <PageSection title="Текущие и назначенные занятия">
-        <SessionTable
-          label="Занятия преподавателя"
-          sessions={sessions.filter(
-            (session) => session.status !== "completed",
-          )}
-        />
-      </PageSection>
-      <PageSection title="Последние результаты">
-        <SessionTable
-          label="Результаты учеников"
-          sessions={sessions.filter(
-            (session) => session.status === "completed",
-          )}
-        />
-      </PageSection>
+      <LessonList student={false} />
     </Stack>
   );
 };

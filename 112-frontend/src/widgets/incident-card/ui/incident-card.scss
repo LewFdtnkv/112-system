@@ -1029,3 +1029,22 @@
   -ms-user-select: none;
   user-select: none;
 }
+
+.arm-questionnaire.arm-questionnaire--server {
+  flex: 0 0 auto;
+  min-height: 100px;
+  background: var(--arm-paper);
+}
+
+@media (max-width: 700px) {
+  .arm-footer-tools {
+    flex-wrap: wrap;
+  }
+  .arm-footer-tools > .arm-small-button {
+    flex: 1 0 100%;
+    min-height: 28px;
+  }
+  .arm-card-notice {
+    bottom: 128px;
+  }
+}

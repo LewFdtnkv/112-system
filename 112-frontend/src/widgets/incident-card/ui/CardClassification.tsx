@@ -22,17 +22,20 @@ export function CardClassification({
   const { fields, setDetail } = editor;
   const [query, setQuery] = useState("");
   const [choosing, setChoosing] = useState(false);
-  const choices = (
-    query || choosing
-      ? incidentCategories
-      : frequentIncidentCategoryIds.map((id) =>
-          incidentCategories.find((category) => category.id === id)!,
-        )
-  ).filter((category) =>
-    category.name
-      .toLocaleLowerCase("ru")
-      .includes(query.toLocaleLowerCase("ru")),
-  );
+  const choices = editor.remote
+    ? editor.remote.categories
+    : (query || choosing
+        ? incidentCategories
+        : frequentIncidentCategoryIds.map((id) =>
+            incidentCategories.find((category) => category.id === id)!,
+          )
+      ).filter((category) =>
+        category.name
+          .toLocaleLowerCase("ru")
+          .includes(query.toLocaleLowerCase("ru")),
+      );
+  const categoryName =
+    editor.remote?.categoryName || getCategoryName(fields.categoryId);
   const answers = fields.details?.clarifications ?? {};
   return (
     <section className="arm-classification" aria-label="Что случилось">
@@ -100,16 +103,18 @@ export function CardClassification({
       {viewing ? (
         <div className="arm-classification-view">
           <h3>
-            {fields.categoryId === "fire"
-              ? "Происшествие 101"
-              : getCategoryName(fields.categoryId)}
+            {fields.categoryId === "fire" ? "Происшествие 101" : categoryName}
           </h3>
           <p>
-            {Object.values(answers).flat().join(". ") ||
-              "Уточняющие признаки не указаны."}
+            {[
+              fields.details?.classificationDescription,
+              ...Object.values(answers).flat(),
+            ]
+              .filter(Boolean)
+              .join(". ") || "Уточняющие признаки не указаны."}
           </p>
           <p>
-            Класс.: <strong>{getCategoryName(fields.categoryId)}</strong>
+            Класс.: <strong>{categoryName}</strong>
           </p>
           <p>[ВИС] Класс.:</p>
         </div>
@@ -135,6 +140,7 @@ export function CardClassification({
               onFocus={() => setChoosing(true)}
               onChange={(e) => {
                 setQuery(e.target.value);
+                editor.remote?.search(e.target.value);
                 setChoosing(true);
               }}
             />
@@ -151,6 +157,7 @@ export function CardClassification({
                     onClick={() => {
                       editor.setCategory(category.id);
                       setQuery("");
+                      editor.remote?.search("");
                       setChoosing(false);
                     }}
                   >
@@ -162,7 +169,11 @@ export function CardClassification({
                     Значимые типы происшествий:
                   </p>
                 )}
-                {choices.length === 0 && (
+                {editor.remote?.searching && <span>Загрузка…</span>}
+                {editor.remote?.error && (
+                  <span role="alert">{editor.remote.error}</span>
+                )}
+                {choices.length === 0 && !editor.remote?.searching && (
                   <span>Тип происшествия не найден.</span>
                 )}
               </div>
@@ -174,7 +185,7 @@ export function CardClassification({
                 <span>
                   {fields.categoryId === "fire"
                     ? "Происшествие 101"
-                    : getCategoryName(fields.categoryId)}
+                    : categoryName}
                 </span>
                 <ArmIconButton
                   icon="close"
@@ -183,13 +194,29 @@ export function CardClassification({
                   onClick={() => editor.setCategory("")}
                 />
               </div>
-              <div className="arm-questionnaire">
+              <div
+                className={`arm-questionnaire ${editor.remote ? "arm-questionnaire--server" : ""}`}
+              >
                 <h3>
                   {fields.categoryId === "fire"
                     ? "Происшествие 101"
-                    : getCategoryName(fields.categoryId)}
+                    : categoryName}
                 </h3>
                 <div className="arm-questionnaire__body">
+                  {editor.remote && (
+                    <div className="arm-question">
+                      <span>Уточнение</span>
+                      <ArmField
+                        label="Уточнение типа происшествия"
+                        inline
+                        disabled={disabled}
+                        value={fields.details?.classificationDescription ?? ""}
+                        onChange={(e) =>
+                          setDetail("classificationDescription", e.target.value)
+                        }
+                      />
+                    </div>
+                  )}
                   {editor.tagGroups.map((group) => (
                     <Fragment key={group.label}>
                       <div className="arm-question">

@@ -1,57 +1,34 @@
-import { Stack } from "@mui/material";
+import { Stack, Typography } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-
-import { useDemoScenarioStore } from "@/entities/scenario";
-import { useDemoTrainingStore } from "@/entities/training-session";
-import { demoUsers, useAuthStore } from "@/entities/user";
+import { trainingApi } from "@/entities/training";
 import { routePaths } from "@/shared/config/routes";
 import { PageHeader } from "@/shared/ui/PageHeader";
-import { PageSection } from "@/shared/ui/PageSection";
-
+import { QueryState } from "@/shared/ui/QueryState";
 export const AdminDashboardPage = () => {
-  const isTeacher = useAuthStore((state) =>
-    state.session?.roles.includes("teacher"),
-  );
-  const scenarios = useDemoScenarioStore((state) => state.scenarios);
-  const sessions = useDemoTrainingStore((state) => state.sessions);
-
+  const query = useQuery({
+    queryKey: ["admin-summary"],
+    queryFn: ({ signal }) => trainingApi.adminSummary(signal),
+  });
   return (
     <Stack spacing={2}>
       <PageHeader title="Кабинет администратора" />
-      <PageSection title="Обзор">
-        <dl>
-          <dt>Пользователи</dt>
-          <dd>{demoUsers.length}</dd>
-          <dt>Сценарии</dt>
-          <dd>{scenarios.length}</dd>
-          <dt>Занятия в процессе</dt>
-          <dd>
-            {sessions.filter((session) => session.status === "active").length}
-          </dd>
-        </dl>
-      </PageSection>
-      <PageSection title="Управление">
-        <ul className="action-links">
-          <li>
-            <Link to={routePaths.users}>Пользователи</Link>
-          </li>
-          {isTeacher && (
-            <>
-              <li>
-                <Link to={routePaths.scenarios}>Сценарии</Link>
-              </li>
-              <li>
-                <Link to={routePaths.sessionMonitoring}>
-                  Мониторинг занятий
-                </Link>
-              </li>
-              <li>
-                <Link to={routePaths.analytics}>Аналитика</Link>
-              </li>
-            </>
-          )}
-        </ul>
-      </PageSection>
+      <div className="action-links">
+        <Link to={routePaths.users}>Пользователи</Link>
+        <Link to={routePaths.catalogs}>Службы и ЕКП</Link>
+      </div>
+      <QueryState
+        pending={query.isPending}
+        error={query.error}
+        retry={() => void query.refetch()}
+      >
+        {query.data && (
+          <Typography>
+            Учётных записей: {query.data.users} · Служб: {query.data.services} ·
+            Версий ЕКП: {query.data.classifiers}
+          </Typography>
+        )}
+      </QueryState>
     </Stack>
   );
 };

@@ -1,384 +1,187 @@
 import "@testing-library/jest-dom/vitest";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
-  act,
   cleanup,
   render,
   screen,
-  waitFor,
   within,
+  waitFor,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-
-import { cardDraftStorageKey } from "@/entities/incident-card";
-import { useDemoTrainingStore } from "@/entities/training-session";
-import { useAuthStore } from "@/entities/user";
-
+import {
+  trainingApi,
+  type Attempt,
+  type StudentLesson,
+} from "@/entities/training";
 import { TrainingWorkspacePage } from "./TrainingWorkspacePage";
-
+const initial: Attempt = {
+  id: "attempt",
+  assignment_id: "assignment",
+  status: "in_progress",
+  started_at: "2026-09-19T10:00:00Z",
+  ended_at: null,
+  instructions: "Заполните карточку",
+  caller_message: "На Учебной улице дым",
+  time_limit_seconds: null,
+  norm_seconds: 60,
+  card: {
+    id: "card",
+    revision: 3,
+    classifier_version_id: "version",
+    classifier_entry_id: null,
+    status: "draft",
+    data: {
+      description: "Серверный черновик",
+      address_text: "Учебная улица, 7",
+      additional_fields: {},
+    },
+    opened_at: null,
+    saved_at: null,
+  },
+  classifier_entry: null,
+  notified_services: [],
+  recipient_services: [],
+  recipient_error: null,
+};
+const lesson: StudentLesson = {
+  id: "lesson",
+  title: "Реальное занятие",
+  status: "active",
+  work_status: "in_progress",
+  started_at: null,
+  ended_at: null,
+  assignments: [
+    {
+      id: "assignment",
+      position: 1,
+      title: "Карточка",
+      role: "operator_112",
+      available: true,
+      attempt_id: "attempt",
+      status: "in_progress",
+      card: null,
+    },
+  ],
+};
 beforeEach(() => {
-  useAuthStore
-    .getState()
-    .setSession({ userId: "demo-student-1", roles: ["student"] });
+  vi.spyOn(trainingApi, "studentLesson").mockResolvedValue(lesson);
+  vi.spyOn(trainingApi, "attempt").mockResolvedValue(structuredClone(initial));
+  vi.spyOn(trainingApi, "attemptEntries").mockResolvedValue([]);
+  vi.spyOn(trainingApi, "recipients").mockResolvedValue([]);
 });
-
 afterEach(() => {
   cleanup();
-  vi.useRealTimers();
-  useDemoTrainingStore.getState().reset();
-  useAuthStore.getState().clearSession();
+  vi.restoreAllMocks();
   localStorage.clear();
 });
-
-const renderWorkspace = (path = "/student/sessions/demo-session-1") =>
-  render(
-    <MemoryRouter initialEntries={[path]}>
-      <Routes>
-        <Route
-          path="/student/sessions/:sessionId"
-          element={<TrainingWorkspacePage />}
-        />
-      </Routes>
-    </MemoryRouter>,
-  );
-
-const acceptIncomingCall = async (user: ReturnType<typeof userEvent.setup>) => {
-  await user.click(screen.getByRole("button", { name: "Принять" }));
-};
-
-it("filters, resets and creates incident cards", async () => {
-  const user = userEvent.setup();
-  renderWorkspace();
-
-  await user.type(
-    screen.getByRole("textbox", { name: "Поиск происшествий" }),
-    "пожар",
-  );
-  await user.click(
-    screen.getByRole("button", { name: "Искать по параметрам" }),
-  );
-
-  const table = screen.getByRole("table", { name: "Список происшествий" });
-  expect(within(table).getByText("Пожар")).toBeVisible();
-  expect(within(table).queryByText("ДТП")).not.toBeInTheDocument();
-
-  await user.click(screen.getByRole("button", { name: "сбросить" }));
-  expect(within(table).getByText("ДТП")).toBeVisible();
-
-  await acceptIncomingCall(user);
-
-  await user.click(
-    screen.getByRole("button", { name: "Создать новую карточку" }),
-  );
-
-  expect(
-    await screen.findByRole("heading", { name: /Карточка происшествия/ }),
-  ).toBeVisible();
-});
-
-it("records operator actions in the card log", async () => {
-  const user = userEvent.setup();
-  renderWorkspace();
-
-  await acceptIncomingCall(user);
-
-  await user.click(
-    screen.getByRole("button", { name: "Открыть карточку 378879302" }),
-  );
-
-  const dialog = await screen.findByRole("dialog");
-  await user.click(
-    within(dialog).getByRole("button", {
-      name: "Учебный комментарий и журнал",
-    }),
-  );
-  await user.type(
-    within(dialog).getByRole("textbox", { name: "Действие оператора" }),
-    "Сообщение принято, дежурная бригада направлена на место",
-  );
-  await user.click(
-    within(dialog).getByRole("button", { name: "Зафиксировать действие" }),
-  );
-
-  expect(
-    within(dialog).getByText(
-      "Оператор: Сообщение принято, дежурная бригада направлена на место",
-    ),
-  ).toBeVisible();
-});
-
-it("blocks submission until the required fields are filled", async () => {
-  const user = userEvent.setup();
-  renderWorkspace();
-
-  await acceptIncomingCall(user);
-
-  await user.click(
-    screen.getByRole("button", { name: "Открыть карточку 378879302" }),
-  );
-  const dialog = await screen.findByRole("dialog");
-  await user.clear(within(dialog).getByRole("textbox", { name: "Дом/Вл" }));
-  await user.click(
-    await within(dialog).findByRole("button", {
-      name: "Оповестить и сохранить карточку",
-    }),
-  );
-
-  expect(within(dialog).getByRole("alert")).toHaveTextContent(
-    /действие оператора/,
-  );
-  expect(within(dialog).getByRole("alert")).toHaveTextContent(
-    /службы реагирования/,
-  );
-  expect(within(dialog).getByRole("alert")).toHaveTextContent(
-    "адрес (улица и дом)",
-  );
-
-  await user.type(
-    within(dialog).getByRole("textbox", { name: "Дом/Вл" }),
-    "12",
-  );
-  await user.click(
-    within(dialog).getByRole("button", {
-      name: "Учебный комментарий и журнал",
-    }),
-  );
-  await user.type(
-    within(dialog).getByRole("textbox", { name: "Действие оператора" }),
-    "Вызов принят",
-  );
-  await user.click(
-    within(dialog).getByRole("button", { name: "Добавить службы" }),
-  );
-  await user.click(screen.getByRole("button", { name: "103" }));
-  await user.click(screen.getByRole("button", { name: "Сохранить и закрыть" }));
-  await user.click(
-    await within(dialog).findByRole("button", {
-      name: "Оповестить и сохранить карточку",
-    }),
-  );
-
-  expect(
-    within(dialog).getByText("Карточка передана на учебную проверку."),
-  ).toBeVisible();
-  expect(
-    localStorage.getItem(cardDraftStorageKey("demo-session-1", "378879302")),
-  ).toBeNull();
-  expect(
-    within(dialog).queryByRole("button", {
-      name: "Оповестить и сохранить карточку",
-    }),
-  ).not.toBeInTheDocument();
-  expect(
-    within(dialog).queryByRole("textbox", { name: "Улица" }),
-  ).not.toBeInTheDocument();
-  expect(
-    within(dialog).getByRole("combobox", { name: "Статус обработки" }),
-  ).toHaveValue("closed");
-  await user.click(within(dialog).getByRole("button", { name: "Закрыть" }));
-  await user.click(
-    await screen.findByRole("button", { name: "Открыть карточку 378879302" }),
-  );
-  expect(
-    localStorage.getItem(cardDraftStorageKey("demo-session-1", "378879302")),
-  ).toBeNull();
-  expect(
-    screen.queryByRole("button", { name: "Оповестить и сохранить карточку" }),
-  ).not.toBeInTheDocument();
-});
-
-it("restores an unfinished card from the local draft", async () => {
-  const user = userEvent.setup();
-  localStorage.setItem(
-    cardDraftStorageKey("demo-session-1"),
-    JSON.stringify({
-      cardId: "378879302",
-      fields: {
-        categoryId: "traffic",
-        address: "г. Москва, восстановленный адрес",
-        district: "ЮАО",
-        callerName: "",
-        callerPhone: "+7 900 123-45-67",
-        victimsCount: null,
-        description: "Черновик после обрыва связи.",
-        operatorAction: "",
-        services: ["102"],
-        status: "in_progress",
+function open() {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  const router = createMemoryRouter(
+    [
+      {
+        path: "/student/sessions/:sessionId",
+        Component: TrainingWorkspacePage,
       },
-      savedAt: new Date().toISOString(),
-    }),
+    ],
+    { initialEntries: ["/student/sessions/lesson"] },
   );
-
-  renderWorkspace();
-  await user.click(
-    screen.getByRole("button", { name: "Открыть карточку 378879302" }),
+  render(
+    <QueryClientProvider client={client}>
+      <RouterProvider router={router} />
+    </QueryClientProvider>,
   );
-
-  const dialog = await screen.findByRole("dialog");
+  return client;
+}
+it("restores server fields and ignores prototype localStorage", async () => {
+  localStorage.setItem(
+    "dds112-card-draft:lesson",
+    JSON.stringify({ description: "Чужой старый черновик" }),
+  );
+  open();
+  await userEvent.click(
+    await screen.findByRole("button", { name: "Продолжить заполнение" }),
+  );
+  const card = await screen.findByRole("dialog");
   expect(
-    within(dialog).getByRole("textbox", { name: "Описательный адрес" }),
-  ).toHaveValue("г. Москва, восстановленный адрес");
-  expect(within(dialog).getByRole("textbox", { name: "Округ" })).toHaveValue(
-    "ЮАО",
+    within(card).getByLabelText("Сообщение со слов заявителя", { exact: true }),
+  ).toHaveValue("Серверный черновик");
+  expect(within(card).getByText(/На Учебной улице дым/)).toBeVisible();
+});
+it("keeps entered values when saving fails", async () => {
+  vi.spyOn(trainingApi, "saveDraft").mockRejectedValue(new Error("offline"));
+  open();
+  await userEvent.click(
+    await screen.findByRole("button", { name: "Продолжить заполнение" }),
   );
+  const card = await screen.findByRole("dialog");
+  await userEvent.clear(
+    within(card).getByLabelText("Сообщение со слов заявителя", { exact: true }),
+  );
+  await userEvent.type(
+    within(card).getByLabelText("Сообщение со слов заявителя", { exact: true }),
+    "Сохранить мои слова",
+  );
+  await userEvent.click(
+    within(card).getByRole("button", { name: "Сохранить черновик" }),
+  );
+  expect(await within(card).findByRole("alert")).toBeVisible();
   expect(
-    within(dialog).getByRole("textbox", { name: "Предоставленный" }),
-  ).toHaveValue("+7 900 123-45-67");
+    within(card).getByLabelText("Сообщение со слов заявителя", { exact: true }),
+  ).toHaveValue("Сохранить мои слова");
+  expect(
+    within(card).queryByText("Карточка передана на учебную проверку."),
+  ).not.toBeInTheDocument();
 });
-
-it("keeps separate drafts when switching cards and remounting the workspace", async () => {
-  const user = userEvent.setup();
-  const view = renderWorkspace();
-
-  await acceptIncomingCall(user);
-  const editAddress = async (cardId: string, address: string) => {
-    await user.click(
-      await screen.findByRole("button", { name: `Открыть карточку ${cardId}` }),
-    );
-    const input = screen.getByRole("textbox", { name: "Улица" });
-    await user.clear(input);
-    await user.type(input, address);
-    await user.click(screen.getByRole("button", { name: "Закрыть" }));
-  };
-
-  await editAddress("378879302", "Первый адрес");
-  const secondCard = (
-    await screen.findAllByRole("button", { name: /Открыть карточку / })
-  ).find(
-    (button) =>
-      button.getAttribute("aria-label") !== "Открыть карточку 378879302",
-  )!;
-  const secondId = secondCard
-    .getAttribute("aria-label")!
-    .replace("Открыть карточку ", "");
-  await editAddress(secondId, "Второй адрес");
-  view.unmount();
-  renderWorkspace();
-
-  await user.click(
-    screen.getByRole("button", { name: "Открыть карточку 378879302" }),
+it("submits only after saving and uses the returned revision", async () => {
+  vi.spyOn(trainingApi, "saveDraft").mockResolvedValue({
+    ...initial,
+    card: { ...initial.card, revision: 4 },
+  });
+  vi.spyOn(trainingApi, "submit").mockResolvedValue({
+    ...initial,
+    status: "completed",
+    ended_at: "2026-09-19T10:01:00Z",
+    card: { ...initial.card, revision: 5, status: "notified" },
+  });
+  open();
+  await userEvent.click(
+    await screen.findByRole("button", { name: "Продолжить заполнение" }),
   );
-  expect(screen.getByRole("textbox", { name: "Улица" })).toHaveValue(
-    "Первый адрес",
-  );
-  expect(screen.getByRole("textbox", { name: "Дом/Вл" })).toHaveValue("12");
-  expect(screen.getByRole("textbox", { name: "Предоставленный" })).toHaveValue(
-    "+7 900 000-00-01",
-  );
-  await user.click(screen.getByRole("button", { name: "Закрыть" }));
-  await user.click(
-    await screen.findByRole("button", { name: `Открыть карточку ${secondId}` }),
-  );
-  expect(screen.getByRole("textbox", { name: "Улица" })).toHaveValue(
-    "Второй адрес",
-  );
-});
-
-it("shows the running call timer and scenario norm inside the card", async () => {
-  vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
-  const user = userEvent.setup();
-  renderWorkspace();
-
-  await acceptIncomingCall(user);
-  await user.click(
-    screen.getByRole("button", { name: "Открыть карточку 378879302" }),
-  );
-
-  const timer = screen.getByLabelText(
-    "Время заполнения карточки относительно норматива",
-  );
-  expect(timer).toHaveTextContent("00:00 / 00:30");
-  expect(screen.queryByText("Норматив превышен")).not.toBeInTheDocument();
-
-  act(() => vi.advanceTimersByTime(31_000));
-  expect(timer).toHaveTextContent("00:31 / 00:30");
-  expect(screen.getByText("Норматив превышен")).toBeVisible();
-});
-
-it("allows submission after the operator action has already been recorded", async () => {
-  const user = userEvent.setup();
-  renderWorkspace();
-  await acceptIncomingCall(user);
-  await user.click(
-    screen.getByRole("button", { name: "Открыть карточку 378879302" }),
-  );
-  await user.click(
-    screen.getByRole("button", { name: "Учебный комментарий и журнал" }),
-  );
-  await user.type(
-    screen.getByRole("textbox", { name: "Действие оператора" }),
-    "Вызов принят",
-  );
-  await user.click(
-    screen.getByRole("button", { name: "Зафиксировать действие" }),
-  );
-  await user.click(screen.getByRole("button", { name: "Добавить службы" }));
-  await user.click(screen.getByRole("button", { name: "103" }));
-  await user.click(screen.getByRole("button", { name: "Сохранить и закрыть" }));
-  await user.click(
-    await screen.findByRole("button", {
+  const card = await screen.findByRole("dialog");
+  await userEvent.click(
+    within(card).getByRole("button", {
       name: "Оповестить и сохранить карточку",
     }),
   );
+  await waitFor(() =>
+    expect(trainingApi.submit).toHaveBeenCalledWith("attempt", 4),
+  );
   expect(
-    screen.getByText("Карточка передана на учебную проверку."),
+    await within(card).findByText("Карточка передана на учебную проверку."),
   ).toBeVisible();
 });
-
-it("completes the training and creates a result after a submitted card", async () => {
-  const user = userEvent.setup();
-  renderWorkspace();
-  await acceptIncomingCall(user);
-  await user.click(
-    screen.getByRole("button", { name: "Открыть карточку 378879302" }),
-  );
-  await user.click(
-    screen.getByRole("button", { name: "Учебный комментарий и журнал" }),
-  );
-  await user.type(
-    screen.getByRole("textbox", { name: "Действие оператора" }),
-    "Вызов принят",
-  );
-  await user.click(
-    screen.getByRole("button", { name: "Зафиксировать действие" }),
-  );
-  await user.click(screen.getByRole("button", { name: "Добавить службы" }));
-  await user.click(screen.getByRole("button", { name: "103" }));
-  await user.click(screen.getByRole("button", { name: "Сохранить и закрыть" }));
-  await user.click(
-    await screen.findByRole("button", {
-      name: "Оповестить и сохранить карточку",
-    }),
-  );
-  await user.click(screen.getByRole("button", { name: "Закрыть" }));
-  await waitFor(() =>
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
-  );
-  await user.click(screen.getByRole("button", { name: "Завершить занятие" }));
-
+it("does not offer DDS execution or create prototype cards", async () => {
+  vi.mocked(trainingApi.studentLesson).mockResolvedValue({
+    ...lesson,
+    assignments: [
+      {
+        ...lesson.assignments[0],
+        role: "dds",
+        available: false,
+        attempt_id: null,
+      },
+    ],
+  });
+  open();
+  expect(await screen.findByRole("alert")).toHaveTextContent("ДДС и SIP");
   expect(
-    useDemoTrainingStore
-      .getState()
-      .sessions.find((session) => session.id === "demo-session-1")?.status,
-  ).toBe("completed");
+    screen.getByRole("button", { name: "Создать новую карточку" }),
+  ).toBeDisabled();
   expect(
-    useDemoTrainingStore
-      .getState()
-      .evaluations.find(
-        (evaluation) => evaluation.sessionId === "demo-session-1",
-      ),
-  ).toMatchObject({ maxScore: 100, source: "auto" });
-});
-
-it.each([
-  { id: "missing", message: "Занятие не найдено" },
-  { id: "demo-session-2", message: "Занятие не найдено" },
-  { id: "demo-session-3", message: "Занятие завершено" },
-])("does not start an unavailable workspace for $id", ({ id, message }) => {
-  renderWorkspace(`/student/sessions/${id}`);
-  expect(screen.getByText(message)).toBeVisible();
-  expect(
-    screen.queryByRole("button", { name: "Принять" }),
+    screen.queryByRole("button", { name: "Начать следующую карточку" }),
   ).not.toBeInTheDocument();
 });

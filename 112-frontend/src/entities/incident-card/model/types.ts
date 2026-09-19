@@ -1,10 +1,11 @@
-export type IncidentStatus = "in_progress" | "not_notified" | "closed";
+export type IncidentStatus = "in_progress" | "not_notified" | "notified" | "closed";
 
-export type ResponseService = "101" | "102" | "103" | "104";
+export type ResponseService = string;
 
 export const incidentStatusLabels: Record<IncidentStatus, string> = {
   in_progress: "Не завершено",
   not_notified: "Не оповещено",
+  notified: "Оповещено",
   closed: "Завершено",
 };
 
@@ -235,6 +236,8 @@ export interface IncidentCardFields {
 }
 
 export interface IncidentCard {
+  categoryName?: string;
+  displayNumber?: string;
   createdDate?: string;
   operatorNumber?: string;
   workstation?: string;

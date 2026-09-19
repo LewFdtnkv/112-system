@@ -43,6 +43,18 @@ const staffRoutes: RouteObject = {
   Component: StaffRoute,
   children: [
     {
+      path: routePaths.groups,
+      lazy: async () => ({
+        Component: (await import("@/pages/groups")).GroupsPage,
+      }),
+    },
+    {
+      path: routePaths.cards,
+      lazy: async () => ({
+        Component: (await import("@/pages/cards")).CardsPage,
+      }),
+    },
+    {
       path: routePaths.teacherDashboard,
       lazy: async () => ({
         Component: (await import("@/pages/teacher-dashboard"))
@@ -100,6 +112,12 @@ const staffRoutes: RouteObject = {
 const adminRoutes: RouteObject = {
   Component: AdminRoute,
   children: [
+    {
+      path: routePaths.catalogs,
+      lazy: async () => ({
+        Component: (await import("@/pages/catalogs")).CatalogsPage,
+      }),
+    },
     {
       path: routePaths.adminDashboard,
       lazy: async () => ({

@@ -6,7 +6,6 @@ export {
 } from "./model/cardDraft";
 export type { CardDraft } from "./model/cardDraft";
 export { demoIncidents } from "./model/demoIncidents";
-export { incidentCardsApi } from "./api/incidentCardsApi";
 export {
   countFilledFields,
   emptyCardFields,

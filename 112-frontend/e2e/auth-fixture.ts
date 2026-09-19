@@ -1,6 +1,8 @@
 import { test as base, expect } from "@playwright/test";
+import { mockBusiness } from "./business-fixture";
 export const test = base.extend({
   page: async ({ page }, providePage) => {
+    await mockBusiness(page);
     let username = "student1";
     await page.route("**/api/v1/auth/login", async (route) => {
       const body = route.request().postDataJSON();

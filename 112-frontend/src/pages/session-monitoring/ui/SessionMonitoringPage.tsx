@@ -1,66 +1,33 @@
-import { useState } from "react";
-import { Button, MenuItem, Stack, TextField } from "@mui/material";
-
-import { useDemoScenarioStore } from "@/entities/scenario";
-import {
-  trainingStatusLabels,
-  useDemoTrainingStore,
-} from "@/entities/training-session";
-import { demoUsers } from "@/entities/user";
+import { Stack } from "@mui/material";
+import { Link } from "react-router-dom";
 import { PageHeader } from "@/shared/ui/PageHeader";
-import { SessionTable } from "@/widgets/session-monitor";
-
+import { useAuthStore } from "@/entities/user";
+import { LessonList } from "@/widgets/lesson-list";
 export const SessionMonitoringPage = () => {
-  const scenarios = useDemoScenarioStore((state) => state.scenarios);
-  const allSessions = useDemoTrainingStore((state) => state.sessions);
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("all");
-  const query = search.trim().toLocaleLowerCase("ru-RU");
-  const sessions = allSessions.filter((session) => {
-    const scenario = scenarios.find((item) => item.id === session.scenarioId);
-    const student = demoUsers.find((user) => user.id === session.studentId);
-    return (
-      (status === "all" || session.status === status) &&
-      `${scenario?.name ?? ""} ${student?.name ?? ""}`
-        .toLocaleLowerCase("ru-RU")
-        .includes(query)
-    );
-  });
-
+  const user = useAuthStore((state) => state.session);
   return (
     <Stack spacing={2}>
-      <PageHeader title="Мониторинг занятий" />
-      <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-        <TextField
-          label="Сценарий или ученик"
-          type="search"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-        />
-        <TextField
-          label="Статус занятия"
-          select
-          value={status}
-          onChange={(event) => setStatus(event.target.value)}
-        >
-          <MenuItem value="all">Все статусы</MenuItem>
-          {Object.entries(trainingStatusLabels).map(([value, label]) => (
-            <MenuItem value={value} key={value}>
-              {label}
-            </MenuItem>
-          ))}
-        </TextField>
-        <Button
-          onClick={() => {
-            setSearch("");
-            setStatus("all");
-          }}
-          disabled={!search && status === "all"}
-        >
-          Сбросить фильтры
-        </Button>
-      </Stack>
-      <SessionTable sessions={sessions} label="Мониторинг занятий" />
+      <PageHeader title="Мониторинг занятий" description={user?.name} />
+      <nav aria-label="Работа преподавателя">
+        <ul className="action-links">
+          <li>
+            <Link to="/scenarios">Сценарии</Link>
+          </li>
+          <li>
+            <Link to="/cards">Карточки</Link>
+          </li>
+          <li>
+            <Link to="/groups">Группы</Link>
+          </li>
+          <li>
+            <Link to="/training">Запуск занятий</Link>
+          </li>
+          <li>
+            <Link to="/analytics">Аналитика</Link>
+          </li>
+        </ul>
+      </nav>
+      <LessonList student={false} />
     </Stack>
   );
 };

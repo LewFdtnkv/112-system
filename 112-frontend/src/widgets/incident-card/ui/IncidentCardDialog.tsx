@@ -36,7 +36,9 @@ export function IncidentCardDialog({
   return (
     <Dialog
       open={Boolean(card)}
-      onClose={props.onClose}
+      onClose={(_, reason) => {
+        if (!props.remote && reason === "escapeKeyDown") props.onClose();
+      }}
       fullScreen
       className="arm-card-dialog"
       aria-labelledby="incident-card-title"
@@ -67,7 +69,20 @@ function IncidentCardForm(
     "victims" | "map" | "calls" | "sms" | "timing"
   >();
   const viewing = preview || isSubmitted;
-  const disabled = viewing || !isCallAccepted;
+  const disabled = viewing || !isCallAccepted || editor.pending;
+  const close = () => {
+    if (editor.pending) return;
+    if (
+      props.remote &&
+      !isSubmitted &&
+      editor.dirty &&
+      !window.confirm(
+        "Закрыть карточку? Несохранённые изменения будут потеряны. Для сохранения используйте «Сохранить черновик».",
+      )
+    )
+      return;
+    onClose();
+  };
   const { fields } = editor;
   return (
     <>
@@ -86,6 +101,11 @@ function IncidentCardForm(
         onViewChange={() => setPreview(!preview)}
         onHistory={setModal}
       />
+      {props.remote?.message && (
+        <div className="arm-source-message">
+          <b>Сообщение заявителя:</b> {props.remote.message}
+        </div>
+      )}
       <div className="arm-card-body" key={viewing ? "view" : "edit"}>
         <CardAddressPanel
           editor={editor}
@@ -100,6 +120,16 @@ function IncidentCardForm(
           onVictims={() => setModal("victims")}
         />
       </div>
+      {editor.saved && (
+        <p className="arm-card-notice" role="status">
+          Черновик сохранён на сервере.
+        </p>
+      )}
+      {props.remote?.error && (
+        <p className="arm-card-notice arm-card-notice--error" role="alert">
+          {props.remote.error}
+        </p>
+      )}
       {editor.error && (
         <p className="arm-card-notice arm-card-notice--error" role="alert">
           {editor.error}
@@ -132,11 +162,14 @@ function IncidentCardForm(
               }
             >
               <span>⌃</span>
-              <strong>Служба {service}</strong>
+              <strong>
+                {props.remote?.services.find((s) => s.id === service)?.name ??
+                  `Служба ${service}`}
+              </strong>
               <small>{isSubmitted ? "Учебная проверка" : "К оповещению"}</small>
             </button>
           ))}
-          {!viewing && (
+          {!viewing && !props.remote && (
             <ArmIconButton
               icon="plus"
               label="Добавить службы"
@@ -147,6 +180,15 @@ function IncidentCardForm(
           )}
         </div>
         <div className="arm-footer-tools">
+          {!viewing && props.remote && (
+            <button
+              className="arm-small-button"
+              disabled={disabled}
+              onClick={editor.saveDraft}
+            >
+              Сохранить черновик
+            </button>
+          )}
           {!viewing && (
             <button
               className="arm-save"
@@ -187,7 +229,7 @@ function IncidentCardForm(
             aria-expanded={commentOpen}
             onClick={() => setCommentOpen(!commentOpen)}
           />
-          <ArmIconButton icon="close" label="Закрыть" onClick={onClose} />
+          <ArmIconButton icon="close" label="Закрыть" onClick={close} />
         </div>
         {activeService && (
           <section
@@ -195,7 +237,8 @@ function IncidentCardForm(
             aria-label={`История службы ${activeService}`}
           >
             <h3>
-              Служба {activeService}
+              {props.remote?.services.find((s) => s.id === activeService)
+                ?.name ?? `Служба ${activeService}`}
               <ArmIconButton
                 icon="close"
                 label="Закрыть историю службы"
@@ -230,7 +273,7 @@ function IncidentCardForm(
             </h3>
             <ArmSelect
               label="Статус обработки"
-              disabled={disabled}
+              disabled={disabled || !!props.remote}
               value={fields.status}
               onChange={(e) =>
                 editor.setField(
@@ -257,9 +300,11 @@ function IncidentCardForm(
             <button
               className="arm-small-button"
               disabled={disabled}
-              onClick={editor.commitAction}
+              onClick={props.remote ? editor.saveDraft : editor.commitAction}
             >
-              Зафиксировать действие
+              {props.remote
+                ? "Сохранить комментарий"
+                : "Зафиксировать действие"}
             </button>
             {!viewing && (
               <button
@@ -339,15 +384,16 @@ function IncidentCardForm(
             ))}
           {modal === "calls" && (
             <p>
-              {isCallAccepted
-                ? `Учебный вызов · ${card.channel}. Аудиозапись в этом задании не предусмотрена.`
-                : "Учебный вызов ещё не принят."}
+              {props.remote
+                ? "SIP-звонки и аудиозапись пока не подключены. Условие задания передаётся текстом."
+                : isCallAccepted
+                  ? `Учебный вызов · ${card.channel}. Аудиозапись в этом задании не предусмотрена.`
+                  : "Учебный вызов ещё не принят."}
             </p>
           )}
           {modal === "timing" && (
             <p>
-              Прошло: {elapsedSeconds} с. Лимит учебного задания: {normSeconds}{" "}
-              с.
+              Прошло: {elapsedSeconds} с. Учебный ориентир: {normSeconds} с.
             </p>
           )}
           {modal === "sms" && <p>В этом учебном задании SMS отсутствуют.</p>}

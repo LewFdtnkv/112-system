@@ -26,8 +26,8 @@ export const MainLayout = () => {
       <AppSidebar />
       <div className="app-workspace">
         <p className="app-demo-note" role="note">
-          Учебный режим. Демонстрационные данные не передаются в реальные
-          службы.
+          Учебный тренажёр · Оценивание преподавателем · ДДС и SIP пока
+          недоступны
         </p>
         <main className="app-main">
           <Outlet />

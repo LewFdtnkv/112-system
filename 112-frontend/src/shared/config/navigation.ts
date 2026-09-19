@@ -24,6 +24,8 @@ export const navigationGroups = [
   {
     title: "Учебный процесс",
     items: [
+      { label: "Карточки", to: routePaths.cards, roles: ["teacher"] },
+      { label: "Группы", to: routePaths.groups, roles: ["teacher"] },
       {
         label: "Сценарии",
         to: routePaths.scenarios,
@@ -49,6 +51,7 @@ export const navigationGroups = [
   {
     title: "Управление",
     items: [
+      { label: "Службы и ЕКП", to: routePaths.catalogs, roles: ["admin"] },
       { label: "Пользователи", to: routePaths.users, roles: ["admin"] },
       {
         label: "Аналитика",

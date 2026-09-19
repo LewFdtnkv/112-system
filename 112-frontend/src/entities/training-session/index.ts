@@ -5,8 +5,6 @@ export {
   getResultScore,
   getResultMaxScore,
 } from "./model/demoSessions";
-export { trainingSessionsApi } from "./api/trainingSessionsApi";
-export { resultsApi } from "./api/resultsApi";
 export { useDemoTrainingStore } from "./model/demoTrainingStore";
 export {
   clearWorkspaceSnapshot,

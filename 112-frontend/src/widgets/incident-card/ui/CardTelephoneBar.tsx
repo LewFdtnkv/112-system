@@ -32,7 +32,13 @@ export function CardTelephoneBar({
       <div className="arm-call-status">
         <ArmIcon name="callEnd" />
         <div>
-          <span>{accepted ? "Отключение" : "Ожидание вызова"}</span>
+          <span>
+            {editor.remote
+              ? "Учебное сообщение"
+              : accepted
+                ? "Отключение"
+                : "Ожидание вызова"}
+          </span>
           <div>
             <button onClick={() => onHistory("calls")}>записи звонков</button>
             <button onClick={() => onHistory("sms")}>список SMS</button>
@@ -88,7 +94,7 @@ export function CardTelephoneBar({
         </div>
       ))}
       <div className="arm-card-identification">
-        <strong>Происшествие {card.id}</strong>
+        <strong>Происшествие {card.displayNumber ?? card.id}</strong>
         <span>
           Созд. {card.createdDate ?? "—"} в {card.createdAt}
         </span>
@@ -112,9 +118,9 @@ export function CardTelephoneBar({
       ) : (
         <div
           className={`arm-card-clock ${elapsedSeconds >= normSeconds ? "is-overdue" : ""}`}
-          title={`Лимит учебного задания: ${formatDuration(normSeconds)}`}
+          title={`Учебный ориентир: ${formatDuration(normSeconds)}`}
         >
-          <strong aria-label="Время заполнения карточки относительно норматива">
+          <strong aria-label="Время заполнения карточки относительно учебного ориентира">
             {formatDuration(elapsedSeconds)}
             <span className="visually-hidden">
               {" "}
@@ -123,7 +129,7 @@ export function CardTelephoneBar({
           </strong>
           <span>минут / секунд</span>
           {elapsedSeconds >= normSeconds && (
-            <span className="visually-hidden">Норматив превышен</span>
+            <span className="visually-hidden">Учебный ориентир превышен</span>
           )}
         </div>
       )}

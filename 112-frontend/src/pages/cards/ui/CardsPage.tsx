@@ -1,0 +1,318 @@
+import { useState } from "react";
+import {
+  Alert,
+  Button,
+  Checkbox,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  FormControlLabel,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  TextField,
+} from "@mui/material";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { trainingApi } from "@/entities/training";
+import { getApiError } from "@/shared/api";
+import { useDebounced } from "@/shared/lib/useDebounced";
+import { PageHeader } from "@/shared/ui/PageHeader";
+import { QueryState, PageControls } from "@/shared/ui/QueryState";
+import { ServerSelect, type SelectOption } from "@/shared/ui/ServerSelect";
+export const CardsPage = () => {
+  const [q, setQ] = useState("");
+  const search = useDebounced(q);
+  const [page, setPage] = useState(0);
+  const [open, setOpen] = useState(false);
+  const [detailId, setDetailId] = useState<string>();
+  const query = useQuery({
+    queryKey: ["cards", search, page],
+    queryFn: ({ signal }) =>
+      trainingApi.cards({ q: search, offset: page * 20 }, signal),
+  });
+  const detail = useQuery({
+    queryKey: ["card", detailId],
+    queryFn: ({ signal }) => trainingApi.card(detailId!, signal),
+    enabled: !!detailId,
+  });
+  return (
+    <Stack spacing={2}>
+      <PageHeader title="Библиотека карточек" />
+      <Button onClick={() => setOpen(true)}>Создать карточку</Button>
+      <TextField
+        label="Поиск карточки"
+        value={q}
+        onChange={(e) => {
+          setQ(e.target.value);
+          setPage(0);
+        }}
+      />
+      <QueryState
+        pending={query.isPending}
+        error={query.error}
+        retry={() => void query.refetch()}
+      >
+        {query.data && (
+          <>
+            <Table aria-label="Библиотека карточек">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Название</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {query.data.items.map((c) => (
+                  <TableRow key={c.id}>
+                    <TableCell>
+                      <Button
+                        className="table-block-link"
+                        onClick={() => setDetailId(c.id)}
+                      >
+                        {c.title}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            <PageControls
+              total={query.data.total}
+              page={page}
+              onPage={setPage}
+            />
+          </>
+        )}
+      </QueryState>
+      <Dialog
+        open={open}
+        onClose={() => setOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Новая карточка</DialogTitle>
+        <DialogContent>
+          <CardCreate onClose={() => setOpen(false)} />
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={!!detailId}
+        onClose={() => setDetailId(undefined)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>{detail.data?.title ?? "Карточка"}</DialogTitle>
+        <DialogContent>
+          <QueryState
+            pending={detail.isPending}
+            error={detail.error}
+            retry={() => void detail.refetch()}
+          >
+            {detail.data && (
+              <Stack spacing={2}>
+                <p>
+                  <b>Сообщение заявителя:</b> {detail.data.caller_message}
+                </p>
+                <p>
+                  <b>Инструкция:</b> {detail.data.instructions || "—"}
+                </p>
+                <p>
+                  <b>Адрес:</b> {detail.data.data.address_text}
+                </p>
+                <p>
+                  <b>Сообщение в карточке:</b> {detail.data.data.description}
+                </p>
+                <p>
+                  <b>Заявитель:</b> {detail.data.data.caller_name || "—"}{" "}
+                  {detail.data.data.caller_phone}
+                </p>
+              </Stack>
+            )}
+          </QueryState>
+          <Button onClick={() => setDetailId(undefined)}>Закрыть</Button>
+        </DialogContent>
+      </Dialog>
+    </Stack>
+  );
+};
+function CardCreate({ onClose }: { onClose: () => void }) {
+  const client = useQueryClient();
+  const [version, setVersion] = useState<SelectOption | null>(null);
+  const [entry, setEntry] = useState<SelectOption | null>(null);
+  const [optional, setOptional] = useState<string[]>([]);
+  const [form, setForm] = useState({
+    title: "",
+    caller_message: "",
+    instructions: "",
+    address_text: "",
+    description: "",
+    caller_name: "",
+    caller_phone: "",
+  });
+  const routes = useQuery({
+    queryKey: ["routes", version?.id, entry?.id],
+    queryFn: ({ signal }) => trainingApi.routes(version!.id, entry!.id, signal),
+    enabled: !!version && !!entry,
+  });
+  const recipients = (routes.data ?? [])
+    .filter(
+      (r) =>
+        !Object.keys(r.conditions).length || optional.includes(r.service_id),
+    )
+    .map((r) => r.service_id);
+  const save = useMutation({
+    mutationFn: () =>
+      trainingApi.createCard({
+        title: form.title,
+        caller_message: form.caller_message,
+        instructions: form.instructions,
+        classifier_version_id: version!.id,
+        classifier_entry_id: entry!.id,
+        recipient_service_ids: recipients,
+        data: {
+          address_text: form.address_text,
+          description: form.description,
+          caller_name: form.caller_name,
+          caller_phone: form.caller_phone,
+          additional_fields: {},
+        },
+      }),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: ["cards"] });
+      void client.invalidateQueries({ queryKey: ["card-options"] });
+      onClose();
+    },
+  });
+  const labels = {
+    title: "Название карточки",
+    caller_message: "Сообщение заявителя для ученика",
+    instructions: "Инструкция ученику",
+    address_text: "Эталонный адрес",
+    description: "Эталонное сообщение в карточке",
+    caller_name: "ФИО заявителя",
+    caller_phone: "Телефон заявителя",
+  };
+  return (
+    <Stack
+      component="form"
+      spacing={2}
+      sx={{ pt: 1 }}
+      onSubmit={(e) => {
+        e.preventDefault();
+        save.mutate();
+      }}
+    >
+      <Alert severity="info">
+        Эталонные сведения видит преподаватель. Ученик получает сообщение
+        заявителя и заполняет свою карточку.
+      </Alert>
+      {Object.entries(labels).map(([key, label]) => (
+        <TextField
+          key={key}
+          label={label}
+          required={[
+            "title",
+            "caller_message",
+            "address_text",
+            "description",
+          ].includes(key)}
+          multiline={["caller_message", "instructions", "description"].includes(
+            key,
+          )}
+          minRows={key === "caller_message" ? 3 : 1}
+          value={form[key as keyof typeof form]}
+          onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+        />
+      ))}
+      <ServerSelect
+        label="Опубликованная версия ЕКП"
+        queryKey={["classifier-options"]}
+        value={version}
+        onChange={(v) => {
+          setVersion(v);
+          setEntry(null);
+          setOptional([]);
+        }}
+        load={async (q, signal) =>
+          (await trainingApi.classifiers(q, signal)).map((c) => ({
+            id: c.id,
+            label: c.label,
+          }))
+        }
+      />
+      <ServerSelect
+        label="Тип происшествия (ЕКП)"
+        queryKey={["entry-options", version?.id]}
+        disabled={!version}
+        value={entry}
+        onChange={(v) => {
+          setEntry(v);
+          setOptional([]);
+        }}
+        load={async (q, signal) =>
+          (await trainingApi.entries(version!.id, { q }, signal)).map((c) => ({
+            id: c.id,
+            label: `${c.code} — ${c.name}`,
+          }))
+        }
+      />
+      {entry && (
+        <QueryState
+          pending={routes.isPending}
+          error={routes.error}
+          retry={() => void routes.refetch()}
+        >
+          {routes.data?.map((r) => (
+            <FormControlLabel
+              key={r.service_id}
+              label={
+                r.service_name +
+                (Object.keys(r.conditions).length ? " (условный маршрут)" : "")
+              }
+              control={
+                <Checkbox
+                  checked={recipients.includes(r.service_id)}
+                  disabled={!Object.keys(r.conditions).length}
+                  onChange={(_, checked) =>
+                    setOptional(
+                      checked
+                        ? [...optional, r.service_id]
+                        : optional.filter((id) => id !== r.service_id),
+                    )
+                  }
+                />
+              }
+            />
+          ))}
+        </QueryState>
+      )}
+      {routes.data?.some((r) => Object.keys(r.conditions).length > 0) && (
+        <Alert severity="warning">
+          Выполнение учеником условных маршрутов пока недоступно.
+        </Alert>
+      )}
+      {save.error && (
+        <Alert severity="error">{getApiError(save.error).message}</Alert>
+      )}
+      <Stack direction="row" spacing={2}>
+        <Button
+          type="submit"
+          disabled={
+            save.isPending ||
+            !version ||
+            !entry ||
+            !recipients.length ||
+            routes.isFetching
+          }
+        >
+          Сохранить карточку
+        </Button>
+        <Button onClick={onClose} disabled={save.isPending}>
+          Отмена
+        </Button>
+      </Stack>
+    </Stack>
+  );
+}

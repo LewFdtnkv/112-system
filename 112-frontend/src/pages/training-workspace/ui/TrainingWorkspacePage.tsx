@@ -1,280 +1,253 @@
-import { Button } from "@mui/material";
+import { Alert, Button } from "@mui/material";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
-
+import { Link, useParams } from "react-router-dom";
+import type { IncidentCardFields } from "@/entities/incident-card";
 import {
-  clearCardDraft,
-  demoIncidents,
-  emptyCardFields,
-  type IncidentCard,
-  type IncidentCardFields,
-} from "@/entities/incident-card";
-import { useDemoScenarioStore } from "@/entities/scenario";
+  trainingApi,
+  type Attempt,
+  type StudentLesson,
+} from "@/entities/training";
 import {
-  clearWorkspaceSnapshot,
-  useDemoTrainingStore,
-  readWorkspaceSnapshot,
-  writeWorkspaceSnapshot,
-  type DemoTrainingSession,
-} from "@/entities/training-session";
-import { useAuthStore } from "@/entities/user";
+  attemptCard,
+  cardData,
+  journalCard,
+} from "@/features/operator-workspace";
+import { getApiError } from "@/shared/api";
 import { getTrainingResultPath, routePaths } from "@/shared/config/routes";
-import { EmptyState } from "@/shared/ui/EmptyState";
-import { IncidentCardDialog } from "@/widgets/incident-card";
-import { LocationMap } from "@/widgets/location-map-placeholder";
+import { useDebounced } from "@/shared/lib/useDebounced";
 import { ArmIconButton } from "@/shared/ui/arm";
+import { QueryState } from "@/shared/ui/QueryState";
+import { IncidentCardDialog } from "@/widgets/incident-card";
 import { IncidentFeed } from "@/widgets/incident-feed";
-import {
-  TrainingStrip,
-  type CallState,
-  type ConnectionState,
-} from "@/widgets/training-strip";
-
-const fallbackNormSeconds = 30;
-
-const nextCardId = (count: number) =>
-  `379${String(count + 1).padStart(6, "0")}`;
-
-const currentTime = () =>
-  new Date().toLocaleTimeString("ru-RU", { hour12: false });
-
 export const TrainingWorkspacePage = () => {
-  const { sessionId } = useParams<{ sessionId: string }>();
-  const userId = useAuthStore((state) => state.session?.userId);
-  const sessions = useDemoTrainingStore((state) => state.sessions);
-  const session = sessions.find(
-    (item) => item.id === sessionId && item.studentId === userId,
+  const { sessionId } = useParams();
+  const lesson = useQuery({
+    queryKey: ["student-lesson", sessionId],
+    queryFn: ({ signal }) => trainingApi.studentLesson(sessionId!, signal),
+  });
+  return (
+    <QueryState
+      pending={lesson.isPending}
+      error={lesson.error}
+      retry={() => void lesson.refetch()}
+    >
+      {lesson.data && <Workspace key={lesson.data.id} lesson={lesson.data} />}
+    </QueryState>
   );
-
-  if (!session) {
-    return (
-      <EmptyState
-        title="Занятие не найдено"
-        action={<Link to={routePaths.studentDashboard}>К моим занятиям</Link>}
-      />
-    );
-  }
-
-  if (session.status === "completed") {
-    return (
-      <EmptyState
-        title="Занятие завершено"
-        action={
-          <Link to={getTrainingResultPath(session.id)}>Открыть результат</Link>
-        }
-      />
-    );
-  }
-
-  return <TrainingWorkspace key={session.id} session={session} />;
 };
-
-const TrainingWorkspace = ({ session }: { session: DemoTrainingSession }) => {
-  const navigate = useNavigate();
-  const sessionId = session.id;
-  const startSession = useDemoTrainingStore((state) => state.startSession);
-  const completeSession = useDemoTrainingStore(
-    (state) => state.completeSession,
-  );
-  const scenarios = useDemoScenarioStore((state) => state.scenarios);
-  const scenario = scenarios.find((item) => item.id === session?.scenarioId);
-  const normSeconds = scenario?.normSeconds ?? fallbackNormSeconds;
-
-  const [initialWorkspace] = useState(() =>
-    readWorkspaceSnapshot(sessionId, {
-      incidents: demoIncidents,
-      logs: {},
-      submittedIds: [],
-      callState: "incoming",
-      connectionState: "connected",
-      elapsedSeconds: 0,
-    }),
-  );
-  const [incidents, setIncidents] = useState<readonly IncidentCard[]>(
-    initialWorkspace.incidents,
-  );
-  const [selectedId, setSelectedId] = useState<string>();
-  const [activeCard, setActiveCard] = useState<IncidentCard | null>(null);
-  const [logs, setLogs] = useState<Record<string, readonly string[]>>(
-    initialWorkspace.logs,
-  );
-  const [submittedIds, setSubmittedIds] = useState<readonly string[]>(
-    initialWorkspace.submittedIds,
-  );
-  const [callState, setCallState] = useState<CallState>(
-    initialWorkspace.callState,
-  );
-  const [connectionState, setConnectionState] = useState<ConnectionState>(
-    initialWorkspace.connectionState,
-  );
-  const [elapsedSeconds, setElapsedSeconds] = useState(
-    initialWorkspace.elapsedSeconds,
-  );
-
-  useEffect(() => {
-    if (callState !== "accepted") return;
-
-    const intervalId = window.setInterval(
-      () => setElapsedSeconds((current) => current + 1),
-      1000,
-    );
-
-    return () => window.clearInterval(intervalId);
-  }, [callState]);
-
-  useEffect(() => {
-    writeWorkspaceSnapshot(sessionId, {
-      incidents,
-      logs,
-      submittedIds,
-      callState,
-      connectionState,
-      elapsedSeconds,
-    });
-  }, [
-    callState,
-    connectionState,
-    elapsedSeconds,
-    incidents,
-    logs,
-    sessionId,
-    submittedIds,
-  ]);
-
-  const appendLog = (cardId: string, entry: string) =>
-    setLogs((current) => ({
-      ...current,
-      [cardId]: [...(current[cardId] ?? []), entry],
-    }));
-
-  const applyFields = (cardId: string, fields: IncidentCardFields) =>
-    setIncidents((current) =>
-      current.map((incident) =>
-        incident.id === cardId ? { ...incident, fields } : incident,
-      ),
-    );
-
-  const openCard = (card: IncidentCard) => {
-    setSelectedId(card.id);
-    setActiveCard(card);
+function Workspace({ lesson }: { lesson: StudentLesson }) {
+  const client = useQueryClient();
+  const [attempt, setAttempt] = useState<Attempt | null>(null);
+  const next = lesson.assignments.find((a) => a.available);
+  const refresh = () => {
+    void client.invalidateQueries({ queryKey: ["student-lesson", lesson.id] });
+    void client.invalidateQueries({ queryKey: ["lessons"] });
   };
-
-  const createCard = () => {
-    const card: IncidentCard = {
-      id: nextCardId(incidents.length),
-      createdAt: currentTime(),
-      channel: "112",
-      origin: "student",
-      createdDate: new Date().toLocaleDateString("ru-RU"),
-      operatorNumber: "0",
-      workstation: "4",
-      fields: {
-        ...emptyCardFields,
-        address: {
-          ...emptyCardFields.address,
-          region: "Москва",
-          country: "",
-        },
-      },
-    };
-
-    setIncidents((current) => [card, ...current]);
-    openCard(card);
-  };
-
-  const commitAction = (fields: IncidentCardFields, action: string) => {
-    if (!activeCard || submittedIds.includes(activeCard.id)) return;
-
-    applyFields(activeCard.id, { ...fields, operatorAction: "" });
-    appendLog(activeCard.id, `Оператор: ${action}`);
-  };
-
-  const submitCard = (fields: IncidentCardFields) => {
-    if (!activeCard || submittedIds.includes(activeCard.id)) return;
-
-    const closed: IncidentCardFields = { ...fields, status: "closed" };
-    applyFields(activeCard.id, closed);
-    setActiveCard({ ...activeCard, fields: closed });
-    appendLog(activeCard.id, "Карточка отправлена на учебную проверку.");
-    setSubmittedIds((current) => [...current, activeCard.id]);
-    clearCardDraft(sessionId, activeCard.id);
-  };
-
-  const completeTraining = () => {
-    const submittedId = submittedIds.at(-1);
-    const submittedCard = incidents.find((item) => item.id === submittedId);
-    if (!submittedCard) return;
-
-    const result = completeSession({
-      sessionId,
-      fields: submittedCard.fields,
-      actionLog: logs[submittedCard.id] ?? [],
-      elapsedSeconds,
-      normSeconds,
-    });
-    if (result) {
-      clearWorkspaceSnapshot(sessionId);
-      navigate(getTrainingResultPath(sessionId));
-    }
-  };
-
+  const open = useMutation({
+    mutationFn: ({
+      assignmentId,
+      attemptId,
+    }: {
+      assignmentId: string;
+      attemptId: string | null;
+    }) =>
+      attemptId
+        ? trainingApi.attempt(attemptId)
+        : trainingApi.startAttempt(assignmentId),
+    onSuccess: (data) => {
+      setAttempt(data);
+      refresh();
+    },
+  });
+  const incidents = lesson.assignments.flatMap((a) =>
+    a.card ? [journalCard(a.card)] : [],
+  );
   return (
     <div className="incident-desk">
-      <TrainingStrip
-        scenarioTitle={scenario?.name ?? "Учебное занятие"}
-        isSessionActive={Boolean(session)}
-        elapsedSeconds={elapsedSeconds}
-        normSeconds={normSeconds}
-        callState={callState}
-        connectionState={connectionState}
-        onAcceptCall={() => {
-          startSession(sessionId);
-          setCallState("accepted");
-        }}
-        onDeclineCall={() => setCallState("declined")}
-        onToggleConnection={() =>
-          setConnectionState((current) =>
-            current === "connected" ? "reconnecting" : "connected",
-          )
-        }
-      />
-
+      <div className="operator-training-bar">
+        <strong>{lesson.title}</strong>
+        <span>
+          Оператор 112 · Карточек сдано:{" "}
+          {lesson.assignments.filter((a) => a.status === "completed").length} /{" "}
+          {lesson.assignments.length}
+        </span>
+        {next && (
+          <Button
+            disabled={open.isPending}
+            onClick={() =>
+              open.mutate({ assignmentId: next.id, attemptId: next.attempt_id })
+            }
+          >
+            {next.attempt_id
+              ? "Продолжить заполнение"
+              : "Начать следующую карточку"}
+          </Button>
+        )}
+      </div>
+      {lesson.assignments.some((a) => a.role === "dds") && (
+        <Alert severity="info">
+          Выполнение упражнения ДДС и SIP-звонки пока недоступны.
+        </Alert>
+      )}
+      {lesson.status === "cancelled" && (
+        <Alert severity="warning">Занятие отменено преподавателем.</Alert>
+      )}
+      {open.error && (
+        <Alert severity="error">{getApiError(open.error).message}</Alert>
+      )}
+      {lesson.work_status === "submitted" && (
+        <Alert
+          severity="success"
+          action={
+            <Button component={Link} to={getTrainingResultPath(lesson.id)}>
+              Результат
+            </Button>
+          }
+        >
+          Все карточки отправлены на проверку.
+        </Alert>
+      )}
       <IncidentFeed
+        incidents={incidents}
+        selectedId={attempt?.card.id}
+        onOpen={(card) => {
+          const row = lesson.assignments.find((a) => a.card?.id === card.id);
+          if (row && !open.isPending)
+            open.mutate({ assignmentId: row.id, attemptId: row.attempt_id });
+        }}
         toolbar={
           <div className="arm-journal-actions">
             <ArmIconButton
               icon="plus"
               label="Создать новую карточку"
-              disabled={callState !== "accepted"}
-              onClick={createCard}
+              disabled={!next || !!next.attempt_id || open.isPending}
+              onClick={() => {
+                if (next)
+                  open.mutate({ assignmentId: next.id, attemptId: null });
+              }}
             />
             <Link to={routePaths.studentDashboard}>Мои занятия</Link>
-            <Button
-              disabled={callState !== "accepted" || submittedIds.length === 0}
-              onClick={completeTraining}
-            >
-              Завершить занятие
-            </Button>
+            <Button onClick={refresh}>Обновить журнал</Button>
           </div>
         }
-        incidents={incidents}
-        selectedId={selectedId}
-        onOpen={openCard}
       />
-
-      <IncidentCardDialog
-        renderMap={(addressLine) => <LocationMap addressLine={addressLine} />}
-        card={activeCard}
-        sessionId={sessionId}
-        log={logs[activeCard?.id ?? ""] ?? []}
-        isSubmitted={activeCard ? submittedIds.includes(activeCard.id) : false}
-        isCallAccepted={callState === "accepted"}
-        onClose={() => setActiveCard(null)}
-        onCommitAction={commitAction}
-        onSubmit={submitCard}
-        elapsedSeconds={elapsedSeconds}
-        normSeconds={normSeconds}
-      />
+      {attempt && (
+        <AttemptEditor
+          key={attempt.id}
+          initial={attempt}
+          onClose={() => setAttempt(null)}
+          onSaved={refresh}
+        />
+      )}
     </div>
   );
-};
+}
+function AttemptEditor({
+  initial,
+  onClose,
+  onSaved,
+}: {
+  initial: Attempt;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [attempt, setAttempt] = useState(initial);
+  const [selected, setSelected] = useState(initial.classifier_entry);
+  const [search, setSearch] = useState("");
+  const debounced = useDebounced(search);
+  const [now, setNow] = useState(() => Date.now());
+  const completed = attempt.status === "completed";
+  useEffect(() => {
+    if (completed) return;
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [completed]);
+  useEffect(() => {
+    if (completed) return;
+    const warn = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [completed]);
+  const entries = useQuery({
+    queryKey: ["attempt-entries", attempt.id, debounced],
+    queryFn: ({ signal }) =>
+      trainingApi.attemptEntries(attempt.id, { q: debounced }, signal),
+    enabled: !completed,
+  });
+  const recipients = useQuery({
+    queryKey: ["recipients", attempt.id, selected?.id],
+    queryFn: ({ signal }) =>
+      trainingApi.recipients(attempt.id, selected!.id, signal),
+    enabled: !!selected && !completed,
+  });
+  const save = async (fields: IncidentCardFields) => {
+    const updated = await trainingApi.saveDraft(
+      attempt.id,
+      attempt.card.revision,
+      fields.categoryId || null,
+      cardData(fields, attempt.card.data),
+    );
+    setAttempt(updated);
+    onSaved();
+    return updated;
+  };
+  const submit = async (fields: IncidentCardFields) => {
+    const updated = await save(fields);
+    const submitted = await trainingApi.submit(
+      updated.id,
+      updated.card.revision,
+    );
+    setAttempt(submitted);
+    onSaved();
+  };
+  const targets = completed
+    ? attempt.notified_services
+    : selected
+      ? (recipients.data ?? [])
+      : [];
+  const error = entries.error || recipients.error;
+  return (
+    <>
+      <IncidentCardDialog
+        card={attemptCard(attempt)}
+        log={[]}
+        isSubmitted={completed}
+        isCallAccepted={attempt.status === "in_progress" || completed}
+        onClose={onClose}
+        onCommitAction={() => {}}
+        onSubmit={submit}
+        elapsedSeconds={Math.max(
+          0,
+          Math.floor(
+            ((attempt.ended_at ? Date.parse(attempt.ended_at) : now) -
+              Date.parse(attempt.started_at)) /
+              1000,
+          ),
+        )}
+        normSeconds={attempt.norm_seconds}
+        remote={{
+          categories: (entries.data ?? []).map((e) => ({
+            id: e.id,
+            name: `${e.code} — ${e.name}`,
+          })),
+          categoryName: selected ? `${selected.code} — ${selected.name}` : "",
+          services: targets.map((s) => ({ id: s.service_id, name: s.name })),
+          search: setSearch,
+          select: (id) =>
+            setSelected(entries.data?.find((e) => e.id === id) ?? null),
+          onSave: async (fields) => {
+            await save(fields);
+          },
+          message: [attempt.caller_message, attempt.instructions]
+            .filter(Boolean)
+            .join("\n\n"),
+          searching: entries.isFetching || recipients.isFetching,
+          error: error ? getApiError(error).message : undefined,
+        }}
+      />
+    </>
+  );
+}

@@ -1,4 +1,8 @@
 import { test, expect } from "@playwright/test";
+import { mockBusiness } from "./business-fixture";
+test.beforeEach(async ({ page }) => {
+  await mockBusiness(page);
+});
 const pair = {
   access_token: "test-access",
   refresh_token: "test-refresh",

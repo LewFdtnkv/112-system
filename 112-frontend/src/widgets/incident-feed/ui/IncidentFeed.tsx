@@ -43,7 +43,7 @@ export function IncidentFeed({
           const address = formatAddress(fields.address);
           const text = [
             incident.id,
-            getCategoryName(fields.categoryId),
+            incident.categoryName ?? getCategoryName(fields.categoryId),
             address,
             fields.description,
             fields.callerName,
@@ -288,7 +288,7 @@ export function IncidentFeed({
                           {incident.operatorNumber ?? "—"}
                         </td>
                         <td>{incident.workstation ?? "—"}</td>
-                        <td>{incident.id}</td>
+                        <td>{incident.displayNumber ?? incident.id}</td>
                         <td>
                           {incident.createdDate?.replace(
                             /\.20(\d{2})$/,
@@ -299,7 +299,7 @@ export function IncidentFeed({
                           {incident.createdAt}
                         </td>
                         <td className="arm-journal-table__category">
-                          {getCategoryName(incident.fields.categoryId)}
+                          {incident.categoryName ?? getCategoryName(incident.fields.categoryId)}
                         </td>
                         <td>
                           {incident.fields.victimsCount
