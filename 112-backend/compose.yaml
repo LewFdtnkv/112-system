@@ -11,6 +11,14 @@ x-backend: &backend
     REFRESH_TOKEN_DAYS: ${REFRESH_TOKEN_DAYS:-7}
 
 services:
+  frontend:
+    build: ../112-frontend
+    ports:
+      - "127.0.0.1:${FRONTEND_PORT:-8080}:80"
+    depends_on:
+      api:
+        condition: service_healthy
+
   db:
     image: postgres:17
     environment:
