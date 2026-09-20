@@ -21,6 +21,7 @@ def lesson_rows_query(*, teacher_id: UUID | None = None, student_id: UUID | None
         Assignment.lesson_id,
         Assignment.student_id,
         func.count(Assignment.id).label("card_count"),
+        func.max(Attempt.ended_at).label("last_finished_at"),
         func.count(Attempt.id).label("started_count"),
         func.count(Attempt.id)
         .filter(Attempt.status.in_([AttemptStatus.COMPLETED, AttemptStatus.INTERRUPTED]))
@@ -78,6 +79,19 @@ def lesson_rows_query(*, teacher_id: UUID | None = None, student_id: UUID | None
             TrainingGroup.name.label("group_name"),
             Lesson.started_at,
             Lesson.ended_at,
+            case(
+                (
+                    (Lesson.status == "finished")
+                    | (counts.c.terminal_count == counts.c.card_count),
+                    func.coalesce(
+                        counts.c.last_finished_at,
+                        Lesson.ended_at,
+                        Lesson.started_at,
+                        Lesson.created_at,
+                    ),
+                ),
+                else_=None,
+            ).label("completed_at"),
             Lesson.available_from,
             Lesson.available_until,
             Lesson.status,

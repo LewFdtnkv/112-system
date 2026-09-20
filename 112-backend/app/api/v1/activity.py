@@ -20,10 +20,12 @@ from app.models import (
     UserActivity,
 )
 from app.schemas.activity import MessageCreate, ProctoringBatch, TransferStudent
+from app.schemas.student_overview import StudentOverview
 from app.schemas.user import UserRead
 from app.services.activity import change_membership, owned_student, send_message
 from app.services.exports import export_rows
 from app.services.student import owned_attempt
+from app.services.student_overview import student_overview
 from app.services.views import lesson_page, lesson_rows_query
 
 router = APIRouter(tags=["activity"])
@@ -91,6 +93,19 @@ async def read_message(message_id: UUID, session: SessionDep, student: StudentDe
         raise HTTPException(404, "Message not found")
     recipient.read_at = recipient.read_at or datetime.now(UTC)
     await session.commit()
+
+
+@router.get("/student/overview", response_model=StudentOverview)
+async def my_overview(session: SessionDep, student: StudentDep, active_offset: Offset = 0):
+    return await student_overview(session, student, active_offset=active_offset)
+
+
+@router.get("/teaching/students/{student_id}/overview", response_model=StudentOverview)
+async def teaching_overview(
+    student_id: UUID, session: SessionDep, teacher: TeacherDep, active_offset: Offset = 0
+):
+    user = await owned_student(session, student_id, teacher.id)
+    return await student_overview(session, user, teacher_id=teacher.id, active_offset=active_offset)
 
 
 @router.get("/teaching/students/{student_id}")

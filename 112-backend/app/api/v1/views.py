@@ -29,6 +29,7 @@ from app.schemas.views import (
     ScenarioItem,
     UserItem,
 )
+from app.services.activity import owned_student
 from app.services.groups import owned_group
 from app.services.views import lesson_page, lesson_rows_query
 
@@ -208,12 +209,16 @@ async def teacher_lessons(
     q: Search = "",
     status: Literal["all", "assigned", "in_progress", "submitted"] = "all",
     lesson_id: UUID | None = None,
+    student_id: UUID | None = None,
     limit: Limit = 20,
     offset: Offset = 0,
 ):
+    if student_id is not None:
+        await owned_student(session, student_id, teacher.id)
     return await lesson_page(
         session,
         teacher_id=teacher.id,
+        student_id=student_id,
         lesson_id=lesson_id,
         q=q,
         status=status,

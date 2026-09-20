@@ -47,6 +47,7 @@ class LessonRow(BaseModel):
     group_name: str | None
     started_at: datetime | None
     ended_at: datetime | None
+    completed_at: datetime | None = None
     available_from: datetime | None = None
     available_until: datetime | None = None
     status: str
