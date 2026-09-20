@@ -360,7 +360,7 @@ test("real API: EKP file roundtrip, rule editing, profile publication and DDS ex
   await editor.getByLabel("Тип происшествия", { exact: true }).fill("101");
   await editor
     .getByRole("button", {
-      name: "101 — Пожар в жилом доме (учебный)",
+      name: "Пожар в жилом доме (учебный)",
       exact: true,
     })
     .click();

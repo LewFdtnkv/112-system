@@ -1,8 +1,12 @@
+import { FeatureInput } from "@/shared/ui/FeatureInput";
+import { matchesFeature } from "@/shared/lib/featureValues";
+import type { FeatureValue } from "@/shared/lib/featureValues";
 import { useState } from "react";
 import {
   Alert,
   Button,
   Checkbox,
+  Chip,
   Dialog,
   DialogContent,
   DialogTitle,
@@ -14,7 +18,6 @@ import {
   TableHead,
   TableRow,
   TextField,
-  MenuItem,
 } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -162,8 +165,12 @@ function CardCreate({ onClose }: { onClose: () => void }) {
   const client = useQueryClient();
   const [version, setVersion] = useState<SelectOption | null>(null);
   const [entry, setEntry] = useState<SelectOption | null>(null);
+  const [notificationRequired, setNotificationRequired] = useState(true);
   const [features, setFeatures] = useState<FeatureDefinition[]>([]);
-  const [answers, setAnswers] = useState<Record<string, boolean>>({});
+  const [answers, setAnswers] = useState<Record<string, FeatureValue>>({});
+  const [manualRecipients, setManualRecipients] = useState<
+    SelectOption[] | null
+  >(null);
   const [optional, setOptional] = useState<string[]>([]);
   const [form, setForm] = useState({
     title: "",
@@ -185,8 +192,8 @@ function CardCreate({ onClose }: { onClose: () => void }) {
         !Object.keys(r.conditions).length ||
         (features.length
           ? Object.entries(
-              (r.conditions.when ?? {}) as Record<string, boolean>,
-            ).every(([key, v]) => answers[key] === v)
+              (r.conditions.when ?? {}) as Record<string, FeatureValue>,
+            ).every(([key, v]) => matchesFeature(answers[key], v))
           : optional.includes(r.service_id)),
     )
     .map((r) => r.service_id);
@@ -198,7 +205,8 @@ function CardCreate({ onClose }: { onClose: () => void }) {
         instructions: form.instructions,
         classifier_version_id: version!.id,
         classifier_entry_id: entry!.id,
-        recipient_service_ids: recipients,
+        recipient_service_ids: manualRecipients?.map((s) => s.id) ?? recipients,
+        use_recommended_recipients: manualRecipients === null,
         data: {
           address_text: structuredAddress || form.address_text,
           address_details: Object.fromEntries(
@@ -255,12 +263,12 @@ function CardCreate({ onClose }: { onClose: () => void }) {
         <TextField
           key={key}
           label={label}
-          required={[
-            "title",
-            "caller_message",
-            "address_text",
-            "description",
-          ].includes(key)}
+          required={
+            !(key === "address_text" && !notificationRequired) &&
+            ["title", "caller_message", "address_text", "description"].includes(
+              key,
+            )
+          }
           multiline={["caller_message", "instructions", "description"].includes(
             key,
           )}
@@ -334,9 +342,11 @@ function CardCreate({ onClose }: { onClose: () => void }) {
         onChange={(v) => {
           setVersion(v);
           setEntry(null);
+          setNotificationRequired(true);
           setFeatures([]);
           setAnswers({});
           setOptional([]);
+          setManualRecipients(null);
         }}
         load={async (q, signal) =>
           (await trainingApi.classifiers(q, signal)).map((c) => ({
@@ -352,35 +362,103 @@ function CardCreate({ onClose }: { onClose: () => void }) {
         value={entry}
         onChange={(v) => {
           setEntry(v);
-          setFeatures((v?.metadata as FeatureDefinition[] | undefined) ?? []);
+          const metadata = v?.metadata as
+            | {
+                features?: FeatureDefinition[];
+                notification_required?: boolean;
+              }
+            | undefined;
+          setFeatures(metadata?.features ?? []);
+          setNotificationRequired(metadata?.notification_required !== false);
           setAnswers({});
           setOptional([]);
+          setManualRecipients(null);
         }}
         load={async (q, signal) => {
           const rows = await trainingApi.entries(version!.id, { q }, signal);
           return rows.map((c) => ({
             id: c.id,
             label: `${c.code} — ${c.name}`,
-            metadata: c.conditions.features ?? [],
+            metadata: {
+              features: c.conditions.features ?? [],
+              notification_required: c.notification_required,
+            },
           }));
         }}
       />
       {features.map((f) => (
-        <TextField
+        <FeatureInput
           key={f.key}
-          select
-          required
-          label={`Признак: ${f.label}`}
-          value={answers[f.key] === undefined ? "" : String(answers[f.key])}
-          onChange={(e) =>
-            setAnswers({ ...answers, [f.key]: e.target.value === "true" })
-          }
-        >
-          <MenuItem value="true">Да</MenuItem>
-          <MenuItem value="false">Нет</MenuItem>
-        </TextField>
+          feature={f}
+          value={answers[f.key]}
+          onChange={(value) => {
+            const next = { ...answers };
+            if (value === undefined) delete next[f.key];
+            else next[f.key] = value;
+            setAnswers(next);
+          }}
+        />
       ))}
       {entry && (
+        <FormControlLabel
+          label="Задать службы эталона вручную"
+          control={
+            <Checkbox
+              checked={manualRecipients !== null}
+              onChange={(_, checked) =>
+                setManualRecipients(
+                  checked
+                    ? (routes.data ?? [])
+                        .filter((r) => recipients.includes(r.service_id))
+                        .map((r) => ({
+                          id: r.service_id,
+                          label: r.service_name,
+                        }))
+                    : null,
+                )
+              }
+            />
+          }
+        />
+      )}
+      {manualRecipients !== null && (
+        <Stack spacing={1}>
+          <Alert severity="info">
+            Используйте для исключений из ЕКП. Укажите причину и сведения для
+            решения в условии карточки. Ученик будет оцениваться по этому
+            списку; пустой список означает регистрацию без оповещения.
+          </Alert>
+          <ServerSelect
+            label="Добавить службу в эталон"
+            queryKey={["reference-services"]}
+            value={null}
+            onChange={(v) => {
+              if (v && !manualRecipients.some((s) => s.id === v.id))
+                setManualRecipients([...manualRecipients, v]);
+            }}
+            load={async (q, signal) =>
+              (await trainingApi.services(q, signal)).map((s) => ({
+                id: s.id,
+                label: s.name,
+              }))
+            }
+          />
+          <Stack direction="row" sx={{ flexWrap: "wrap", gap: 1 }}>
+            {manualRecipients.map((s) => (
+              <Chip
+                key={s.id}
+                label={s.label}
+                onDelete={() =>
+                  setManualRecipients(
+                    manualRecipients.filter((x) => x.id !== s.id),
+                  )
+                }
+              />
+            ))}
+          </Stack>
+        </Stack>
+      )}
+      {entry && manualRecipients === null && (
         <QueryState
           pending={routes.isPending}
           error={routes.error}
@@ -428,7 +506,9 @@ function CardCreate({ onClose }: { onClose: () => void }) {
             save.isPending ||
             !version ||
             !entry ||
-            !recipients.length ||
+            (manualRecipients === null &&
+              notificationRequired &&
+              !recipients.length) ||
             routes.isFetching
           }
         >

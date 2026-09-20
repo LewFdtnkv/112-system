@@ -2,7 +2,7 @@ import { randomUUID } from "@/shared/lib/uuid";
 import type { ClientObservation } from "@/entities/training";
 
 const fieldPattern =
-  /^(ekpAnswers\.[a-z][a-z0-9_]{0,49}|categoryId|callerName|description|operatorAction|victimsCount|address\.(country|region|locality|object|district|area|street|house|building|structure|apartment|entrance|floor|doorCode|description)|phones\.(callerId|provided|onSite)|details\.(buildingFloors|classificationDescription|callerStatus|callerGender|callerAge|foreignLanguage|refusedAmbulance|blocked))$/;
+  /^(ekpAnswers\.[a-z][a-z0-9_]{0,49}|location\.(latitude|longitude)|categoryId|callerName|description|operatorAction|victimsCount|address\.(country|region|locality|object|district|area|street|house|building|structure|apartment|entrance|floor|doorCode|description)|phones\.(callerId|provided|onSite)|details\.(buildingFloors|classificationDescription|callerStatus|callerGender|callerAge|foreignLanguage|refusedAmbulance|blocked))$/;
 function flatten(
   value: unknown,
   prefix = "",
@@ -15,7 +15,11 @@ function flatten(
       ),
     );
   return fieldPattern.test(prefix) &&
-    (value === null || ["string", "number", "boolean"].includes(typeof value))
+    (value === null ||
+      ["string", "number", "boolean"].includes(typeof value) ||
+      (prefix.startsWith("ekpAnswers.") &&
+        Array.isArray(value) &&
+        value.every((v) => typeof v === "string")))
     ? { [prefix]: value as ClientObservation["value"] }
     : {};
 }
@@ -71,7 +75,7 @@ export function createObservationBuffer(
       ...Object.keys(baseline),
       ...Object.keys(next),
     ])) {
-      if (baseline[key] !== next[key])
+      if (JSON.stringify(baseline[key]) !== JSON.stringify(next[key]))
         pending.set(key, {
           ...make("ui.field_changed"),
           field: key,

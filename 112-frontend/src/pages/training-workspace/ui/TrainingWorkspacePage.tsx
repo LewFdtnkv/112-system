@@ -1,3 +1,4 @@
+import type { FeatureValue } from "@/shared/lib/featureValues";
 import { useProctoring } from "@/features/proctoring";
 import { StudentMessages } from "@/features/teaching-messages";
 import { DDSWorkspace } from "./DDSWorkspace";
@@ -316,9 +317,9 @@ function AttemptEditor({
   const [autosaveError, setAutosaveError] = useState("");
   const [selected, setSelected] = useState(initial.classifier_entry);
   const [search, setSearch] = useState("");
-  const debounced = useDebounced(search);
-  const [answers, setAnswers] = useState<Record<string, boolean>>(
-    (initial.card.data.features?.ekp as Record<string, boolean>) ?? {},
+  const debounced = useDebounced(search.trim());
+  const [answers, setAnswers] = useState<Record<string, FeatureValue>>(
+    (initial.card.data.features?.ekp as Record<string, FeatureValue>) ?? {},
   );
   const debouncedAnswers = useDebounced(answers);
   const [now, setNow] = useState(() => Date.now());
@@ -345,15 +346,28 @@ function AttemptEditor({
     queryKey: ["attempt-entries", attempt.id, debounced],
     queryFn: ({ signal }) =>
       trainingApi.attemptEntries(attempt.id, { q: debounced }, signal),
+    enabled: !completed && debounced.length >= 2 && search.trim().length >= 2,
+  });
+  const popular = useQuery({
+    queryKey: ["attempt-popular-entries", attempt.id],
+    queryFn: ({ signal }) =>
+      trainingApi.attemptEntries(
+        attempt.id,
+        { popular: true, limit: 11 },
+        signal,
+      ),
     enabled: !completed,
+    staleTime: Infinity,
   });
   const recipients = useQuery({
     queryKey: ["recipients", attempt.id, selected?.id, debouncedAnswers],
     queryFn: ({ signal }) =>
-      selected?.conditions?.format === "boolean-features-v1"
+      ["boolean-features-v1", "typed-features-v1"].includes(
+        String(selected?.conditions?.format),
+      )
         ? trainingApi.previewRecipients(
             attempt.id,
-            selected.id,
+            selected!.id,
             debouncedAnswers,
             signal,
           )
@@ -369,6 +383,7 @@ function AttemptEditor({
           revision.current,
           fields.categoryId || null,
           cardData(fields, initial.card.data),
+          fields.manualServices?.map((s) => s.id) ?? null,
         );
         revision.current = updated.card.revision;
         setAttempt(updated);
@@ -416,7 +431,13 @@ function AttemptEditor({
     : selected
       ? (recipients.data ?? [])
       : [];
-  const error = entries.error || recipients.error;
+  const error =
+    entries.error ||
+    popular.error ||
+    (JSON.stringify(answers) === JSON.stringify(debouncedAnswers) &&
+    !recipients.isFetching
+      ? recipients.error
+      : undefined);
   return (
     <>
       {autosaveError && (
@@ -464,22 +485,57 @@ function AttemptEditor({
                 : (fields.ekpAnswers ?? {}),
             );
           },
-          categories: (entries.data ?? []).map((e) => ({
+          categories: (debounced === search.trim() && debounced.length >= 2
+            ? (entries.data ?? [])
+            : []
+          ).map((e) => ({
             id: e.id,
-            name: `${e.code} — ${e.name}`,
+            name: e.display_name || e.name,
           })),
-          categoryName: selected ? `${selected.code} — ${selected.name}` : "",
-          services: targets.map((s) => ({ id: s.service_id, name: s.name })),
+          popularCategories: (popular.data ?? []).map((e) => ({
+            id: e.id,
+            name: e.display_name || e.name,
+          })),
+          categoryName: selected ? selected.display_name || selected.name : "",
+          notificationRequired: selected?.notification_required !== false,
+          serviceQueryKey: attempt.id,
+          loadServices: async (q, offset, signal) => {
+            const page = await trainingApi.attemptServices(
+              attempt.id,
+              { q, offset },
+              signal,
+            );
+            return {
+              items: page.items.map((s) => ({
+                id: s.id,
+                name: s.name,
+                short_name: s.short_name,
+              })),
+              total: page.total,
+            };
+          },
+          services: targets.map((s) => ({
+            id: s.service_id,
+            name: s.name,
+            short_name: s.short_name,
+          })),
           search: setSearch,
           select: (id) =>
-            setSelected(entries.data?.find((e) => e.id === id) ?? null),
+            setSelected(
+              [...(entries.data ?? []), ...(popular.data ?? [])].find(
+                (e) => e.id === id,
+              ) ?? null,
+            ),
           onSave: async (fields) => {
             await save(fields);
           },
           message: [attempt.caller_message, attempt.instructions]
             .filter(Boolean)
             .join("\n\n"),
-          searching: entries.isFetching || recipients.isFetching,
+          searching:
+            entries.isFetching ||
+            popular.isFetching ||
+            (search.trim().length >= 2 && debounced !== search.trim()),
           error: error ? getApiError(error).message : undefined,
         }}
       />

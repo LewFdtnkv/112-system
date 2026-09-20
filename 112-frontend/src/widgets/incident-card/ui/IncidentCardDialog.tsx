@@ -1,3 +1,4 @@
+import { LocationPicker } from "@/features/location-picker";
 import "./incident-card.scss";
 import { Dialog, DialogContent, DialogTitle } from "@mui/material";
 import { useState, type ReactNode } from "react";
@@ -155,6 +156,9 @@ function IncidentCardForm(
         >
           <div className="arm-service-tiles">
             <strong>Службы:</strong>
+            {editor.remote?.notificationRequired === false && (
+              <span>Оповещение не требуется</span>
+            )}
             {fields.services.map((service) => (
               <button
                 key={service}
@@ -168,7 +172,10 @@ function IncidentCardForm(
               >
                 <span>⌃</span>
                 <strong>
-                  {props.remote?.services.find((s) => s.id === service)?.name ??
+                  {editor.remote?.services.find((s) => s.id === service)
+                    ?.short_name ||
+                    editor.remote?.services.find((s) => s.id === service)
+                      ?.name ||
                     `Служба ${service}`}
                 </strong>
                 <small>
@@ -176,7 +183,7 @@ function IncidentCardForm(
                 </small>
               </button>
             ))}
-            {!viewing && !props.remote && (
+            {!viewing && (!props.remote || props.remote.loadServices) && (
               <ArmIconButton
                 icon="plus"
                 label="Добавить службы"
@@ -199,7 +206,11 @@ function IncidentCardForm(
             {!viewing && (
               <button
                 className="arm-save"
-                aria-label="Оповестить и сохранить карточку"
+                aria-label={
+                  editor.remote?.notificationRequired === false
+                    ? "Сохранить без оповещения"
+                    : "Оповестить и сохранить карточку"
+                }
                 disabled={disabled}
                 onClick={editor.submit}
               >
@@ -244,7 +255,7 @@ function IncidentCardForm(
               aria-label={`История службы ${activeService}`}
             >
               <h3>
-                {props.remote?.services.find((s) => s.id === activeService)
+                {editor.remote?.services.find((s) => s.id === activeService)
                   ?.name ?? `Служба ${activeService}`}
                 <ArmIconButton
                   icon="close"
@@ -341,6 +352,9 @@ function IncidentCardForm(
       <CardServicesDialog
         open={servicesOpen && !viewing}
         selected={fields.services}
+        remote={editor.remote}
+        manual={fields.manualServices != null}
+        onReset={editor.useRecommendedServices}
         onToggle={editor.toggleService}
         onClose={() => setServicesOpen(false)}
       />
@@ -349,9 +363,10 @@ function IncidentCardForm(
         onClose={() => setModal(undefined)}
         fullWidth
         maxWidth={modal === "map" ? "md" : "sm"}
+        aria-labelledby="card-aux-dialog-title"
         className="arm-aux-dialog"
       >
-        <DialogTitle>
+        <DialogTitle id="card-aux-dialog-title">
           {modal === "victims"
             ? "Пострадавшие"
             : modal === "map"
@@ -388,7 +403,15 @@ function IncidentCardForm(
           )}
           {modal === "map" &&
             (renderMap?.(formatAddress(fields.address)) ?? (
-              <p>Карта не подключена.</p>
+              <LocationPicker
+                initial={fields.location ?? null}
+                readOnly={disabled}
+                onConfirm={(point) => {
+                  editor.setField("location", point);
+                  setModal(undefined);
+                }}
+                onCancel={() => setModal(undefined)}
+              />
             ))}
           {modal === "calls" && (
             <p>

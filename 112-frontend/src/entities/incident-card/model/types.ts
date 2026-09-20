@@ -1,4 +1,6 @@
-export type IncidentStatus = "in_progress" | "not_notified" | "notified" | "closed";
+import type { FeatureValue } from "@/shared/lib/featureValues";
+export type IncidentStatus =
+  "in_progress" | "not_notified" | "notified" | "closed";
 
 export type ResponseService = string;
 
@@ -53,6 +55,7 @@ export const incidentCategories: readonly IncidentCategory[] = [
 // The reference ARM's shortcuts; this demonstration list is not an EKP import.
 export const frequentIncidentCategoryIds = [
   "traffic",
+  "fire",
   "wrong_number",
   "gas",
   "person_danger",
@@ -225,7 +228,10 @@ export interface IncidentCardDetails {
 }
 
 export interface IncidentCardFields {
-  ekpAnswers?: Record<string,boolean>;
+  location?: import("@/shared/lib/geo").MapPoint | null;
+  manualServices?:
+    { id: string; name: string; short_name?: string | null }[] | null;
+  ekpAnswers?: Record<string, FeatureValue>;
   details?: IncidentCardDetails;
   categoryId: string;
   address: IncidentAddress;

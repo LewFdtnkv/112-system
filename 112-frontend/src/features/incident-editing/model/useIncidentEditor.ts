@@ -14,10 +14,25 @@ import {
 } from "@/entities/incident-card";
 import { getApiError } from "@/shared/api";
 export interface RemoteEditor {
-  features?: { key: string; label: string }[];
-  categories: { id: string; name: string }[];
+  serviceQueryKey?: string;
+  loadServices?: (
+    q: string,
+    offset: number,
+    signal: AbortSignal,
+  ) => Promise<{
+    items: { id: string; name: string; short_name?: string | null }[];
+    total: number;
+  }>;
+  features?: import("@/shared/lib/featureValues").FeatureDefinition[];
+  categories: { id: string; name: string; short_name?: string | null }[];
+  popularCategories?: {
+    id: string;
+    name: string;
+    short_name?: string | null;
+  }[];
+  notificationRequired?: boolean;
   categoryName: string;
-  services: { id: string; name: string }[];
+  services: { id: string; name: string; short_name?: string | null }[];
   search: (value: string) => void;
   select: (id: string) => void;
   onSave: (fields: IncidentCardFields) => Promise<void>;
@@ -108,14 +123,32 @@ export function useIncidentEditor({
     setSaved(false);
   };
 
-  const toggleService = (service: ResponseService) =>
-    setFields((current) => {
-      const services = current.services.includes(service)
-        ? current.services.filter((item) => item !== service)
-        : [...current.services, service];
-
-      return { ...current, services };
-    });
+  const toggleService = (
+    service: ResponseService,
+    name?: string,
+    short_name?: string | null,
+  ) => {
+    if (remote) {
+      setFields((current) => {
+        const selected = current.manualServices ?? remote.services;
+        return {
+          ...current,
+          manualServices: selected.some((s) => s.id === service)
+            ? selected.filter((s) => s.id !== service)
+            : [...selected, { id: service, name: name ?? service, short_name }],
+        };
+      });
+    } else {
+      setFields((current) => ({
+        ...current,
+        services: current.services.includes(service)
+          ? current.services.filter((s) => s !== service)
+          : [...current.services, service],
+      }));
+    }
+    setSaved(false);
+    setError(undefined);
+  };
 
   const setCategory = (categoryId: string) => {
     remote?.select(categoryId);
@@ -222,11 +255,22 @@ export function useIncidentEditor({
     setSaved(false);
   };
 
+  const visibleServices = fields.manualServices ?? remote?.services ?? [];
   return {
     fields: remote
-      ? { ...fields, services: remote.services.map((s) => s.id) }
+      ? { ...fields, services: visibleServices.map((s) => s.id) }
       : fields,
-    remote,
+    remote: remote
+      ? {
+          ...remote,
+          services: visibleServices,
+          notificationRequired:
+            fields.manualServices != null
+              ? visibleServices.length > 0
+              : remote.notificationRequired,
+        }
+      : undefined,
+    useRecommendedServices: () => setField("manualServices", null),
     pending,
     dirty: JSON.stringify(fields) !== savedFields,
     saved,

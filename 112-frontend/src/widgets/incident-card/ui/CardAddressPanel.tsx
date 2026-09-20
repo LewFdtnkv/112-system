@@ -41,6 +41,12 @@ export function CardAddressPanel({ editor, disabled, viewing, onMap }: Props) {
               .join(", ")}
           </strong>
           <p>{[address.district, address.area].filter(Boolean).join(", ")}</p>
+          {fields.location && (
+            <p title="Координаты происшествия">
+              {fields.location.latitude.toFixed(6)},{" "}
+              {fields.location.longitude.toFixed(6)}
+            </p>
+          )}
         </div>
         <div className="arm-description-view">
           <p>{fields.description}</p>
@@ -106,6 +112,12 @@ export function CardAddressPanel({ editor, disabled, viewing, onMap }: Props) {
       <div className="arm-address-block">
         <div className="arm-address-heading">
           <span>Адрес:</span>
+          {fields.location && (
+            <span title="Координаты происшествия">
+              {fields.location.latitude.toFixed(6)},{" "}
+              {fields.location.longitude.toFixed(6)}
+            </span>
+          )}
           <ArmIconButton
             icon="map"
             label="Показать адрес на карте"

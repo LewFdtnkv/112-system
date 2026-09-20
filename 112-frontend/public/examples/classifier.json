@@ -4,11 +4,13 @@
   "services": [
     {
       "code": "example_fire",
-      "name": "Учебная пожарная служба"
+      "name": "Учебная пожарная служба",
+      "short_name": "Служба 101"
     },
     {
       "code": "example_medical",
-      "name": "Учебная скорая помощь"
+      "name": "Учебная скорая помощь",
+      "short_name": "Служба 103"
     }
   ],
   "entries": [
@@ -21,6 +23,28 @@
         {
           "key": "victims",
           "label": "Есть пострадавшие"
+        },
+        {
+          "key": "place",
+          "label": "Где произошло",
+          "type": "choice",
+          "required": true,
+          "options": [
+            "Дом",
+            "Улица",
+            "Транспорт"
+          ]
+        },
+        {
+          "key": "signs",
+          "label": "Признаки",
+          "type": "array",
+          "required": false,
+          "options": [
+            "Дым",
+            "Пламя",
+            "Запах гари"
+          ]
         }
       ],
       "routes": [
@@ -36,7 +60,11 @@
             "victims": true
           }
         }
-      ]
+      ],
+      "display_name": "Пожар",
+      "is_popular": true,
+      "popular_order": 0,
+      "notification_required": true
     }
   ]
 }

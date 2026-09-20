@@ -1,3 +1,5 @@
+import { FeatureInput } from "@/shared/ui/FeatureInput";
+import { featureText } from "@/shared/lib/featureValues";
 import { Fragment, useState } from "react";
 import {
   getCategoryName,
@@ -22,18 +24,28 @@ export function CardClassification({
   const { fields, setDetail } = editor;
   const [query, setQuery] = useState("");
   const [choosing, setChoosing] = useState(false);
-  const choices = editor.remote
-    ? editor.remote.categories
-    : (query || choosing
-        ? incidentCategories
-        : frequentIncidentCategoryIds.map((id) =>
-            incidentCategories.find((category) => category.id === id)!,
-          )
-      ).filter((category) =>
-        category.name
-          .toLocaleLowerCase("ru")
-          .includes(query.toLocaleLowerCase("ru")),
+  const term = query.trim();
+  const showResults = choosing && term.length >= 2;
+  const popular = editor.remote
+    ? (editor.remote.popularCategories ?? [])
+    : frequentIncidentCategoryIds.map((id) =>
+        incidentCategories.find((category) => category.id === id)!,
       );
+  const choices = showResults
+    ? editor.remote
+      ? editor.remote.categories
+      : incidentCategories.filter((category) =>
+          category.name
+            .toLocaleLowerCase("ru")
+            .includes(term.toLocaleLowerCase("ru")),
+        )
+    : popular.slice(0, 11);
+  const choose = (id: string) => {
+    editor.setCategory(id);
+    setQuery("");
+    editor.remote?.search("");
+    setChoosing(false);
+  };
   const categoryName =
     editor.remote?.categoryName || getCategoryName(fields.categoryId);
   const answers = fields.details?.clarifications ?? {};
@@ -110,7 +122,7 @@ export function CardClassification({
               ? editor.remote.features
                   .map(
                     (f) =>
-                      `${f.label}: ${fields.ekpAnswers?.[f.key] === true ? "Да" : fields.ekpAnswers?.[f.key] === false ? "Нет" : "Не указано"}`,
+                      `${f.label}: ${featureText(fields.ekpAnswers?.[f.key])}`,
                   )
                   .join(". ")
               : [
@@ -151,27 +163,27 @@ export function CardClassification({
                 setChoosing(true);
               }}
             />
-            {(choosing || !fields.categoryId) && (
+            {choosing && term.length < 2 && (
+              <small className="arm-category-hint">
+                Введите не менее 2 символов для поиска
+              </small>
+            )}
+            {(showResults || (!fields.categoryId && !term)) && (
               <div
                 className={
-                  choosing ? "arm-category-results" : "arm-category-choices"
+                  showResults ? "arm-category-results" : "arm-category-choices"
                 }
               >
                 {choices.map((category) => (
                   <button
                     disabled={disabled}
                     key={category.id}
-                    onClick={() => {
-                      editor.setCategory(category.id);
-                      setQuery("");
-                      editor.remote?.search("");
-                      setChoosing(false);
-                    }}
+                    onClick={() => choose(category.id)}
                   >
                     {category.name}
                   </button>
                 ))}
-                {!query && !choosing && (
+                {!showResults && choices.length > 0 && (
                   <p className="arm-category-significant">
                     Значимые типы происшествий:
                   </p>
@@ -180,9 +192,11 @@ export function CardClassification({
                 {editor.remote?.error && (
                   <span role="alert">{editor.remote.error}</span>
                 )}
-                {choices.length === 0 && !editor.remote?.searching && (
-                  <span>Тип происшествия не найден.</span>
-                )}
+                {showResults &&
+                  choices.length === 0 &&
+                  !editor.remote?.searching && (
+                    <span>Тип происшествия не найден.</span>
+                  )}
               </div>
             )}
           </div>
@@ -225,29 +239,18 @@ export function CardClassification({
                     </div>
                   )}
                   {editor.remote?.features?.map((feature) => (
-                    <div className="arm-question" key={feature.key}>
-                      <span>{feature.label}</span>
-                      <div>
-                        {([true, false] as const).map((value) => (
-                          <button
-                            key={String(value)}
-                            disabled={disabled}
-                            aria-label={`${feature.label}: ${value ? "Да" : "Нет"}`}
-                            aria-pressed={
-                              fields.ekpAnswers?.[feature.key] === value
-                            }
-                            onClick={() =>
-                              editor.setField("ekpAnswers", {
-                                ...fields.ekpAnswers,
-                                [feature.key]: value,
-                              })
-                            }
-                          >
-                            {value ? "Да" : "Нет"}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
+                    <FeatureInput
+                      key={feature.key}
+                      feature={feature}
+                      disabled={disabled}
+                      value={fields.ekpAnswers?.[feature.key]}
+                      onChange={(value) => {
+                        const next = { ...fields.ekpAnswers };
+                        if (value === undefined) delete next[feature.key];
+                        else next[feature.key] = value;
+                        editor.setField("ekpAnswers", next);
+                      }}
+                    />
                   ))}
                   {editor.tagGroups.map((group) => (
                     <Fragment key={group.label}>

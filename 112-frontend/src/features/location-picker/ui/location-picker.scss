@@ -1,0 +1,39 @@
+.arm-location-picker {
+  font:
+    13px Arial,
+    sans-serif;
+  color: #333;
+}
+.arm-location-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 0;
+}
+.arm-location-toolbar input {
+  width: 125px;
+  padding: 5px 8px;
+  border: 1px solid #999;
+}
+.arm-location-toolbar button,
+.arm-location-picker button {
+  padding: 5px 12px;
+  cursor: pointer;
+  background: #fff;
+  border: 1px solid #aaa;
+  border-radius: 2px;
+}
+.arm-location-picker button:hover:not(:disabled) {
+  background: #e7eef6;
+}
+.arm-location-picker button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.arm-location-canvas {
+  height: min(65vh, 680px);
+  min-height: 300px;
+  width: 100%;
+  background: #eef0ed;
+}

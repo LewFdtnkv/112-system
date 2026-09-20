@@ -47,3 +47,30 @@ it("retries the same event IDs and does not block the exercise on network failur
   buffer.close();
   await buffer.flush();
 });
+
+it("audits feature lists and confirmed coordinates without duplicating unchanged arrays", async () => {
+  const send = vi.fn().mockResolvedValue(undefined);
+  const buffer = createObservationBuffer({}, send, vi.fn());
+  buffer.observe({
+    ekpAnswers: { signs: ["Дым", "Пламя"] },
+    location: { latitude: 55, longitude: 37 },
+  });
+  await buffer.flush();
+  expect(send.mock.calls[0][0]).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        field: "ekpAnswers.signs",
+        value: ["Дым", "Пламя"],
+      }),
+      expect.objectContaining({ field: "location.latitude", value: 55 }),
+    ]),
+  );
+  buffer.observe({
+    ekpAnswers: { signs: ["Дым", "Пламя"] },
+    location: { latitude: 55, longitude: 37 },
+  });
+  await buffer.flush();
+  expect(send).toHaveBeenCalledTimes(1);
+  buffer.close();
+  await buffer.flush();
+});

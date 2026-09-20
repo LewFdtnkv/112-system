@@ -50,6 +50,7 @@ export interface GroupItem {
   student_count: number;
 }
 export interface Service {
+  short_name?: string | null;
   id: string;
   code: string;
   name: string;
@@ -60,6 +61,10 @@ export interface Classifier {
   status?: string;
 }
 export interface ClassifierEntry {
+  display_name?: string | null;
+  is_popular?: boolean;
+  popular_order?: number;
+  notification_required?: boolean;
   id: string;
   classifier_version_id: string;
   code: string;
@@ -68,6 +73,7 @@ export interface ClassifierEntry {
   conditions: Record<string, unknown>;
 }
 export interface Recipient {
+  short_name?: string | null;
   service_id: string;
   name: string;
 }
@@ -102,7 +108,9 @@ export type CardListItem = Pick<
   CardTemplate,
   "id" | "title" | "classifier_version_id" | "classifier_entry_id"
 >;
-export type CardTemplateInput = Omit<CardTemplate, "id">;
+export type CardTemplateInput = Omit<CardTemplate, "id"> & {
+  use_recommended_recipients?: boolean;
+};
 export interface ScenarioInput {
   dds_policy?: DDSPolicy | null;
   assessment_policy?: AssessmentPolicy;
@@ -210,6 +218,7 @@ export interface Attempt {
   time_limit_seconds: number | null;
   norm_seconds: number;
   card: {
+    recipient_service_ids?: string[] | null;
     id: string;
     revision: number;
     classifier_version_id: string;
@@ -264,7 +273,7 @@ export interface ClientObservation {
   kind: "ui.card_opened" | "ui.card_closed" | "ui.field_changed";
   client_occurred_at: string;
   field?: string;
-  value?: string | number | boolean | null;
+  value?: string | number | boolean | string[] | null;
 }
 export interface AuditEvent {
   id: string;

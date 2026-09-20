@@ -499,7 +499,14 @@
 .arm-category-search:has(+ .arm-category-tab) .arm-field > span {
   display: none;
 }
+.arm-category-hint {
+  display: block;
+  margin-top: 6px;
+  color: #626b70;
+}
 .arm-category-choices {
+  max-height: 170px;
+  overflow-y: auto;
   display: flex;
   flex-wrap: wrap;
   gap: 13px 22px;

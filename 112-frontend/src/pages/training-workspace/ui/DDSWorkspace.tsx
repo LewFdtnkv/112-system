@@ -108,7 +108,10 @@ export function DDSWorkspace({
         normSeconds={attempt.norm_seconds}
         remote={{
           categories: [],
-          categoryName: `${attempt.classifier_entry?.code ?? ""} — ${attempt.classifier_entry?.name ?? ""}`,
+          categoryName:
+            attempt.classifier_entry?.display_name ||
+            attempt.classifier_entry?.name ||
+            "",
           features:
             (attempt.classifier_entry?.conditions.features as
               { key: string; label: string }[] | undefined) ?? [],

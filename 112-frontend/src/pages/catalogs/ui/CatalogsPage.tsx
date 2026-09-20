@@ -27,6 +27,8 @@ export const CatalogsPage = () => {
   const [servicePage, setServicePage] = useState(0);
   const [page, setPage] = useState(0);
   const [code, setCode] = useState("");
+  const [editingService, setEditingService] = useState<string>();
+  const [shortName, setShortName] = useState("");
   const [name, setName] = useState("");
   const [json, setJson] = useState("");
   const [parseError, setParseError] = useState("");
@@ -46,10 +48,22 @@ export const CatalogsPage = () => {
     void client.invalidateQueries({ queryKey: ["classifier-options"] });
   };
   const createService = useMutation({
-    mutationFn: () => trainingApi.createService({ code, name }),
+    mutationFn: () =>
+      editingService
+        ? trainingApi.updateService(editingService, {
+            name,
+            short_name: shortName || null,
+          })
+        : trainingApi.createService({
+            code,
+            name,
+            short_name: shortName || null,
+          }),
     onSuccess: () => {
       setCode("");
       setName("");
+      setShortName("");
+      setEditingService(undefined);
       void client.invalidateQueries({ queryKey: ["admin-services"] });
       refresh();
     },
@@ -82,20 +96,39 @@ export const CatalogsPage = () => {
       >
         <TextField
           label="Код службы"
+          disabled={!!editingService}
           required
           value={code}
           slotProps={{ htmlInput: { pattern: "[a-z0-9_\\-]+", maxLength: 50 } }}
           onChange={(e) => setCode(e.target.value)}
         />
         <TextField
-          label="Название службы"
+          label="Короткое название службы"
+          value={shortName}
+          slotProps={{ htmlInput: { maxLength: 100 } }}
+          onChange={(e) => setShortName(e.target.value)}
+        />
+        <TextField
+          label="Полное наименование службы"
           required
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
         <Button type="submit" disabled={createService.isPending}>
-          Создать службу
+          {editingService ? "Сохранить службу" : "Создать службу"}
         </Button>
+        {editingService && (
+          <Button
+            onClick={() => {
+              setEditingService(undefined);
+              setCode("");
+              setName("");
+              setShortName("");
+            }}
+          >
+            Отмена
+          </Button>
+        )}
       </Stack>
       {createService.error && (
         <Alert severity="error">
@@ -121,7 +154,18 @@ export const CatalogsPage = () => {
                 {services.data.items.map((s) => (
                   <TableRow key={s.id}>
                     <TableCell>{s.code}</TableCell>
-                    <TableCell>{s.name}</TableCell>
+                    <TableCell>
+                      <Button
+                        onClick={() => {
+                          setEditingService(s.id);
+                          setCode(s.code);
+                          setName(s.name);
+                          setShortName(s.short_name ?? "");
+                        }}
+                      >
+                        {s.short_name ? `${s.short_name} — ${s.name}` : s.name}
+                      </Button>
+                    </TableCell>
                     <TableCell sx={{ userSelect: "text" }}>{s.id}</TableCell>
                   </TableRow>
                 ))}

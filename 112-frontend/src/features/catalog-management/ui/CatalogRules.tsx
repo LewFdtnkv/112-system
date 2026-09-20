@@ -1,3 +1,4 @@
+import { FeatureInput } from "@/shared/ui/FeatureInput";
 import { useState } from "react";
 import {
   Alert,
@@ -273,7 +274,14 @@ function RuleForm({
 }) {
   const [form, setForm] = useState(initial);
   const mutation = useMutation({
-    mutationFn: () => save(form),
+    mutationFn: () =>
+      save({
+        ...form,
+        features: form.features.map((f) => ({
+          ...f,
+          options: (f.options ?? []).map((v) => v.trim()).filter(Boolean),
+        })),
+      }),
     onSuccess: onSaved,
   });
   return (
@@ -309,9 +317,60 @@ function RuleForm({
               />
             ),
           )}
+          <TextField
+            label="Короткое название для ученика"
+            value={form.display_name ?? ""}
+            helperText="Без технического кода. Если не заполнено, используется название происшествия."
+            slotProps={{ htmlInput: { maxLength: 100 } }}
+            onChange={(e) =>
+              setForm({ ...form, display_name: e.target.value || null })
+            }
+          />
+          <FormControlLabel
+            label="Популярный тип — показывать быструю кнопку"
+            control={
+              <Checkbox
+                checked={form.is_popular ?? false}
+                onChange={(_, v) => setForm({ ...form, is_popular: v })}
+              />
+            }
+          />
+          {form.is_popular && (
+            <TextField
+              label="Порядок быстрой кнопки"
+              type="number"
+              helperText="Меньшее число — раньше. Ученик видит до 11 популярных типов."
+              slotProps={{ htmlInput: { min: 0, max: 10000 } }}
+              value={form.popular_order ?? 0}
+              onChange={(e) =>
+                setForm({ ...form, popular_order: Number(e.target.value) })
+              }
+            />
+          )}
+          <FormControlLabel
+            label="Требуется оповещение служб"
+            control={
+              <Checkbox
+                checked={form.notification_required !== false}
+                onChange={(_, v) =>
+                  setForm({
+                    ...form,
+                    notification_required: v,
+                    routes: v ? form.routes : [],
+                  })
+                }
+              />
+            }
+          />
+          {form.notification_required === false && (
+            <Alert severity="info">
+              Служебное обращение: регистрация без оповещения. Маршруты служб не
+              задаются.
+            </Alert>
+          )}
           <b>Типовые признаки</b>
           {form.features.map((f, i) => (
-            <Stack key={i} direction="row" spacing={1}>
+            <Stack key={i} spacing={1}>
               <TextField
                 required
                 label={`Ключ признака ${i + 1}`}
@@ -348,6 +407,65 @@ function RuleForm({
                   })
                 }
               />
+              <TextField
+                select
+                label={`Формат признака ${i + 1}`}
+                value={f.type ?? "boolean"}
+                onChange={(e) => {
+                  const type = e.target.value as "boolean" | "choice" | "array";
+                  setForm({
+                    ...form,
+                    features: form.features.map((x, j) =>
+                      j === i ? { ...x, type, options: [] } : x,
+                    ),
+                    routes: form.routes.map((r) => ({
+                      ...r,
+                      when: Object.fromEntries(
+                        Object.entries(r.when).filter(([key]) => key !== f.key),
+                      ),
+                    })),
+                  });
+                }}
+              >
+                <MenuItem value="boolean">Да / Нет</MenuItem>
+                <MenuItem value="choice">Одно значение</MenuItem>
+                <MenuItem value="array">Список значений</MenuItem>
+              </TextField>
+              <FormControlLabel
+                label="Обязательный признак"
+                control={
+                  <Checkbox
+                    checked={f.required !== false}
+                    onChange={(_, required) =>
+                      setForm({
+                        ...form,
+                        features: form.features.map((x, j) =>
+                          j === i ? { ...x, required } : x,
+                        ),
+                      })
+                    }
+                  />
+                }
+              />
+              {f.type && f.type !== "boolean" && (
+                <TextField
+                  multiline
+                  label={`Варианты признака ${i + 1}`}
+                  required={f.type === "choice"}
+                  helperText="По одному значению в строке. Для списка можно оставить пустым — свободный ввод."
+                  value={(f.options ?? []).join("\n")}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      features: form.features.map((x, j) =>
+                        j === i
+                          ? { ...x, options: e.target.value.split("\n") }
+                          : x,
+                      ),
+                    })
+                  }
+                />
+              )}
               <Button
                 onClick={() =>
                   setForm({
@@ -379,7 +497,7 @@ function RuleForm({
           >
             Добавить признак
           </Button>
-          <b>Правила оповещения</b>
+          {form.notification_required !== false && <b>Правила оповещения</b>}
           {form.routes.map((r, i) => (
             <Paper key={i} sx={{ p: 2 }}>
               <Stack spacing={1}>
@@ -427,19 +545,20 @@ function RuleForm({
                 {form.features
                   .filter((f) => f.key)
                   .map((f) => (
-                    <TextField
-                      select
+                    <FeatureInput
                       key={f.key}
-                      label={f.label || f.key}
-                      value={
-                        r.when[f.key] === undefined
-                          ? "any"
-                          : String(r.when[f.key])
-                      }
-                      onChange={(e) => {
+                      feature={f}
+                      condition
+                      disabled={!editable}
+                      value={r.when[f.key]}
+                      onChange={(value) => {
                         const when = { ...r.when };
-                        if (e.target.value === "any") delete when[f.key];
-                        else when[f.key] = e.target.value === "true";
+                        if (
+                          value === undefined ||
+                          (Array.isArray(value) && !value.length)
+                        )
+                          delete when[f.key];
+                        else when[f.key] = value;
                         setForm({
                           ...form,
                           routes: form.routes.map((x, j) =>
@@ -447,11 +566,7 @@ function RuleForm({
                           ),
                         });
                       }}
-                    >
-                      <MenuItem value="any">Не учитывать</MenuItem>
-                      <MenuItem value="true">Да</MenuItem>
-                      <MenuItem value="false">Нет</MenuItem>
-                    </TextField>
+                    />
                   ))}
                 <Button
                   disabled={form.routes.length === 1}
@@ -468,6 +583,7 @@ function RuleForm({
             </Paper>
           ))}
           <Button
+            disabled={form.notification_required === false}
             onClick={() =>
               setForm({
                 ...form,

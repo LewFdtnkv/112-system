@@ -79,6 +79,7 @@ test("real API: authoring, operator drafts, revision conflict, notification and 
     await dialog.getByRole("button", { name: "Создать аккаунт" }).click();
     await expect(dialog).not.toBeVisible();
   }
+  await page.getByLabel("Поиск пользователя", { exact: true }).fill(student);
   // Administration details use the real profile and revoke access on disable.
   await page
     .getByRole("button", { name: new RegExp(`\\(${student}\\)`) })
@@ -119,7 +120,9 @@ test("real API: authoring, operator drafts, revision conflict, notification and 
   await page
     .getByRole("textbox", { name: "Код службы", exact: true })
     .fill(`test${suffix}`);
-  await page.getByLabel("Название службы").fill("Учебная пожарная служба");
+  await page
+    .getByLabel("Полное наименование службы")
+    .fill("Учебная пожарная служба");
   await page
     .getByRole("button", { name: "Создать службу", exact: true })
     .click();
@@ -265,7 +268,7 @@ test("real API: authoring, operator drafts, revision conflict, notification and 
     .fill("Дым из окна");
   await card.getByLabel("Тип происшествия", { exact: true }).fill("пожар");
   await card
-    .getByRole("button", { name: "T001 — Учебный пожар", exact: true })
+    .getByRole("button", { name: "Учебный пожар", exact: true })
     .click();
   await expect(
     card.getByRole("button").filter({ hasText: "Учебная пожарная служба" }),
@@ -345,7 +348,7 @@ test("real API: authoring, operator drafts, revision conflict, notification and 
     .fill("Дым из окна");
   await card.getByLabel("Тип происшествия", { exact: true }).fill("пожар");
   await card
-    .getByRole("button", { name: "T001 — Учебный пожар", exact: true })
+    .getByRole("button", { name: "Учебный пожар", exact: true })
     .click();
   await card
     .getByRole("button", { name: "Оповестить и сохранить карточку" })

@@ -1,3 +1,4 @@
+import type { FeatureValue } from "@/shared/lib/featureValues";
 import {
   emptyCardFields,
   emptyIncidentAddress,
@@ -32,11 +33,24 @@ export function attemptCard(attempt: Attempt): IncidentCard {
     }),
     channel: "112",
     origin: "student",
-    categoryName: attempt.classifier_entry?.name,
+    categoryName:
+      attempt.classifier_entry?.display_name || attempt.classifier_entry?.name,
     fields: {
       ...emptyCardFields,
+      location: (extra.location as IncidentCardFields["location"]) ?? null,
+      manualServices:
+        attempt.card.recipient_service_ids != null
+          ? (attempt.status === "completed"
+              ? attempt.notified_services
+              : attempt.recipient_services
+            ).map((s) => ({
+              id: s.service_id,
+              name: s.name,
+              short_name: s.short_name,
+            }))
+          : null,
       ekpAnswers:
-        (data.features?.ekp as Record<string, boolean> | undefined) ?? {},
+        (data.features?.ekp as Record<string, FeatureValue> | undefined) ?? {},
       categoryId: attempt.card.classifier_entry_id ?? "",
       address: {
         ...emptyIncidentAddress,
@@ -86,6 +100,7 @@ export function cardData(
     },
     additional_fields: {
       ...previous.additional_fields,
+      location: fields.location ?? null,
       details: fields.details ?? {},
       operatorAction: fields.operatorAction,
     },

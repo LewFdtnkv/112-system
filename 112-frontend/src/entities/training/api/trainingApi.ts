@@ -1,3 +1,4 @@
+import type { FeatureValue } from "@/shared/lib/featureValues";
 import { backendApi } from "@/shared/api";
 import type {
   Analytics,
@@ -46,7 +47,7 @@ export const trainingApi = {
   previewRecipients: (
     attemptId: string,
     entryId: string,
-    answers: Record<string, boolean>,
+    answers: Record<string, FeatureValue>,
     signal?: AbortSignal,
   ) =>
     backendApi
@@ -170,6 +171,8 @@ export const trainingApi = {
       previousId ? `scenarios/${id(previousId)}/versions` : "scenarios",
       body,
     ),
+  services: (q: string, signal?: AbortSignal) =>
+    get<Service[]>("services", { q, limit: 20 }, signal),
   classifiers: (q: string, signal?: AbortSignal) =>
     get<Classifier[]>("classifiers", { q, limit: 20 }, signal),
   entries: (versionId: string, params: Params, signal?: AbortSignal) =>
@@ -210,6 +213,12 @@ export const trainingApi = {
       params,
       signal,
     ),
+  attemptServices: (attemptId: string, params: Params, signal?: AbortSignal) =>
+    get<Page<Service>>(
+      `student/attempts/${id(attemptId)}/services`,
+      params,
+      signal,
+    ),
   recipients: (attemptId: string, entryId: string, signal?: AbortSignal) =>
     get<Recipient[]>(
       `student/attempts/${id(attemptId)}/recipients`,
@@ -221,10 +230,16 @@ export const trainingApi = {
     revision: number,
     entryId: string | null,
     data: CardData,
+    recipient_service_ids?: string[] | null,
   ) =>
     backendApi
       .put(`student/attempts/${id(attemptId)}/card`, {
-        json: { revision, classifier_entry_id: entryId, data },
+        json: {
+          revision,
+          classifier_entry_id: entryId,
+          data,
+          recipient_service_ids,
+        },
       })
       .json<Attempt>(),
   submit: (attemptId: string, revision: number) =>
@@ -254,8 +269,18 @@ export const trainingApi = {
     get<Page<Service>>("views/admin/services", params, signal),
   adminClassifiers: (params: Params, signal?: AbortSignal) =>
     get<Page<Classifier>>("views/admin/classifiers", params, signal),
-  createService: (body: { code: string; name: string }) =>
-    post<Service>("admin/services", body),
+  updateService: (
+    serviceId: string,
+    body: { name: string; short_name: string | null },
+  ) =>
+    backendApi
+      .patch(`admin/services/${id(serviceId)}`, { json: body })
+      .json<Service>(),
+  createService: (body: {
+    code: string;
+    name: string;
+    short_name?: string | null;
+  }) => post<Service>("admin/services", body),
   createClassifier: (body: unknown) =>
     post<Classifier>("admin/classifiers", body),
   publishClassifier: (versionId: string) =>

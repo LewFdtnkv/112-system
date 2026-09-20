@@ -86,6 +86,15 @@ const messages: Record<string, string> = {
   "Group members must be active student accounts":
     "В группу можно добавить только активного ученика.",
 };
+const translate = (message: string) => {
+  for (const [prefix, text] of [
+    ["Answer required feature: ", "Заполните обязательный признак: "],
+    ["Invalid answer for feature: ", "Проверьте значение признака: "],
+  ]) {
+    if (message.startsWith(prefix)) return text + message.slice(prefix.length);
+  }
+  return messages[message];
+};
 export const getApiError = (error: unknown): ApiErrorInfo => {
   if (isHTTPError(error)) {
     const body = error.data as { detail?: unknown } | undefined;
@@ -112,7 +121,7 @@ export const getApiError = (error: unknown): ApiErrorInfo => {
       status: error.response.status,
       message:
         validationMessage ||
-        (messages[detail] ??
+        (translate(detail) ??
           (
             {
               413: "JSON-файл превышает допустимый размер 8 МБ.",

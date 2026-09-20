@@ -1,8 +1,13 @@
-export interface FeatureDefinition {
-  key: string;
-  label: string;
-}
+import type {
+  FeatureDefinition,
+  FeatureValue,
+} from "@/shared/lib/featureValues";
+export type { FeatureDefinition } from "@/shared/lib/featureValues";
 export interface CatalogRule {
+  display_name?: string | null;
+  is_popular?: boolean;
+  popular_order?: number;
+  notification_required?: boolean;
   code: string;
   section: string;
   name: string;
@@ -11,7 +16,7 @@ export interface CatalogRule {
   routes: {
     service_code: string;
     is_main: boolean;
-    when: Record<string, boolean>;
+    when: Record<string, FeatureValue>;
   }[];
 }
 export interface CatalogVersion {
