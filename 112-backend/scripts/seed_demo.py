@@ -7,9 +7,11 @@ import re
 import secrets
 import tempfile
 from decimal import Decimal
+from ipaddress import ip_address
 from pathlib import Path
 from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
+from urllib.parse import urlsplit
+from urllib.request import ProxyHandler, Request, build_opener
 from uuid import NAMESPACE_URL, uuid5
 
 
@@ -24,6 +26,14 @@ class API:
     def __init__(self, base_url: str, token: str | None = None):
         self.base_url = base_url.rstrip("/")
         self.token = token
+        host = urlsplit(self.base_url).hostname or ""
+        try:
+            local = ip_address(host).is_loopback
+        except ValueError:
+            local = host.lower().rstrip(".") == "localhost"
+        # A local Docker API must not be routed through system/VPN HTTP proxies.
+        # Keep the configured proxy behavior for remote API addresses.
+        self.opener = build_opener(ProxyHandler({})) if local else build_opener()
 
     def request(self, method: str, path: str, payload=None, expected=(200,)):
         headers = {"Accept": "application/json"}
@@ -37,7 +47,7 @@ class API:
             f"{self.base_url}/api/v1/{path}", data=body, headers=headers, method=method
         )
         try:
-            with urlopen(request, timeout=30) as response:
+            with self.opener.open(request, timeout=30) as response:
                 status, content = response.status, response.read()
         except HTTPError as exc:
             status, content = exc.code, exc.read()
@@ -409,8 +419,15 @@ def main():
             os.environ.get("DEMO_ADMIN_PASSWORD", "admin"),
         )
     except (APIError, URLError, OSError, ValueError, RuntimeError) as exc:
+        hint = ""
+        if isinstance(exc, APIError) and exc.status in (502, 503, 504):
+            hint = (
+                "Проверьте адрес/порт API, docker compose ps и /health/ready. "
+                "Если используется прокси, проверьте его соединение с API.\n"
+            )
         parser.exit(
-            1, f"Проверка не завершена: {exc}\nДанные не удалены; сохраните файл состояния.\n"
+            1,
+            f"Проверка не завершена: {exc}\n{hint}Данные не удалены; сохраните файл состояния.\n",
         )
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
