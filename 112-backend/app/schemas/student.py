@@ -2,10 +2,11 @@ from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, JsonValue
+from pydantic import BaseModel, ConfigDict, Field, JsonValue, field_validator
 
 from app.models.enums import AttemptStatus, CardStatus, LessonStatus, TrainingRole
 from app.schemas.catalog import ClassifierEntryRead
+from app.schemas.location import validate_location
 
 
 class DraftData(BaseModel):
@@ -21,6 +22,8 @@ class DraftData(BaseModel):
     features: dict[str, JsonValue] | None = None
     additional_fields: dict[str, JsonValue] = Field(default_factory=dict)
 
+    _validate_location = field_validator("additional_fields")(validate_location)
+
 
 class DraftSave(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -28,6 +31,14 @@ class DraftSave(BaseModel):
     revision: int = Field(ge=1)
     classifier_entry_id: UUID | None = None
     data: DraftData
+    recipient_service_ids: list[UUID] | None = Field(default=None, max_length=100)
+
+    @field_validator("recipient_service_ids")
+    @classmethod
+    def unique_services(cls, value):
+        if value is not None and len(value) != len(set(value)):
+            raise ValueError("Services must not repeat")
+        return value
 
 
 class CardSubmit(BaseModel):
@@ -37,6 +48,7 @@ class CardSubmit(BaseModel):
 
 
 class StudentCardRead(BaseModel):
+    recipient_service_ids: list[UUID] | None = None
     id: UUID
     revision: int
     status: CardStatus
@@ -49,6 +61,7 @@ class StudentCardRead(BaseModel):
 
 
 class RecipientRead(BaseModel):
+    short_name: str | None = None
     service_id: UUID
     name: str
 

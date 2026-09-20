@@ -1,13 +1,13 @@
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query, Response
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from app.api.dependencies import SessionDep, StudentDep
 from app.api.v1.authoring import Limit, Offset
-from app.models import Assignment, ClassifierEntry, IncidentCard, Lesson
+from app.models import Assignment, ClassifierEntry, IncidentCard, Lesson, Service
 from app.schemas.audit import ObservationBatch
-from app.schemas.catalog import ClassifierEntryRead
+from app.schemas.catalog import ClassifierEntryRead, ServiceRead
 from app.schemas.catalog_document import RoutePreview
 from app.schemas.dds import DDSAction, DDSFinish
 from app.schemas.student import (
@@ -89,22 +89,59 @@ async def codes(
     student: StudentDep,
     limit: Limit = 20,
     offset: Offset = 0,
+    popular: bool = False,
     q: str = Query(default="", max_length=200),
 ):
     row, _ = await owned_attempt(session, attempt_id, student.id)
     card = await session.scalar(select(IncidentCard).where(IncidentCard.attempt_id == row.id))
-    return list(
-        await session.scalars(
-            select(ClassifierEntry)
-            .where(
-                ClassifierEntry.classifier_version_id == card.classifier_version_id,
-                (ClassifierEntry.name.ilike(f"%{q}%") | ClassifierEntry.code.ilike(f"%{q}%")),
-            )
-            .order_by(ClassifierEntry.code, ClassifierEntry.id)
-            .limit(limit)
-            .offset(offset)
-        )
+    query = select(ClassifierEntry).where(
+        ClassifierEntry.classifier_version_id == card.classifier_version_id
     )
+    term = q.strip()
+    if popular:
+        query = query.where(ClassifierEntry.is_popular).order_by(
+            ClassifierEntry.popular_order, ClassifierEntry.source_row, ClassifierEntry.id
+        )
+        limit = min(limit, 11)
+    elif len(term) < 2:
+        return []
+    else:
+        # Escape LIKE wildcards: two '%' characters must not expose the entire catalog.
+        term = term.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        query = query.where(
+            ClassifierEntry.code.ilike(f"%{term}%", escape="\\")
+            | ClassifierEntry.name.ilike(f"%{term}%", escape="\\")
+            | ClassifierEntry.display_name.ilike(f"%{term}%", escape="\\")
+        ).order_by(ClassifierEntry.name, ClassifierEntry.id)
+    return list(await session.scalars(query.limit(limit).offset(offset)))
+
+
+@router.get("/attempts/{attempt_id}/services")
+async def available_services(
+    attempt_id: UUID,
+    session: SessionDep,
+    student: StudentDep,
+    limit: Limit = 20,
+    offset: Offset = 0,
+    q: str = Query(default="", max_length=200),
+):
+    await owned_attempt(session, attempt_id, student.id)
+    query = select(Service).where(
+        Service.is_active.is_(True),
+        Service.name.ilike(f"%{q.strip()}%")
+        | Service.short_name.ilike(f"%{q.strip()}%")
+        | Service.code.ilike(f"%{q.strip()}%"),
+    )
+    total = await session.scalar(select(func.count()).select_from(query.subquery()))
+    rows = await session.scalars(
+        query.order_by(Service.name, Service.id).limit(limit).offset(offset)
+    )
+    return {
+        "items": [ServiceRead.model_validate(s) for s in rows],
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+    }
 
 
 @router.get("/attempts/{attempt_id}/recipients", response_model=list[RecipientRead])
@@ -117,7 +154,7 @@ async def preview(
     row, _ = await owned_attempt(session, attempt_id, student.id)
     card = await session.scalar(select(IncidentCard).where(IncidentCard.attempt_id == row.id))
     return [
-        RecipientRead(service_id=service.id, name=service.name)
+        RecipientRead(service_id=service.id, name=service.name, short_name=service.short_name)
         for service in await recipients(session, card, classifier_entry_id)
     ]
 
@@ -174,5 +211,6 @@ async def preview_fields(
         features={"ekp": payload.answers},
     )
     return [
-        RecipientRead(service_id=s.id, name=s.name) for s in await recipients(session, preview_card)
+        RecipientRead(service_id=s.id, name=s.name, short_name=s.short_name)
+        for s in await recipients(session, preview_card)
     ]

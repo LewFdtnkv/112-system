@@ -2,6 +2,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, JsonValue
 
+from app.schemas.catalog_admin import EntryPresentation
+
 
 class CatalogModel(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -12,7 +14,7 @@ class ClassifierRead(CatalogModel):
     label: str
 
 
-class ClassifierEntryRead(CatalogModel):
+class ClassifierEntryRead(EntryPresentation, CatalogModel):
     id: UUID
     classifier_version_id: UUID
     code: str
@@ -30,6 +32,7 @@ class ClassifierRouteRead(CatalogModel):
 
 
 class ServiceRead(CatalogModel):
+    short_name: str | None = None
     id: UUID
     code: str
     name: str

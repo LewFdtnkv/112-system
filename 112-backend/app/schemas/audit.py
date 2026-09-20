@@ -14,7 +14,7 @@ class ClientObservation(BaseModel):
     field: str | None = Field(
         default=None,
         max_length=100,
-        pattern=r"^(ekpAnswers\.[a-z][a-z0-9_]{0,49}|categoryId|callerName|description|operatorAction|victimsCount|address\.(country|region|locality|object|district|area|street|house|building|structure|apartment|entrance|floor|doorCode|description)|phones\.(callerId|provided|onSite)|details\.(buildingFloors|classificationDescription|callerStatus|callerGender|callerAge|foreignLanguage|refusedAmbulance|blocked))$",
+        pattern=r"^(ekpAnswers\.[a-z][a-z0-9_]{0,49}|location\.(latitude|longitude)|categoryId|callerName|description|operatorAction|victimsCount|address\.(country|region|locality|object|district|area|street|house|building|structure|apartment|entrance|floor|doorCode|description)|phones\.(callerId|provided|onSite)|details\.(buildingFloors|classificationDescription|callerStatus|callerGender|callerAge|foreignLanguage|refusedAmbulance|blocked))$",
     )
     value: JsonValue = None
 
@@ -25,10 +25,16 @@ class ClientObservation(BaseModel):
         if self.kind != "ui.field_changed" and (self.field is not None or self.value is not None):
             raise ValueError("Navigation observations have no field value")
         if (
-            isinstance(self.value, (dict, list))
+            isinstance(self.value, dict)
+            or isinstance(self.value, list)
+            and (
+                not (self.field or "").startswith("ekpAnswers.")
+                or len(self.value) > 30
+                or any(not isinstance(v, str) or len(v) > 200 for v in self.value)
+            )
             or len(json.dumps(self.value, ensure_ascii=False)) > 12000
         ):
-            raise ValueError("Observation must contain one bounded scalar value")
+            raise ValueError("Observation must contain a bounded scalar or feature string list")
         return self
 
 

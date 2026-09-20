@@ -33,6 +33,8 @@ ADDRESS_LABELS = {
 def display(value) -> str:
     if value is None:
         return ""
+    if isinstance(value, list):
+        return ", ".join(sorted(str(v) for v in value))
     if isinstance(value, bool):
         return "Да" if value else "Нет"
     return str(value)
@@ -83,7 +85,17 @@ def check_fields(
             return
         if answer is None or normalized(answer, phone=phone) == "":
             status = "missing"
-        elif normalized(reference, phone=phone) == normalized(answer, phone=phone):
+        elif (
+            (
+                isinstance(answer, list)
+                and all(isinstance(v, str) for v in answer)
+                and set(reference) == set(answer)
+            )
+            if isinstance(reference, list)
+            else (type(answer) is bool and reference == answer)
+            if isinstance(reference, bool)
+            else normalized(reference, phone=phone) == normalized(answer, phone=phone)
+        ):
             status = "matched"
         else:
             status = "different" if scored else "needs_review"
@@ -109,7 +121,20 @@ def check_fields(
         else "",
     )
     recipients = snapshot.get("recipients") or []
-    if recipients:
+    if snapshot.get("notification_required") is False:
+        add(
+            "recipients",
+            "Регистрация без оповещения",
+            True,
+            attempt.status == "completed"
+            and attempt.card.status == "registered"
+            and not attempt.notified_services,
+            reference_text="Сохранить без оповещения",
+            answer_text="Сохранено без оповещения"
+            if attempt.card.status == "registered" and not attempt.notified_services
+            else "Не выполнено",
+        )
+    elif recipients:
         notified = attempt.notified_services
         add(
             "recipients",
@@ -174,7 +199,13 @@ def check_fields(
     if not isinstance(actual_answers, dict):
         actual_answers = {}
     for key, reference in reference_answers.items():
-        if type(reference) is bool:
+        if (
+            type(reference) is bool
+            or isinstance(reference, str)
+            and reference
+            or isinstance(reference, list)
+            and reference
+        ):
             add(
                 f"features.ekp.{key}",
                 f"Признак: {feature_labels.get(key, key)}",

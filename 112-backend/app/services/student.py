@@ -187,8 +187,8 @@ async def attempt_read(
     ):
         try:
             targets = [
-                RecipientRead(service_id=item.id, name=item.name)
-                for item in await recipients(session, card)
+                RecipientRead(service_id=item.id, name=item.name, short_name=item.short_name)
+                for item in await final_recipients(session, card)
             ]
         except HTTPException as exc:
             recipient_error = str(exc.detail)
@@ -223,9 +223,13 @@ async def attempt_read(
             opened_at=card.opened_at,
             saved_at=card.saved_at,
             notification_completed_at=card.notification_completed_at,
+            recipient_service_ids=card.recipient_service_ids,
         ),
         notified_services=[
-            RecipientRead(service_id=r.service_id, name=r.service_name) for r in responses
+            RecipientRead(
+                service_id=r.service_id, name=r.service_name, short_name=r.service_short_name
+            )
+            for r in responses
         ],
     )
 
@@ -405,7 +409,11 @@ async def recipients(
             .order_by(Service.id)
         )
     ).all()
-    if not routes or any(not service.is_active for _, service in routes):
+    if (
+        (entry.notification_required and not routes)
+        or (not entry.notification_required and routes)
+        or any(not service.is_active for _, service in routes)
+    ):
         raise HTTPException(status_code=409, detail="Active prepared service routes are required")
     from app.services.catalog_rules import applicable_routes
 
@@ -413,6 +421,27 @@ async def recipients(
         r.service_id for r in applicable_routes(entry, [r for r, _ in routes], card.features)
     }
     return [service for route, service in routes if route.service_id in selected]
+
+
+async def selected_services(session, ids):
+    rows = list(
+        await session.scalars(
+            select(Service)
+            .where(Service.id.in_(ids), Service.is_active.is_(True))
+            .order_by(Service.name, Service.id)
+        )
+    )
+    if len(rows) != len(ids):
+        raise HTTPException(422, "Choose existing active training services")
+    return rows
+
+
+async def final_recipients(session, card):
+    if card.recipient_service_ids is None:
+        return await recipients(session, card)
+    # The operator decides who to notify independently of route recommendations.
+    # Required feature validation happens on submission, not while reading a draft.
+    return await selected_services(session, card.recipient_service_ids)
 
 
 async def save_card(session: AsyncSession, attempt_id: UUID, student_id: UUID, payload: DraftSave):
@@ -430,10 +459,39 @@ async def save_card(session: AsyncSession, attempt_id: UUID, student_id: UUID, p
             raise HTTPException(
                 status_code=422, detail="Choose a code from the assigned classifier"
             )
+    if payload.recipient_service_ids is not None:
+        await selected_services(session, payload.recipient_service_ids)
+    if payload.classifier_entry_id is not None:
+        from app.services.catalog_rules import feature_definitions, validate_answers
+
+        validate_answers(
+            feature_definitions(entry),
+            (payload.data.features or {}).get("ekp", {}),
+            require_complete=False,
+        )
+    before_revision = card.revision
+    previous_services = card.recipient_service_ids
+    chosen_services = (
+        [str(sid) for sid in payload.recipient_service_ids]
+        if payload.recipient_service_ids is not None
+        else None
+    )
+    card.recipient_service_ids = chosen_services
+    if previous_services != chosen_services:
+        await event(
+            session,
+            attempt,
+            student_id,
+            "card.services_changed",
+            {
+                "before": previous_services,
+                "after": chosen_services,
+                "mode": "ekp" if chosen_services is None else "manual",
+            },
+        )
     before = DraftData.model_validate(card).model_dump(mode="json") | {
         "classifier_entry_id": str(card.classifier_entry_id) if card.classifier_entry_id else None
     }
-    before_revision = card.revision
     card.classifier_entry_id = payload.classifier_entry_id
     for key, value in payload.data.model_dump(mode="json").items():
         setattr(card, key, value)
@@ -480,13 +538,19 @@ async def submit_card(
     card = await session.scalar(select(IncidentCard).where(IncidentCard.attempt_id == attempt.id))
     if card.revision != payload.revision:
         raise HTTPException(status_code=409, detail="Card revision is stale; reload the card")
-    if not (card.address_text or "").strip() or not (card.description or "").strip():
+    entry = await selected_entry(session, card)
+    if (entry.notification_required and not (card.address_text or "").strip()) or not (
+        card.description or ""
+    ).strip():
         raise HTTPException(status_code=422, detail="Address and incident description are required")
-    targets = await recipients(session, card)
+    from app.services.catalog_rules import feature_definitions, validate_answers
+
+    validate_answers(feature_definitions(entry), (card.features or {}).get("ekp", {}))
+    targets = await final_recipients(session, card)
     now = datetime.now(UTC)
     card.saved_at = now
-    card.notification_completed_at = now
-    card.status = CardStatus.NOTIFIED
+    card.notification_completed_at = now if targets else None
+    card.status = CardStatus.NOTIFIED if targets else CardStatus.REGISTERED
     session.add_all(
         [
             ServiceResponse(
@@ -494,6 +558,7 @@ async def submit_card(
                 attempt_id=attempt.id,
                 service_id=service.id,
                 service_name=service.name,
+                service_short_name=service.short_name,
                 added_at=now,
                 sent_at=now,
             )
@@ -502,12 +567,16 @@ async def submit_card(
     )
     attempt.status = AttemptStatus.COMPLETED
     attempt.ended_at = now
-    attempt.end_reason = "operator_112_notification_completed"
+    attempt.end_reason = (
+        "operator_112_notification_completed"
+        if targets
+        else "operator_112_registered_without_notification"
+    )
     await event(
         session,
         attempt,
         student_id,
-        "card.notified",
+        "card.notified" if targets else "card.registered_without_notification",
         {
             "service_ids": [str(service.id) for service in targets],
         },

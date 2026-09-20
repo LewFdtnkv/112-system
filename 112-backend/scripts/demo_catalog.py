@@ -129,6 +129,12 @@ TARGETS = {
 }
 
 
+def answer_text(value):
+    if type(value) is bool:
+        return "да" if value else "нет"
+    return ", ".join(value) if isinstance(value, list) else value
+
+
 def material(prefix):
     entries = []
     for section_index, (service, section, names, features) in enumerate(CATEGORIES, 1):
@@ -150,19 +156,96 @@ def material(prefix):
                 {
                     "code": f"TRAIN.{section_index:02d}.{index:02d}",
                     "section": section,
-                    "name": f"Учебное: {name}",
+                    "name": name,
+                    "display_name": name,
+                    "is_popular": False,
+                    "popular_order": 0,
+                    "notification_required": True,
                     "response_scenario": (
                         "Искусственная учебная маршрутизация. Не "
                         "использовать для реального реагирования."
                     ),
-                    "features": [{"key": k, "label": label} for k, label in features],
+                    "features": [{"key": k, "label": label} for k, label in features]
+                    + [
+                        {
+                            "key": "place",
+                            "label": "Где произошло",
+                            "type": "choice",
+                            "required": True,
+                            "options": ["Дом", "Улица", "Транспорт", "Здание / объект"],
+                        },
+                        {
+                            "key": "details",
+                            "label": "Дополнительные признаки",
+                            "type": "array",
+                            "required": False,
+                            "options": ["Нет доступа", "Затруднён проезд", "Повторное обращение"],
+                        },
+                        {
+                            "key": "witness",
+                            "label": "Заявитель — очевидец",
+                            "type": "boolean",
+                            "required": False,
+                        },
+                    ],
                     "routes": routes,
                 }
             )
+    popular = {
+        "TRAIN.02.01": ("ДТП", 0),
+        "TRAIN.01.01": ("Пожар", 1),
+        "TRAIN.04.01": ("104", 3),
+        "TRAIN.06.01": ("Человек в опасности", 4),
+    }
+    for entry in entries:
+        if entry["code"] in popular:
+            label, order = popular[entry["code"]]
+            entry.update(display_name=label, is_popular=True, popular_order=order)
+    for index, (name, order) in enumerate(
+        [
+            ("Ошибочно набран номер", 2),
+            ("Отмена вызова", 5),
+            ("Тестовый вызов", 6),
+            ("Передача дежурства", 7),
+            ("Консультация", 8),
+            ("Вызов на иностранном языке", 9),
+            ("Справка-101", 10),
+        ],
+        1,
+    ):
+        entries.append(
+            {
+                "code": f"TRAIN.INFO.{index:02d}",
+                "section": "Служебные обращения",
+                "name": name,
+                "display_name": name,
+                "is_popular": True,
+                "popular_order": order,
+                "notification_required": False,
+                "features": [],
+                "routes": [],
+                "response_scenario": "Учебная регистрация обращения без оповещения служб.",
+            }
+        )
     return {
         "format": "system112-ekp-v1",
-        "label": f"{prefix}-synthetic-ekp-v2-36",
-        "services": [{"code": f"{prefix}-{key}", "name": name} for key, name in NAMES.items()],
+        "label": f"{prefix}-synthetic-ekp-v3-43",
+        "services": [
+            {
+                "code": f"{prefix}-{key}",
+                "name": name,
+                "short_name": {
+                    "fire": "Служба 101",
+                    "police": "Служба 102",
+                    "medical": "Служба 103",
+                    "gas": "Служба 104",
+                    "rescue": "Спасатели",
+                    "power": "Электросети",
+                    "utility": "ЖКХ",
+                }.get(key, name),
+            }
+            for key, name in NAMES.items()
+        ],
         "entries": entries,
     }
 
@@ -170,7 +253,7 @@ def material(prefix):
 def populate(state, admin, teacher, student, group_id):
     prefix = state.data["prefix"]
     document = material(prefix)
-    version = state.create("expanded-classifier-v2", admin, "admin/classifiers/import", document)
+    version = state.create("expanded-classifier-v3", admin, "admin/classifiers/import", document)
     admin.request("POST", f"admin/classifiers/{version}/publish")
     entries = teacher.request("GET", f"classifiers/{version}/entries?limit=100")
     by_code = {e["code"]: e["id"] for e in entries}
@@ -225,12 +308,22 @@ def populate(state, admin, teacher, student, group_id):
         )
         admin.request("POST", f"admin/service-profiles/{pid}/publish")
         profile_ids[key] = pid
-    selected = [e for e in document["entries"] if e["code"].endswith((".01", ".02"))]
+    selected = [
+        e
+        for e in document["entries"]
+        if e["notification_required"] and e["code"].endswith((".01", ".02"))
+    ]
     cards = []
     cases = []
     for index, entry in enumerate(selected, 1):
         answers = {
-            f["key"]: (index % 2 == 0 if n != 1 else index % 3 == 0)
+            f["key"]: (
+                f["options"][index % len(f["options"])]
+                if f.get("type") == "choice"
+                else [f["options"][0]]
+                if f.get("type") == "array"
+                else (index % 2 == 0 if n != 1 else index % 3 == 0)
+            )
             for n, f in enumerate(entry["features"])
         }
         targets = [
@@ -240,7 +333,7 @@ def populate(state, admin, teacher, student, group_id):
         ]
         address = f"Учебная улица, дом {index}"
         facts = "; ".join(
-            f"{f['label']}: {'да' if answers[f['key']] else 'нет'}" for f in entry["features"]
+            f"{f['label']}: {answer_text(answers[f['key']])}" for f in entry["features"]
         )
         data = {
             "address_text": address,
@@ -252,7 +345,7 @@ def populate(state, admin, teacher, student, group_id):
         }
         message = f"{entry['name']}. Адрес: {address}. Сообщает Учебный заявитель. {facts}."
         card = state.create(
-            f"expanded-card-v2-{index}",
+            f"expanded-card-v3-{index}",
             teacher,
             "cards",
             {
@@ -268,7 +361,7 @@ def populate(state, admin, teacher, student, group_id):
         cards.append(card)
         cases.append((data, by_code[entry["code"]], targets))
     scenario = state.create(
-        "expanded-scenario-v2",
+        "expanded-scenario-v3",
         teacher,
         "scenarios",
         {
@@ -297,7 +390,7 @@ def populate(state, admin, teacher, student, group_id):
         )
         return state.remember(key, row["id"])
 
-    verified = launch("expanded-verified-v2", scenario, "проверка 12 ситуаций")
+    verified = launch("expanded-verified-v3", scenario, "проверка 12 ситуаций")
     work = student.request("GET", f"student/lessons/{verified}")
     for assignment, (data, entry_id, targets) in zip(work["assignments"], cases, strict=True):
         attempt = student.request(
@@ -321,7 +414,7 @@ def populate(state, admin, teacher, student, group_id):
     grade = student.request("GET", f"student/lessons/{verified}/evaluation")
     if grade["score"] != "100.00":
         raise RuntimeError("Не совпал автоматический результат 12 ситуаций")
-    ready = launch("expanded-ready-v2", scenario, "12 ситуаций для самостоятельного прохождения")
+    ready = launch("expanded-ready-v3", scenario, "12 ситуаций для самостоятельного прохождения")
     steps = [
         {
             "status": "accepted",
@@ -353,7 +446,7 @@ def populate(state, admin, teacher, student, group_id):
         },
     ]
     dds = state.create(
-        "dds-scenario-v2",
+        "dds-scenario-v3",
         teacher,
         "scenarios",
         {
@@ -368,7 +461,7 @@ def populate(state, admin, teacher, student, group_id):
             ),
         },
     )
-    dds_verified = launch("dds-verified-v2", dds, "проверка реагирования ДДС")
+    dds_verified = launch("dds-verified-v3", dds, "проверка реагирования ДДС")
     work = student.request("GET", f"student/lessons/{dds_verified}")
     for assignment in work["assignments"]:
         attempt = student.request(
@@ -395,7 +488,7 @@ def populate(state, admin, teacher, student, group_id):
     grade = student.request("GET", f"student/lessons/{dds_verified}/evaluation")
     if grade["score"] != "100.00":
         raise RuntimeError("Не совпал автоматический результат ДДС")
-    dds_ready = launch("dds-ready-v2", dds, "ДДС для самостоятельного прохождения")
+    dds_ready = launch("dds-ready-v3", dds, "ДДС для самостоятельного прохождения")
     return {
         "expanded_classifier_id": version,
         "expanded_entry_count": len(document["entries"]),

@@ -7,6 +7,7 @@ from sqlalchemy import func, select
 from test_teacher_api import teaching as teaching
 
 from app.models import AttemptEvent, ClassifierVersion, Evaluation, ResponseEvent, Service
+from app.schemas.catalog_document import CatalogDocument
 
 pytestmark = pytest.mark.anyio
 
@@ -52,7 +53,9 @@ async def test_catalog_roundtrip_edits_revision_publication_and_clone(api):
     doc = document()
     version = await api("POST", "admin/classifiers/import", doc, status=201)
     path = f"admin/classifiers/{version['id']}"
-    assert await api("GET", path + "/export") == doc
+    assert await api("GET", path + "/export") == CatalogDocument.model_validate(doc).model_dump(
+        mode="json"
+    )
     listing = await api("GET", path + "/entries?limit=1")
     assert listing["total"] == 1
     entry_path = path + "/entries/" + listing["items"][0]["id"]
@@ -380,4 +383,7 @@ async def test_typed_conditions_require_explicit_answers_and_matching_reference_
         actor="teacher",
         status=201,
     )
-    assert scenario["cards"][0]["snapshot"]["feature_definitions"] == doc["entries"][0]["features"]
+    assert (
+        scenario["cards"][0]["snapshot"]["feature_definitions"]
+        == CatalogDocument.model_validate(doc).model_dump()["entries"][0]["features"]
+    )

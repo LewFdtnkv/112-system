@@ -12,6 +12,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     false,
+    true,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
@@ -50,6 +51,7 @@ class ClassifierEntry(UUIDPrimaryKey, Base):
         UniqueConstraint("classifier_version_id", "code"),
         UniqueConstraint("id", "classifier_version_id"),
         CheckConstraint("source_row > 0", name="positive_source_row"),
+        CheckConstraint("popular_order >= 0", name="popular_order_nonnegative"),
     )
 
     classifier_version_id: Mapped[UUID] = mapped_column(
@@ -58,6 +60,12 @@ class ClassifierEntry(UUIDPrimaryKey, Base):
     code: Mapped[str] = mapped_column(String(50))
     section: Mapped[str] = mapped_column(String(255))
     name: Mapped[str] = mapped_column(Text)
+    display_name: Mapped[str | None] = mapped_column(String(100))
+    is_popular: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
+    popular_order: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    notification_required: Mapped[bool] = mapped_column(
+        Boolean, default=True, server_default=true()
+    )
     response_scenario: Mapped[str | None] = mapped_column(Text)
     conditions: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default="{}")
     source_sheet: Mapped[str] = mapped_column(String(100))

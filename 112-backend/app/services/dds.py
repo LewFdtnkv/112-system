@@ -56,6 +56,7 @@ async def initialize(session, attempt, scenario, source, now):
                 attempt_id=attempt.id,
                 service_id=recipient["service_id"],
                 service_name=recipient["name"],
+                service_short_name=recipient.get("short_name"),
                 status=ResponseStatus.RECEIVED,
                 added_at=now,
                 sent_at=now,

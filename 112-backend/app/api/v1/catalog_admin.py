@@ -11,7 +11,12 @@ from app.api.dependencies import AdminDep, SessionDep
 from app.models import ClassifierEntry, ClassifierRoute, ClassifierVersion, Service
 from app.models.enums import PublicationStatus
 from app.schemas.catalog import ServiceRead
-from app.schemas.catalog_admin import ClassifierAdminRead, ClassifierCreate, ServiceCreate
+from app.schemas.catalog_admin import (
+    ClassifierAdminRead,
+    ClassifierCreate,
+    ServiceCreate,
+    ServiceNames,
+)
 
 router = APIRouter(prefix="/admin", tags=["catalog administration"])
 
@@ -30,8 +35,25 @@ async def create_service(payload: ServiceCreate, session: SessionDep, admin: Adm
     return service
 
 
+@router.patch("/services/{service_id}", response_model=ServiceRead)
+async def rename_service(
+    service_id: UUID, payload: ServiceNames, session: SessionDep, admin: AdminDep
+):
+    service = await session.scalar(
+        select(Service).where(Service.id == service_id).with_for_update()
+    )
+    if service is None:
+        raise HTTPException(404, "Service not found")
+    service.name, service.short_name = payload.name, payload.short_name
+    await session.commit()
+    return service
+
+
 @router.post("/classifiers", response_model=ClassifierAdminRead, status_code=201)
 async def create_classifier(payload: ClassifierCreate, session: SessionDep, admin: AdminDep):
+    for entry in payload.entries:
+        if bool(entry.service_ids) != entry.notification_required:
+            raise HTTPException(422, "Service routes must match notification_required")
     service_ids = {service_id for entry in payload.entries for service_id in entry.service_ids}
     services = list(
         await session.scalars(
@@ -64,6 +86,10 @@ async def create_classifier(payload: ClassifierCreate, session: SessionDep, admi
                 code=item.code,
                 section=item.section,
                 name=item.name,
+                display_name=item.display_name,
+                is_popular=item.is_popular,
+                popular_order=item.popular_order,
+                notification_required=item.notification_required,
                 source_sheet="entries",
                 source_row=row,
                 source_data=item.model_dump(mode="json"),
@@ -122,7 +148,8 @@ async def publish_classifier(version_id: UUID, session: SessionDep, admin: Admin
     ).all()
     if (
         not entries
-        or {entry.id for entry in entries} != {route.entry_id for route, _ in routes}
+        or {entry.id for entry in entries if entry.notification_required}
+        != {route.entry_id for route, _ in routes}
         or any(not service.is_active for _, service in routes)
     ):
         raise HTTPException(status_code=409, detail="Every code requires active service routes")
@@ -132,15 +159,18 @@ async def publish_classifier(version_id: UUID, session: SessionDep, admin: Admin
     for route, _ in routes:
         routes_by_entry.setdefault(route.entry_id, []).append(route)
     for entry in entries:
-        keys = {f.key for f in feature_definitions(entry)}
+        definitions = {f.key: f for f in feature_definitions(entry)}
         for route in routes_by_entry.get(entry.id, []):
             if not route.conditions:
                 continue
             if (
                 set(route.conditions) != {"when"}
                 or not isinstance(route.conditions["when"], dict)
-                or not set(route.conditions["when"]) <= keys
-                or any(type(v) is not bool for v in route.conditions["when"].values())
+                or not set(route.conditions["when"]) <= set(definitions)
+                or any(
+                    not definitions[k].accepts(v) or v == []
+                    for k, v in route.conditions["when"].items()
+                )
             ):
                 raise HTTPException(409, "Invalid classifier route conditions")
     version.revision += 1

@@ -324,7 +324,7 @@ def run(base_url: str, state_path: Path, prefix: str, admin_password: str) -> di
             )
         ensure(attempt["caller_message"] == case["message"], "Неверный текст задания")
         path = f"student/attempts/{attempt['id']}"
-        codes = student.request("GET", f"{path}/classifier-entries")
+        codes = student.request("GET", f"{path}/classifier-entries?q=DEMO.")
         selected = next(entry["id"] for entry in codes if entry["code"] == case["code"])
         filled = student.request(
             "PUT",

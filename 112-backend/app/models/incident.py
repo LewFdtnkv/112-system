@@ -74,6 +74,9 @@ class IncidentCard(UUIDPrimaryKey, CreatedAt, Base):
     additional_fields: Mapped[dict[str, Any]] = mapped_column(
         JSONB, default=dict, server_default="{}"
     )
+    # NULL follows EKP; [] explicitly disables notification. UUIDs are validated
+    # against active services on save and again on submit; names are server-resolved.
+    recipient_service_ids: Mapped[list[str] | None] = mapped_column(JSONB(none_as_null=True))
     opened_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     saved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     notification_completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -114,6 +117,7 @@ class ServiceResponse(UUIDPrimaryKey, Base):
     service_id: Mapped[UUID] = mapped_column(
         ForeignKey("services.id", ondelete="RESTRICT"), index=True
     )
+    service_short_name: Mapped[str | None] = mapped_column(String(100))
     service_name: Mapped[str] = mapped_column(String(255))
     status: Mapped[ResponseStatus] = mapped_column(
         enum_column(ResponseStatus, "response_status"), default=ResponseStatus.ADDED

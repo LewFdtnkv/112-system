@@ -44,7 +44,7 @@ async def test_seed_from_admin_only_database_and_repeat(
         (LessonEvaluation, 4),
     ]:
         assert await db_session.scalar(select(func.count()).select_from(model)) == expected
-    assert first["expanded_entry_count"] == 36 and first["expanded_case_count"] == 12
+    assert first["expanded_entry_count"] == 43 and first["expanded_case_count"] == 12
     assert first["service_profile_count"] == 7
     assert stat.S_IMODE(state_path.stat().st_mode) == 0o600
     state = json.loads(state_path.read_text())

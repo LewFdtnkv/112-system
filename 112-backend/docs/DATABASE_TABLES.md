@@ -735,3 +735,21 @@ PK — первичный ключ; `NULL` — допустимое отсутс
 - `proctoring_events`: отдельные события вкладки/фокуса по попытке, уникальный command_id, серверное и клиентское время. Не входят в AttemptEvent и оценивание.
 
 Контракты и политика сроков: [BPMN_IMPLEMENTATION.md](BPMN_IMPLEMENTATION.md).
+
+### 0011–0012: представление ЕКП и выбор служб
+
+`classifier_entries`: display_name varchar(100) nullable, is_popular boolean default false,
+popular_order integer default 0 (>=0), notification_required boolean default true.
+`incident_cards.recipient_service_ids`: nullable JSONB со списком UUID активных служб;
+null следует ЕКП, пустой массив фиксирует ручной отказ от оповещения. Ссылки
+проверяются сервисом на сохранении и отправке; значения входят в аудит и снимок оценки.
+
+### 0013_service_short_names
+
+- `services.short_name` varchar(100), nullable — короткое название; `name` хранит полное.
+- `service_responses.service_short_name` varchar(100), nullable — снимок короткого
+  названия при учебном оповещении; существующий `service_name` — снимок полного.
+- Типы/обязательность/варианты признаков остаются в JSONB
+  `classifier_entries.conditions` (`typed-features-v1`); старая схема boolean читается.
+- Точка карты — JSON `incident_cards.additional_fields.location` с latitude/longitude,
+  валидируется API; отдельной таблицы или координат, выведенных из адреса, нет.

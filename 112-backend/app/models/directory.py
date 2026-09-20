@@ -27,6 +27,7 @@ from app.models.enums import PublicationStatus
 class Service(UUIDPrimaryKey, CreatedAt, Base):
     __tablename__ = "services"
 
+    short_name: Mapped[str | None] = mapped_column(String(100))
     code: Mapped[str] = mapped_column(String(50), unique=True)
     name: Mapped[str] = mapped_column(String(255))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())

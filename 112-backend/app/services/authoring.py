@@ -91,6 +91,8 @@ async def create_card(session: AsyncSession, teacher_id: UUID, payload: CardCrea
         raise HTTPException(
             status_code=422, detail="The incident code must belong to the selected classifier"
         )
+    if entry.notification_required and not payload.data.address_text.strip():
+        raise HTTPException(422, "Address is required for an incident requiring notification")
     routes = list(
         await session.scalars(
             select(ClassifierRoute).where(
@@ -98,19 +100,19 @@ async def create_card(session: AsyncSession, teacher_id: UUID, payload: CardCrea
             )
         )
     )
-    if not routes:
+    if (entry.notification_required and not routes) or (not entry.notification_required and routes):
         raise HTTPException(
             status_code=409, detail="The incident code has no prepared service routes"
         )
     selected = set(payload.recipient_service_ids)
     allowed = {route.service_id for route in routes}
     required = {route.service_id for route in routes if not route.conditions}
-    if entry.conditions.get("format") == "boolean-features-v1":
+    if entry.conditions.get("format") in ("boolean-features-v1", "typed-features-v1"):
         from app.services.catalog_rules import applicable_routes
 
         required = {r.service_id for r in applicable_routes(entry, routes, payload.data.features)}
         allowed = required
-    if not required <= selected or not selected <= allowed:
+    if payload.use_recommended_recipients and (not required <= selected or not selected <= allowed):
         raise HTTPException(422, "Recipients must follow the selected classifier routes")
     recipients = list(
         await session.scalars(
@@ -125,7 +127,9 @@ async def create_card(session: AsyncSession, teacher_id: UUID, payload: CardCrea
         )
     card = CardTemplate(
         created_by_id=teacher_id,
-        **payload.model_dump(exclude={"recipient_service_ids", "data"}),
+        **payload.model_dump(
+            exclude={"recipient_service_ids", "data", "use_recommended_recipients"}
+        ),
         data=payload.data.model_dump(mode="json"),
     )
     session.add(card)
@@ -223,7 +227,9 @@ async def create_scenario(
     for card_id, service in recipients:
         if not service.is_active:
             raise HTTPException(status_code=409, detail="A card recipient is inactive")
-        by_card[card_id].append({"service_id": str(service.id), "name": service.name})
+        by_card[card_id].append(
+            {"service_id": str(service.id), "name": service.name, "short_name": service.short_name}
+        )
     for card in cards:
         if payload.role == TrainingRole.OPERATOR_112 and not card.caller_message:
             raise HTTPException(
@@ -284,8 +290,8 @@ async def create_scenario(
             ],
         )
     )
-    feature_labels = {
-        str(e.id): e.conditions.get("features", [])
+    entry_settings = {
+        str(e.id): e
         for e in await session.scalars(
             select(ClassifierEntry).where(
                 ClassifierEntry.id.in_({c.classifier_entry_id for c in cards})
@@ -307,7 +313,10 @@ async def create_scenario(
                     "classifier_version_id": str(card.classifier_version_id),
                     "classifier_entry_id": str(card.classifier_entry_id),
                     "recipients": by_card[card.id],
-                    "feature_definitions": feature_labels.get(str(card.classifier_entry_id), []),
+                    "feature_definitions": entry_settings[
+                        str(card.classifier_entry_id)
+                    ].conditions.get("features", []),
+                    "notification_required": bool(by_card[card.id]),
                 },
             )
         )

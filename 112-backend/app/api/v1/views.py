@@ -289,7 +289,9 @@ async def admin_services(
 ):
     query = select(Service).where(Service.is_active.is_(True))
     if q:
-        query = query.where(func.concat_ws(" ", Service.code, Service.name).ilike(f"%{q}%"))
+        query = query.where(
+            func.concat_ws(" ", Service.code, Service.name, Service.short_name).ilike(f"%{q}%")
+        )
     total, rows = await page_rows(session, query.order_by(Service.code, Service.id), limit, offset)
     return Page(
         items=[ServiceRead.model_validate(row[0]) for row in rows],

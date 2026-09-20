@@ -17,6 +17,7 @@ from app.models.enums import LessonStatus, PublicationStatus, TrainingMode, Trai
 from app.schemas.assessment import AssessmentPolicy
 from app.schemas.dds import DDSPolicy
 from app.schemas.group import Title
+from app.schemas.location import validate_location
 
 NonblankText = Annotated[
     str, StringConstraints(strip_whitespace=True, min_length=1, max_length=10000)
@@ -29,15 +30,17 @@ class CardData(BaseModel):
     caller_name: str | None = Field(default=None, max_length=255)
     caller_phone: str | None = Field(default=None, max_length=100)
     caller_details: dict[str, JsonValue] | None = None
-    address_text: NonblankText
+    address_text: str = Field(default="", max_length=10000)
     address_details: dict[str, JsonValue] | None = None
     description: NonblankText
     victim_details: str | None = Field(default=None, max_length=10000)
     features: dict[str, JsonValue] | None = None
     additional_fields: dict[str, JsonValue] = Field(default_factory=dict)
 
+    _validate_location = field_validator("additional_fields")(validate_location)
 
-class CardCreate(BaseModel):
+
+class CardDefinition(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     title: Title
@@ -46,7 +49,7 @@ class CardCreate(BaseModel):
     caller_message: NonblankText | None = None
     instructions: str = Field(default="", max_length=10000)
     data: CardData
-    recipient_service_ids: list[UUID] = Field(min_length=1, max_length=100)
+    recipient_service_ids: list[UUID] = Field(default_factory=list, max_length=100)
 
     @field_validator("recipient_service_ids")
     @classmethod
@@ -56,7 +59,11 @@ class CardCreate(BaseModel):
         return value
 
 
-class CardRead(CardCreate):
+class CardCreate(CardDefinition):
+    use_recommended_recipients: bool = True
+
+
+class CardRead(CardDefinition):
     id: UUID
     created_by_id: UUID
     created_at: datetime

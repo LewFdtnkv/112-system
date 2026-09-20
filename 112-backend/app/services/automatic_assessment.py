@@ -146,6 +146,8 @@ async def assess_submission(session, attempt, lesson, card_read, *, publish=True
                         [
                             "card.draft_saved",
                             "card.notified",
+                            "card.registered_without_notification",
+                            "card.services_changed",
                             "dds.information",
                             "dds.status_changed",
                             "dds.submitted",

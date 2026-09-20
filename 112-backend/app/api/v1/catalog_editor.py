@@ -67,7 +67,11 @@ async def entries(
     version = await service.version_row(session, version_id)
     query = select(ClassifierEntry).where(
         ClassifierEntry.classifier_version_id == version_id,
-        (ClassifierEntry.name.ilike(f"%{q}%") | ClassifierEntry.code.ilike(f"%{q}%")),
+        (
+            ClassifierEntry.name.ilike(f"%{q}%")
+            | ClassifierEntry.code.ilike(f"%{q}%")
+            | ClassifierEntry.display_name.ilike(f"%{q}%")
+        ),
     )
     total = await session.scalar(select(func.count()).select_from(query.subquery()))
     rows = list(
@@ -112,6 +116,10 @@ async def detail(version_id: UUID, entry_id: UUID, session: SessionDep, admin: A
             "code": entry.code,
             "section": entry.section,
             "name": entry.name,
+            "display_name": entry.display_name,
+            "is_popular": entry.is_popular,
+            "popular_order": entry.popular_order,
+            "notification_required": entry.notification_required,
             "response_scenario": entry.response_scenario,
             "features": feature_definitions(entry),
             "routes": [

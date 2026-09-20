@@ -56,7 +56,11 @@ async def list_entries(
             select(ClassifierEntry)
             .where(
                 ClassifierEntry.classifier_version_id == version_id,
-                (ClassifierEntry.name.ilike(f"%{q}%") | ClassifierEntry.code.ilike(f"%{q}%")),
+                (
+                    ClassifierEntry.name.ilike(f"%{q}%")
+                    | ClassifierEntry.code.ilike(f"%{q}%")
+                    | ClassifierEntry.display_name.ilike(f"%{q}%")
+                ),
             )
             .order_by(ClassifierEntry.code, ClassifierEntry.id)
             .limit(limit)
@@ -97,7 +101,10 @@ async def list_services(
             select(Service)
             .where(
                 Service.is_active.is_(True),
-                (Service.name.ilike(f"%{q}%") | Service.code.ilike(f"%{q}%")),
+                (
+                    (Service.name.ilike(f"%{q}%") | Service.short_name.ilike(f"%{q}%"))
+                    | Service.code.ilike(f"%{q}%")
+                ),
             )
             .order_by(
                 Service.code,

@@ -54,7 +54,9 @@ async def export_document(session, version):
             .order_by(Service.code)
         )
     ).all()
-    services = {s.code: {"code": s.code, "name": s.name} for _, s in pairs}
+    services = {
+        s.code: {"code": s.code, "name": s.name, "short_name": s.short_name} for _, s in pairs
+    }
     grouped = {}
     for route, service in pairs:
         if route.conditions and set(route.conditions) != {"when"}:
@@ -74,6 +76,10 @@ async def export_document(session, version):
                 code=e.code,
                 section=e.section,
                 name=e.name,
+                display_name=e.display_name,
+                is_popular=e.is_popular,
+                popular_order=e.popular_order,
+                notification_required=e.notification_required,
                 response_scenario=e.response_scenario,
                 features=feature_definitions(e),
                 routes=grouped.get(e.id, []),
@@ -92,9 +98,11 @@ async def write_entry(session, version_id, item, services, *, entry=None, row=1)
     else:
         await session.execute(delete(ClassifierRoute).where(ClassifierRoute.entry_id == entry.id))
     entry.code, entry.section, entry.name = item.code, item.section, item.name
+    for key in ("display_name", "is_popular", "popular_order", "notification_required"):
+        setattr(entry, key, getattr(item, key))
     entry.response_scenario = item.response_scenario
     entry.conditions = (
-        {"format": "boolean-features-v1", "features": [f.model_dump() for f in item.features]}
+        {"format": "typed-features-v1", "features": [f.model_dump() for f in item.features]}
         if item.features
         else {}
     )
@@ -126,13 +134,19 @@ async def import_document(session, document, admin_id, filename="classifier.json
     }
     for item in document.services:
         found = services.get(item.code)
-        if found and (not found.is_active or found.name != item.name):
+        if found and (
+            not found.is_active
+            or found.name != item.name
+            or (item.short_name is not None and found.short_name not in (None, item.short_name))
+        ):
             raise HTTPException(409, f"Service code conflicts with existing service: {item.code}")
     for item in document.services:
         if item.code not in services:
-            row = Service(id=uuid4(), code=item.code, name=item.name)
+            row = Service(id=uuid4(), **item.model_dump())
             session.add(row)
             services[item.code] = row
+        elif item.short_name is not None and services[item.code].short_name is None:
+            services[item.code].short_name = item.short_name
     canonical = json.dumps(document.model_dump(mode="json"), ensure_ascii=False, sort_keys=True)
     vid = uuid4()
     version = ClassifierVersion(

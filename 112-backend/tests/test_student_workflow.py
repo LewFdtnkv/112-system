@@ -74,7 +74,9 @@ async def test_sequential_operator_workflow(exercise, db_session):
     assert again["id"] == first["id"] and again["started_at"] == first["started_at"]
     filled = await e.fill(first)
     routes = await e.request("GET", f"student/attempts/{first['id']}/recipients")
-    assert routes == [{"service_id": str(e.t.service.id), "name": e.t.service.name}]
+    assert routes == [
+        {"service_id": str(e.t.service.id), "name": e.t.service.name, "short_name": None}
+    ]
     body = {"revision": filled["card"]["revision"]}
     completed = await e.request("POST", f"student/attempts/{first['id']}/submit", body)
     assert completed["status"] == "completed" and completed["ended_at"]

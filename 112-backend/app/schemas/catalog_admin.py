@@ -6,20 +6,37 @@ from app.models.enums import PublicationStatus
 from app.schemas.group import Title
 
 
-class ServiceCreate(BaseModel):
+class ServiceNames(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    name: Title
+    short_name: str | None = Field(
+        default=None, min_length=1, max_length=100, pattern=r"^\S(?:.*\S)?$"
+    )
+
+
+class ServiceCreate(ServiceNames):
     model_config = ConfigDict(extra="forbid")
 
     code: str = Field(min_length=1, max_length=50, pattern=r"^[a-z0-9_-]+$")
     name: Title
 
 
-class EntryCreate(BaseModel):
+class EntryPresentation(BaseModel):
+    display_name: str | None = Field(
+        default=None, min_length=1, max_length=100, pattern=r"^\S(?:.*\S)?$"
+    )
+    is_popular: bool = False
+    popular_order: int = Field(default=0, ge=0, le=10000)
+    notification_required: bool = True
+
+
+class EntryCreate(EntryPresentation):
     model_config = ConfigDict(extra="forbid")
 
     code: str = Field(min_length=1, max_length=50, pattern=r"^\S+$")
     section: Title
     name: Title
-    service_ids: list[UUID] = Field(min_length=1, max_length=100)
+    service_ids: list[UUID] = Field(default_factory=list, max_length=100)
 
     @field_validator("service_ids")
     @classmethod
