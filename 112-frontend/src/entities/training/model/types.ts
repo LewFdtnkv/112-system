@@ -95,22 +95,45 @@ export interface CardData {
   additional_fields: Record<string, unknown>;
 }
 export interface CardTemplate {
+  revision: number;
+  updated_at: string;
+  created_at: string;
+  classifier_label: string;
+  can_edit: boolean;
+  scenario_count: number;
   classifier_entry?: ClassifierEntry | null;
   recipients?: Recipient[];
   id: string;
   title: string;
   classifier_version_id: string;
   classifier_entry_id: string;
-  caller_message: string;
+  caller_message: string | null;
   instructions: string;
   data: CardData;
   recipient_service_ids: string[];
 }
 export type CardListItem = Pick<
   CardTemplate,
-  "id" | "title" | "classifier_version_id" | "classifier_entry_id"
->;
-export type CardTemplateInput = Omit<CardTemplate, "id"> & {
+  | "id"
+  | "title"
+  | "classifier_version_id"
+  | "classifier_entry_id"
+  | "revision"
+  | "updated_at"
+  | "created_at"
+  | "scenario_count"
+  | "classifier_label"
+> & { incident_name: string; address_text: string; recipients: Recipient[] };
+export type CardTemplateInput = Pick<
+  CardTemplate,
+  | "title"
+  | "classifier_version_id"
+  | "classifier_entry_id"
+  | "caller_message"
+  | "instructions"
+  | "data"
+  | "recipient_service_ids"
+> & {
   use_recommended_recipients?: boolean;
 };
 export interface ScenarioInput {

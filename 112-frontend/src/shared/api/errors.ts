@@ -7,6 +7,10 @@ const messages: Record<string, string> = {
     "В ответах есть признак, которого нет в выбранном правиле ЕКП. Выберите тип происшествия заново.",
   "Catalog label, service or incident code already exists":
     "Название версии или код уже используется. Укажите уникальное название новой версии.",
+  "Used cards cannot be edited":
+    "Карточка уже включена в сценарий. Доступен только просмотр.",
+  "Card has a newer revision. Reload it before saving.":
+    "Карточка изменена в другом окне. Загрузите актуальные данные перед сохранением.",
   "Recipients must follow the selected classifier routes":
     "Выбранные службы не соответствуют признакам и маршрутам ЕКП.",
   "Unsupported classifier condition format":

@@ -162,6 +162,11 @@ export const trainingApi = {
   card: (cardId: string, signal?: AbortSignal) =>
     get<CardTemplate>(`cards/${id(cardId)}`, {}, signal),
   createCard: (body: CardTemplateInput) => post<CardTemplate>("cards", body),
+  updateCard: (
+    cardId: string,
+    body: CardTemplateInput & { revision: number },
+  ) =>
+    backendApi.put(`cards/${id(cardId)}`, { json: body }).json<CardTemplate>(),
   scenarios: (params: Params, signal?: AbortSignal) =>
     get<Page<ScenarioItem>>("views/scenarios", params, signal),
   scenario: (versionId: string, signal?: AbortSignal) =>
