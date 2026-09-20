@@ -26,6 +26,8 @@ from app.schemas.authoring import (
     ScenarioCreate,
     ScenarioRead,
 )
+from app.schemas.catalog import ClassifierEntryRead
+from app.schemas.student import RecipientRead
 from app.services.assessment_policy import scenario_policy
 
 
@@ -65,7 +67,8 @@ async def owned_card(session: AsyncSession, card_id: UUID, teacher_id: UUID) -> 
 async def card_read(session: AsyncSession, card: CardTemplate) -> CardRead:
     recipients = list(
         await session.scalars(
-            select(CardTemplateRecipient.service_id)
+            select(Service)
+            .join(CardTemplateRecipient, CardTemplateRecipient.service_id == Service.id)
             .where(CardTemplateRecipient.card_template_id == card.id)
             .order_by(CardTemplateRecipient.service_id)
         )
@@ -80,7 +83,14 @@ async def card_read(session: AsyncSession, card: CardTemplate) -> CardRead:
         caller_message=card.caller_message,
         instructions=card.instructions,
         data=card.data,
-        recipient_service_ids=recipients,
+        recipient_service_ids=[service.id for service in recipients],
+        recipients=[
+            RecipientRead(service_id=service.id, name=service.name, short_name=service.short_name)
+            for service in recipients
+        ],
+        classifier_entry=ClassifierEntryRead.model_validate(
+            await session.get(ClassifierEntry, card.classifier_entry_id)
+        ),
     )
 
 

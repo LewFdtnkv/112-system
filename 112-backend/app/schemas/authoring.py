@@ -15,9 +15,11 @@ from pydantic import (
 
 from app.models.enums import LessonStatus, PublicationStatus, TrainingMode, TrainingRole
 from app.schemas.assessment import AssessmentPolicy
+from app.schemas.catalog import ClassifierEntryRead
 from app.schemas.dds import DDSPolicy
 from app.schemas.group import Title
 from app.schemas.location import validate_location
+from app.schemas.student import RecipientRead
 
 NonblankText = Annotated[
     str, StringConstraints(strip_whitespace=True, min_length=1, max_length=10000)
@@ -64,6 +66,8 @@ class CardCreate(CardDefinition):
 
 
 class CardRead(CardDefinition):
+    classifier_entry: ClassifierEntryRead | None = None
+    recipients: list[RecipientRead] = Field(default_factory=list)
     id: UUID
     created_by_id: UUID
     created_at: datetime

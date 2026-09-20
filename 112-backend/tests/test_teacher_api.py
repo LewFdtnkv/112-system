@@ -394,6 +394,18 @@ async def test_scenario_snapshots_do_not_change_with_template(teaching, db_sessi
     assert response.json()["cards"][1]["snapshot"]["data"]["description"] == "Упало дерево"
 
 
+async def test_card_details_include_reference_metadata_without_student_access(teaching, db_client):
+    t = teaching
+    card = await t.post("cards", t.card_payload)
+    path = f"/api/v1/cards/{card['id']}"
+    detail = (await db_client.get(path, headers=t.headers["teacher"])).json()
+    assert detail["classifier_entry"]["id"] == str(t.entry.id)
+    assert detail["recipients"][0]["service_id"] == str(t.service.id)
+    assert detail["recipients"][0]["name"] == t.service.name
+    assert (await db_client.get(path, headers=t.headers["student"])).status_code == 403
+    assert (await db_client.get(path, headers=t.headers["other"])).status_code == 404
+
+
 async def test_scenarios_enforce_owner_and_role_requirements(teaching, db_client, db_session):
     t = teaching
     card = await t.post("cards", t.card_payload | {"caller_message": None})
