@@ -47,6 +47,10 @@ class Lesson(UUIDPrimaryKey, CreatedAt, Base):
     __table_args__ = (
         UniqueConstraint("teacher_id", "start_request_id"),
         CheckConstraint(
+            "available_until IS NULL OR available_from IS NULL OR available_until > available_from",
+            name="availability_order",
+        ),
+        CheckConstraint(
             "ended_at IS NULL OR (started_at IS NOT NULL AND ended_at >= started_at)",
             name="time_order",
         ),
@@ -67,6 +71,8 @@ class Lesson(UUIDPrimaryKey, CreatedAt, Base):
     scenario_version_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("scenario_versions.id", ondelete="RESTRICT"), index=True
     )
+    available_from: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    available_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
     start_request_id: Mapped[UUID | None] = mapped_column()
     start_fingerprint: Mapped[str | None] = mapped_column(String(64))
 

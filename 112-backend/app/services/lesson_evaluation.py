@@ -46,7 +46,7 @@ async def review_rows(
 
 
 async def review_work(session: AsyncSession, lesson_id: UUID, student_id: UUID, teacher_id: UUID):
-    _, rows = await review_rows(session, lesson_id, student_id, teacher_id)
+    lesson, rows = await review_rows(session, lesson_id, student_id, teacher_id)
     assignments = []
     sources = {
         source.id: source
@@ -112,7 +112,11 @@ async def review_work(session: AsyncSession, lesson_id: UUID, student_id: UUID, 
     return LessonWorkReview(
         lesson_id=lesson_id,
         student_id=student_id,
-        submitted=all(attempt and attempt.status == AttemptStatus.COMPLETED for _, attempt in rows),
+        submitted=lesson.status == LessonStatus.FINISHED
+        or all(
+            attempt and attempt.status in (AttemptStatus.COMPLETED, AttemptStatus.INTERRUPTED)
+            for _, attempt in rows
+        ),
         assignments=assignments,
         evaluations=evaluations,
         automatic_check=summarize(
@@ -149,8 +153,13 @@ async def grade_lesson(
                 status_code=409, detail="Request ID was already used with different parameters"
             )
         return existing, False
-    if lesson.status == LessonStatus.CANCELLED or any(
-        attempt is None or attempt.status != AttemptStatus.COMPLETED for _, attempt in rows
+    if lesson.status == LessonStatus.CANCELLED or (
+        lesson.status != LessonStatus.FINISHED
+        and any(
+            attempt is None
+            or attempt.status not in (AttemptStatus.COMPLETED, AttemptStatus.INTERRUPTED)
+            for _, attempt in rows
+        )
     ):
         raise HTTPException(
             status_code=409, detail="The student must submit every card before grading"
@@ -174,6 +183,8 @@ async def grade_lesson(
     session.add(evaluation)
     await session.flush()
     for _, attempt in rows:
+        if attempt is None:
+            continue
         await append_event(
             session,
             attempt.id,
@@ -194,8 +205,12 @@ async def grade_lesson(
 
 async def ensure_automatic_grade(session, lesson_id, student_id, teacher_id):
     lesson, rows = await review_rows(session, lesson_id, student_id, teacher_id, lock=True)
-    if lesson.status == LessonStatus.CANCELLED or any(
-        a is None or a.status != AttemptStatus.COMPLETED for _, a in rows
+    if lesson.status == LessonStatus.CANCELLED or (
+        lesson.status != LessonStatus.FINISHED
+        and any(
+            a is None or a.status not in (AttemptStatus.COMPLETED, AttemptStatus.INTERRUPTED)
+            for _, a in rows
+        )
     ):
         raise HTTPException(
             status_code=409, detail="The student must submit every card before grading"

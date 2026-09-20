@@ -258,7 +258,8 @@ async def finish(session, attempt_id, student_id, data):
             Assignment.lesson_id == lesson.id,
             ~select(Attempt.id)
             .where(
-                Attempt.assignment_id == Assignment.id, Attempt.status == AttemptStatus.COMPLETED
+                Attempt.assignment_id == Assignment.id,
+                Attempt.status.in_([AttemptStatus.COMPLETED, AttemptStatus.INTERRUPTED]),
             )
             .exists(),
         )

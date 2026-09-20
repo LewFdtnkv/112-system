@@ -8,11 +8,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.concurrency import run_in_threadpool
 
 from app.core.security import hash_password
-from app.models import AuthSession, User
+from app.models import AuthSession, User, UserActivity
 from app.schemas.user import UserCreate, UserUpdate
 
 
-async def create_user(session: AsyncSession, payload: UserCreate) -> User:
+async def create_user(
+    session: AsyncSession, payload: UserCreate, actor_id: UUID | None = None
+) -> User:
     password_hash = await run_in_threadpool(
         hash_password, payload.initial_password.get_secret_value()
     )
@@ -24,6 +26,15 @@ async def create_user(session: AsyncSession, payload: UserCreate) -> User:
     )
     session.add(user)
     try:
+        await session.flush()
+        session.add(
+            UserActivity(
+                user_id=user.id,
+                actor_id=actor_id,
+                kind="account.created",
+                details={"role": user.role},
+            )
+        )
         await session.commit()
     except IntegrityError as exc:
         await session.rollback()
@@ -51,6 +62,7 @@ async def update_user(
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
     changes = payload.model_dump(exclude_unset=True)
+    reason = (changes.pop("reason", None) or "").strip()
     role = changes.pop("role", user.role)
     active = changes.get("is_active", user.is_active)
     if user.id == admin_id and (not active or role != "admin"):
@@ -66,6 +78,18 @@ async def update_user(
                 status_code=409, detail="The last active administrator must be retained"
             )
     revoke = role != user.role or active != user.is_active
+    if revoke and not reason:
+        raise HTTPException(status_code=422, detail="A reason is required to change role or access")
+    before = {key: getattr(user, key) for key in changes} | {"role": user.role}
+    session.add(
+        UserActivity(
+            user_id=user.id,
+            actor_id=admin_id,
+            kind="account.access_changed" if revoke else "account.updated",
+            reason=reason,
+            details={"before": before, "after": changes | {"role": role}},
+        )
+    )
     for key, value in changes.items():
         setattr(user, key, value)
     user.is_admin, user.is_teacher = role == "admin", role == "teacher"

@@ -47,6 +47,8 @@ class LessonRow(BaseModel):
     group_name: str | None
     started_at: datetime | None
     ended_at: datetime | None
+    available_from: datetime | None = None
+    available_until: datetime | None = None
     status: str
     work_status: str
     card_count: int

@@ -91,6 +91,7 @@ class StudentAssignmentRead(BaseModel):
     role: TrainingRole
     available: bool
     attempt_id: UUID | None
+    deadline_at: datetime | None = None
     card: JournalCardRead | None = None
     status: Literal["pending", "in_progress", "completed", "interrupted"]
 
@@ -102,4 +103,6 @@ class StudentLessonRead(BaseModel):
     started_at: datetime | None
     ended_at: datetime | None
     work_status: Literal["assigned", "in_progress", "submitted"]
+    available_from: datetime | None = None
+    available_until: datetime | None = None
     assignments: list[StudentAssignmentRead]

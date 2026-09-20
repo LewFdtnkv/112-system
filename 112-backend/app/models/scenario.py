@@ -3,6 +3,7 @@ from typing import Any
 from uuid import UUID
 
 from sqlalchemy import (
+    Boolean,
     CheckConstraint,
     DateTime,
     ForeignKey,
@@ -10,6 +11,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    false,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
@@ -22,6 +24,7 @@ from app.models.enums import PublicationStatus, TrainingRole
 class Scenario(UUIDPrimaryKey, CreatedAt, Base):
     __tablename__ = "scenarios"
 
+    is_archived: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
     title: Mapped[str] = mapped_column(String(255))
     created_by_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
 

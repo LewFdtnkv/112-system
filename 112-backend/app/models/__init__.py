@@ -1,4 +1,11 @@
 # Import every model here so Alembic sees the complete metadata.
+from app.models.activity import (
+    MessageRecipient,
+    ProctoringEvent,
+    TeachingMessage,
+    UserActivity,
+    UserPhoto,
+)
 from app.models.auth_session import AuthSession
 from app.models.authoring import CardTemplate, CardTemplateRecipient, ScenarioCard
 from app.models.classifier import ClassifierEntry, ClassifierRoute, ClassifierVersion
@@ -26,6 +33,11 @@ from app.models.training import (
 from app.models.user import User
 
 __all__ = [
+    "MessageRecipient",
+    "ProctoringEvent",
+    "TeachingMessage",
+    "UserActivity",
+    "UserPhoto",
     "AIJob",
     "AnswerKey",
     "Assignment",

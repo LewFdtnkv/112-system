@@ -3,12 +3,12 @@ from uuid import uuid4
 
 import pytest
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import hash_password, refresh_token_hash, verify_password
 from app.main import app
-from app.models import AuthSession, User
+from app.models import AuthSession, User, UserActivity
 
 NEW_PASSWORD = "new-admin-password-112"
 
@@ -160,6 +160,11 @@ async def test_session_rejected(db_client, db_session, state):
         )
         auth_session.expires_at = datetime.now(UTC) - timedelta(seconds=1)
     else:
+        await db_session.execute(
+            delete(UserActivity).where(
+                (UserActivity.user_id == admin.id) | (UserActivity.actor_id == admin.id)
+            )
+        )
         await db_session.delete(admin)
     await db_session.commit()
     assert (await db_client.get("/api/v1/users/me", headers=bearer(pair))).status_code == 401

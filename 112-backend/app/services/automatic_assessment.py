@@ -22,7 +22,7 @@ from app.models import (
     LessonEvaluation,
     ScenarioCard,
 )
-from app.models.enums import AttemptStatus, EvaluationMethod, EvaluationStatus
+from app.models.enums import AttemptStatus, EvaluationMethod, EvaluationStatus, LessonStatus
 from app.schemas.assessment import AssessmentPolicy
 from app.services.audit import append_event
 from app.services.field_evaluation import check_fields
@@ -210,9 +210,16 @@ async def publish_lesson_result(session, lesson, student_id):
             .where(Assignment.lesson_id == lesson.id, Assignment.student_id == student_id)
         )
     ).all()
-    if not attempts or any(a is None or a.status != AttemptStatus.COMPLETED for _, a in attempts):
+    closed = lesson.status == LessonStatus.FINISHED
+    if not attempts or (
+        not closed
+        and any(
+            a is None or a.status not in (AttemptStatus.COMPLETED, AttemptStatus.INTERRUPTED)
+            for _, a in attempts
+        )
+    ):
         return
-    ids = [a.id for _, a in attempts]
+    ids = [a.id for _, a in attempts if a]
     evaluations = list(
         await session.scalars(
             select(Evaluation).where(
@@ -228,7 +235,7 @@ async def publish_lesson_result(session, lesson, student_id):
         from app.services.student import review_attempts
 
         assessed = {e.attempt_id for e in evaluations}
-        missing = [a for _, a in attempts if a.id not in assessed]
+        missing = [a for _, a in attempts if a and a.id not in assessed]
         cards = await review_attempts(session, missing)
         for attempt in missing:
             if attempt.id not in cards:
@@ -267,7 +274,13 @@ async def publish_lesson_result(session, lesson, student_id):
         group["score"] += float(criterion.score)
         group["max_score"] += float(criterion.max_score)
     details = {
-        "policy_version": evaluations[0].context_snapshot["policy"]["version"],
+        "policy_version": evaluations[0].context_snapshot["policy"]["version"]
+        if evaluations
+        else "weighted-fields-v1",
+        "missed_cards": len(attempts) - len(ids),
+        "aggregation": "mean_card_percent_with_zero_missing"
+        if len(ids) < len(attempts)
+        else "weighted_criteria_sum",
         "scope": "formal_fields",
         "criteria": list(grouped.values()),
         "evaluated_cards": len(ids),
@@ -282,7 +295,14 @@ async def publish_lesson_result(session, lesson, student_id):
             request_id=uuid5(NAMESPACE_URL, f"system112:automatic:{lesson.id}:{student_id}"),
             revision=1,
             method="rules",
-            score=(100 * score / maximum).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
+            score=(
+                (
+                    sum((100 * e.score / e.max_score for e in evaluations), Decimal(0))
+                    / len(attempts)
+                )
+                if len(ids) < len(attempts)
+                else (100 * score / maximum)
+            ).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP),
             max_score=100,
             comment=(
                 "Рассчитано автоматически по формальным критериям. "

@@ -36,6 +36,8 @@ class AssessmentDetails(BaseModel):
     criteria: list[AssessmentCriterion]
     unverified_fields: int
     evaluated_cards: int
+    missed_cards: int = 0
+    aggregation: str = "weighted_criteria_sum"
     source_evaluation_ids: list[UUID]
 
 

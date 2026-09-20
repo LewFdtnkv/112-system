@@ -31,6 +31,7 @@ from app.models import (
     ServiceResponse,
     TrainingGroup,
     User,
+    UserActivity,
 )
 from app.models.enums import PublicationStatus, TrainingRole
 from app.schemas.authoring import LessonStart
@@ -253,5 +254,12 @@ async def test_concurrent_duplicate_user_returns_conflict(concurrent_teaching):
         assert sorted(await asyncio.gather(create(), create())) == [201, 409]
     finally:
         async with d.factory() as session:
+            await session.execute(
+                delete(UserActivity).where(
+                    UserActivity.user_id.in_(
+                        select(User.id).where(User.username == payload.username)
+                    )
+                )
+            )
             await session.execute(delete(User).where(User.username == payload.username))
             await session.commit()

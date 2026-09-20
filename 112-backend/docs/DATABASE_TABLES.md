@@ -723,3 +723,15 @@ PK — первичный ключ; `NULL` — допустимое отсутс
 - INDEX `(attempt_id)`.
 
 Миграция `0009_catalog_revision`: revision в ЕКП и профилях защищает правки черновиков от устаревших запросов. Публикация также увеличивает revision. См. [CATALOG_AND_DDS.md](CATALOG_AND_DDS.md).
+
+
+## Дополнение 0010_bpmn_workflows
+
+- `lessons.available_from / available_until`: окно доступности; конец позже начала.
+- `scenarios.is_archived`: использованные сценарии сохраняются, новые назначения запрещаются.
+- `user_activities`: субъект, исполнитель, вид события, причина, снимок изменённых полей, время.
+- `user_photos`: отдельный JPEG по user_id.
+- `teaching_messages` и `message_recipients`: сообщение, преподаватель, исходная группа, снимок получателей, время прочтения.
+- `proctoring_events`: отдельные события вкладки/фокуса по попытке, уникальный command_id, серверное и клиентское время. Не входят в AttemptEvent и оценивание.
+
+Контракты и политика сроков: [BPMN_IMPLEMENTATION.md](BPMN_IMPLEMENTATION.md).

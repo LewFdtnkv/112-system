@@ -144,7 +144,7 @@ async def scenarios(
             & (latest.c.version == ScenarioVersion.version),
         )
         .outerjoin(ScenarioCard)
-        .where(Scenario.created_by_id == teacher.id)
+        .where(Scenario.created_by_id == teacher.id, Scenario.is_archived.is_(False))
     )
     if q:
         query = query.where(

@@ -3,6 +3,7 @@ from typing import Annotated, Literal
 from uuid import UUID
 
 from pydantic import (
+    AwareDatetime,
     BaseModel,
     ConfigDict,
     Field,
@@ -149,13 +150,33 @@ class LessonStart(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     request_id: UUID
-    group_id: UUID
+    group_id: UUID | None = None
+    group_ids: list[UUID] = Field(default_factory=list, max_length=100)
+    student_ids: list[UUID] = Field(default_factory=list, max_length=1000)
+    available_from: AwareDatetime | None = None
+    available_until: AwareDatetime | None = None
     student_id: UUID | None = None
     scenario_version_id: UUID
     title: Title | None = None
     mode: TrainingMode = TrainingMode.PRACTICE
     time_limit_seconds: int | None = Field(default=None, ge=1, le=86400)
     hint_delay_seconds: int | None = Field(default=None, ge=1, le=86400)
+
+    @model_validator(mode="after")
+    def targets_and_window(self):
+        if self.group_id is None and not self.group_ids and not self.student_ids:
+            raise ValueError("Choose groups or students")
+        if self.group_id is not None and (self.group_ids or self.student_ids):
+            raise ValueError("Do not mix legacy and multiple targets")
+        if self.student_id is not None and self.group_id is None:
+            raise ValueError("Individual legacy target requires a group")
+        if (
+            self.available_from
+            and self.available_until
+            and self.available_until <= self.available_from
+        ):
+            raise ValueError("End must be after start")
+        return self
 
 
 class LessonRead(BaseModel):
@@ -168,6 +189,8 @@ class LessonRead(BaseModel):
     started_at: datetime | None
     ended_at: datetime | None
     student_count: int
+    available_from: datetime | None = None
+    available_until: datetime | None = None
     assignment_count: int
 
 

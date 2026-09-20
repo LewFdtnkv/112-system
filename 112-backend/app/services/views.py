@@ -23,6 +23,9 @@ def lesson_rows_query(*, teacher_id: UUID | None = None, student_id: UUID | None
         func.count(Assignment.id).label("card_count"),
         func.count(Attempt.id).label("started_count"),
         func.count(Attempt.id)
+        .filter(Attempt.status.in_([AttemptStatus.COMPLETED, AttemptStatus.INTERRUPTED]))
+        .label("terminal_count"),
+        func.count(Attempt.id)
         .filter(Attempt.status == AttemptStatus.COMPLETED)
         .label("completed_count"),
     ).outerjoin(Attempt, (Attempt.assignment_id == Assignment.id) & (Attempt.number == 1))
@@ -75,9 +78,12 @@ def lesson_rows_query(*, teacher_id: UUID | None = None, student_id: UUID | None
             TrainingGroup.name.label("group_name"),
             Lesson.started_at,
             Lesson.ended_at,
+            Lesson.available_from,
+            Lesson.available_until,
             Lesson.status,
             case(
-                (counts.c.completed_count == counts.c.card_count, "submitted"),
+                (Lesson.status == "finished", "submitted"),
+                (counts.c.terminal_count == counts.c.card_count, "submitted"),
                 (counts.c.started_count > 0, "in_progress"),
                 else_="assigned",
             ).label("work_status"),

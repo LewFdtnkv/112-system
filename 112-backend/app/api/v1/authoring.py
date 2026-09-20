@@ -1,11 +1,19 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Query, Response
-from sqlalchemy import select
+from fastapi import APIRouter, HTTPException, Query, Response
+from sqlalchemy import delete, select
 
 from app.api.dependencies import SessionDep, TeacherDep
-from app.models import Assignment, CardTemplate, Lesson, Scenario, ScenarioVersion
+from app.models import (
+    AnswerKey,
+    Assignment,
+    CardTemplate,
+    Lesson,
+    Scenario,
+    ScenarioCard,
+    ScenarioVersion,
+)
 from app.schemas.authoring import (
     AssignmentRead,
     CardCreate,
@@ -158,3 +166,34 @@ async def new_scenario_version(
     version_id: UUID, payload: ScenarioCreate, session: SessionDep, teacher: TeacherDep
 ):
     return await create_scenario(session, teacher.id, payload, previous_id=version_id)
+
+
+@router.delete("/scenarios/{version_id}")
+async def delete_scenario(version_id: UUID, session: SessionDep, teacher: TeacherDep):
+    version = await owned_scenario(session, version_id, teacher.id)
+    scenario = await session.scalar(
+        select(Scenario).where(Scenario.id == version.scenario_id).with_for_update()
+    )
+    if scenario is None:
+        raise HTTPException(404, "Scenario not found")
+    versions = select(ScenarioVersion.id).where(ScenarioVersion.scenario_id == scenario.id)
+    used = await session.scalar(
+        select(Assignment.id).where(Assignment.scenario_version_id.in_(versions)).limit(1)
+    )
+    if used or await session.scalar(
+        select(Lesson.id).where(Lesson.scenario_version_id.in_(versions)).limit(1)
+    ):
+        scenario.is_archived = True
+        result = "archived"
+    else:
+        await session.execute(delete(AnswerKey).where(AnswerKey.scenario_version_id.in_(versions)))
+        await session.execute(
+            delete(ScenarioCard).where(ScenarioCard.scenario_version_id.in_(versions))
+        )
+        await session.execute(
+            delete(ScenarioVersion).where(ScenarioVersion.scenario_id == scenario.id)
+        )
+        await session.delete(scenario)
+        result = "deleted"
+    await session.commit()
+    return {"result": result}

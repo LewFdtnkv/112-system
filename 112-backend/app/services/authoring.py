@@ -245,6 +245,8 @@ async def create_scenario(
         scenario = await session.scalar(
             select(Scenario).where(Scenario.id == previous.scenario_id).with_for_update()
         )
+        if scenario.is_archived:
+            raise HTTPException(409, "Archived scenarios cannot be edited")
         number = 1 + await session.scalar(
             select(func.max(ScenarioVersion.version)).where(
                 ScenarioVersion.scenario_id == scenario.id

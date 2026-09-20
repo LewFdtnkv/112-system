@@ -18,7 +18,7 @@ from app.core.security import (
     refresh_token_hash,
     verify_password,
 )
-from app.models import AuthSession, User
+from app.models import AuthSession, User, UserActivity
 from app.schemas.auth import TokenPair
 
 
@@ -104,6 +104,7 @@ async def login(session: AsyncSession, username: str, password: str) -> TokenPai
     )
     if not valid or user is None or not user.is_active:
         raise unauthorized()
+    session.add(UserActivity(user_id=user.id, actor_id=user.id, kind="auth.login"))
     user.last_login_at = datetime.now(UTC)
     pair = await start_session(session, user)
     await session.commit()
@@ -148,6 +149,11 @@ async def change_password(
         .where(AuthSession.user_id == identity.user.id, AuthSession.revoked_at.is_(None))
         .values(revoked_at=datetime.now(UTC))
     )
+    session.add(
+        UserActivity(
+            user_id=identity.user.id, actor_id=identity.user.id, kind="auth.password_changed"
+        )
+    )
     pair = await start_session(session, identity.user)
     await session.commit()
     return pair
@@ -155,5 +161,8 @@ async def change_password(
 
 async def logout(session: AsyncSession, identity: Identity) -> None:
     identity = await lock_identity(session, identity)
+    session.add(
+        UserActivity(user_id=identity.user.id, actor_id=identity.user.id, kind="auth.logout")
+    )
     identity.session.revoked_at = datetime.now(UTC)
     await session.commit()

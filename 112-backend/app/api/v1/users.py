@@ -14,7 +14,7 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 @router.post("", response_model=UserRead, status_code=201)
 async def add_user(payload: UserCreate, session: SessionDep, admin: AdminDep) -> User:
-    return await create_user(session, payload)
+    return await create_user(session, payload, admin.id)
 
 
 @router.get("/me", response_model=UserRead)

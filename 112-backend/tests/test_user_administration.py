@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from test_teacher_api import PASSWORD
 from test_teacher_api import teaching as teaching
 
-from app.models import User
+from app.models import User, UserActivity
 
 pytestmark = pytest.mark.anyio
 
@@ -61,7 +61,12 @@ async def test_disable_reenable_revokes_old_tokens(teaching, db_client):
     disabled = await db_client.patch(
         path,
         headers=t.headers["admin"],
-        json={"is_active": False, "first_name": "Иван", "email": "student@example.test"},
+        json={
+            "reason": "Проверка блокировки",
+            "is_active": False,
+            "first_name": "Иван",
+            "email": "student@example.test",
+        },
     )
     assert disabled.status_code == 200
     assert not disabled.json()["is_active"] and disabled.json()["last_login_at"]
@@ -70,7 +75,9 @@ async def test_disable_reenable_revokes_old_tokens(teaching, db_client):
     assert (
         await db_client.get("/api/v1/users/me", headers=t.headers["student"])
     ).status_code == 401
-    enabled = await db_client.patch(path, headers=t.headers["admin"], json={"is_active": True})
+    enabled = await db_client.patch(
+        path, headers=t.headers["admin"], json={"is_active": True, "reason": "Доступ восстановлен"}
+    )
     assert enabled.status_code == 200 and enabled.json()["first_name"] == "Иван"
     assert (
         await db_client.post("/api/v1/auth/refresh", json={"refresh_token": old["refresh_token"]})
@@ -84,7 +91,11 @@ async def test_disable_reenable_revokes_old_tokens(teaching, db_client):
 async def test_role_change_revokes_sessions_and_self_lockout_is_rejected(teaching, db_client):
     t = teaching
     path = f"/api/v1/users/{t.accounts['teacher'].id}"
-    changed = await db_client.patch(path, headers=t.headers["admin"], json={"role": "admin"})
+    changed = await db_client.patch(
+        path,
+        headers=t.headers["admin"],
+        json={"role": "admin", "reason": "Назначение администратора"},
+    )
     assert changed.status_code == 200 and changed.json()["role"] == "admin"
     assert not changed.json()["is_teacher"]
     assert (await db_client.get("/api/v1/groups", headers=t.headers["teacher"])).status_code == 401
@@ -158,7 +169,7 @@ async def test_concurrent_admin_demotion_keeps_one_authorized_admin(auth_setting
                         client.patch(
                             f"/api/v1/users/{ids[1 - index]}",
                             headers={"Authorization": f"Bearer {pair['access_token']}"},
-                            json={"role": "teacher"},
+                            json={"role": "teacher", "reason": "Изменение обязанностей"},
                         )
                         for index, pair in enumerate(pairs)
                     ]
@@ -173,6 +184,11 @@ async def test_concurrent_admin_demotion_keeps_one_authorized_admin(auth_setting
     finally:
         app.dependency_overrides.pop(get_session, None)
         async with factory() as session:
+            await session.execute(
+                delete(UserActivity).where(
+                    UserActivity.user_id.in_(ids) | UserActivity.actor_id.in_(ids)
+                )
+            )
             await session.execute(delete(User).where(User.id.in_(ids)))
             await session.commit()
         await engine.dispose()

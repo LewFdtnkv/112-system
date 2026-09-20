@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from app.core.security import hash_password
 from app.db.session import get_session
 from app.main import app
-from app.models import User
+from app.models import User, UserActivity
 
 
 @pytest.mark.parametrize("operation", ["refresh", "change-password"])
@@ -67,6 +67,11 @@ async def test_concurrent_token_mutations(auth_settings, operation):
     finally:
         app.dependency_overrides.pop(get_session, None)
         async with factory() as session:
+            await session.execute(
+                delete(UserActivity).where(
+                    (UserActivity.user_id == user_id) | (UserActivity.actor_id == user_id)
+                )
+            )
             await session.execute(delete(User).where(User.id == user_id))
             await session.commit()
         await engine.dispose()

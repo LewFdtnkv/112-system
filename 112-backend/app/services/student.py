@@ -54,11 +54,14 @@ async def student_lesson(
             select(Assignment.lesson_id).where(Assignment.student_id == student_id),
         ),
     )
-    if lock:
-        query = query.with_for_update()
-    lesson = await session.scalar(query)
+    query = query.with_for_update()
+    lesson = await session.scalar(query.execution_options(populate_existing=True))
     if lesson is None:
         raise HTTPException(status_code=404, detail="Lesson not found")
+    from app.services.deadlines import enforce_deadlines
+
+    if await enforce_deadlines(session, lesson):
+        await session.refresh(lesson, with_for_update=True)
     return lesson
 
 
@@ -88,10 +91,15 @@ async def lesson_work(session: AsyncSession, lesson: Lesson, student_id: UUID) -
             .order_by(Assignment.position)
         )
     ).all()
+    from app.services.deadlines import attempt_deadline
+
     assignments = []
     previous_complete = True
     for assignment, scenario, source, attempt, card, category_name in rows:
-        complete = attempt is not None and attempt.status == AttemptStatus.COMPLETED
+        complete = attempt is not None and attempt.status in (
+            AttemptStatus.COMPLETED,
+            AttemptStatus.INTERRUPTED,
+        )
         assignments.append(
             StudentAssignmentRead(
                 id=assignment.id,
@@ -106,6 +114,7 @@ async def lesson_work(session: AsyncSession, lesson: Lesson, student_id: UUID) -
                     scenario.role == TrainingRole.OPERATOR_112
                     or bool(scenario.completion_rules.get("dds"))
                 ),
+                deadline_at=attempt_deadline(attempt, lesson) if attempt else None,
                 attempt_id=attempt.id if attempt else None,
                 card=JournalCardRead(
                     id=card.id,
@@ -126,7 +135,7 @@ async def lesson_work(session: AsyncSession, lesson: Lesson, student_id: UUID) -
         previous_complete = previous_complete and complete
     state = (
         "submitted"
-        if assignments and previous_complete
+        if lesson.status == LessonStatus.FINISHED or (assignments and previous_complete)
         else ("in_progress" if any(item.attempt_id for item in assignments) else "assigned")
     )
     return StudentLessonRead(
@@ -135,6 +144,8 @@ async def lesson_work(session: AsyncSession, lesson: Lesson, student_id: UUID) -
         status=lesson.status,
         started_at=lesson.started_at,
         ended_at=lesson.ended_at,
+        available_from=lesson.available_from,
+        available_until=lesson.available_until,
         work_status=state,
         assignments=assignments,
     )
@@ -289,7 +300,8 @@ async def start_attempt(session: AsyncSession, assignment_id: UUID, student_id: 
             Assignment.position < assignment.position,
             ~select(Attempt.id)
             .where(
-                Attempt.assignment_id == Assignment.id, Attempt.status == AttemptStatus.COMPLETED
+                Attempt.assignment_id == Assignment.id,
+                Attempt.status.in_([AttemptStatus.COMPLETED, AttemptStatus.INTERRUPTED]),
             )
             .exists(),
         )
@@ -305,6 +317,7 @@ async def start_attempt(session: AsyncSession, assignment_id: UUID, student_id: 
         mode=assignment.mode,
         started_at=now,
         settings_snapshot={
+            "deadline_policy": "bpmn-v1",
             "time_limit_seconds": assignment.time_limit_seconds,
             "hint_delay_seconds": assignment.hint_delay_seconds,
             "settings": assignment.settings,
@@ -507,7 +520,8 @@ async def submit_card(
             Assignment.lesson_id == lesson.id,
             ~select(Attempt.id)
             .where(
-                Attempt.assignment_id == Assignment.id, Attempt.status == AttemptStatus.COMPLETED
+                Attempt.assignment_id == Assignment.id,
+                Attempt.status.in_([AttemptStatus.COMPLETED, AttemptStatus.INTERRUPTED]),
             )
             .exists(),
         )

@@ -2,7 +2,8 @@ FROM python:3.13-slim
 
 COPY --from=ghcr.io/astral-sh/uv:0.12.8 /uv /usr/local/bin/uv
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
+ENV SYSTEM_LOG_DIRECTORY=/home/appuser/logs \
+    PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     UV_PYTHON_DOWNLOADS=never \
     UV_LINK_MODE=copy \
@@ -12,7 +13,8 @@ WORKDIR /app
 
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-cache \
-    && useradd --create-home --uid 10001 appuser
+    && useradd --create-home --uid 10001 appuser \
+    && install -d -o appuser -g appuser /home/appuser/logs
 
 COPY app ./app
 COPY alembic ./alembic
