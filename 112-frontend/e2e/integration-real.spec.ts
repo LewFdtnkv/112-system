@@ -89,6 +89,10 @@ test("real API: authoring, operator drafts, revision conflict, notification and 
   ).toBeVisible();
   await account.getByLabel("Аккаунт активен").uncheck();
   await account.getByRole("button", { name: "Сохранить изменения" }).click();
+  await page
+    .getByLabel("Причина изменения роли или блокировки")
+    .fill("Учебная проверка доступа");
+  await page.getByRole("button", { name: "Подтвердить", exact: true }).click();
   await expect(account).not.toBeVisible();
   await expect(
     page.getByRole("row").filter({ hasText: student }),
@@ -106,6 +110,10 @@ test("real API: authoring, operator drafts, revision conflict, notification and 
     animations: "disabled",
   });
   await account.getByRole("button", { name: "Сохранить изменения" }).click();
+  await page
+    .getByLabel("Причина изменения роли или блокировки")
+    .fill("Учебная проверка доступа");
+  await page.getByRole("button", { name: "Подтвердить", exact: true }).click();
   await expect(account).not.toBeVisible();
   await page.goto("/catalogs");
   await page
@@ -226,7 +234,8 @@ test("real API: authoring, operator drafts, revision conflict, notification and 
   await page.goto("/training");
   await select(page, "Группа", `Группа ${suffix}`);
   await select(page, "Готовый сценарий", `Сценарий ${suffix}`);
-  await page.getByRole("button", { name: "Запустить урок" }).click();
+  await page.getByRole("button", { name: "Назначить задание" }).click();
+  await page.getByRole("button", { name: "Подтвердить назначение" }).click();
   await expect(page).toHaveURL(/training\/[\w-]+$/);
   const lessonId = page.url().split("/").at(-1)!;
   await page.screenshot({
@@ -239,7 +248,8 @@ test("real API: authoring, operator drafts, revision conflict, notification and 
   await change(page, initial, final);
   await expect(page).toHaveURL(/student$/);
   await page.goto(`/student/sessions/${lessonId}`);
-  await page.getByRole("button", { name: "Начать следующую карточку" }).click();
+  await page.getByRole("button", { name: "Приступить к заданию" }).click();
+  await page.getByRole("button", { name: "Подтвердить начало" }).click();
   const card = page.getByRole("dialog");
   await expect(card).toBeVisible();
   await expect(

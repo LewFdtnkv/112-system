@@ -27,6 +27,7 @@ export interface UserDetail extends Omit<UserItem, "groups"> {
   password_changed_at: string | null;
 }
 export interface UserUpdate {
+  reason?: string;
   first_name: string;
   last_name: string;
   middle_name: string | null;
@@ -145,6 +146,8 @@ export interface LessonRow {
   scenario_title: string;
   group_name: string | null;
   role: "operator_112" | "dds";
+  available_from?: string | null;
+  available_until?: string | null;
   started_at: string | null;
   ended_at: string | null;
   status: string;
@@ -173,6 +176,7 @@ export interface JournalCard {
   category_name: string | null;
 }
 export interface Assignment {
+  deadline_at?: string | null;
   card: JournalCard | null;
   id: string;
   position: number;
@@ -186,6 +190,8 @@ export interface StudentLesson {
   id: string;
   title: string;
   status: string;
+  available_from?: string | null;
+  available_until?: string | null;
   started_at: string | null;
   ended_at: string | null;
   work_status: string;
@@ -232,6 +238,8 @@ export interface Grade {
     }[];
     unverified_fields: number;
     evaluated_cards: number;
+    missed_cards?: number;
+    aggregation?: string;
   } | null;
   id: string;
   score: string;
@@ -320,7 +328,11 @@ export interface GradeInput {
 }
 export interface LessonStart {
   request_id: string;
-  group_id: string;
+  group_id?: string;
+  group_ids?: string[];
+  student_ids?: string[];
+  available_from?: string;
+  available_until?: string;
   student_id?: string;
   scenario_version_id: string;
   title?: string;

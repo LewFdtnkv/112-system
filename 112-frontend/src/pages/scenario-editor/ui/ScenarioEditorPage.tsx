@@ -119,7 +119,13 @@ function Editor({ initial }: { initial?: ScenarioDetail }) {
       spacing={2}
       onSubmit={(e) => {
         e.preventDefault();
-        save.mutate();
+        if (
+          !initial ||
+          window.confirm(
+            "Сохранить новую версию сценария? Назначенные задания сохранят прежнюю версию.",
+          )
+        )
+          save.mutate();
       }}
     >
       {initial && (

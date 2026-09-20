@@ -1,3 +1,6 @@
+import { Link } from "react-router-dom";
+import { MessageComposer } from "@/features/teaching-messages";
+import { StudentProfileDialog } from "@/features/student-profile";
 import { useState } from "react";
 import {
   Alert,
@@ -14,12 +17,22 @@ import {
   TextField,
 } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { trainingApi, userName, type GroupItem } from "@/entities/training";
+import {
+  activityApi,
+  trainingApi,
+  userName,
+  type GroupItem,
+} from "@/entities/training";
 import { getApiError } from "@/shared/api";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { PageControls, QueryState } from "@/shared/ui/QueryState";
 import { ServerSelect, type SelectOption } from "@/shared/ui/ServerSelect";
 export const GroupsPage = () => {
+  const [search, setSearch] = useState("");
+  const [memberSearch, setMemberSearch] = useState("");
+  const [profile, setProfile] = useState<string | null>(null);
+  const [moveStudent, setMoveStudent] = useState<string | null>(null);
+  const [target, setTarget] = useState<SelectOption | null>(null);
   const [name, setName] = useState("");
   const [page, setPage] = useState(0);
   const [group, setGroup] = useState<GroupItem | null>(null);
@@ -27,14 +40,15 @@ export const GroupsPage = () => {
   const [student, setStudent] = useState<SelectOption | null>(null);
   const client = useQueryClient();
   const groups = useQuery({
-    queryKey: ["groups", page],
-    queryFn: ({ signal }) => trainingApi.groups({ offset: page * 20 }, signal),
+    queryKey: ["groups", page, search],
+    queryFn: ({ signal }) =>
+      trainingApi.groups({ q: search, offset: page * 20 }, signal),
   });
   const members = useQuery({
-    queryKey: ["group-members", group?.id, memberPage],
+    queryKey: ["group-members", group?.id, memberPage, memberSearch],
     queryFn: ({ signal }) =>
       trainingApi.users(
-        { group_id: group!.id, offset: memberPage * 20 },
+        { q: memberSearch, group_id: group!.id, offset: memberPage * 20 },
         signal,
       ),
     enabled: !!group,
@@ -56,9 +70,34 @@ export const GroupsPage = () => {
       void client.invalidateQueries({ queryKey: ["group-members"] });
     },
   });
+  const changeMember = useMutation({
+    mutationFn: (remove: boolean) =>
+      remove
+        ? activityApi.remove(group!.id, moveStudent!)
+        : activityApi.transfer(group!.id, moveStudent!, target!.id),
+    onSuccess: () => {
+      setMoveStudent(null);
+      setTarget(null);
+      for (const key of [
+        "groups",
+        "group-options",
+        "group-members",
+        "student-profile",
+      ])
+        void client.invalidateQueries({ queryKey: [key] });
+    },
+  });
   return (
     <Stack spacing={2}>
       <PageHeader title="Учебные группы" />
+      <TextField
+        label="Поиск группы"
+        value={search}
+        onChange={(e) => {
+          setSearch(e.target.value);
+          setPage(0);
+        }}
+      />
       <Stack
         component="form"
         direction="row"
@@ -123,10 +162,74 @@ export const GroupsPage = () => {
           </>
         )}
       </QueryState>
+      {profile && (
+        <StudentProfileDialog
+          studentId={profile}
+          onClose={() => setProfile(null)}
+        >
+          <MessageComposer studentId={profile} />
+        </StudentProfileDialog>
+      )}
+      <Dialog
+        open={!!moveStudent}
+        onClose={() => setMoveStudent(null)}
+        fullWidth
+      >
+        <DialogTitle>Перевод или исключение из группы</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ pt: 1 }}>
+            <Alert severity="info">
+              Назначенные задания и результаты сохранятся.
+            </Alert>
+            <ServerSelect
+              label="Другая группа"
+              queryKey={["transfer-group-options"]}
+              value={target}
+              onChange={setTarget}
+              load={async (q, signal) =>
+                (await trainingApi.groups({ q }, signal)).items
+                  .filter((g) => g.id !== group?.id)
+                  .map((g) => ({ id: g.id, label: g.name }))
+              }
+            />
+            <Button
+              disabled={!target || changeMember.isPending}
+              onClick={() => changeMember.mutate(false)}
+            >
+              Подтвердить перевод
+            </Button>
+            <Button
+              color="error"
+              disabled={changeMember.isPending}
+              onClick={() => changeMember.mutate(true)}
+            >
+              Исключить из текущей группы
+            </Button>
+            {changeMember.error && (
+              <Alert severity="error">
+                {getApiError(changeMember.error).message}
+              </Alert>
+            )}
+            <Button onClick={() => setMoveStudent(null)}>Отмена</Button>
+          </Stack>
+        </DialogContent>
+      </Dialog>
       <Dialog open={!!group} onClose={() => setGroup(null)} fullWidth>
         <DialogTitle>{group?.name}</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ pt: 1 }}>
+            <Button component={Link} to={`/training?group=${group?.id}`}>
+              Назначить задание
+            </Button>
+            {group && <MessageComposer key={group.id} groupId={group.id} />}
+            <TextField
+              label="Поиск ученика в группе"
+              value={memberSearch}
+              onChange={(e) => {
+                setMemberSearch(e.target.value);
+                setMemberPage(0);
+              }}
+            />
             <ServerSelect
               label="Ученик"
               queryKey={["student-options"]}
@@ -154,9 +257,21 @@ export const GroupsPage = () => {
             >
               {members.data && (
                 <>
-                  <ul>
+                  <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
                     {members.data.items.map((u) => (
-                      <li key={u.id}>{userName(u)}</li>
+                      <li key={u.id}>
+                        <Button onClick={() => setProfile(u.id)}>
+                          {userName(u)} · Подробнее
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            setMoveStudent(u.id);
+                            changeMember.reset();
+                          }}
+                        >
+                          Перевести / исключить
+                        </Button>
+                      </li>
                     ))}
                   </ul>
                   <PageControls

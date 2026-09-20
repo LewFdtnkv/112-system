@@ -46,6 +46,13 @@ export async function mockBusiness(page: Page) {
     const path = new URL(req.url()).pathname.replace("/api/v1/", "");
     if (path.startsWith("auth/") || path === "users/me")
       return route.fallback();
+    if (path === "student/messages")
+      return route.fulfill({
+        json: { items: [], total: 0, limit: 20, offset: 0 },
+      });
+    if (path.endsWith("/photo")) return route.fulfill({ status: 204 });
+    if (path.endsWith("/proctoring"))
+      return route.fulfill({ json: { accepted: 1 } });
     const completed = attempt.status === "completed";
     const row = {
       lesson_id: "lesson",

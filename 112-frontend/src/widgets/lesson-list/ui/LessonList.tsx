@@ -102,7 +102,7 @@ export function LessonList({
                     <TableRow>
                       <TableCell>Сценарий / занятие</TableCell>
                       {!student && <TableCell>Ученик / группа</TableCell>}
-                      <TableCell>Дата (МСК)</TableCell>
+                      <TableCell>Доступно (МСК)</TableCell>
                       <TableCell>Статус</TableCell>
                       <TableCell>Карточки</TableCell>
                       <TableCell>Результат</TableCell>
@@ -132,18 +132,28 @@ export function LessonList({
                             </TableCell>
                           )}
                           <TableCell>
-                            {row.started_at
-                              ? new Date(row.started_at).toLocaleString(
-                                  "ru-RU",
-                                  { timeZone: "Europe/Moscow" },
-                                )
-                              : "—"}
+                            {(row.available_from ?? row.started_at)
+                              ? new Date(
+                                  (row.available_from ?? row.started_at)!,
+                                ).toLocaleString("ru-RU", {
+                                  timeZone: "Europe/Moscow",
+                                })
+                              : "Сразу"}
+                            <small className="block-detail">
+                              До:{" "}
+                              {row.available_until
+                                ? new Date(row.available_until).toLocaleString(
+                                    "ru-RU",
+                                    { timeZone: "Europe/Moscow" },
+                                  )
+                                : "Без срока"}
+                            </small>
                           </TableCell>
                           <TableCell>
                             {workStatusLabels[row.work_status]}
                             {row.role === "dds" && (
                               <small className="block-detail">
-                                ДДС: выполнение пока недоступно
+                                Диспетчер ДДС
                               </small>
                             )}
                           </TableCell>

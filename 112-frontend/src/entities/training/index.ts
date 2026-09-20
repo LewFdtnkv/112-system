@@ -7,3 +7,7 @@ export { CardDataFields } from "./ui/CardDataFields";
 export { fieldLabels } from "./model/fieldLabels";
 
 export * from "./model/catalogTypes";
+
+export { activityApi } from "./api/activityApi";
+export type { FocusKind } from "./api/activityApi";
+export { UserPhoto } from "./ui/UserPhoto";

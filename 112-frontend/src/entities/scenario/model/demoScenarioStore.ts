@@ -1,3 +1,4 @@
+import { randomUUID } from "@/shared/lib/uuid";
 import { create } from "zustand";
 
 import { demoScenarios } from "./demoScenarios";
@@ -13,7 +14,7 @@ interface DemoScenarioStore {
 export const useDemoScenarioStore = create<DemoScenarioStore>()((set, get) => ({
   scenarios: demoScenarios.map((scenario) => ({ ...scenario })),
   createScenario: (draft) => {
-    const id = `demo-scenario-${crypto.randomUUID()}`;
+    const id = `demo-scenario-${randomUUID()}`;
     set((state) => ({ scenarios: [...state.scenarios, { ...draft, id }] }));
     return id;
   },

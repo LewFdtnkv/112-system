@@ -1,3 +1,4 @@
+import { ProctoringMonitor } from "@/widgets/proctoring-monitor";
 import { Stack } from "@mui/material";
 import { Link } from "react-router-dom";
 import { PageHeader } from "@/shared/ui/PageHeader";
@@ -27,6 +28,7 @@ export const SessionMonitoringPage = () => {
           </li>
         </ul>
       </nav>
+      <ProctoringMonitor />
       <LessonList student={false} />
     </Stack>
   );

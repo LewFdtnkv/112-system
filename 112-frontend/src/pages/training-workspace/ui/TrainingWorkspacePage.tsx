@@ -1,7 +1,16 @@
+import { useProctoring } from "@/features/proctoring";
+import { StudentMessages } from "@/features/teaching-messages";
 import { DDSWorkspace } from "./DDSWorkspace";
-import { Alert, Button } from "@mui/material";
+import {
+  Alert,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  Stack,
+} from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import type { IncidentCardFields } from "@/entities/incident-card";
 import {
@@ -27,6 +36,7 @@ export const TrainingWorkspacePage = () => {
   const lesson = useQuery({
     queryKey: ["student-lesson", sessionId],
     queryFn: ({ signal }) => trainingApi.studentLesson(sessionId!, signal),
+    refetchInterval: 5000,
   });
   return (
     <QueryState
@@ -39,10 +49,36 @@ export const TrainingWorkspacePage = () => {
   );
 };
 function Workspace({ lesson }: { lesson: StudentLesson }) {
+  const [confirmStart, setConfirmStart] = useState(false);
+  const [now, setNow] = useState(Date.now);
   const client = useQueryClient();
   const [attempt, setAttempt] = useState<Attempt | null>(null);
   const isDDS = lesson.assignments.some((a) => a.role === "dds");
   const next = lesson.assignments.find((a) => a.available);
+  const activeAttempt = lesson.assignments.find(
+    (a) => a.status === "in_progress",
+  );
+  const proctoringFailed = useProctoring(
+    activeAttempt?.attempt_id ?? undefined,
+    !!activeAttempt,
+  );
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+  const deadline = Math.min(
+    lesson.available_until ? Date.parse(lesson.available_until) : Infinity,
+    activeAttempt?.deadline_at
+      ? Date.parse(activeAttempt.deadline_at)
+      : Infinity,
+  );
+  const remaining = Number.isFinite(deadline)
+    ? Math.max(0, Math.ceil((deadline - now) / 1000))
+    : null;
+  const unopened =
+    !lesson.assignments.some((a) => a.attempt_id) &&
+    lesson.work_status !== "submitted";
+
   const refresh = () => {
     void client.invalidateQueries({ queryKey: ["student-lesson", lesson.id] });
     void client.invalidateQueries({ queryKey: ["lessons"] });
@@ -63,13 +99,112 @@ function Workspace({ lesson }: { lesson: StudentLesson }) {
       refresh();
     },
   });
+  const openedAttemptId = attempt?.id;
+  const expiredAttempt =
+    attempt &&
+    lesson.assignments.find((a) => a.attempt_id === attempt.id)?.status ===
+      "interrupted";
+  useEffect(() => {
+    if (!expiredAttempt || !openedAttemptId) return;
+    let cancelled = false;
+    void trainingApi.attempt(openedAttemptId).then((data) => {
+      if (!cancelled) setAttempt(data);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [expiredAttempt, openedAttemptId]);
   const incidents = lesson.assignments.flatMap((a) =>
     a.card ? [journalCard(a.card)] : [],
   );
+  if (unopened)
+    return (
+      <Stack
+        spacing={2}
+        sx={{
+          p: 4,
+          my: 4,
+          maxWidth: 900,
+          mx: "auto",
+          bgcolor: "background.paper",
+          border: "1px solid",
+          borderColor: "divider",
+          alignItems: "center",
+        }}
+      >
+        <h1>{lesson.title}</h1>
+        <p>
+          Карточек: {lesson.assignments.length}. Выполняйте их последовательно.
+          Срок задания общий; лимит карточки начинается при её открытии.
+        </p>
+        <p>
+          Начало:{" "}
+          {lesson.available_from
+            ? new Date(lesson.available_from).toLocaleString("ru-RU")
+            : "Сразу"}
+          . Окончание:{" "}
+          {lesson.available_until
+            ? new Date(lesson.available_until).toLocaleString("ru-RU")
+            : "Без общей даты окончания"}
+          .
+        </p>
+        <Alert severity="info">
+          Во время выполнения сохраняются события видимости вкладки и фокуса
+          окна для проверки преподавателем. Камера и экран не записываются.
+          Учебные действия ведутся в отдельном журнале для оценивания и
+          подсказок.
+        </Alert>
+        <Alert severity="warning">
+          По истечении срока работа фиксируется. Непройденные карточки
+          учитываются как 0.
+        </Alert>
+        <Button
+          variant="contained"
+          disabled={!next || open.isPending}
+          onClick={() => setConfirmStart(true)}
+        >
+          Приступить к заданию
+        </Button>
+        {lesson.status === "planned" && (
+          <p>Задание ещё не доступно. Оно откроется в указанное время.</p>
+        )}
+        {open.error && (
+          <Alert severity="error">{getApiError(open.error).message}</Alert>
+        )}
+        <StudentMessages />
+        <Dialog open={confirmStart} onClose={() => setConfirmStart(false)}>
+          <DialogTitle>Начать выполнение?</DialogTitle>
+          <DialogContent>
+            <p>
+              Таймер первой карточки начнётся сразу. Закрытие страницы не
+              останавливает время.
+            </p>
+            <Button
+              disabled={open.isPending}
+              onClick={() => {
+                if (next) {
+                  open.mutate({ assignmentId: next.id, attemptId: null });
+                  setConfirmStart(false);
+                }
+              }}
+            >
+              Подтвердить начало
+            </Button>
+            <Button onClick={() => setConfirmStart(false)}>Отмена</Button>
+          </DialogContent>
+        </Dialog>
+      </Stack>
+    );
   return (
     <div className="incident-desk">
       <div className="operator-training-bar">
         <strong>{lesson.title}</strong>
+        {remaining !== null && lesson.work_status !== "submitted" && (
+          <strong role="timer">
+            Осталось: {Math.floor(remaining / 60)}:
+            {String(remaining % 60).padStart(2, "0")}
+          </strong>
+        )}
         <span>
           {isDDS ? "Диспетчер ДДС" : "Оператор 112"} · Карточек сдано:{" "}
           {lesson.assignments.filter((a) => a.status === "completed").length} /{" "}
@@ -90,6 +225,10 @@ function Workspace({ lesson }: { lesson: StudentLesson }) {
           </Button>
         )}
       </div>
+      {proctoringFailed && (
+        <Alert severity="warning">События прокторинга ожидают отправки.</Alert>
+      )}
+      <StudentMessages compact />
       {lesson.assignments.some((a) => a.role === "dds") && (
         <Alert severity="info">
           Работа своей службы не меняет статусы других служб. Звонки пока не
@@ -111,7 +250,7 @@ function Workspace({ lesson }: { lesson: StudentLesson }) {
             </Button>
           }
         >
-          Все карточки сданы. Автоматическая оценка доступна в результатах.
+          Задание завершено. Автоматическая оценка доступна в результатах.
         </Alert>
       )}
       <IncidentFeed
@@ -142,7 +281,7 @@ function Workspace({ lesson }: { lesson: StudentLesson }) {
       />
       {attempt?.dds ? (
         <DDSWorkspace
-          key={attempt.id}
+          key={`${attempt.id}:${attempt.status}`}
           initial={attempt}
           onClose={() => setAttempt(null)}
           onSaved={refresh}
@@ -150,7 +289,7 @@ function Workspace({ lesson }: { lesson: StudentLesson }) {
       ) : (
         attempt && (
           <AttemptEditor
-            key={attempt.id}
+            key={`${attempt.id}:${attempt.status}`}
             initial={attempt}
             onClose={() => setAttempt(null)}
             onSaved={refresh}
@@ -170,6 +309,11 @@ function AttemptEditor({
   onSaved: () => void;
 }) {
   const [attempt, setAttempt] = useState(initial);
+  const observedFields = useRef(JSON.stringify(attemptCard(initial).fields));
+  const revision = useRef(initial.card.revision);
+  const pendingFields = useRef<IncidentCardFields | null>(null);
+  const saving = useRef<Promise<Attempt>>(Promise.resolve(initial));
+  const [autosaveError, setAutosaveError] = useState("");
   const [selected, setSelected] = useState(initial.classifier_entry);
   const [search, setSearch] = useState("");
   const debounced = useDebounced(search);
@@ -178,7 +322,7 @@ function AttemptEditor({
   );
   const debouncedAnswers = useDebounced(answers);
   const [now, setNow] = useState(() => Date.now());
-  const completed = attempt.status === "completed";
+  const completed = attempt.status !== "in_progress";
   const audit = useAttemptAudit(
     attempt.id,
     attemptCard(initial).fields,
@@ -216,16 +360,45 @@ function AttemptEditor({
         : trainingApi.recipients(attempt.id, selected!.id, signal),
     enabled: !!selected && !completed,
   });
+  const persist = (fields: IncidentCardFields) => {
+    const operation = saving.current
+      .catch(() => attempt)
+      .then(async () => {
+        const updated = await trainingApi.saveDraft(
+          attempt.id,
+          revision.current,
+          fields.categoryId || null,
+          cardData(fields, initial.card.data),
+        );
+        revision.current = updated.card.revision;
+        setAttempt(updated);
+        setAutosaveError("");
+        return updated;
+      });
+    saving.current = operation;
+    return operation;
+  };
+  const persistRef = useRef(persist);
+  useEffect(() => {
+    persistRef.current = persist;
+  });
+  useEffect(() => {
+    if (completed) return;
+    const timer = window.setInterval(() => {
+      const fields = pendingFields.current;
+      if (!fields) return;
+      pendingFields.current = null;
+      void persistRef.current(fields).catch((error) => {
+        setAutosaveError(getApiError(error).message);
+      });
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [completed]);
   const save = async (fields: IncidentCardFields) => {
+    pendingFields.current = null;
     audit.observe(fields);
     await audit.flush();
-    const updated = await trainingApi.saveDraft(
-      attempt.id,
-      attempt.card.revision,
-      fields.categoryId || null,
-      cardData(fields, attempt.card.data),
-    );
-    setAttempt(updated);
+    const updated = await persist(fields);
     onSaved();
     return updated;
   };
@@ -246,6 +419,9 @@ function AttemptEditor({
   const error = entries.error || recipients.error;
   return (
     <>
+      {autosaveError && (
+        <Alert severity="error">Черновик не сохранён: {autosaveError}</Alert>
+      )}
       {audit.failed && (
         <Alert severity="warning">
           Часть наблюдений за вводом пока не отправлена. Сохранение карточки и
@@ -255,7 +431,8 @@ function AttemptEditor({
       <IncidentCardDialog
         card={attemptCard(attempt)}
         log={[]}
-        isSubmitted={completed}
+        isSubmitted={attempt.status === "completed"}
+        readOnly={attempt.status === "interrupted"}
         isCallAccepted={attempt.status === "in_progress" || completed}
         onClose={onClose}
         onCommitAction={() => {}}
@@ -274,6 +451,11 @@ function AttemptEditor({
             (selected?.conditions?.features as
               { key: string; label: string }[] | undefined) ?? [],
           onFieldsChange: (fields) => {
+            const serialized = JSON.stringify(fields);
+            if (!completed && serialized !== observedFields.current) {
+              observedFields.current = serialized;
+              pendingFields.current = fields;
+            }
             audit.observe(fields);
             setAnswers((previous) =>
               JSON.stringify(previous) ===

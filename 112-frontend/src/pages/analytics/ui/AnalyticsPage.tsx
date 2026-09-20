@@ -1,6 +1,9 @@
+import { download } from "@/shared/lib/download";
+import { getApiError } from "@/shared/api";
 import { useState } from "react";
 import {
   Alert,
+  Button,
   Stack,
   Table,
   TableBody,
@@ -9,11 +12,15 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
-import { trainingApi } from "@/entities/training";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { activityApi, trainingApi } from "@/entities/training";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { QueryState, PageControls } from "@/shared/ui/QueryState";
 export const AnalyticsPage = () => {
+  const exportReport = useMutation({
+    mutationFn: async () =>
+      download(await activityApi.report("xlsx"), "training-report.xlsx"),
+  });
   const [page, setPage] = useState(0);
   const query = useQuery({
     queryKey: ["analytics", page],
@@ -23,6 +30,17 @@ export const AnalyticsPage = () => {
   return (
     <Stack spacing={2}>
       <PageHeader title="Аналитика обучения" />
+      <Button
+        disabled={exportReport.isPending}
+        onClick={() => exportReport.mutate()}
+      >
+        Скачать отчёт XLSX
+      </Button>
+      {exportReport.error && (
+        <Alert severity="error">
+          {getApiError(exportReport.error).message}
+        </Alert>
+      )}
       <Alert severity="info">
         Учтены автоматические оценки и последние пересмотры преподавателя.
         Средний результат приведён к процентам от максимального балла. Оценка ИИ

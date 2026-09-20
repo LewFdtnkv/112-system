@@ -1,3 +1,4 @@
+import { AccountStatistics } from "@/features/account-statistics";
 import { useState } from "react";
 import {
   Alert,
@@ -68,6 +69,7 @@ export const UsersPage = () => {
     setForm({ ...form, [key]: value });
   return (
     <Stack spacing={2}>
+      <AccountStatistics />
       <PageHeader
         title="Пользователи"
         actions={
@@ -211,7 +213,7 @@ export const UsersPage = () => {
             value={form.username}
             onChange={(e) => update("username", e.target.value)}
             slotProps={{
-              htmlInput: { pattern: "[A-Za-z0-9_.-]{1,50}", maxLength: 50 },
+              htmlInput: { pattern: "[A-Za-z0-9_.\\-]{1,50}", maxLength: 50 },
             }}
           />
           <TextField

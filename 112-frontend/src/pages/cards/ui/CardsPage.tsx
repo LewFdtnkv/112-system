@@ -150,6 +150,13 @@ export const CardsPage = () => {
 };
 function CardCreate({ onClose }: { onClose: () => void }) {
   const [address, setAddress] = useState({ ...emptyIncidentAddress });
+  const [person, setPerson] = useState({
+    gender: "",
+    age: "",
+    height_cm: "",
+    weight_kg: "",
+    appearance: "",
+  });
   const [victims, setVictims] = useState("");
   const structuredAddress = formatAddress(address);
   const client = useQueryClient();
@@ -202,6 +209,14 @@ function CardCreate({ onClose }: { onClose: () => void }) {
             ekp: answers,
           },
           description: form.description,
+          caller_details: Object.fromEntries(
+            Object.entries(person)
+              .filter(([, v]) => v !== "")
+              .map(([k, v]) => [
+                k,
+                ["age", "height_cm", "weight_kg"].includes(k) ? Number(v) : v,
+              ]),
+          ),
           caller_name: form.caller_name,
           caller_phone: form.caller_phone,
           additional_fields: {},
@@ -266,6 +281,43 @@ function CardCreate({ onClose }: { onClose: () => void }) {
           onChange={(e) => setForm({ ...form, [key]: e.target.value })}
         />
       ))}
+      <Alert severity="info">
+        Параметры человека необязательны. Укажите существенные сведения также в
+        сообщении заявителя, чтобы ученик не оценивался по скрытым фактам.
+        Генерация ИИ будет подключена отдельно.
+      </Alert>
+      <Stack direction="row" spacing={1}>
+        {(
+          [
+            ["gender", "Пол"],
+            ["age", "Возраст"],
+            ["height_cm", "Рост, см"],
+            ["weight_kg", "Вес, кг"],
+          ] as const
+        ).map(([key, label]) => (
+          <TextField
+            key={key}
+            label={label}
+            type={key === "gender" ? "text" : "number"}
+            value={person[key]}
+            onChange={(e) => setPerson({ ...person, [key]: e.target.value })}
+            slotProps={{
+              htmlInput: {
+                min: 0,
+                max: key === "age" ? 130 : 600,
+                maxLength: 40,
+              },
+            }}
+          />
+        ))}
+      </Stack>
+      <TextField
+        label="Внешность и особые приметы"
+        multiline
+        value={person.appearance}
+        onChange={(e) => setPerson({ ...person, appearance: e.target.value })}
+        slotProps={{ htmlInput: { maxLength: 2000 } }}
+      />
       <TemplateAddress value={address} onChange={setAddress} />
       <TextField
         label="Количество пострадавших в эталоне"

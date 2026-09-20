@@ -1,3 +1,4 @@
+import { randomUUID } from "@/shared/lib/uuid";
 import type { ClientObservation } from "@/entities/training";
 
 const fieldPattern =
@@ -33,7 +34,7 @@ export function createObservationBuffer(
   let retries = 0;
   const make = (kind: ClientObservation["kind"]): ClientObservation => ({
     kind,
-    command_id: crypto.randomUUID(),
+    command_id: randomUUID(),
     client_occurred_at: new Date().toISOString(),
   });
   const flush = (): Promise<void> => {

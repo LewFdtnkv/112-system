@@ -1,3 +1,4 @@
+import { UserActivityDialog } from "./UserActivityDialog";
 import { useState } from "react";
 import {
   Alert,
@@ -14,6 +15,8 @@ import {
 } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  activityApi,
+  UserPhoto,
   trainingApi,
   type UserDetail,
   type UserUpdate,
@@ -72,11 +75,23 @@ function AccountForm({
     role: user.role,
     is_active: user.is_active,
   });
+  const [reason, setReason] = useState("");
+  const [confirm, setConfirm] = useState(false);
+  const [history, setHistory] = useState(false);
+  const accessChanged =
+    form.role !== user.role || form.is_active !== user.is_active;
   const client = useQueryClient();
+  const upload = useMutation({
+    mutationFn: (file: File) => activityApi.uploadPhoto(user.id, file),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: ["user-photo", user.id] });
+    },
+  });
   const save = useMutation({
     mutationFn: () =>
       trainingApi.updateUser(user.id, {
         ...form,
+        ...(accessChanged ? { reason } : {}),
         email: form.email?.trim() || null,
         middle_name: form.middle_name?.trim() || null,
       }),
@@ -93,9 +108,66 @@ function AccountForm({
       sx={{ pt: 1 }}
       onSubmit={(e) => {
         e.preventDefault();
-        save.mutate();
+        if (accessChanged) setConfirm(true);
+        else save.mutate();
       }}
     >
+      <UserPhoto userId={user.id} />
+      <Button component="label" disabled={upload.isPending}>
+        Загрузить фотографию
+        <input
+          type="file"
+          hidden
+          accept="image/png,image/jpeg"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) upload.mutate(file);
+            e.target.value = "";
+          }}
+        />
+      </Button>
+      {upload.error && (
+        <Alert severity="error">{getApiError(upload.error).message}</Alert>
+      )}
+      <Button onClick={() => setHistory(true)}>История действий</Button>
+      {history && (
+        <UserActivityDialog
+          userId={user.id}
+          onClose={() => setHistory(false)}
+        />
+      )}
+      <Dialog
+        open={confirm}
+        onClose={() => !save.isPending && setConfirm(false)}
+        fullWidth
+      >
+        <DialogTitle>Подтвердите изменение доступа</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ pt: 1 }}>
+            <TextField
+              autoFocus
+              label="Причина изменения роли или блокировки"
+              required
+              multiline
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              slotProps={{ htmlInput: { maxLength: 2000 } }}
+            />
+            <Button
+              disabled={!reason.trim() || save.isPending}
+              onClick={() => save.mutate()}
+            >
+              Подтвердить
+            </Button>
+            {save.error && (
+              <Alert severity="error">{getApiError(save.error).message}</Alert>
+            )}
+            <Button onClick={() => setConfirm(false)} disabled={save.isPending}>
+              Отмена
+            </Button>
+          </Stack>
+        </DialogContent>
+      </Dialog>
       <TextField
         label="Логин"
         value={user.username}

@@ -42,6 +42,7 @@ const get = <T>(path: string, params: Params = {}, signal?: AbortSignal) =>
 const post = <T>(path: string, json: unknown) =>
   backendApi.post(path, { json }).json<T>();
 export const trainingApi = {
+  me: () => get<UserDetail>("users/me"),
   previewRecipients: (
     attemptId: string,
     entryId: string,

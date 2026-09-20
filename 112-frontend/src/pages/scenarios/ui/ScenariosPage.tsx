@@ -1,5 +1,9 @@
 import { useState } from "react";
 import {
+  Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
   Button,
   MenuItem,
   Stack,
@@ -10,14 +14,29 @@ import {
   TableRow,
   TextField,
 } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getApiError } from "@/shared/api";
 import { Link } from "react-router-dom";
-import { trainingApi } from "@/entities/training";
+import {
+  activityApi,
+  trainingApi,
+  type ScenarioItem,
+} from "@/entities/training";
 import { getScenarioEditPath, routePaths } from "@/shared/config/routes";
 import { useDebounced } from "@/shared/lib/useDebounced";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { QueryState, PageControls } from "@/shared/ui/QueryState";
 export const ScenariosPage = () => {
+  const client = useQueryClient();
+  const [remove, setRemove] = useState<ScenarioItem | null>(null);
+  const deletion = useMutation({
+    mutationFn: () => activityApi.deleteScenario(remove!.id),
+    onSuccess: () => {
+      setRemove(null);
+      void client.invalidateQueries({ queryKey: ["scenarios"] });
+      void client.invalidateQueries({ queryKey: ["scenario-options"] });
+    },
+  });
   const [q, setQ] = useState("");
   const search = useDebounced(q);
   const [status, setStatus] = useState("all");
@@ -30,6 +49,36 @@ export const ScenariosPage = () => {
   return (
     <Stack spacing={2}>
       <PageHeader title="Сценарии" />
+      {deletion.isSuccess && (
+        <Alert severity="success">
+          {deletion.data.result === "archived"
+            ? "Сценарий архивирован. История заданий сохранена."
+            : "Неиспользованный сценарий удалён."}
+        </Alert>
+      )}
+      <Dialog open={!!remove} onClose={() => setRemove(null)} fullWidth>
+        <DialogTitle>Удалить сценарий «{remove?.title}»?</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2}>
+            <Alert severity="info">
+              Неиспользованный сценарий будет удалён. Если по нему уже назначено
+              задание, сценарий перейдёт в архив, а результаты сохранятся.
+            </Alert>
+            {deletion.error && (
+              <Alert severity="error">
+                {getApiError(deletion.error).message}
+              </Alert>
+            )}
+            <Button
+              disabled={deletion.isPending}
+              onClick={() => deletion.mutate()}
+            >
+              Подтвердить удаление
+            </Button>
+            <Button onClick={() => setRemove(null)}>Отмена</Button>
+          </Stack>
+        </DialogContent>
+      </Dialog>
       <Button component={Link} to={routePaths.scenarioCreate}>
         Создать сценарий
       </Button>
@@ -71,6 +120,7 @@ export const ScenariosPage = () => {
                   <TableCell>Роль</TableCell>
                   <TableCell>Карточек</TableCell>
                   <TableCell>Статус</TableCell>
+                  <TableCell>Действия</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -94,6 +144,24 @@ export const ScenariosPage = () => {
                     <TableCell>{s.card_count}</TableCell>
                     <TableCell>
                       {s.status === "published" ? "Опубликован" : "Черновик"}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        component={Link}
+                        to={`/training?scenario=${s.id}&title=${encodeURIComponent(s.title)}`}
+                        disabled={s.status !== "published"}
+                      >
+                        Назначить задание
+                      </Button>
+                      <Button
+                        color="error"
+                        onClick={() => {
+                          setRemove(s);
+                          deletion.reset();
+                        }}
+                      >
+                        Удалить
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}

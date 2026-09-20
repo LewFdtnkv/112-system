@@ -1,4 +1,9 @@
 export const fieldLabels: Record<string, string> = {
+  gender: "Пол",
+  age: "Возраст",
+  height_cm: "Рост, см",
+  weight_kg: "Вес, кг",
+  appearance: "Внешность",
   categoryId: "Тип происшествия",
   classifier_entry_id: "Тип происшествия",
   callerName: "Заявитель",

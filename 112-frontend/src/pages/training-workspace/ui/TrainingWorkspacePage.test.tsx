@@ -11,6 +11,7 @@ import userEvent from "@testing-library/user-event";
 import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import {
+  activityApi,
   trainingApi,
   type Attempt,
   type StudentLesson,
@@ -66,6 +67,13 @@ const lesson: StudentLesson = {
   ],
 };
 beforeEach(() => {
+  vi.spyOn(activityApi, "messages").mockResolvedValue({
+    items: [],
+    total: 0,
+    limit: 20,
+    offset: 0,
+  });
+  vi.spyOn(activityApi, "proctoring").mockResolvedValue(new Response());
   vi.spyOn(trainingApi, "studentLesson").mockResolvedValue(lesson);
   vi.spyOn(trainingApi, "attempt").mockResolvedValue(structuredClone(initial));
   vi.spyOn(trainingApi, "attemptEntries").mockResolvedValue([]);
@@ -177,13 +185,8 @@ it("does not start an unavailable legacy DDS assignment", async () => {
     ],
   });
   open();
-  expect(await screen.findByRole("alert")).toHaveTextContent(
-    "Звонки пока не подключены",
-  );
   expect(
-    screen.getByRole("button", { name: "Получить следующую карточку" }),
+    await screen.findByRole("button", { name: "Приступить к заданию" }),
   ).toBeDisabled();
-  expect(
-    screen.queryByRole("button", { name: "Начать следующую карточку" }),
-  ).not.toBeInTheDocument();
+  expect(screen.getByText(/Камера и экран не записываются/)).toBeVisible();
 });

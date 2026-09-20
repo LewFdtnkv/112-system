@@ -1,3 +1,5 @@
+import { ProctoringHistory } from "@/features/proctoring";
+import { MessageComposer } from "@/features/teaching-messages";
 import { Stack } from "@mui/material";
 import { useParams, useSearchParams } from "react-router-dom";
 import { useAuthStore } from "@/entities/user";
@@ -11,9 +13,15 @@ export const TrainingResultPage = () => {
   return (
     <Stack spacing={2}>
       <PageHeader title="Результат занятия" />
+      {teacher && params.get("student") && (
+        <MessageComposer studentId={params.get("student")!} />
+      )}
       {sessionId ? (
         teacher && params.get("student") ? (
           <LessonReview
+            renderProctoring={(attemptId) => (
+              <ProctoringHistory attemptId={attemptId} />
+            )}
             lessonId={sessionId}
             studentId={params.get("student")!}
           />

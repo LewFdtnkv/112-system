@@ -1,3 +1,4 @@
+import { randomUUID } from "@/shared/lib/uuid";
 import "./dds-workspace.scss";
 import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@mui/material";
@@ -30,14 +31,14 @@ export function DDSWorkspace({
   const [status, setStatus] = useState("");
   const [crew, setCrew] = useState(initial.dds?.crew_number ?? "");
   const [comment, setComment] = useState("");
-  const [requestId, setRequestId] = useState(() => crypto.randomUUID());
+  const [requestId, setRequestId] = useState(() => randomUUID());
   const [editing, setEditing] = useState(false);
   const [activeService, setActiveService] = useState(
     initial.dds!.profile.service_id,
   );
   const [now, setNow] = useState(Date.now);
   const dds = attempt.dds!;
-  const completed = attempt.status === "completed";
+  const completed = attempt.status !== "in_progress";
   useEffect(() => {
     if (completed || dds.first_decision_at) return;
     const timer = setInterval(() => setNow(Date.now()), 1000);
@@ -48,7 +49,7 @@ export function DDSWorkspace({
     setStatus("");
     setComment("");
     setEditing(false);
-    setRequestId(crypto.randomUUID());
+    setRequestId(randomUUID());
     onSaved();
   };
   const save = useMutation({
@@ -302,7 +303,7 @@ export function DDSWorkspace({
               disabled={busy}
               onChange={(e) => {
                 setStatus(e.target.value);
-                setRequestId(crypto.randomUUID());
+                setRequestId(randomUUID());
               }}
             >
               <option value="">Выберите статус</option>
@@ -319,7 +320,7 @@ export function DDSWorkspace({
               disabled={busy}
               onChange={(e) => {
                 setCrew(e.target.value);
-                setRequestId(crypto.randomUUID());
+                setRequestId(randomUUID());
               }}
             />
             <ArmTextarea
@@ -331,7 +332,7 @@ export function DDSWorkspace({
               disabled={busy}
               onChange={(e) => {
                 setComment(e.target.value);
-                setRequestId(crypto.randomUUID());
+                setRequestId(randomUUID());
               }}
             />
             {save.error && (

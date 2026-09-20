@@ -84,7 +84,7 @@ export const CatalogsPage = () => {
           label="Код службы"
           required
           value={code}
-          slotProps={{ htmlInput: { pattern: "[a-z0-9_-]+", maxLength: 50 } }}
+          slotProps={{ htmlInput: { pattern: "[a-z0-9_\\-]+", maxLength: 50 } }}
           onChange={(e) => setCode(e.target.value)}
         />
         <TextField

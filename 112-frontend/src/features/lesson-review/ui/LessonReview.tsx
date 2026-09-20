@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { randomUUID } from "@/shared/lib/uuid";
+import { useState, type ReactNode } from "react";
 import {
   Alert,
   Button,
@@ -67,6 +68,13 @@ function GradeView({ grade }: { grade: Grade }) {
       <p style={{ whiteSpace: "pre-wrap" }}>{grade.comment}</p>
       {grade.assessment_details && (
         <Stack spacing={1}>
+          {!!grade.assessment_details.missed_cards && (
+            <Alert severity="warning">
+              Не начато карточек: {grade.assessment_details.missed_cards}. Они
+              учтены как 0. Итог — сумма процентов оценённых карточек, делённая
+              на число всех назначенных карточек.
+            </Alert>
+          )}
           {grade.assessment_details.criteria.map((criterion) => (
             <Typography key={criterion.code} variant="body2">
               {criterion.label}: {criterion.score} / {criterion.max_score}
@@ -92,13 +100,16 @@ function GradeView({ grade }: { grade: Grade }) {
 export function LessonReview({
   lessonId,
   studentId,
+  renderProctoring,
 }: {
   lessonId: string;
   studentId: string;
+  renderProctoring?: (attemptId: string) => ReactNode;
 }) {
   const query = useQuery({
     queryKey: ["work-review", lessonId, studentId],
     queryFn: ({ signal }) => trainingApi.review(lessonId, studentId, signal),
+    refetchInterval: 5000,
   });
   return (
     <QueryState
@@ -107,12 +118,24 @@ export function LessonReview({
       retry={() => void query.refetch()}
     >
       {query.data && (
-        <Review data={query.data} reload={() => void query.refetch()} />
+        <Review
+          renderProctoring={renderProctoring}
+          data={query.data}
+          reload={() => void query.refetch()}
+        />
       )}
     </QueryState>
   );
 }
-function Review({ data, reload }: { data: WorkReview; reload: () => void }) {
+function Review({
+  data,
+  reload,
+  renderProctoring,
+}: {
+  data: WorkReview;
+  reload: () => void;
+  renderProctoring?: (attemptId: string) => ReactNode;
+}) {
   const calculate = useMutation({
     mutationFn: () =>
       trainingApi.automaticGrade(data.lesson_id, data.student_id),
@@ -209,6 +232,7 @@ function Review({ data, reload }: { data: WorkReview; reload: () => void }) {
               attemptId={row.attempt.id}
             />
           )}
+          {row.attempt && renderProctoring?.(row.attempt.id)}
         </Paper>
       ))}
       {data.evaluations.length > 1 && (
@@ -234,7 +258,7 @@ function GradeForm({ data, reload }: { data: WorkReview; reload: () => void }) {
   const [score, setScore] = useState(latest?.score ?? "");
   const [max, setMax] = useState(latest?.max_score ?? "100");
   const [comment, setComment] = useState(latest?.comment ?? "");
-  const [requestId, setRequestId] = useState(() => crypto.randomUUID());
+  const [requestId, setRequestId] = useState(() => randomUUID());
   const save = useMutation({
     mutationFn: () =>
       trainingApi.grade(data.lesson_id, data.student_id, {
@@ -282,7 +306,7 @@ function GradeForm({ data, reload }: { data: WorkReview; reload: () => void }) {
           slotProps={{ htmlInput: { min: 0, max: Number(max), step: "0.01" } }}
           onChange={(e) => {
             setScore(e.target.value);
-            setRequestId(crypto.randomUUID());
+            setRequestId(randomUUID());
           }}
         />
         <TextField
@@ -293,7 +317,7 @@ function GradeForm({ data, reload }: { data: WorkReview; reload: () => void }) {
           slotProps={{ htmlInput: { min: 0.01, step: "0.01" } }}
           onChange={(e) => {
             setMax(e.target.value);
-            setRequestId(crypto.randomUUID());
+            setRequestId(randomUUID());
           }}
         />
       </Stack>
@@ -305,7 +329,7 @@ function GradeForm({ data, reload }: { data: WorkReview; reload: () => void }) {
         value={comment}
         onChange={(e) => {
           setComment(e.target.value);
-          setRequestId(crypto.randomUUID());
+          setRequestId(randomUUID());
         }}
       />
       {save.error && (

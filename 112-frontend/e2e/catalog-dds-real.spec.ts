@@ -278,8 +278,9 @@ test("real API: EKP file roundtrip, rule editing, profile publication and DDS ex
   await expect(page).toHaveURL(/student$/);
   await page.goto(`/student/sessions/${lesson.id}`);
   await page
-    .getByRole("button", { name: "Начать следующую карточку", exact: true })
+    .getByRole("button", { name: "Приступить к заданию", exact: true })
     .click();
+  await page.getByRole("button", { name: "Подтвердить начало" }).click();
   await expect(
     page.getByRole("button", { name: "Изменить статус ДДС" }),
   ).toBeVisible();
@@ -352,8 +353,9 @@ test("real API: EKP file roundtrip, rule editing, profile publication and DDS ex
   });
   await page.goto(`/student/sessions/${operatorLesson.id}`);
   await page
-    .getByRole("button", { name: "Начать следующую карточку", exact: true })
+    .getByRole("button", { name: "Приступить к заданию", exact: true })
     .click();
+  await page.getByRole("button", { name: "Подтвердить начало" }).click();
   const editor = page.getByRole("dialog");
   await editor.getByLabel("Тип происшествия", { exact: true }).fill("101");
   await editor

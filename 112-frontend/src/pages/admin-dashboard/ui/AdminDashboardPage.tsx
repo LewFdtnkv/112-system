@@ -1,3 +1,4 @@
+import { AccountStatistics } from "@/features/account-statistics";
 import { Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
@@ -13,6 +14,7 @@ export const AdminDashboardPage = () => {
   return (
     <Stack spacing={2}>
       <PageHeader title="Кабинет администратора" />
+      <AccountStatistics />
       <div className="action-links">
         <Link to={routePaths.users}>Пользователи</Link>
         <Link to={routePaths.catalogs}>Службы и ЕКП</Link>
