@@ -1,5 +1,6 @@
 import "./feature-input.scss";
 import { useState } from "react";
+import { useFieldFeedback } from "./arm/FieldFeedback";
 import {
   type FeatureDefinition,
   type FeatureValue,
@@ -20,6 +21,7 @@ export function FeatureInput({
   condition?: boolean;
 }) {
   const [draft, setDraft] = useState("");
+  const feedback = useFieldFeedback(`feature:${feature.key}`);
   const multiple = feature.type === "array";
   const options: (boolean | string)[] =
     !feature.type || feature.type === "boolean"
@@ -27,7 +29,11 @@ export function FeatureInput({
       : (feature.options ?? []);
   const selected = Array.isArray(value) ? value : [];
   return (
-    <div className="structured-feature arm-question">
+    <div
+      className="structured-feature arm-question"
+      data-feedback={feedback?.tone}
+      title={feedback?.text}
+    >
       <span>
         {feature.label}
         {!condition && (feature.required !== false ? " *" : " (необязательно)")}

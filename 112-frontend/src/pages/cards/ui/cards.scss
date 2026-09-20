@@ -1,0 +1,115 @@
+.template-detail,
+.template-editor.MuiStack-root {
+  display: grid;
+  grid-template-columns: minmax(250px, 0.8fr) minmax(0, 1.65fr);
+  gap: 20px;
+  padding-top: 20px;
+  align-items: start;
+}
+.template-condition {
+  padding: 20px;
+  border: 1px solid #c9d8e1;
+  background: #edf4f8;
+  position: sticky;
+  top: 0;
+  display: grid;
+  gap: 16px;
+}
+.template-condition h3,
+.template-solution h3 {
+  margin: 0;
+  font-size: 18px;
+}
+.template-condition h4,
+.template-solution h4 {
+  margin: 6px 0 0;
+  font-size: 14px;
+}
+.template-condition p {
+  margin: 0;
+  white-space: pre-wrap;
+  line-height: 1.65;
+}
+.template-condition small {
+  color: #586d7a;
+}
+.template-solution {
+  border: 1px solid #c9d8e1;
+  padding: 20px;
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+.template-solution-heading {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+}
+.template-explanation {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #5b6c77;
+}
+.template-routing {
+  padding: 12px;
+  border: 1px solid #dce5eb;
+  background: #f7f9fa;
+  font-size: 14px;
+}
+.template-routing p {
+  margin: 6px 0 14px;
+}
+.template-routing ul {
+  list-style: none;
+  padding: 0;
+  margin: 6px 0 0;
+}
+.template-routing li {
+  margin: 4px 0;
+}
+.template-solution .card-data-fields {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 16px;
+}
+.template-solution .card-data-fields > div {
+  border-bottom: 1px solid #e0e7ec;
+  padding: 12px 0;
+}
+.template-solution .card-data-fields dt {
+  font-size: 12px;
+  color: #637582;
+}
+.template-solution .card-data-fields dd {
+  margin: 6px 0 0;
+  font-size: 14px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.template-input-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.template-editor-actions {
+  grid-column: 1 / -1;
+  position: sticky;
+  bottom: -20px;
+  padding: 14px;
+  background: #edf2f5;
+  border-top: 1px solid #c9d8e1;
+  z-index: 1;
+}
+@media (max-width: 800px) {
+  .template-detail,
+  .template-editor.MuiStack-root {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .template-condition {
+    position: static;
+  }
+}

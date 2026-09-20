@@ -1,4 +1,8 @@
 import { LocationPicker } from "@/features/location-picker";
+import {
+  FieldFeedbackContext,
+  type FieldFeedbackMap,
+} from "@/shared/ui/arm/FieldFeedback";
 import "./incident-card.scss";
 import { Dialog, DialogContent, DialogTitle } from "@mui/material";
 import { useState, type ReactNode } from "react";
@@ -21,6 +25,7 @@ import {
 import { CardAddressPanel } from "./CardAddressPanel";
 import { CardClassification } from "./CardClassification";
 import { CardServicesDialog } from "./CardServicesDialog";
+import { CardServiceTile } from "./CardServiceTile";
 import { CardTelephoneBar } from "./CardTelephoneBar";
 
 interface IncidentCardDialogProps extends Omit<IncidentEditorOptions, "card"> {
@@ -30,6 +35,8 @@ interface IncidentCardDialogProps extends Omit<IncidentEditorOptions, "card"> {
   onClose: () => void;
   renderMap?: (address: string) => ReactNode;
   readOnly?: boolean;
+  readOnlyLayout?: "summary" | "form";
+  fieldFeedback?: FieldFeedbackMap;
   responseFooter?: ReactNode;
   trainingNotice?: ReactNode;
 }
@@ -41,13 +48,16 @@ export function IncidentCardDialog({
     <Dialog
       open={Boolean(card)}
       onClose={(_, reason) => {
-        if (!props.remote && reason === "escapeKeyDown") props.onClose();
+        if ((!props.remote || props.readOnly) && reason === "escapeKeyDown")
+          props.onClose();
       }}
       fullScreen
-      className="arm-card-dialog"
+      className={`arm-card-dialog ${props.readOnlyLayout === "form" ? "arm-card-dialog--readonly-form" : ""}`}
       aria-labelledby="incident-card-title"
     >
-      {card && <IncidentCardForm key={card.id} card={card} {...props} />}
+      <FieldFeedbackContext.Provider value={props.fieldFeedback ?? {}}>
+        {card && <IncidentCardForm key={card.id} card={card} {...props} />}
+      </FieldFeedbackContext.Provider>
     </Dialog>
   );
 }
@@ -73,6 +83,7 @@ function IncidentCardForm(
     "victims" | "map" | "calls" | "sms" | "timing"
   >();
   const viewing = preview || isSubmitted || !!props.readOnly;
+  const summaryLayout = viewing && props.readOnlyLayout !== "form";
   const disabled = viewing || !isCallAccepted || editor.pending;
   const close = () => {
     if (editor.pending) return;
@@ -115,13 +126,13 @@ function IncidentCardForm(
         <CardAddressPanel
           editor={editor}
           disabled={disabled}
-          viewing={viewing}
+          viewing={summaryLayout}
           onMap={() => setModal("map")}
         />
         <CardClassification
           editor={editor}
           disabled={disabled}
-          viewing={viewing}
+          viewing={summaryLayout}
           onVictims={() => setModal("victims")}
         />
       </div>
@@ -159,30 +170,25 @@ function IncidentCardForm(
             {editor.remote?.notificationRequired === false && (
               <span>Оповещение не требуется</span>
             )}
-            {fields.services.map((service) => (
-              <button
-                key={service}
-                className="arm-service-tile"
-                aria-expanded={activeService === service}
-                onClick={() =>
-                  setActiveService(
-                    activeService === service ? undefined : service,
-                  )
-                }
-              >
-                <span>⌃</span>
-                <strong>
-                  {editor.remote?.services.find((s) => s.id === service)
-                    ?.short_name ||
-                    editor.remote?.services.find((s) => s.id === service)
-                      ?.name ||
-                    `Служба ${service}`}
-                </strong>
-                <small>
-                  {isSubmitted ? "Учебная проверка" : "К оповещению"}
-                </small>
-              </button>
-            ))}
+            {fields.services.map((service) => {
+              const info = editor.remote?.services.find(
+                (s) => s.id === service,
+              );
+              return (
+                <CardServiceTile
+                  key={service}
+                  name={info?.name ?? `Служба ${service}`}
+                  shortName={info?.short_name}
+                  status={isSubmitted ? "Учебная проверка" : "К оповещению"}
+                  expanded={activeService === service}
+                  onClick={() =>
+                    setActiveService(
+                      activeService === service ? undefined : service,
+                    )
+                  }
+                />
+              );
+            })}
             {!viewing && (!props.remote || props.remote.loadServices) && (
               <ArmIconButton
                 icon="plus"

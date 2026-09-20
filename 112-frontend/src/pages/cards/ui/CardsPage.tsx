@@ -1,3 +1,6 @@
+import "./cards.scss";
+import { TrainingCardPreview } from "@/widgets/incident-card";
+import type { ReferenceCardSource } from "@/features/incident-editing";
 import { FeatureInput } from "@/shared/ui/FeatureInput";
 import { matchesFeature } from "@/shared/lib/featureValues";
 import type { FeatureValue } from "@/shared/lib/featureValues";
@@ -37,6 +40,7 @@ export const CardsPage = () => {
   const search = useDebounced(q);
   const [page, setPage] = useState(0);
   const [open, setOpen] = useState(false);
+  const [preview, setPreview] = useState<ReferenceCardSource>();
   const [detailId, setDetailId] = useState<string>();
   const query = useQuery({
     queryKey: ["cards", search, page],
@@ -51,6 +55,12 @@ export const CardsPage = () => {
   return (
     <Stack spacing={2}>
       <PageHeader title="Библиотека карточек" />
+      {preview && (
+        <TrainingCardPreview
+          reference={preview}
+          onClose={() => setPreview(undefined)}
+        />
+      )}
       <Button onClick={() => setOpen(true)}>Создать карточку</Button>
       <TextField
         label="Поиск карточки"
@@ -99,10 +109,10 @@ export const CardsPage = () => {
       <Dialog
         open={open}
         onClose={() => setOpen(false)}
-        maxWidth="md"
+        maxWidth="lg"
         fullWidth
       >
-        <DialogTitle>Новая карточка</DialogTitle>
+        <DialogTitle>Новая учебная карточка</DialogTitle>
         <DialogContent>
           <CardCreate onClose={() => setOpen(false)} />
         </DialogContent>
@@ -110,7 +120,7 @@ export const CardsPage = () => {
       <Dialog
         open={!!detailId}
         onClose={() => setDetailId(undefined)}
-        maxWidth="md"
+        maxWidth="lg"
         fullWidth
       >
         <DialogTitle>{detail.data?.title ?? "Карточка"}</DialogTitle>
@@ -121,28 +131,64 @@ export const CardsPage = () => {
             retry={() => void detail.refetch()}
           >
             {detail.data && (
-              <Stack spacing={2}>
-                <p>
-                  <b>Сообщение заявителя:</b> {detail.data.caller_message}
-                </p>
-                <p>
-                  <b>Инструкция:</b> {detail.data.instructions || "—"}
-                </p>
-                <p>
-                  <b>Адрес:</b> {detail.data.data.address_text}
-                </p>
-                <p>
-                  <b>Сообщение в карточке:</b> {detail.data.data.description}
-                </p>
-                <p>
-                  <b>Заявитель:</b> {detail.data.data.caller_name || "—"}{" "}
-                  {detail.data.data.caller_phone}
-                </p>
-                <details>
-                  <summary>Все поля эталона</summary>
-                  <CardDataFields data={detail.data.data} />
-                </details>
-              </Stack>
+              <div className="template-detail">
+                <aside className="template-condition">
+                  <h3>Условие для ученика</h3>
+                  <p className="template-message">
+                    {detail.data.caller_message}
+                  </p>
+                  <h4>Инструкция</h4>
+                  <p>
+                    {detail.data.instructions || "Дополнительных указаний нет"}
+                  </p>
+                  <small>Эти сведения доступны ученику во время задания.</small>
+                </aside>
+                <section
+                  className="template-solution"
+                  aria-label="Эталонное решение"
+                >
+                  <div className="template-solution-heading">
+                    <h3>Эталонное решение</h3>
+                    <Button onClick={() => setPreview(detail.data!)}>
+                      Открыть в АРМ
+                    </Button>
+                  </div>
+                  <p className="template-explanation">
+                    Образец для сравнения. Другая формулировка может быть
+                    корректной; смысловые поля проверяются отдельно.
+                  </p>
+                  <div className="template-routing">
+                    <b>Тип происшествия</b>
+                    <p>
+                      {detail.data.classifier_entry?.display_name ||
+                        detail.data.classifier_entry?.name ||
+                        "Тип не загружен"}
+                    </p>
+                    <b>Службы</b>
+                    <ul>
+                      {detail.data.recipients?.length ? (
+                        detail.data.recipients.map((service) => (
+                          <li key={service.service_id}>
+                            {service.short_name && (
+                              <strong>{service.short_name} · </strong>
+                            )}
+                            {service.name}
+                          </li>
+                        ))
+                      ) : (
+                        <li>Без оповещения служб</li>
+                      )}
+                    </ul>
+                  </div>
+                  <CardDataFields
+                    data={detail.data.data}
+                    features={
+                      detail.data.classifier_entry?.conditions.features as
+                        FeatureDefinition[] | undefined
+                    }
+                  />
+                </section>
+              </div>
             )}
           </QueryState>
           <Button onClick={() => setDetailId(undefined)}>Закрыть</Button>
@@ -240,26 +286,15 @@ function CardCreate({ onClose }: { onClose: () => void }) {
     title: "Название карточки",
     caller_message: "Сообщение заявителя для ученика",
     instructions: "Инструкция ученику",
-    address_text: "Эталонный адрес",
-    description: "Эталонное сообщение в карточке",
+    address_text: "Адрес целиком",
+    description: "Сообщение в карточке",
     caller_name: "ФИО заявителя",
     caller_phone: "Телефон заявителя",
   };
-  return (
-    <Stack
-      component="form"
-      spacing={2}
-      sx={{ pt: 1 }}
-      onSubmit={(e) => {
-        e.preventDefault();
-        save.mutate();
-      }}
-    >
-      <Alert severity="info">
-        Эталонные сведения видит преподаватель. Ученик получает сообщение
-        заявителя и заполняет свою карточку.
-      </Alert>
-      {Object.entries(labels).map(([key, label]) => (
+  const renderFields = (keys: string[]) =>
+    Object.entries(labels)
+      .filter(([key]) => keys.includes(key))
+      .map(([key, label]) => (
         <TextField
           key={key}
           label={label}
@@ -288,218 +323,252 @@ function CardCreate({ onClose }: { onClose: () => void }) {
           }
           onChange={(e) => setForm({ ...form, [key]: e.target.value })}
         />
-      ))}
-      <Alert severity="info">
-        Параметры человека необязательны. Укажите существенные сведения также в
-        сообщении заявителя, чтобы ученик не оценивался по скрытым фактам.
-        Генерация ИИ будет подключена отдельно.
-      </Alert>
-      <Stack direction="row" spacing={1}>
-        {(
-          [
-            ["gender", "Пол"],
-            ["age", "Возраст"],
-            ["height_cm", "Рост, см"],
-            ["weight_kg", "Вес, кг"],
-          ] as const
-        ).map(([key, label]) => (
-          <TextField
-            key={key}
-            label={label}
-            type={key === "gender" ? "text" : "number"}
-            value={person[key]}
-            onChange={(e) => setPerson({ ...person, [key]: e.target.value })}
-            slotProps={{
-              htmlInput: {
-                min: 0,
-                max: key === "age" ? 130 : 600,
-                maxLength: 40,
+      ));
+  return (
+    <Stack
+      component="form"
+      className="template-editor"
+      onSubmit={(e) => {
+        e.preventDefault();
+        save.mutate();
+      }}
+    >
+      <aside className="template-condition">
+        <h3>Условие для ученика</h3>
+        {renderFields(["title", "caller_message", "instructions"])}
+        <p className="template-explanation">
+          Укажите здесь все факты, необходимые для решения. Ученик не видит
+          эталонное решение.
+        </p>
+      </aside>
+      <section className="template-solution">
+        <h3>Эталонное решение</h3>
+        <p className="template-explanation">
+          Заполняйте только известные из условия сведения. Пустое необязательное
+          поле не считается ошибкой ученика.
+        </p>
+        <h4>Заявитель и содержание обращения</h4>
+        <div className="template-input-grid">
+          {renderFields(["caller_name", "caller_phone"])}
+        </div>
+        {renderFields(["description"])}
+
+        <Alert severity="info">
+          Параметры человека необязательны. Укажите существенные сведения также
+          в сообщении заявителя, чтобы ученик не оценивался по скрытым фактам.
+          Генерация ИИ будет подключена отдельно.
+        </Alert>
+        <Stack direction="row" spacing={1}>
+          {(
+            [
+              ["gender", "Пол"],
+              ["age", "Возраст"],
+              ["height_cm", "Рост, см"],
+              ["weight_kg", "Вес, кг"],
+            ] as const
+          ).map(([key, label]) => (
+            <TextField
+              key={key}
+              label={label}
+              type={key === "gender" ? "text" : "number"}
+              value={person[key]}
+              onChange={(e) => setPerson({ ...person, [key]: e.target.value })}
+              slotProps={{
+                htmlInput: {
+                  min: 0,
+                  max: key === "age" ? 130 : 600,
+                  maxLength: 40,
+                },
+              }}
+            />
+          ))}
+        </Stack>
+        <TextField
+          label="Внешность и особые приметы"
+          multiline
+          value={person.appearance}
+          onChange={(e) => setPerson({ ...person, appearance: e.target.value })}
+          slotProps={{ htmlInput: { maxLength: 2000 } }}
+        />
+        <TemplateAddress value={address} onChange={setAddress} />
+        {renderFields(["address_text"])}
+        <h4>Происшествие и службы</h4>
+        <TextField
+          label="Количество пострадавших"
+          type="number"
+          value={victims}
+          onChange={(e) => setVictims(e.target.value)}
+          slotProps={{ htmlInput: { min: 0, max: 100000, step: 1 } }}
+          helperText="Оставьте пустым, если в условии не указано. Ноль означает, что пострадавших нет."
+        />
+        <ServerSelect
+          label="Опубликованная версия ЕКП"
+          queryKey={["classifier-options"]}
+          value={version}
+          onChange={(v) => {
+            setVersion(v);
+            setEntry(null);
+            setNotificationRequired(true);
+            setFeatures([]);
+            setAnswers({});
+            setOptional([]);
+            setManualRecipients(null);
+          }}
+          load={async (q, signal) =>
+            (await trainingApi.classifiers(q, signal)).map((c) => ({
+              id: c.id,
+              label: c.label,
+            }))
+          }
+        />
+        <ServerSelect
+          label="Тип происшествия (ЕКП)"
+          queryKey={["entry-options-with-features", version?.id]}
+          disabled={!version}
+          value={entry}
+          onChange={(v) => {
+            setEntry(v);
+            const metadata = v?.metadata as
+              | {
+                  features?: FeatureDefinition[];
+                  notification_required?: boolean;
+                }
+              | undefined;
+            setFeatures(metadata?.features ?? []);
+            setNotificationRequired(metadata?.notification_required !== false);
+            setAnswers({});
+            setOptional([]);
+            setManualRecipients(null);
+          }}
+          load={async (q, signal) => {
+            const rows = await trainingApi.entries(version!.id, { q }, signal);
+            return rows.map((c) => ({
+              id: c.id,
+              label: `${c.code} — ${c.name}`,
+              metadata: {
+                features: c.conditions.features ?? [],
+                notification_required: c.notification_required,
               },
+            }));
+          }}
+        />
+        {features.map((f) => (
+          <FeatureInput
+            key={f.key}
+            feature={f}
+            value={answers[f.key]}
+            onChange={(value) => {
+              const next = { ...answers };
+              if (value === undefined) delete next[f.key];
+              else next[f.key] = value;
+              setAnswers(next);
             }}
           />
         ))}
-      </Stack>
-      <TextField
-        label="Внешность и особые приметы"
-        multiline
-        value={person.appearance}
-        onChange={(e) => setPerson({ ...person, appearance: e.target.value })}
-        slotProps={{ htmlInput: { maxLength: 2000 } }}
-      />
-      <TemplateAddress value={address} onChange={setAddress} />
-      <TextField
-        label="Количество пострадавших в эталоне"
-        type="number"
-        value={victims}
-        onChange={(e) => setVictims(e.target.value)}
-        slotProps={{ htmlInput: { min: 0, max: 100000, step: 1 } }}
-        helperText="Оставьте пустым, если в условии не указано. Ноль означает, что пострадавших нет."
-      />
-      <ServerSelect
-        label="Опубликованная версия ЕКП"
-        queryKey={["classifier-options"]}
-        value={version}
-        onChange={(v) => {
-          setVersion(v);
-          setEntry(null);
-          setNotificationRequired(true);
-          setFeatures([]);
-          setAnswers({});
-          setOptional([]);
-          setManualRecipients(null);
-        }}
-        load={async (q, signal) =>
-          (await trainingApi.classifiers(q, signal)).map((c) => ({
-            id: c.id,
-            label: c.label,
-          }))
-        }
-      />
-      <ServerSelect
-        label="Тип происшествия (ЕКП)"
-        queryKey={["entry-options-with-features", version?.id]}
-        disabled={!version}
-        value={entry}
-        onChange={(v) => {
-          setEntry(v);
-          const metadata = v?.metadata as
-            | {
-                features?: FeatureDefinition[];
-                notification_required?: boolean;
-              }
-            | undefined;
-          setFeatures(metadata?.features ?? []);
-          setNotificationRequired(metadata?.notification_required !== false);
-          setAnswers({});
-          setOptional([]);
-          setManualRecipients(null);
-        }}
-        load={async (q, signal) => {
-          const rows = await trainingApi.entries(version!.id, { q }, signal);
-          return rows.map((c) => ({
-            id: c.id,
-            label: `${c.code} — ${c.name}`,
-            metadata: {
-              features: c.conditions.features ?? [],
-              notification_required: c.notification_required,
-            },
-          }));
-        }}
-      />
-      {features.map((f) => (
-        <FeatureInput
-          key={f.key}
-          feature={f}
-          value={answers[f.key]}
-          onChange={(value) => {
-            const next = { ...answers };
-            if (value === undefined) delete next[f.key];
-            else next[f.key] = value;
-            setAnswers(next);
-          }}
-        />
-      ))}
-      {entry && (
-        <FormControlLabel
-          label="Задать службы эталона вручную"
-          control={
-            <Checkbox
-              checked={manualRecipients !== null}
-              onChange={(_, checked) =>
-                setManualRecipients(
-                  checked
-                    ? (routes.data ?? [])
-                        .filter((r) => recipients.includes(r.service_id))
-                        .map((r) => ({
-                          id: r.service_id,
-                          label: r.service_name,
-                        }))
-                    : null,
-                )
-              }
-            />
-          }
-        />
-      )}
-      {manualRecipients !== null && (
-        <Stack spacing={1}>
-          <Alert severity="info">
-            Используйте для исключений из ЕКП. Укажите причину и сведения для
-            решения в условии карточки. Ученик будет оцениваться по этому
-            списку; пустой список означает регистрацию без оповещения.
-          </Alert>
-          <ServerSelect
-            label="Добавить службу в эталон"
-            queryKey={["reference-services"]}
-            value={null}
-            onChange={(v) => {
-              if (v && !manualRecipients.some((s) => s.id === v.id))
-                setManualRecipients([...manualRecipients, v]);
-            }}
-            load={async (q, signal) =>
-              (await trainingApi.services(q, signal)).map((s) => ({
-                id: s.id,
-                label: s.name,
-              }))
-            }
-          />
-          <Stack direction="row" sx={{ flexWrap: "wrap", gap: 1 }}>
-            {manualRecipients.map((s) => (
-              <Chip
-                key={s.id}
-                label={s.label}
-                onDelete={() =>
+        {entry && (
+          <FormControlLabel
+            label="Задать службы эталонного решения вручную"
+            control={
+              <Checkbox
+                checked={manualRecipients !== null}
+                onChange={(_, checked) =>
                   setManualRecipients(
-                    manualRecipients.filter((x) => x.id !== s.id),
+                    checked
+                      ? (routes.data ?? [])
+                          .filter((r) => recipients.includes(r.service_id))
+                          .map((r) => ({
+                            id: r.service_id,
+                            label: r.service_name,
+                          }))
+                      : null,
                   )
                 }
               />
-            ))}
-          </Stack>
-        </Stack>
-      )}
-      {entry && manualRecipients === null && (
-        <QueryState
-          pending={routes.isPending}
-          error={routes.error}
-          retry={() => void routes.refetch()}
-        >
-          {routes.data?.map((r) => (
-            <FormControlLabel
-              key={r.service_id}
-              label={
-                r.service_name +
-                (Object.keys(r.conditions).length ? " (условный маршрут)" : "")
+            }
+          />
+        )}
+        {manualRecipients !== null && (
+          <Stack spacing={1}>
+            <Alert severity="info">
+              Используйте для исключений из ЕКП. Укажите причину и сведения для
+              решения в условии карточки. Ученик будет оцениваться по этому
+              списку; пустой список означает регистрацию без оповещения.
+            </Alert>
+            <ServerSelect
+              label="Добавить службу в эталонное решение"
+              queryKey={["reference-services"]}
+              value={null}
+              onChange={(v) => {
+                if (v && !manualRecipients.some((s) => s.id === v.id))
+                  setManualRecipients([...manualRecipients, v]);
+              }}
+              load={async (q, signal) =>
+                (await trainingApi.services(q, signal)).map((s) => ({
+                  id: s.id,
+                  label: s.name,
+                }))
               }
-              control={
-                <Checkbox
-                  checked={recipients.includes(r.service_id)}
-                  disabled={
-                    features.length > 0 || !Object.keys(r.conditions).length
-                  }
-                  onChange={(_, checked) =>
-                    setOptional(
-                      checked
-                        ? [...optional, r.service_id]
-                        : optional.filter((id) => id !== r.service_id),
+            />
+            <Stack direction="row" sx={{ flexWrap: "wrap", gap: 1 }}>
+              {manualRecipients.map((s) => (
+                <Chip
+                  key={s.id}
+                  label={s.label}
+                  onDelete={() =>
+                    setManualRecipients(
+                      manualRecipients.filter((x) => x.id !== s.id),
                     )
                   }
                 />
-              }
-            />
-          ))}
-        </QueryState>
-      )}
-      {!features.length &&
-        routes.data?.some((r) => Object.keys(r.conditions).length > 0) && (
-          <Alert severity="warning">
-            Выполнение учеником условных маршрутов пока недоступно.
-          </Alert>
+              ))}
+            </Stack>
+          </Stack>
         )}
-      {save.error && (
-        <Alert severity="error">{getApiError(save.error).message}</Alert>
-      )}
-      <Stack direction="row" spacing={2}>
+        {entry && manualRecipients === null && (
+          <QueryState
+            pending={routes.isPending}
+            error={routes.error}
+            retry={() => void routes.refetch()}
+          >
+            {routes.data?.map((r) => (
+              <FormControlLabel
+                key={r.service_id}
+                label={
+                  r.service_name +
+                  (Object.keys(r.conditions).length
+                    ? " (условный маршрут)"
+                    : "")
+                }
+                control={
+                  <Checkbox
+                    checked={recipients.includes(r.service_id)}
+                    disabled={
+                      features.length > 0 || !Object.keys(r.conditions).length
+                    }
+                    onChange={(_, checked) =>
+                      setOptional(
+                        checked
+                          ? [...optional, r.service_id]
+                          : optional.filter((id) => id !== r.service_id),
+                      )
+                    }
+                  />
+                }
+              />
+            ))}
+          </QueryState>
+        )}
+        {!features.length &&
+          routes.data?.some((r) => Object.keys(r.conditions).length > 0) && (
+            <Alert severity="warning">
+              Выполнение учеником условных маршрутов пока недоступно.
+            </Alert>
+          )}
+        {save.error && (
+          <Alert severity="error">{getApiError(save.error).message}</Alert>
+        )}
+      </section>
+      <Stack className="template-editor-actions" direction="row" spacing={2}>
         <Button
           type="submit"
           disabled={

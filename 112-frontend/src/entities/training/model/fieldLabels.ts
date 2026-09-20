@@ -12,7 +12,7 @@ export const fieldLabels: Record<string, string> = {
   buildingFloors: "Этажность",
   caller_name: "Заявитель",
   caller_phone: "Телефон",
-  caller_details: "Телефоны",
+  caller_details: "Сведения о заявителе",
   callerId: "АОН",
   provided: "Предоставленный",
   onSite: "На месте",

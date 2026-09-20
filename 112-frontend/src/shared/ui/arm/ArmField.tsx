@@ -4,6 +4,7 @@ import {
   type SelectHTMLAttributes,
   type TextareaHTMLAttributes,
 } from "react";
+import { useFieldFeedback } from "./FieldFeedback";
 
 type Base = { label: string; className?: string; inline?: boolean };
 export function ArmField({
@@ -13,10 +14,13 @@ export function ArmField({
   ...props
 }: Base & InputHTMLAttributes<HTMLInputElement>) {
   const id = useId();
+  const feedback = useFieldFeedback(label);
   return (
     <label
       className={`arm-field ${inline ? "arm-field--inline" : ""} ${className}`}
       htmlFor={id}
+      data-feedback={feedback?.tone}
+      title={feedback?.text}
     >
       <span>{label}</span>
       <input id={id} {...props} />
@@ -30,8 +34,14 @@ export function ArmSelect({
   ...props
 }: Base & SelectHTMLAttributes<HTMLSelectElement>) {
   const id = useId();
+  const feedback = useFieldFeedback(label);
   return (
-    <label className={`arm-field arm-field--select ${className}`} htmlFor={id}>
+    <label
+      className={`arm-field arm-field--select ${className}`}
+      htmlFor={id}
+      data-feedback={feedback?.tone}
+      title={feedback?.text}
+    >
       <span>{label}</span>
       <select id={id} {...props}>
         {children}
@@ -45,10 +55,13 @@ export function ArmTextarea({
   ...props
 }: Base & TextareaHTMLAttributes<HTMLTextAreaElement>) {
   const id = useId();
+  const feedback = useFieldFeedback(label);
   return (
     <label
       className={`arm-field arm-field--textarea ${className}`}
       htmlFor={id}
+      data-feedback={feedback?.tone}
+      title={feedback?.text}
     >
       <span>{label}</span>
       <textarea id={id} {...props} />

@@ -21,12 +21,12 @@ export function TemplateAddress({
   return (
     <Stack spacing={1}>
       <Typography component="h3" variant="subtitle1">
-        Поля эталонного адреса
+        Адрес происшествия
       </Typography>
       <Typography variant="body2" color="text.secondary">
         Заполняйте только известные из условия сведения. Пустые поля не
         участвуют в автопроверке. Для адреса без улицы и дома используйте строку
-        «Эталонный адрес».
+        «Адрес целиком».
       </Typography>
       <div
         style={{

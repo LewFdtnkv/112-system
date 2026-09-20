@@ -182,14 +182,14 @@ test("real API: authoring, operator drafts, revision conflict, notification and 
   await page
     .getByLabel("Сообщение заявителя для ученика")
     .fill("На Учебной улице, дом 7, дым из окна. Сообщает Иван Петров.");
-  await page.getByLabel("Эталонный адрес").fill("Учебная улица, д. 7");
+  await page.getByLabel("Адрес целиком").fill("Учебная улица, д. 7");
   await page.getByLabel("Улица", { exact: true }).fill("Учебная улица");
   await page.getByLabel("Дом", { exact: true }).fill("7");
   await page.getByLabel("ФИО заявителя", { exact: true }).fill("Иван Петров");
-  await expect(page.getByLabel("Эталонный адрес")).toHaveValue(
+  await expect(page.getByLabel("Адрес целиком")).toHaveValue(
     "Учебная улица, д. 7",
   );
-  await page.getByLabel("Эталонное сообщение в карточке").fill("Дым из окна");
+  await page.getByLabel("Сообщение в карточке").fill("Дым из окна");
   await select(page, "Опубликованная версия ЕКП", classifier);
   await select(page, "Тип происшествия (ЕКП)", "Учебный пожар");
   await page.getByLabel("Улица", { exact: true }).scrollIntoViewIfNeeded();
@@ -204,7 +204,9 @@ test("real API: authoring, operator drafts, revision conflict, notification and 
   await page
     .getByRole("button", { name: `Пожар ${suffix}`, exact: true })
     .click();
-  await page.getByText("Все поля эталона", { exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Эталонное решение", exact: true }),
+  ).toBeVisible();
   await expect(page.getByRole("dialog").locator("dl")).toContainText(
     "Сведения об адресе / Улица",
   );
@@ -377,6 +379,10 @@ test("real API: authoring, operator drafts, revision conflict, notification and 
       name: "Автоматическая оценка: 88.89 / 100.00",
     }),
   ).toBeVisible();
+  for (const button of await page
+    .getByRole("button", { name: "Таблица", exact: true })
+    .all())
+    await button.click();
   const checks = page.getByRole("table", {
     name: "Автоматическая проверка полей",
   });

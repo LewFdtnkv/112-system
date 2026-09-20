@@ -95,6 +95,8 @@ export interface CardData {
   additional_fields: Record<string, unknown>;
 }
 export interface CardTemplate {
+  classifier_entry?: ClassifierEntry | null;
+  recipients?: Recipient[];
   id: string;
   title: string;
   classifier_version_id: string;
@@ -302,6 +304,9 @@ export interface WorkReview {
     position: number;
     source_classifier_entry?: ClassifierEntry | null;
     source_snapshot: {
+      classifier_entry_id?: string;
+      feature_definitions?: import("@/shared/lib/featureValues").FeatureDefinition[];
+      instructions?: string;
       title: string;
       caller_message: string;
       recipients?: Recipient[];

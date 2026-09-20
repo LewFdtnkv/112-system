@@ -16,6 +16,17 @@ interface Props {
 export function CardAddressPanel({ editor, disabled, viewing, onMap }: Props) {
   const { fields, setField, setDetail, setAddressField } = editor;
   const address = fields.address;
+  const country = address.country ?? (disabled ? "" : "Россия");
+  const region = address.region ?? (disabled ? "" : "Москва");
+  const addressLine = [
+    region.trim().toLocaleLowerCase() ===
+    (address.locality ?? "").trim().toLocaleLowerCase()
+      ? ""
+      : region,
+    formatAddress(address),
+  ]
+    .filter(Boolean)
+    .join(", ");
   if (viewing)
     return (
       <section
@@ -31,15 +42,7 @@ export function CardAddressPanel({ editor, disabled, viewing, onMap }: Props) {
             label="Показать адрес на карте"
             onClick={onMap}
           />
-          <strong>
-            {[
-              address.country ?? "Россия",
-              address.region ?? "Москва",
-              formatAddress(address),
-            ]
-              .filter(Boolean)
-              .join(", ")}
-          </strong>
+          <strong>{[country, addressLine].filter(Boolean).join(", ")}</strong>
           <p>{[address.district, address.area].filter(Boolean).join(", ")}</p>
           {fields.location && (
             <p title="Координаты происшествия">
@@ -125,13 +128,7 @@ export function CardAddressPanel({ editor, disabled, viewing, onMap }: Props) {
           />
         </div>
         <div className="arm-address-line">
-          {[
-            address.region ?? "Москва",
-            address.locality,
-            formatAddress(address),
-          ]
-            .filter(Boolean)
-            .join(", ") || "Москва"}
+          {addressLine || "—"}
           <ArmIconButton
             icon="close"
             label="Очистить адрес"
@@ -169,7 +166,7 @@ export function CardAddressPanel({ editor, disabled, viewing, onMap }: Props) {
               className={`arm-address-grid__${area}`}
               label={label}
               disabled={disabled}
-              value={address[key] ?? fallback}
+              value={address[key] ?? (disabled ? "" : fallback)}
               onChange={(e) => setAddressField(key, e.target.value)}
             />
           ))}

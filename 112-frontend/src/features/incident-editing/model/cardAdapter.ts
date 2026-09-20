@@ -7,7 +7,13 @@ import {
   type IncidentCard,
   type IncidentCardFields,
 } from "@/entities/incident-card";
-import type { Attempt, CardData, JournalCard } from "@/entities/training";
+import type {
+  Attempt,
+  CardData,
+  ClassifierEntry,
+  Recipient,
+  JournalCard,
+} from "@/entities/training";
 const record = (value: unknown): Record<string, unknown> =>
   value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
@@ -16,12 +22,43 @@ const strings = (value: unknown) =>
   Object.fromEntries(
     Object.entries(record(value)).filter(([, v]) => typeof v === "string"),
   ) as Record<string, string>;
-export function attemptCard(attempt: Attempt): IncidentCard {
-  const { data } = attempt.card;
+function answerFields(data: CardData): IncidentCardFields {
   const extra = record(data.additional_fields);
-  const details = record(extra.details);
   const phones = strings(data.caller_details);
   const address = strings(data.address_details);
+  return {
+    ...emptyCardFields,
+    location: (extra.location as IncidentCardFields["location"]) ?? null,
+    ekpAnswers:
+      (data.features?.ekp as Record<string, FeatureValue> | undefined) ?? {},
+    address: {
+      ...emptyIncidentAddress,
+      ...address,
+      ...(!Object.values(address).some(Boolean)
+        ? { description: data.address_text ?? "" }
+        : {}),
+    },
+    phones: {
+      ...emptyIncidentPhones,
+      ...phones,
+      provided: phones.provided ?? data.caller_phone ?? "",
+    },
+    callerName: data.caller_name ?? "",
+    description: data.description ?? "",
+    operatorAction:
+      typeof extra.operatorAction === "string" ? extra.operatorAction : "",
+    victimsCount:
+      typeof data.features?.victimsCount === "number"
+        ? data.features.victimsCount
+        : null,
+    details: record(extra.details),
+  };
+}
+export function attemptCard(attempt: Attempt): IncidentCard {
+  const services =
+    attempt.status === "completed"
+      ? attempt.notified_services
+      : attempt.recipient_services;
   return {
     id: attempt.card.id,
     displayNumber: attempt.card.id.slice(0, 8),
@@ -36,48 +73,41 @@ export function attemptCard(attempt: Attempt): IncidentCard {
     categoryName:
       attempt.classifier_entry?.display_name || attempt.classifier_entry?.name,
     fields: {
-      ...emptyCardFields,
-      location: (extra.location as IncidentCardFields["location"]) ?? null,
+      ...answerFields(attempt.card.data),
       manualServices:
         attempt.card.recipient_service_ids != null
-          ? (attempt.status === "completed"
-              ? attempt.notified_services
-              : attempt.recipient_services
-            ).map((s) => ({
+          ? services.map((s) => ({
               id: s.service_id,
               name: s.name,
               short_name: s.short_name,
             }))
           : null,
-      ekpAnswers:
-        (data.features?.ekp as Record<string, FeatureValue> | undefined) ?? {},
       categoryId: attempt.card.classifier_entry_id ?? "",
-      address: {
-        ...emptyIncidentAddress,
-        ...address,
-        ...(!Object.values(address).some(Boolean)
-          ? { description: data.address_text ?? "" }
-          : {}),
-      },
-      phones: {
-        ...emptyIncidentPhones,
-        ...phones,
-        provided: phones.provided ?? data.caller_phone ?? "",
-      },
-      callerName: data.caller_name ?? "",
-      description: data.description ?? "",
-      operatorAction:
-        typeof extra.operatorAction === "string" ? extra.operatorAction : "",
-      victimsCount:
-        typeof data.features?.victimsCount === "number"
-          ? data.features.victimsCount
-          : null,
-      details,
-      services: (attempt.status === "completed"
-        ? attempt.notified_services
-        : attempt.recipient_services
-      ).map((s) => s.service_id),
+      services: services.map((s) => s.service_id),
       status: attempt.status === "completed" ? "notified" : "not_notified",
+    },
+  };
+}
+export interface ReferenceCardSource {
+  id: string;
+  title: string;
+  data: CardData;
+  classifier_entry?: ClassifierEntry | null;
+  recipients?: Recipient[];
+}
+export function referenceCard(source: ReferenceCardSource): IncidentCard {
+  return {
+    id: source.id,
+    displayNumber: source.id.slice(0, 8),
+    createdAt: "",
+    channel: "112",
+    origin: "generated",
+    categoryName:
+      source.classifier_entry?.display_name || source.classifier_entry?.name,
+    fields: {
+      ...answerFields(source.data),
+      categoryId: source.classifier_entry?.id ?? "",
+      services: (source.recipients ?? []).map((s) => s.service_id),
     },
   };
 }

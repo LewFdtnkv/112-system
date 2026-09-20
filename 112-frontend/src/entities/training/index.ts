@@ -5,6 +5,7 @@ export type { Params } from "./api/trainingApi";
 export { CardDataFields } from "./ui/CardDataFields";
 
 export { fieldLabels } from "./model/fieldLabels";
+export { flattenCardData, cardFieldOrder } from "./model/cardFields";
 
 export * from "./model/catalogTypes";
 

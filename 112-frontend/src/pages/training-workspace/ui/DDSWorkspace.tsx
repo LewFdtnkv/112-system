@@ -8,7 +8,7 @@ import {
   ddsStatusLabels,
   type Attempt,
 } from "@/entities/training";
-import { attemptCard } from "@/features/operator-workspace";
+import { attemptCard } from "@/features/incident-editing";
 import { IncidentCardDialog } from "@/widgets/incident-card";
 import {
   ArmField,

@@ -1,3 +1,8 @@
+import {
+  attemptCard,
+  cardData,
+  journalCard,
+} from "@/features/incident-editing";
 import type { FeatureValue } from "@/shared/lib/featureValues";
 import { useProctoring } from "@/features/proctoring";
 import { StudentMessages } from "@/features/teaching-messages";
@@ -19,12 +24,7 @@ import {
   type Attempt,
   type StudentLesson,
 } from "@/entities/training";
-import {
-  attemptCard,
-  cardData,
-  journalCard,
-  useAttemptAudit,
-} from "@/features/operator-workspace";
+import { useAttemptAudit } from "@/features/operator-workspace";
 import { getApiError } from "@/shared/api";
 import { getTrainingResultPath, routePaths } from "@/shared/config/routes";
 import { useDebounced } from "@/shared/lib/useDebounced";
@@ -454,6 +454,7 @@ function AttemptEditor({
         log={[]}
         isSubmitted={attempt.status === "completed"}
         readOnly={attempt.status === "interrupted"}
+        readOnlyLayout={completed ? "form" : undefined}
         isCallAccepted={attempt.status === "in_progress" || completed}
         onClose={onClose}
         onCommitAction={() => {}}

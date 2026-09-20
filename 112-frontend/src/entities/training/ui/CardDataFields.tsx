@@ -1,28 +1,20 @@
 import type { CardData } from "../model/types";
+import type { FeatureDefinition } from "@/shared/lib/featureValues";
+import { flattenCardData } from "../model/cardFields";
 
-import { fieldLabels } from "../model/fieldLabels";
-
-export function CardDataFields({ data }: { data: CardData }) {
-  const flatten = (value: unknown, prefix: string): [string, string][] => {
-    if (value === null || value === undefined || value === "") return [];
-    if (Array.isArray(value)) return [[prefix, value.map(String).join(", ")]];
-    if (typeof value === "object")
-      return Object.entries(value).flatMap(([k, v]) =>
-        flatten(v, [prefix, fieldLabels[k] ?? k].filter(Boolean).join(" / ")),
-      );
-    return [
-      [
-        prefix,
-        typeof value === "boolean" ? (value ? "Да" : "Нет") : String(value),
-      ],
-    ];
-  };
+export function CardDataFields({
+  data,
+  features,
+}: {
+  data: CardData;
+  features?: FeatureDefinition[];
+}) {
   return (
-    <dl>
-      {flatten(data, "").map(([label, value]) => (
-        <div key={label}>
+    <dl className="card-data-fields">
+      {flattenCardData(data, features).map(({ field, label, value }) => (
+        <div key={field}>
           <dt>{label}</dt>
-          <dd>{value}</dd>
+          <dd>{value || "—"}</dd>
         </div>
       ))}
     </dl>

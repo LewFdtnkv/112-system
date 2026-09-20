@@ -10,16 +10,12 @@ import {
 } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import {
-  trainingApi,
-  CardDataFields,
-  type Grade,
-  type WorkReview,
-} from "@/entities/training";
+import { trainingApi, type Grade, type WorkReview } from "@/entities/training";
 import { getApiError } from "@/shared/api";
 import { getStudentTrainingWorkspacePath } from "@/shared/config/routes";
 import { QueryState } from "@/shared/ui/QueryState";
-import { AutomaticCheckView } from "./AutomaticCheckView";
+import { CardComparison } from "./CardComparison";
+import type { ReviewedCard } from "../model/comparison";
 import { AuditTrail } from "./AuditTrail";
 export function StudentResult({ lessonId }: { lessonId: string }) {
   const grade = useQuery({
@@ -101,10 +97,12 @@ export function LessonReview({
   lessonId,
   studentId,
   renderProctoring,
+  renderCardActions,
 }: {
   lessonId: string;
   studentId: string;
   renderProctoring?: (attemptId: string) => ReactNode;
+  renderCardActions?: (row: ReviewedCard, rows: ReviewedCard[]) => ReactNode;
 }) {
   const query = useQuery({
     queryKey: ["work-review", lessonId, studentId],
@@ -120,6 +118,7 @@ export function LessonReview({
       {query.data && (
         <Review
           renderProctoring={renderProctoring}
+          renderCardActions={renderCardActions}
           data={query.data}
           reload={() => void query.refetch()}
         />
@@ -131,10 +130,12 @@ function Review({
   data,
   reload,
   renderProctoring,
+  renderCardActions,
 }: {
   data: WorkReview;
   reload: () => void;
   renderProctoring?: (attemptId: string) => ReactNode;
+  renderCardActions?: (row: ReviewedCard, rows: ReviewedCard[]) => ReactNode;
 }) {
   const calculate = useMutation({
     mutationFn: () =>
@@ -177,54 +178,10 @@ function Review({
           <p>
             <b>Условие:</b> {row.source_snapshot?.caller_message}
           </p>
-          <div className="review-columns">
-            <section>
-              <h3>Сведения преподавателя</h3>
-              <p>
-                Тип: {row.source_classifier_entry?.code}{" "}
-                {row.source_classifier_entry?.name || "—"}
-              </p>
-              <p>
-                Получатели:{" "}
-                {row.source_snapshot?.recipients
-                  ?.map((s) => s.name)
-                  .join(", ") || "—"}
-              </p>
-              <p>Адрес: {row.source_snapshot?.data.address_text}</p>
-              <p>Сообщение: {row.source_snapshot?.data.description}</p>
-            </section>
-            <section>
-              <h3>Карточка ученика</h3>
-              {row.attempt ? (
-                <>
-                  <p>Адрес: {row.attempt.card.data.address_text || "—"}</p>
-                  <p>Сообщение: {row.attempt.card.data.description || "—"}</p>
-                  <p>
-                    Заявитель: {row.attempt.card.data.caller_name || "—"}{" "}
-                    {row.attempt.card.data.caller_phone}
-                  </p>
-                  <p>
-                    Тип: {row.attempt.classifier_entry?.name || "Не выбран"}
-                  </p>
-                  <p>
-                    Оповещены:{" "}
-                    {row.attempt.notified_services
-                      .map((s) => s.name)
-                      .join(", ") || "—"}
-                  </p>
-                  <details>
-                    <summary>Все заполненные поля</summary>
-                    <CardDataFields data={row.attempt.card.data} />
-                  </details>
-                </>
-              ) : (
-                <p>Не начата</p>
-              )}
-            </section>
-          </div>
-          {row.automatic_check && (
-            <AutomaticCheckView check={row.automatic_check} />
-          )}
+          <CardComparison
+            row={row}
+            actions={renderCardActions?.(row, data.assignments)}
+          />
           {row.attempt && (
             <AuditTrail
               lessonId={data.lesson_id}
@@ -274,6 +231,7 @@ function GradeForm({ data, reload }: { data: WorkReview; reload: () => void }) {
       });
       void client.invalidateQueries({ queryKey: ["lessons"] });
       void client.invalidateQueries({ queryKey: ["analytics"] });
+      void client.invalidateQueries({ queryKey: ["student-overview"] });
       void client.invalidateQueries({ queryKey: ["attempt-audit"] });
       void client.invalidateQueries({
         queryKey: ["evaluation", data.lesson_id],
