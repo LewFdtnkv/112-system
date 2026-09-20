@@ -2,7 +2,7 @@ from datetime import UTC, datetime
 from uuid import UUID
 
 from fastapi import HTTPException
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import (
@@ -22,6 +22,7 @@ from app.models.enums import PublicationStatus, TrainingRole
 from app.schemas.authoring import (
     CardCreate,
     CardRead,
+    CardUpdate,
     ScenarioCardRead,
     ScenarioCreate,
     ScenarioRead,
@@ -52,13 +53,15 @@ async def published_profile(session: AsyncSession, profile_id: UUID) -> ServiceP
     return profile
 
 
-async def owned_card(session: AsyncSession, card_id: UUID, teacher_id: UUID) -> CardTemplate:
-    card = await session.scalar(
-        select(CardTemplate).where(
-            CardTemplate.id == card_id,
-            CardTemplate.created_by_id == teacher_id,
-        )
+async def owned_card(
+    session: AsyncSession, card_id: UUID, teacher_id: UUID, *, lock: bool = False
+) -> CardTemplate:
+    query = select(CardTemplate).where(
+        CardTemplate.id == card_id, CardTemplate.created_by_id == teacher_id
     )
+    if lock:
+        query = query.with_for_update()
+    card = await session.scalar(query)
     if card is None:
         raise HTTPException(status_code=404, detail="Card not found")
     return card
@@ -73,8 +76,19 @@ async def card_read(session: AsyncSession, card: CardTemplate) -> CardRead:
             .order_by(CardTemplateRecipient.service_id)
         )
     )
+    scenario_count = await session.scalar(
+        select(func.count(func.distinct(ScenarioVersion.scenario_id)))
+        .select_from(ScenarioCard)
+        .join(ScenarioVersion, ScenarioVersion.id == ScenarioCard.scenario_version_id)
+        .where(ScenarioCard.card_template_id == card.id)
+    )
     return CardRead(
+        can_edit=scenario_count == 0,
+        scenario_count=scenario_count,
         id=card.id,
+        revision=card.revision,
+        updated_at=card.updated_at,
+        classifier_label=(await session.get(ClassifierVersion, card.classifier_version_id)).label,
         created_at=card.created_at,
         created_by_id=card.created_by_id,
         title=card.title,
@@ -94,7 +108,7 @@ async def card_read(session: AsyncSession, card: CardTemplate) -> CardRead:
     )
 
 
-async def create_card(session: AsyncSession, teacher_id: UUID, payload: CardCreate) -> CardRead:
+async def validate_card_definition(session: AsyncSession, payload: CardCreate) -> list[Service]:
     await published_classifier(session, payload.classifier_version_id)
     entry = await session.get(ClassifierEntry, payload.classifier_entry_id)
     if entry is None or entry.classifier_version_id != payload.classifier_version_id:
@@ -135,6 +149,11 @@ async def create_card(session: AsyncSession, teacher_id: UUID, payload: CardCrea
         raise HTTPException(
             status_code=422, detail="Every recipient must be an existing active service"
         )
+    return recipients
+
+
+async def create_card(session: AsyncSession, teacher_id: UUID, payload: CardCreate) -> CardRead:
+    recipients = await validate_card_definition(session, payload)
     card = CardTemplate(
         created_by_id=teacher_id,
         **payload.model_dump(
@@ -144,6 +163,35 @@ async def create_card(session: AsyncSession, teacher_id: UUID, payload: CardCrea
     )
     session.add(card)
     await session.flush()
+    session.add_all(
+        [CardTemplateRecipient(card_template_id=card.id, service_id=s.id) for s in recipients]
+    )
+    await session.commit()
+    return await card_read(session, card)
+
+
+async def update_card(
+    session: AsyncSession, teacher_id: UUID, card_id: UUID, payload: CardUpdate
+) -> CardRead:
+    card = await owned_card(session, card_id, teacher_id, lock=True)
+    if card.revision != payload.revision:
+        raise HTTPException(409, "Card has a newer revision. Reload it before saving.")
+    used = await session.scalar(
+        select(ScenarioCard.id).where(ScenarioCard.card_template_id == card.id).limit(1)
+    )
+    if used is not None:
+        raise HTTPException(409, "Used cards cannot be edited")
+    recipients = await validate_card_definition(session, payload)
+    for key, value in payload.model_dump(
+        exclude={"revision", "recipient_service_ids", "use_recommended_recipients", "data"}
+    ).items():
+        setattr(card, key, value)
+    card.data = payload.data.model_dump(mode="json")
+    card.revision += 1
+    card.updated_at = datetime.now(UTC)
+    await session.execute(
+        delete(CardTemplateRecipient).where(CardTemplateRecipient.card_template_id == card.id)
+    )
     session.add_all(
         [CardTemplateRecipient(card_template_id=card.id, service_id=s.id) for s in recipients]
     )
@@ -206,10 +254,13 @@ async def create_scenario(
 ) -> ScenarioRead:
     cards = list(
         await session.scalars(
-            select(CardTemplate).where(
+            select(CardTemplate)
+            .where(
                 CardTemplate.id.in_(payload.card_ids),
                 CardTemplate.created_by_id == teacher_id,
             )
+            .order_by(CardTemplate.id)
+            .with_for_update()
         )
     )
     by_id = {card.id: card for card in cards}

@@ -8,6 +8,8 @@ from app.api.dependencies import AdminDep, SessionDep, StaffDep, StudentDep, Tea
 from app.api.v1.authoring import Limit, Offset
 from app.models import (
     CardTemplate,
+    CardTemplateRecipient,
+    ClassifierEntry,
     ClassifierVersion,
     GroupMembership,
     Scenario,
@@ -17,12 +19,13 @@ from app.models import (
     TrainingGroup,
     User,
 )
-from app.schemas.authoring import CardListItem
 from app.schemas.catalog import ServiceRead
 from app.schemas.catalog_admin import ClassifierAdminRead
+from app.schemas.student import RecipientRead
 from app.schemas.views import (
     AnalyticsRead,
     AnalyticsRow,
+    CardLibraryItem,
     GroupItem,
     LessonPage,
     Page,
@@ -177,7 +180,7 @@ async def scenarios(
     )
 
 
-@router.get("/cards", response_model=Page[CardListItem])
+@router.get("/cards", response_model=Page[CardLibraryItem])
 async def cards(
     session: SessionDep,
     teacher: TeacherDep,
@@ -186,7 +189,28 @@ async def cards(
     limit: Limit = 20,
     offset: Offset = 0,
 ):
-    query = select(CardTemplate).where(CardTemplate.created_by_id == teacher.id)
+    usage = (
+        select(
+            ScenarioCard.card_template_id,
+            func.count(func.distinct(ScenarioVersion.scenario_id)).label("count"),
+        )
+        .join(ScenarioVersion, ScenarioVersion.id == ScenarioCard.scenario_version_id)
+        .group_by(ScenarioCard.card_template_id)
+        .subquery()
+    )
+    query = (
+        select(
+            CardTemplate,
+            ClassifierEntry.name,
+            ClassifierEntry.display_name,
+            ClassifierVersion.label,
+            func.coalesce(usage.c.count, 0),
+        )
+        .join(ClassifierEntry, ClassifierEntry.id == CardTemplate.classifier_entry_id)
+        .join(ClassifierVersion, ClassifierVersion.id == CardTemplate.classifier_version_id)
+        .outerjoin(usage, usage.c.card_template_id == CardTemplate.id)
+        .where(CardTemplate.created_by_id == teacher.id)
+    )
     if q:
         query = query.where(CardTemplate.title.ilike(f"%{q}%"))
     if classifier_version_id:
@@ -194,8 +218,37 @@ async def cards(
     total, rows = await page_rows(
         session, query.order_by(CardTemplate.created_at.desc(), CardTemplate.id), limit, offset
     )
+    services = {row[0].id: [] for row in rows}
+    if services:
+        for card_id, service in await session.execute(
+            select(CardTemplateRecipient.card_template_id, Service)
+            .join(Service, Service.id == CardTemplateRecipient.service_id)
+            .where(CardTemplateRecipient.card_template_id.in_(services))
+            .order_by(Service.name, Service.id)
+        ):
+            services[card_id].append(
+                RecipientRead(
+                    service_id=service.id, name=service.name, short_name=service.short_name
+                )
+            )
     return Page(
-        items=[CardListItem.model_validate(row[0]) for row in rows],
+        items=[
+            CardLibraryItem(
+                id=card.id,
+                title=card.title,
+                revision=card.revision,
+                updated_at=card.updated_at,
+                classifier_version_id=card.classifier_version_id,
+                classifier_entry_id=card.classifier_entry_id,
+                created_at=card.created_at,
+                incident_name=display_name or name,
+                classifier_label=label,
+                address_text=card.data.get("address_text") or "",
+                recipients=services[card.id],
+                scenario_count=count,
+            )
+            for card, name, display_name, label, count in rows
+        ],
         total=total,
         limit=limit,
         offset=offset,

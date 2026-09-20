@@ -352,6 +352,8 @@ PK — первичный ключ; `NULL` — допустимое отсутс
 | `classifier_entry_id` | `UUID` | нет | — | `—` |
 | `caller_message` | `TEXT` | да | — | `—` |
 | `instructions` | `TEXT` | нет | — | `''` |
+| `revision` | `INTEGER` | нет | — | `1` |
+| `updated_at` | `TIMESTAMP WITH TIME ZONE` | нет | — | `now()` |
 | `data` | `JSONB` | нет | — | `—` |
 | `id` | `UUID` | нет | да | `—` |
 | `created_at` | `TIMESTAMP WITH TIME ZONE` | нет | — | `now()` |
@@ -360,6 +362,8 @@ PK — первичный ключ; `NULL` — допустимое отсутс
 - FK `(classifier_version_id)` → `classifier_versions.id`; DELETE `RESTRICT`.
 - FK `(classifier_entry_id, classifier_version_id)` → `classifier_entries.id, classifier_entries.classifier_version_id`; DELETE `RESTRICT`.
 - INDEX `(created_by_id)`, `(classifier_version_id)`, `(classifier_entry_id)`.
+
+- CHECK `revision > 0`. Счётчик защищает от конфликтов записи; это не история редакций. Изменение через API разрешено только при отсутствии ссылок из `scenario_cards`.
 
 ## `card_template_recipients`
 

@@ -65,7 +65,16 @@ class CardCreate(CardDefinition):
     use_recommended_recipients: bool = True
 
 
+class CardUpdate(CardCreate):
+    revision: int = Field(ge=1)
+
+
 class CardRead(CardDefinition):
+    can_edit: bool
+    scenario_count: int
+    revision: int
+    updated_at: datetime
+    classifier_label: str
     classifier_entry: ClassifierEntryRead | None = None
     recipients: list[RecipientRead] = Field(default_factory=list)
     id: UUID
@@ -81,6 +90,8 @@ class CardListItem(BaseModel):
     classifier_version_id: UUID
     classifier_entry_id: UUID
     created_at: datetime
+    revision: int
+    updated_at: datetime
 
 
 class ScenarioMetadata(BaseModel):

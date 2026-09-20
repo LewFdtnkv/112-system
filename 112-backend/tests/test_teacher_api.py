@@ -496,3 +496,95 @@ async def test_catalogs_and_list_isolation(teaching, db_client):
     ):
         response = await db_client.get(f"/api/v1/{path}", headers=t.headers["teacher"])
         assert response.status_code == 200 and len(response.json()) == 1
+
+
+async def test_edit_unused_card_preserves_id_and_rejects_stale_write(teaching, db_client):
+    t = teaching
+    card = await t.post("cards", t.card_payload)
+    assert card["can_edit"] and card["revision"] == 1 and card["scenario_count"] == 0
+    payload = t.card_payload | {
+        "revision": 1,
+        "title": "Уточнённая карточка",
+        "data": {
+            "address_text": "Учебная улица, 12",
+            "description": "Уточнили адрес",
+            "features": {"victimsCount": 0},
+            "additional_fields": {"note": "Сохранить"},
+        },
+    }
+    path = f"/api/v1/cards/{card['id']}"
+    response = await db_client.put(path, headers=t.headers["teacher"], json=payload)
+    assert response.status_code == 200, response.text
+    updated = response.json()
+    assert updated["id"] == card["id"] and updated["revision"] == 2
+    assert updated["created_at"] == card["created_at"]
+    assert updated["data"]["features"]["victimsCount"] == 0
+    assert updated["data"]["additional_fields"]["note"] == "Сохранить"
+    assert updated["title"] == payload["title"]
+    assert (
+        await db_client.put(path, headers=t.headers["teacher"], json=payload)
+    ).status_code == 409
+    current = (await db_client.get(path, headers=t.headers["teacher"])).json()
+    assert current["revision"] == 2 and current["title"] == payload["title"]
+
+
+async def test_used_cards_are_read_only_even_in_draft_scenario(teaching, db_client):
+    t = teaching
+    card = await t.post("cards", t.card_payload)
+    scenario = await t.post(
+        "scenarios",
+        {
+            "title": "Черновик",
+            "role": "operator_112",
+            "status": "draft",
+            "card_ids": [card["id"], card["id"]],
+        },
+    )
+    path = f"/api/v1/cards/{card['id']}"
+    current = (await db_client.get(path, headers=t.headers["teacher"])).json()
+    assert not current["can_edit"] and current["scenario_count"] == 1
+    response = await db_client.put(
+        path,
+        headers=t.headers["teacher"],
+        json=t.card_payload | {"revision": 1, "title": "Нельзя изменить"},
+    )
+    assert response.status_code == 409
+    frozen = (
+        await db_client.get(f"/api/v1/scenarios/{scenario['id']}", headers=t.headers["teacher"])
+    ).json()
+    assert frozen["cards"] == scenario["cards"]
+    assert (await db_client.get(path, headers=t.headers["teacher"])).json()["revision"] == 1
+
+
+async def test_card_edit_enforces_owner_roles_and_classifier_validation(teaching, db_client):
+    t = teaching
+    card = await t.post("cards", t.card_payload)
+    path = f"/api/v1/cards/{card['id']}"
+    payload = t.card_payload | {"revision": 1}
+    for actor, expected in [("student", 403), ("admin", 403), ("other", 404)]:
+        assert (
+            await db_client.put(path, headers=t.headers[actor], json=payload)
+        ).status_code == expected
+    invalid = payload | {"recipient_service_ids": []}
+    assert (
+        await db_client.put(path, headers=t.headers["teacher"], json=invalid)
+    ).status_code == 422
+    assert (await db_client.get(path, headers=t.headers["teacher"])).json()["revision"] == 1
+
+
+async def test_card_library_returns_compact_metadata_and_usage(teaching, db_client):
+    t = teaching
+    card = await t.post("cards", t.card_payload)
+    await t.post(
+        "scenarios",
+        {"title": "Сценарий", "role": "operator_112", "card_ids": [card["id"], card["id"]]},
+    )
+    page = (await db_client.get("/api/v1/views/cards", headers=t.headers["teacher"])).json()
+    item = next(row for row in page["items"] if row["id"] == card["id"])
+    assert item["scenario_count"] == 1
+    assert item["address_text"] == t.card_payload["data"]["address_text"]
+    assert item["incident_name"] == t.entry.name
+    assert item["classifier_label"] == t.classifier.label
+    assert item["recipients"][0]["name"] == t.service.name
+    assert item["revision"] == 1 and item["updated_at"]
+    assert "data" not in item and "caller_message" not in item

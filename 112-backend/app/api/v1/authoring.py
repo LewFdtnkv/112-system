@@ -19,6 +19,7 @@ from app.schemas.authoring import (
     CardCreate,
     CardListItem,
     CardRead,
+    CardUpdate,
     LessonRead,
     LessonStart,
     ScenarioCreate,
@@ -32,6 +33,7 @@ from app.services.authoring import (
     owned_card,
     owned_scenario,
     scenario_read,
+    update_card,
 )
 from app.services.lessons import lesson_read, lesson_reads, owned_lesson, start_lesson
 
@@ -65,6 +67,11 @@ async def list_cards(
 @router.get("/cards/{card_id}", response_model=CardRead)
 async def get_card(card_id: UUID, session: SessionDep, teacher: TeacherDep):
     return await card_read(session, await owned_card(session, card_id, teacher.id))
+
+
+@router.put("/cards/{card_id}", response_model=CardRead)
+async def put_card(card_id: UUID, payload: CardUpdate, session: SessionDep, teacher: TeacherDep):
+    return await update_card(session, teacher.id, card_id, payload)
 
 
 @router.post("/scenarios", response_model=ScenarioRead, status_code=201)

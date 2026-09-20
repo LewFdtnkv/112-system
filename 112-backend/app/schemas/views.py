@@ -6,12 +6,23 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
+from app.schemas.authoring import CardListItem
+from app.schemas.student import RecipientRead
+
 
 class Page[T](BaseModel):
     items: list[T]
     total: int
     limit: int
     offset: int
+
+
+class CardLibraryItem(CardListItem):
+    incident_name: str
+    classifier_label: str
+    address_text: str
+    recipients: list[RecipientRead]
+    scenario_count: int
 
 
 class UserItem(BaseModel):

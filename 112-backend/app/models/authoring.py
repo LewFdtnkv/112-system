@@ -1,16 +1,19 @@
 """Teacher-authored card library and ordered, immutable scenario composition."""
 
+from datetime import datetime
 from typing import Any
 from uuid import UUID
 
 from sqlalchemy import (
     CheckConstraint,
+    DateTime,
     ForeignKey,
     ForeignKeyConstraint,
     Integer,
     String,
     Text,
     UniqueConstraint,
+    func,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
@@ -22,6 +25,7 @@ from app.models.common import CreatedAt, UUIDPrimaryKey
 class CardTemplate(UUIDPrimaryKey, CreatedAt, Base):
     __tablename__ = "card_templates"
     __table_args__ = (
+        CheckConstraint("revision > 0", name="positive_revision"),
         ForeignKeyConstraint(
             ["classifier_entry_id", "classifier_version_id"],
             ["classifier_entries.id", "classifier_entries.classifier_version_id"],
@@ -40,6 +44,8 @@ class CardTemplate(UUIDPrimaryKey, CreatedAt, Base):
     caller_message: Mapped[str | None] = mapped_column(Text)
     instructions: Mapped[str] = mapped_column(Text, default="", server_default="")
     data: Mapped[dict[str, Any]] = mapped_column(JSONB)
+    revision: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 class CardTemplateRecipient(Base):
