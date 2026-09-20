@@ -1,3 +1,4 @@
+import { DDSWorkspace } from "./DDSWorkspace";
 import { Alert, Button } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -40,6 +41,7 @@ export const TrainingWorkspacePage = () => {
 function Workspace({ lesson }: { lesson: StudentLesson }) {
   const client = useQueryClient();
   const [attempt, setAttempt] = useState<Attempt | null>(null);
+  const isDDS = lesson.assignments.some((a) => a.role === "dds");
   const next = lesson.assignments.find((a) => a.available);
   const refresh = () => {
     void client.invalidateQueries({ queryKey: ["student-lesson", lesson.id] });
@@ -69,7 +71,7 @@ function Workspace({ lesson }: { lesson: StudentLesson }) {
       <div className="operator-training-bar">
         <strong>{lesson.title}</strong>
         <span>
-          Оператор 112 · Карточек сдано:{" "}
+          {isDDS ? "Диспетчер ДДС" : "Оператор 112"} · Карточек сдано:{" "}
           {lesson.assignments.filter((a) => a.status === "completed").length} /{" "}
           {lesson.assignments.length}
         </span>
@@ -81,14 +83,17 @@ function Workspace({ lesson }: { lesson: StudentLesson }) {
             }
           >
             {next.attempt_id
-              ? "Продолжить заполнение"
+              ? isDDS
+                ? "Продолжить обработку"
+                : "Продолжить заполнение"
               : "Начать следующую карточку"}
           </Button>
         )}
       </div>
       {lesson.assignments.some((a) => a.role === "dds") && (
         <Alert severity="info">
-          Выполнение упражнения ДДС и SIP-звонки пока недоступны.
+          Работа своей службы не меняет статусы других служб. Звонки пока не
+          подключены.
         </Alert>
       )}
       {lesson.status === "cancelled" && (
@@ -121,7 +126,9 @@ function Workspace({ lesson }: { lesson: StudentLesson }) {
           <div className="arm-journal-actions">
             <ArmIconButton
               icon="plus"
-              label="Создать новую карточку"
+              label={
+                isDDS ? "Получить следующую карточку" : "Создать новую карточку"
+              }
               disabled={!next || !!next.attempt_id || open.isPending}
               onClick={() => {
                 if (next)
@@ -133,13 +140,22 @@ function Workspace({ lesson }: { lesson: StudentLesson }) {
           </div>
         }
       />
-      {attempt && (
-        <AttemptEditor
+      {attempt?.dds ? (
+        <DDSWorkspace
           key={attempt.id}
           initial={attempt}
           onClose={() => setAttempt(null)}
           onSaved={refresh}
         />
+      ) : (
+        attempt && (
+          <AttemptEditor
+            key={attempt.id}
+            initial={attempt}
+            onClose={() => setAttempt(null)}
+            onSaved={refresh}
+          />
+        )
       )}
     </div>
   );
@@ -157,6 +173,10 @@ function AttemptEditor({
   const [selected, setSelected] = useState(initial.classifier_entry);
   const [search, setSearch] = useState("");
   const debounced = useDebounced(search);
+  const [answers, setAnswers] = useState<Record<string, boolean>>(
+    (initial.card.data.features?.ekp as Record<string, boolean>) ?? {},
+  );
+  const debouncedAnswers = useDebounced(answers);
   const [now, setNow] = useState(() => Date.now());
   const completed = attempt.status === "completed";
   const audit = useAttemptAudit(
@@ -184,9 +204,16 @@ function AttemptEditor({
     enabled: !completed,
   });
   const recipients = useQuery({
-    queryKey: ["recipients", attempt.id, selected?.id],
+    queryKey: ["recipients", attempt.id, selected?.id, debouncedAnswers],
     queryFn: ({ signal }) =>
-      trainingApi.recipients(attempt.id, selected!.id, signal),
+      selected?.conditions?.format === "boolean-features-v1"
+        ? trainingApi.previewRecipients(
+            attempt.id,
+            selected.id,
+            debouncedAnswers,
+            signal,
+          )
+        : trainingApi.recipients(attempt.id, selected!.id, signal),
     enabled: !!selected && !completed,
   });
   const save = async (fields: IncidentCardFields) => {
@@ -243,7 +270,18 @@ function AttemptEditor({
         )}
         normSeconds={attempt.norm_seconds}
         remote={{
-          onFieldsChange: audit.observe,
+          features:
+            (selected?.conditions?.features as
+              { key: string; label: string }[] | undefined) ?? [],
+          onFieldsChange: (fields) => {
+            audit.observe(fields);
+            setAnswers((previous) =>
+              JSON.stringify(previous) ===
+              JSON.stringify(fields.ekpAnswers ?? {})
+                ? previous
+                : (fields.ekpAnswers ?? {}),
+            );
+          },
           categories: (entries.data ?? []).map((e) => ({
             id: e.id,
             name: `${e.code} — ${e.name}`,

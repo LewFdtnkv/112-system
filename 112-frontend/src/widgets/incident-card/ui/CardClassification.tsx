@@ -106,12 +106,19 @@ export function CardClassification({
             {fields.categoryId === "fire" ? "Происшествие 101" : categoryName}
           </h3>
           <p>
-            {[
-              fields.details?.classificationDescription,
-              ...Object.values(answers).flat(),
-            ]
-              .filter(Boolean)
-              .join(". ") || "Уточняющие признаки не указаны."}
+            {editor.remote?.features?.length
+              ? editor.remote.features
+                  .map(
+                    (f) =>
+                      `${f.label}: ${fields.ekpAnswers?.[f.key] === true ? "Да" : fields.ekpAnswers?.[f.key] === false ? "Нет" : "Не указано"}`,
+                  )
+                  .join(". ")
+              : [
+                  fields.details?.classificationDescription,
+                  ...Object.values(answers).flat(),
+                ]
+                  .filter(Boolean)
+                  .join(". ") || "Уточняющие признаки не указаны."}
           </p>
           <p>
             Класс.: <strong>{categoryName}</strong>
@@ -217,6 +224,31 @@ export function CardClassification({
                       />
                     </div>
                   )}
+                  {editor.remote?.features?.map((feature) => (
+                    <div className="arm-question" key={feature.key}>
+                      <span>{feature.label}</span>
+                      <div>
+                        {([true, false] as const).map((value) => (
+                          <button
+                            key={String(value)}
+                            disabled={disabled}
+                            aria-label={`${feature.label}: ${value ? "Да" : "Нет"}`}
+                            aria-pressed={
+                              fields.ekpAnswers?.[feature.key] === value
+                            }
+                            onClick={() =>
+                              editor.setField("ekpAnswers", {
+                                ...fields.ekpAnswers,
+                                [feature.key]: value,
+                              })
+                            }
+                          >
+                            {value ? "Да" : "Нет"}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                   {editor.tagGroups.map((group) => (
                     <Fragment key={group.label}>
                       <div className="arm-question">

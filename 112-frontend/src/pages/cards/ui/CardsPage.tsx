@@ -14,9 +14,14 @@ import {
   TableHead,
   TableRow,
   TextField,
+  MenuItem,
 } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { trainingApi, CardDataFields } from "@/entities/training";
+import {
+  trainingApi,
+  CardDataFields,
+  type FeatureDefinition,
+} from "@/entities/training";
 import { emptyIncidentAddress, formatAddress } from "@/entities/incident-card";
 import { TemplateAddress } from "./TemplateAddress";
 import { getApiError } from "@/shared/api";
@@ -150,6 +155,8 @@ function CardCreate({ onClose }: { onClose: () => void }) {
   const client = useQueryClient();
   const [version, setVersion] = useState<SelectOption | null>(null);
   const [entry, setEntry] = useState<SelectOption | null>(null);
+  const [features, setFeatures] = useState<FeatureDefinition[]>([]);
+  const [answers, setAnswers] = useState<Record<string, boolean>>({});
   const [optional, setOptional] = useState<string[]>([]);
   const [form, setForm] = useState({
     title: "",
@@ -168,7 +175,12 @@ function CardCreate({ onClose }: { onClose: () => void }) {
   const recipients = (routes.data ?? [])
     .filter(
       (r) =>
-        !Object.keys(r.conditions).length || optional.includes(r.service_id),
+        !Object.keys(r.conditions).length ||
+        (features.length
+          ? Object.entries(
+              (r.conditions.when ?? {}) as Record<string, boolean>,
+            ).every(([key, v]) => answers[key] === v)
+          : optional.includes(r.service_id)),
     )
     .map((r) => r.service_id);
   const save = useMutation({
@@ -185,7 +197,10 @@ function CardCreate({ onClose }: { onClose: () => void }) {
           address_details: Object.fromEntries(
             Object.entries(address).filter(([, value]) => value?.trim()),
           ),
-          features: victims === "" ? {} : { victimsCount: Number(victims) },
+          features: {
+            ...(victims === "" ? {} : { victimsCount: Number(victims) }),
+            ekp: answers,
+          },
           description: form.description,
           caller_name: form.caller_name,
           caller_phone: form.caller_phone,
@@ -267,6 +282,8 @@ function CardCreate({ onClose }: { onClose: () => void }) {
         onChange={(v) => {
           setVersion(v);
           setEntry(null);
+          setFeatures([]);
+          setAnswers({});
           setOptional([]);
         }}
         load={async (q, signal) =>
@@ -278,20 +295,39 @@ function CardCreate({ onClose }: { onClose: () => void }) {
       />
       <ServerSelect
         label="Тип происшествия (ЕКП)"
-        queryKey={["entry-options", version?.id]}
+        queryKey={["entry-options-with-features", version?.id]}
         disabled={!version}
         value={entry}
         onChange={(v) => {
           setEntry(v);
+          setFeatures((v?.metadata as FeatureDefinition[] | undefined) ?? []);
+          setAnswers({});
           setOptional([]);
         }}
-        load={async (q, signal) =>
-          (await trainingApi.entries(version!.id, { q }, signal)).map((c) => ({
+        load={async (q, signal) => {
+          const rows = await trainingApi.entries(version!.id, { q }, signal);
+          return rows.map((c) => ({
             id: c.id,
             label: `${c.code} — ${c.name}`,
-          }))
-        }
+            metadata: c.conditions.features ?? [],
+          }));
+        }}
       />
+      {features.map((f) => (
+        <TextField
+          key={f.key}
+          select
+          required
+          label={`Признак: ${f.label}`}
+          value={answers[f.key] === undefined ? "" : String(answers[f.key])}
+          onChange={(e) =>
+            setAnswers({ ...answers, [f.key]: e.target.value === "true" })
+          }
+        >
+          <MenuItem value="true">Да</MenuItem>
+          <MenuItem value="false">Нет</MenuItem>
+        </TextField>
+      ))}
       {entry && (
         <QueryState
           pending={routes.isPending}
@@ -308,7 +344,9 @@ function CardCreate({ onClose }: { onClose: () => void }) {
               control={
                 <Checkbox
                   checked={recipients.includes(r.service_id)}
-                  disabled={!Object.keys(r.conditions).length}
+                  disabled={
+                    features.length > 0 || !Object.keys(r.conditions).length
+                  }
                   onChange={(_, checked) =>
                     setOptional(
                       checked
@@ -322,11 +360,12 @@ function CardCreate({ onClose }: { onClose: () => void }) {
           ))}
         </QueryState>
       )}
-      {routes.data?.some((r) => Object.keys(r.conditions).length > 0) && (
-        <Alert severity="warning">
-          Выполнение учеником условных маршрутов пока недоступно.
-        </Alert>
-      )}
+      {!features.length &&
+        routes.data?.some((r) => Object.keys(r.conditions).length > 0) && (
+          <Alert severity="warning">
+            Выполнение учеником условных маршрутов пока недоступно.
+          </Alert>
+        )}
       {save.error && (
         <Alert severity="error">{getApiError(save.error).message}</Alert>
       )}

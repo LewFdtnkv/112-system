@@ -164,7 +164,7 @@ it("submits only after saving and uses the returned revision", async () => {
     await within(card).findByText("Карточка передана на учебную проверку."),
   ).toBeVisible();
 });
-it("does not offer DDS execution or create prototype cards", async () => {
+it("does not start an unavailable legacy DDS assignment", async () => {
   vi.mocked(trainingApi.studentLesson).mockResolvedValue({
     ...lesson,
     assignments: [
@@ -177,9 +177,11 @@ it("does not offer DDS execution or create prototype cards", async () => {
     ],
   });
   open();
-  expect(await screen.findByRole("alert")).toHaveTextContent("ДДС и SIP");
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "Звонки пока не подключены",
+  );
   expect(
-    screen.getByRole("button", { name: "Создать новую карточку" }),
+    screen.getByRole("button", { name: "Получить следующую карточку" }),
   ).toBeDisabled();
   expect(
     screen.queryByRole("button", { name: "Начать следующую карточку" }),

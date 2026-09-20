@@ -1,3 +1,4 @@
+import type { DDSPolicy, DDSContext } from "./catalogTypes";
 export interface Page<T> {
   items: T[];
   total: number;
@@ -102,6 +103,7 @@ export type CardListItem = Pick<
 >;
 export type CardTemplateInput = Omit<CardTemplate, "id">;
 export interface ScenarioInput {
+  dds_policy?: DDSPolicy | null;
   assessment_policy?: AssessmentPolicy;
   title: string;
   category: string;
@@ -190,6 +192,8 @@ export interface StudentLesson {
   assignments: Assignment[];
 }
 export interface Attempt {
+  role?: "operator_112" | "dds";
+  dds?: DDSContext | null;
   id: string;
   assignment_id: string;
   status: string;

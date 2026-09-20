@@ -12,12 +12,18 @@ import {
   Typography,
 } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  CatalogFiles,
+  CatalogRules,
+  ProfilesPanel,
+} from "@/features/catalog-management";
 import { trainingApi } from "@/entities/training";
 import { getApiError } from "@/shared/api";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { QueryState, PageControls } from "@/shared/ui/QueryState";
 export const CatalogsPage = () => {
   const client = useQueryClient();
+  const [selected, setSelected] = useState<string>();
   const [servicePage, setServicePage] = useState(0);
   const [page, setPage] = useState(0);
   const [code, setCode] = useState("");
@@ -132,11 +138,12 @@ export const CatalogsPage = () => {
       <Typography variant="h6" component="h2">
         Версии ЕКП
       </Typography>
-      <Alert severity="info">
-        Загрузите подготовленный JSON с безусловными маршрутами, проверьте его и
-        опубликуйте версию. Импорт исходных XLSX и условных правил пока не
-        подключён.
-      </Alert>
+      <CatalogFiles
+        onImported={() => {
+          refresh();
+          void client.invalidateQueries({ queryKey: ["admin-services"] });
+        }}
+      />
       <details>
         <summary>Формат JSON</summary>
         <pre>
@@ -209,7 +216,14 @@ export const CatalogsPage = () => {
               <TableBody>
                 {classifiers.data.items.map((c) => (
                   <TableRow key={c.id}>
-                    <TableCell>{c.label}</TableCell>
+                    <TableCell>
+                      <Button
+                        className="table-block-link"
+                        onClick={() => setSelected(c.id)}
+                      >
+                        {c.label}
+                      </Button>
+                    </TableCell>
                     <TableCell>
                       {c.status === "published" ? "Опубликована" : "Черновик"}
                     </TableCell>
@@ -233,6 +247,14 @@ export const CatalogsPage = () => {
           </>
         )}
       </QueryState>
+      <ProfilesPanel />
+      {selected && (
+        <CatalogRules
+          versionId={selected}
+          onClose={() => setSelected(undefined)}
+          onChanged={refresh}
+        />
+      )}
     </Stack>
   );
 };

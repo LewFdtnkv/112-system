@@ -35,6 +35,8 @@ export function attemptCard(attempt: Attempt): IncidentCard {
     categoryName: attempt.classifier_entry?.name,
     fields: {
       ...emptyCardFields,
+      ekpAnswers:
+        (data.features?.ekp as Record<string, boolean> | undefined) ?? {},
       categoryId: attempt.card.classifier_entry_id ?? "",
       address: {
         ...emptyIncidentAddress,
@@ -77,7 +79,11 @@ export function cardData(
     address_text: formatAddress(fields.address),
     address_details: { ...previous.address_details, ...fields.address },
     description: fields.description,
-    features: { ...previous.features, victimsCount: fields.victimsCount },
+    features: {
+      ...previous.features,
+      victimsCount: fields.victimsCount,
+      ekp: fields.ekpAnswers ?? {},
+    },
     additional_fields: {
       ...previous.additional_fields,
       details: fields.details ?? {},

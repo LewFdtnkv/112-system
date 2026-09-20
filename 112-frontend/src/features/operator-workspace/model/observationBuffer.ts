@@ -1,7 +1,7 @@
 import type { ClientObservation } from "@/entities/training";
 
 const fieldPattern =
-  /^(categoryId|callerName|description|operatorAction|victimsCount|address\.(country|region|locality|object|district|area|street|house|building|structure|apartment|entrance|floor|doorCode|description)|phones\.(callerId|provided|onSite)|details\.(buildingFloors|classificationDescription|callerStatus|callerGender|callerAge|foreignLanguage|refusedAmbulance|blocked))$/;
+  /^(ekpAnswers\.[a-z][a-z0-9_]{0,49}|categoryId|callerName|description|operatorAction|victimsCount|address\.(country|region|locality|object|district|area|street|house|building|structure|apartment|entrance|floor|doorCode|description)|phones\.(callerId|provided|onSite)|details\.(buildingFloors|classificationDescription|callerStatus|callerGender|callerAge|foreignLanguage|refusedAmbulance|blocked))$/;
 function flatten(
   value: unknown,
   prefix = "",

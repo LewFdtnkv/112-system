@@ -12,10 +12,19 @@ import {
   Typography,
 } from "@mui/material";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { trainingApi, fieldLabels, type AuditEvent } from "@/entities/training";
+import {
+  trainingApi,
+  fieldLabels,
+  ddsStatusLabels,
+  type AuditEvent,
+} from "@/entities/training";
 import { QueryState } from "@/shared/ui/QueryState";
 
 const kinds: Record<string, string> = {
+  "dds.card_received": "Получение карточки ДДС",
+  "dds.information": "Сообщение по сценарию",
+  "dds.status_changed": "Изменение статуса ДДС",
+  "dds.submitted": "Сдача упражнения ДДС",
   "attempt.started": "Начало карточки",
   "card.draft_saved": "Сохранение черновика",
   "card.notified": "Оповещение служб",
@@ -67,6 +76,16 @@ function EventDetails({ event }: { event: AuditEvent }) {
           </p>
         ))}
       </details>
+    );
+  if (event.kind === "dds.information")
+    return <>{String(event.payload.message)}</>;
+  if (event.kind === "dds.status_changed")
+    return (
+      <>
+        {ddsStatusLabels[String(event.payload.status)]} ·{" "}
+        {String(event.payload.comment)} · Наряд:{" "}
+        {String(event.payload.crew_number ?? "—")}
+      </>
     );
   if (event.kind === "ui.field_changed")
     return (

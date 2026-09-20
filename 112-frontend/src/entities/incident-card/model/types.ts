@@ -225,6 +225,7 @@ export interface IncidentCardDetails {
 }
 
 export interface IncidentCardFields {
+  ekpAnswers?: Record<string,boolean>;
   details?: IncidentCardDetails;
   categoryId: string;
   address: IncidentAddress;

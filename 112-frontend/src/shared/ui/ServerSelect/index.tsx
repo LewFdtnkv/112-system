@@ -6,6 +6,7 @@ import { getApiError } from "@/shared/api";
 export interface SelectOption {
   id: string;
   label: string;
+  metadata?: unknown;
 }
 export function ServerSelect({
   label,
@@ -34,7 +35,9 @@ export function ServerSelect({
       disabled={disabled}
       options={query.data ?? []}
       value={value}
-      getOptionLabel={(option) => option.label}
+      getOptionLabel={(option) =>
+        query.data?.find((item) => item.id === option.id)?.label ?? option.label
+      }
       isOptionEqualToValue={(a, b) => a.id === b.id}
       filterOptions={(options) => options}
       loading={query.isFetching}

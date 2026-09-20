@@ -1,3 +1,4 @@
+import { DDSPolicyFields } from "./DDSPolicyFields";
 import { useState } from "react";
 import {
   Alert,
@@ -71,6 +72,9 @@ function Editor({ initial }: { initial?: ScenarioDetail }) {
     role: initial?.role ?? "operator_112",
     card_ids: [],
     service_profile_id: initial?.service_profile_id ?? null,
+    dds_policy: initial?.dds_policy ?? {
+      steps: [{ status: "accepted", message: "", crew_number: null }],
+    },
   }));
   const [cards, setCards] = useState<SelectOption[]>(
     () =>
@@ -91,6 +95,7 @@ function Editor({ initial }: { initial?: ScenarioDetail }) {
         {
           ...form,
           card_ids: cards.map((c) => c.id),
+          dds_policy: form.role === "dds" ? form.dds_policy : null,
           service_profile_id:
             form.role === "dds" ? (profile?.id ?? null) : null,
         },
@@ -184,9 +189,13 @@ function Editor({ initial }: { initial?: ScenarioDetail }) {
       {form.role === "dds" && (
         <>
           <Alert severity="warning">
-            Сценарий можно подготовить. Выполнение ДДС и SIP-звонки пока
-            недоступны.
+            Выберите опубликованный профиль и задайте сообщения и ожидаемые
+            действия ДДС. Звонки пока не подключены.
           </Alert>
+          <DDSPolicyFields
+            value={form.dds_policy!}
+            onChange={(dds_policy) => setForm({ ...form, dds_policy })}
+          />
           <ServerSelect
             label="Профиль службы"
             queryKey={["profiles"]}
@@ -272,12 +281,21 @@ function Editor({ initial }: { initial?: ScenarioDetail }) {
         <MenuItem value="draft">Черновик</MenuItem>
         <MenuItem value="published">Опубликован</MenuItem>
       </TextField>
-      <AssessmentPolicyFields
-        value={form.assessment_policy!}
-        onChange={(assessment_policy) =>
-          setForm({ ...form, assessment_policy })
-        }
-      />
+      {form.role === "dds" ? (
+        <Alert severity="info">
+          Автооценка ДДС: 80% — последовательность статусов по сообщениям, 20% —
+          номера нарядов. Если номера не заданы, учитываются только статусы.
+          Смысл комментариев доступен для проверки преподавателю; подключение ИИ
+          предусмотрено позже.
+        </Alert>
+      ) : (
+        <AssessmentPolicyFields
+          value={form.assessment_policy!}
+          onChange={(assessment_policy) =>
+            setForm({ ...form, assessment_policy })
+          }
+        />
+      )}
       {save.error && (
         <Alert severity="error">{getApiError(save.error).message}</Alert>
       )}

@@ -29,6 +29,12 @@ import type {
   AuditPage,
   ClientObservation,
 } from "../model/types";
+import type {
+  CatalogRule,
+  CatalogVersion,
+  ProfileInput,
+  ServiceProfile,
+} from "../model/catalogTypes";
 export type Params = Record<string, string | number | boolean>;
 const id = encodeURIComponent;
 const get = <T>(path: string, params: Params = {}, signal?: AbortSignal) =>
@@ -36,6 +42,82 @@ const get = <T>(path: string, params: Params = {}, signal?: AbortSignal) =>
 const post = <T>(path: string, json: unknown) =>
   backendApi.post(path, { json }).json<T>();
 export const trainingApi = {
+  previewRecipients: (
+    attemptId: string,
+    entryId: string,
+    answers: Record<string, boolean>,
+    signal?: AbortSignal,
+  ) =>
+    backendApi
+      .post(`student/attempts/${id(attemptId)}/recipients-preview`, {
+        json: { classifier_entry_id: entryId, answers },
+        signal,
+      })
+      .json<Recipient[]>(),
+  importCatalog: (text: string) =>
+    backendApi
+      .post("admin/classifiers/import", {
+        body: text,
+        headers: { "Content-Type": "application/json" },
+      })
+      .json<CatalogVersion>(),
+  exportCatalog: (versionId: string) =>
+    backendApi.get(`admin/classifiers/${id(versionId)}/export`).blob(),
+  cloneCatalog: (versionId: string, label: string) =>
+    post<CatalogVersion>(`admin/classifiers/${id(versionId)}/versions`, {
+      label,
+    }),
+  catalogRules: (versionId: string, params: Params, signal?: AbortSignal) =>
+    get<
+      Page<{ id: string; code: string; name: string; section: string }> & {
+        version: CatalogVersion;
+      }
+    >(`admin/classifiers/${id(versionId)}/entries`, params, signal),
+  catalogRule: (versionId: string, entryId: string, signal?: AbortSignal) =>
+    get<{ revision: number; entry: CatalogRule }>(
+      `admin/classifiers/${id(versionId)}/entries/${id(entryId)}`,
+      {},
+      signal,
+    ),
+  updateCatalogRule: (
+    versionId: string,
+    entryId: string,
+    revision: number,
+    entry: CatalogRule,
+  ) =>
+    backendApi
+      .put(`admin/classifiers/${id(versionId)}/entries/${id(entryId)}`, {
+        json: { expected_revision: revision, entry },
+      })
+      .json<CatalogVersion>(),
+  adminProfiles: (params: Params, signal?: AbortSignal) =>
+    get<Page<ServiceProfile>>("admin/service-profiles", params, signal),
+  adminProfile: (profileId: string, signal?: AbortSignal) =>
+    get<ServiceProfile>(`admin/service-profiles/${id(profileId)}`, {}, signal),
+  createProfile: (data: ProfileInput) =>
+    post<ServiceProfile>("admin/service-profiles", data),
+  updateProfile: (profileId: string, data: ProfileInput, revision: number) =>
+    backendApi
+      .put(`admin/service-profiles/${id(profileId)}`, {
+        json: { ...data, expected_revision: revision },
+      })
+      .json<ServiceProfile>(),
+  publishProfile: (profileId: string) =>
+    post<ServiceProfile>(`admin/service-profiles/${id(profileId)}/publish`, {}),
+  ddsAction: (
+    attemptId: string,
+    data: {
+      request_id: string;
+      revision: number;
+      information_event_id: string;
+      status: string;
+      crew_number: string | null;
+      comment: string;
+    },
+  ) => post<Attempt>(`student/attempts/${id(attemptId)}/dds/actions`, data),
+  ddsSubmit: (attemptId: string, revision: number) =>
+    post<Attempt>(`student/attempts/${id(attemptId)}/dds/submit`, { revision }),
+
   automaticGrade: (lessonId: string, studentId: string) =>
     post<Grade | null>(
       `lessons/${id(lessonId)}/students/${id(studentId)}/automatic-evaluation`,

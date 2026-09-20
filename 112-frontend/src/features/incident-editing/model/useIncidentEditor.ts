@@ -14,6 +14,7 @@ import {
 } from "@/entities/incident-card";
 import { getApiError } from "@/shared/api";
 export interface RemoteEditor {
+  features?: { key: string; label: string }[];
   categories: { id: string; name: string }[];
   categoryName: string;
   services: { id: string; name: string }[];
@@ -122,6 +123,7 @@ export function useIncidentEditor({
     setFields((current) => ({
       ...current,
       categoryId,
+      ekpAnswers: {},
       services: remote ? [] : (category?.defaultServices ?? []),
       details: { ...current.details, clarifications: {} },
     }));
