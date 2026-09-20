@@ -130,6 +130,7 @@ async def lesson_page(
     lesson_id=None,
     q="",
     status="all",
+    role="all",
     limit=20,
     offset=0,
 ):
@@ -145,6 +146,8 @@ async def lesson_page(
         )
     if status != "all":
         query = query.where(rows.c.work_status == status)
+    if role != "all":
+        query = query.where(rows.c.role == role)
     filtered = query.subquery()
     stats = (
         await session.execute(

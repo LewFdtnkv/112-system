@@ -261,6 +261,7 @@ async def teacher_lessons(
     teacher: TeacherDep,
     q: Search = "",
     status: Literal["all", "assigned", "in_progress", "submitted"] = "all",
+    role: Literal["all", "operator_112", "dds"] = "all",
     lesson_id: UUID | None = None,
     student_id: UUID | None = None,
     limit: Limit = 20,
@@ -275,6 +276,7 @@ async def teacher_lessons(
         lesson_id=lesson_id,
         q=q,
         status=status,
+        role=role,
         limit=limit,
         offset=offset,
     )
@@ -286,11 +288,18 @@ async def student_lessons(
     student: StudentDep,
     q: Search = "",
     status: Literal["all", "assigned", "in_progress", "submitted"] = "all",
+    role: Literal["all", "operator_112", "dds"] = "all",
     limit: Limit = 20,
     offset: Offset = 0,
 ):
     return await lesson_page(
-        session, student_id=student.id, q=q, status=status, limit=limit, offset=offset
+        session,
+        student_id=student.id,
+        q=q,
+        status=status,
+        role=role,
+        limit=limit,
+        offset=offset,
     )
 
 

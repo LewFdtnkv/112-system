@@ -84,6 +84,83 @@ async def test_journal_draft_classifier_preview_and_latest_grades(exercise):
     assert stats["scenarios"]["total"] == 1
 
 
+async def test_lesson_role_filter_applies_before_counts_and_pagination(exercise):
+    e = exercise
+    dds = await e.t.prepare("dds")
+    for _ in range(2):
+        await e.t.post(
+            "lessons/start",
+            dds.payload
+            | {"request_id": str(uuid4()), "student_id": str(e.t.accounts["student"].id)},
+        )
+    await e.start()
+    for path, actor in [("views/lessons", "teacher"), ("views/student/lessons", "student")]:
+        page = await e.request("GET", f"{path}?role=dds&limit=1", actor=actor)
+        assert page["total"] == page["assigned_count"] == 2
+        assert page["in_progress_count"] == page["submitted_count"] == 0
+        assert page["graded_count"] == 0
+        assert len(page["items"]) == 1 and page["items"][0]["role"] == "dds"
+        second = await e.request("GET", f"{path}?role=dds&limit=1&offset=1", actor=actor)
+        assert second["total"] == 2 and len(second["items"]) == 1
+        assert page["items"][0]["lesson_id"] != second["items"][0]["lesson_id"]
+        operator = await e.request(
+            "GET", f"{path}?role=operator_112&status=in_progress", actor=actor
+        )
+        assert operator["total"] == operator["in_progress_count"] == 1
+        assert operator["items"][0]["lesson_id"] == e.lesson["id"]
+        assert operator["items"][0]["completed_at"] is None
+        assert (await e.request("GET", f"{path}?role=all", actor=actor))["total"] == 3
+        for query in ["role=dds&status=in_progress", "role=dds&q=missing-lesson"]:
+            empty = await e.request("GET", f"{path}?{query}", actor=actor)
+            assert empty["total"] == 0 and empty["items"] == []
+        await e.request("GET", f"{path}?role=admin", actor=actor, status=422)
+    assert (await e.request("GET", "views/lessons?role=dds", actor="other"))["total"] == 0
+    assert (await e.request("GET", "views/student/lessons?role=dds", actor="student2"))[
+        "total"
+    ] == 0
+
+
+async def test_lesson_completion_time_is_per_student_and_stable_after_regrading(exercise):
+    e = exercise
+    # A second learner keeps the group lesson active after the first has finished.
+    group_lesson = await e.t.post("lessons/start", e.d.payload | {"request_id": str(uuid4())})
+    work = await e.request("GET", f"student/lessons/{group_lesson['id']}")
+    last = None
+    for assignment in work["assignments"]:
+        attempt = await e.request(
+            "POST", f"student/assignments/{assignment['id']}/start", {}, status=201
+        )
+        filled = await e.fill(attempt)
+        last = await e.request(
+            "POST",
+            f"student/attempts/{attempt['id']}/submit",
+            {"revision": filled["card"]["revision"]},
+        )
+    path = f"views/lessons?lesson_id={group_lesson['id']}&role=operator_112"
+    page = await e.request("GET", path, actor="teacher")
+    by_student = {row["student_id"]: row for row in page["items"]}
+    row = by_student[str(e.t.accounts["student"].id)]
+    assert row["completed_at"] == last["ended_at"]
+    assert row["ended_at"] is None
+    assert by_student[str(e.t.accounts["student2"].id)]["completed_at"] is None
+    await e.request(
+        "POST",
+        f"lessons/{group_lesson['id']}/students/{e.t.accounts['student'].id}/evaluations",
+        {
+            "request_id": str(uuid4()),
+            "expected_revision": row["evaluation_revision"],
+            "score": 90,
+            "max_score": 100,
+            "comment": "Пересмотр",
+        },
+        actor="teacher",
+        status=201,
+    )
+    own = await e.request("GET", "views/student/lessons?status=submitted&role=operator_112")
+    assert own["total"] == 1
+    assert own["items"][0]["completed_at"] == row["completed_at"]
+
+
 async def test_versioned_scenario_edit_preserves_assigned_version(teaching):
     t = teaching
     d = await t.prepare()
