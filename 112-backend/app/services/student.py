@@ -102,7 +102,10 @@ async def lesson_work(session: AsyncSession, lesson: Lesson, student_id: UUID) -
                 and not complete
                 and (attempt is None or attempt.status == AttemptStatus.IN_PROGRESS)
                 and lesson.status == LessonStatus.ACTIVE
-                and scenario.role == TrainingRole.OPERATOR_112,
+                and (
+                    scenario.role == TrainingRole.OPERATOR_112
+                    or bool(scenario.completion_rules.get("dds"))
+                ),
                 attempt_id=attempt.id if attempt else None,
                 card=JournalCardRead(
                     id=card.id,
@@ -165,7 +168,12 @@ async def attempt_read(
         assignment, source, scenario, card, entry, responses = context
     targets = []
     recipient_error = None
-    if preview and entry and attempt.status == AttemptStatus.IN_PROGRESS:
+    if (
+        scenario.role == TrainingRole.OPERATOR_112
+        and preview
+        and entry
+        and attempt.status == AttemptStatus.IN_PROGRESS
+    ):
         try:
             targets = [
                 RecipientRead(service_id=item.id, name=item.name)
@@ -173,7 +181,13 @@ async def attempt_read(
             ]
         except HTTPException as exc:
             recipient_error = str(exc.detail)
+    from app.services.dds import context as dds_context
+
     return StudentAttemptRead(
+        role=scenario.role,
+        dds=await dds_context(session, attempt, responses)
+        if scenario.role == TrainingRole.DDS
+        else None,
         classifier_entry=ClassifierEntryRead.model_validate(entry) if entry else None,
         recipient_services=targets,
         recipient_error=recipient_error,
@@ -264,10 +278,8 @@ async def start_attempt(session: AsyncSession, assignment_id: UUID, student_id: 
     if lesson.status != LessonStatus.ACTIVE:
         raise HTTPException(status_code=409, detail="Lesson is not active")
     scenario = await session.get(ScenarioVersion, assignment.scenario_version_id)
-    if scenario.role != TrainingRole.OPERATOR_112 or assignment.scenario_card_id is None:
-        raise HTTPException(
-            status_code=409, detail="Only composed operator 112 scenarios can be started"
-        )
+    if assignment.scenario_card_id is None:
+        raise HTTPException(status_code=409, detail="Only composed scenarios can be started")
     previous = await session.scalar(
         select(func.count())
         .select_from(Assignment)
@@ -303,15 +315,21 @@ async def start_attempt(session: AsyncSession, assignment_id: UUID, student_id: 
     )
     session.add(attempt)
     await session.flush()
-    session.add(
-        IncidentCard(
-            attempt_id=attempt.id,
-            origin=CardOrigin.STUDENT,
-            created_by_id=student_id,
-            classifier_version_id=scenario.classifier_version_id,
-            opened_at=now,
+    if scenario.role == TrainingRole.DDS:
+        from app.services.dds import initialize
+
+        source = await session.get(ScenarioCard, assignment.scenario_card_id)
+        await initialize(session, attempt, scenario, source, now)
+    else:
+        session.add(
+            IncidentCard(
+                attempt_id=attempt.id,
+                origin=CardOrigin.STUDENT,
+                created_by_id=student_id,
+                classifier_version_id=scenario.classifier_version_id,
+                opened_at=now,
+            )
         )
-    )
     await event(session, attempt, student_id, "attempt.started", {})
     await session.commit()
     return await attempt_read(session, attempt), True
@@ -376,15 +394,18 @@ async def recipients(
     ).all()
     if not routes or any(not service.is_active for _, service in routes):
         raise HTTPException(status_code=409, detail="Active prepared service routes are required")
-    if entry.conditions or any(route.conditions for route, _ in routes):
-        raise HTTPException(
-            status_code=409, detail="Conditional routing is not supported by this workflow yet"
-        )
-    return [service for _, service in routes]
+    from app.services.catalog_rules import applicable_routes
+
+    selected = {
+        r.service_id for r in applicable_routes(entry, [r for r, _ in routes], card.features)
+    }
+    return [service for route, service in routes if route.service_id in selected]
 
 
 async def save_card(session: AsyncSession, attempt_id: UUID, student_id: UUID, payload: DraftSave):
     attempt, lesson = await owned_attempt(session, attempt_id, student_id, lock=True)
+    if "dds_policy" in attempt.settings_snapshot:
+        raise HTTPException(409, "DDS input cards are read-only; use response actions")
     if attempt.status != AttemptStatus.IN_PROGRESS or lesson.status != LessonStatus.ACTIVE:
         raise HTTPException(status_code=409, detail="This attempt is no longer editable")
     card = await session.scalar(select(IncidentCard).where(IncidentCard.attempt_id == attempt.id))
@@ -435,8 +456,12 @@ async def submit_card(
     session: AsyncSession, attempt_id: UUID, student_id: UUID, payload: CardSubmit
 ):
     attempt, lesson = await owned_attempt(session, attempt_id, student_id, lock=True)
+    if "dds_policy" in attempt.settings_snapshot:
+        raise HTTPException(409, "DDS input cards are read-only; use response actions")
     if attempt.status == AttemptStatus.COMPLETED:
         return await attempt_read(session, attempt)
+    if "dds_policy" in attempt.settings_snapshot:
+        raise HTTPException(409, "DDS input cards are read-only; use response actions")
     if attempt.status != AttemptStatus.IN_PROGRESS or lesson.status != LessonStatus.ACTIVE:
         raise HTTPException(status_code=409, detail="This attempt cannot be submitted")
     card = await session.scalar(select(IncidentCard).where(IncidentCard.attempt_id == attempt.id))

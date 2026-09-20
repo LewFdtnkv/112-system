@@ -166,4 +166,19 @@ def check_fields(
         (expected.get("features") or {}).get("victimsCount"),
         (actual.get("features") or {}).get("victimsCount"),
     )
+    feature_labels = {f["key"]: f["label"] for f in snapshot.get("feature_definitions", [])}
+    reference_answers = (expected.get("features") or {}).get("ekp") or {}
+    actual_answers = (actual.get("features") or {}).get("ekp") or {}
+    if not isinstance(reference_answers, dict):
+        reference_answers = {}
+    if not isinstance(actual_answers, dict):
+        actual_answers = {}
+    for key, reference in reference_answers.items():
+        if type(reference) is bool:
+            add(
+                f"features.ekp.{key}",
+                f"Признак: {feature_labels.get(key, key)}",
+                reference,
+                actual_answers.get(key),
+            )
     return summarize(fields)

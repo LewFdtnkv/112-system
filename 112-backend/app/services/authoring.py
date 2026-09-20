@@ -105,12 +105,13 @@ async def create_card(session: AsyncSession, teacher_id: UUID, payload: CardCrea
     selected = set(payload.recipient_service_ids)
     allowed = {route.service_id for route in routes}
     required = {route.service_id for route in routes if not route.conditions}
-    # Conditional routes are selected by the author after checking the exposed EKP conditions.
-    # A generic rule interpreter is outside this manual-authoring API.
+    if entry.conditions.get("format") == "boolean-features-v1":
+        from app.services.catalog_rules import applicable_routes
+
+        required = {r.service_id for r in applicable_routes(entry, routes, payload.data.features)}
+        allowed = required
     if not required <= selected or not selected <= allowed:
-        raise HTTPException(
-            status_code=422, detail="Recipients must follow the selected classifier routes"
-        )
+        raise HTTPException(422, "Recipients must follow the selected classifier routes")
     recipients = list(
         await session.scalars(
             select(Service).where(
@@ -169,6 +170,7 @@ async def scenario_read(session: AsyncSession, version: ScenarioVersion) -> Scen
         status=version.status,
         classifier_version_id=version.classifier_version_id,
         service_profile_id=version.service_profile_id,
+        dds_policy=version.completion_rules.get("dds"),
         instructions=version.instructions,
         category=version.category,
         difficulty=version.difficulty or "basic",
@@ -255,6 +257,9 @@ async def create_scenario(
         role=payload.role,
         classifier_version_id=classifier_id,
         service_profile_id=payload.service_profile_id,
+        completion_rules={"dds": payload.dds_policy.model_dump(mode="json")}
+        if payload.role == TrainingRole.DDS and payload.dds_policy
+        else {},
         instructions=payload.instructions,
         category=payload.category,
         difficulty=payload.difficulty,
@@ -277,6 +282,14 @@ async def create_scenario(
             ],
         )
     )
+    feature_labels = {
+        str(e.id): e.conditions.get("features", [])
+        for e in await session.scalars(
+            select(ClassifierEntry).where(
+                ClassifierEntry.id.in_({c.classifier_entry_id for c in cards})
+            )
+        )
+    }
     for position, card_id in enumerate(payload.card_ids, start=1):
         card = by_id[card_id]
         session.add(
@@ -292,6 +305,7 @@ async def create_scenario(
                     "classifier_version_id": str(card.classifier_version_id),
                     "classifier_entry_id": str(card.classifier_entry_id),
                     "recipients": by_card[card.id],
+                    "feature_definitions": feature_labels.get(str(card.classifier_entry_id), []),
                 },
             )
         )

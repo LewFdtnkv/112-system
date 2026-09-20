@@ -126,10 +126,24 @@ async def publish_classifier(version_id: UUID, session: SessionDep, admin: Admin
         or any(not service.is_active for _, service in routes)
     ):
         raise HTTPException(status_code=409, detail="Every code requires active service routes")
-    if any(entry.conditions for entry in entries) or any(route.conditions for route, _ in routes):
-        raise HTTPException(
-            status_code=409, detail="Conditional rules require a separate reviewed importer"
-        )
+    from app.services.catalog_rules import feature_definitions
+
+    routes_by_entry = {}
+    for route, _ in routes:
+        routes_by_entry.setdefault(route.entry_id, []).append(route)
+    for entry in entries:
+        keys = {f.key for f in feature_definitions(entry)}
+        for route in routes_by_entry.get(entry.id, []):
+            if not route.conditions:
+                continue
+            if (
+                set(route.conditions) != {"when"}
+                or not isinstance(route.conditions["when"], dict)
+                or not set(route.conditions["when"]) <= keys
+                or any(type(v) is not bool for v in route.conditions["when"].values())
+            ):
+                raise HTTPException(409, "Invalid classifier route conditions")
+    version.revision += 1
     version.status = PublicationStatus.PUBLISHED
     version.approved_by_id = admin.id
     version.approved_at = datetime.now(UTC)

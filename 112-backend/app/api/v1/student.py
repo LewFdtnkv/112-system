@@ -8,6 +8,8 @@ from app.api.v1.authoring import Limit, Offset
 from app.models import Assignment, ClassifierEntry, IncidentCard, Lesson
 from app.schemas.audit import ObservationBatch
 from app.schemas.catalog import ClassifierEntryRead
+from app.schemas.catalog_document import RoutePreview
+from app.schemas.dds import DDSAction, DDSFinish
 from app.schemas.student import (
     CardSubmit,
     DraftSave,
@@ -15,6 +17,7 @@ from app.schemas.student import (
     StudentAttemptRead,
     StudentLessonRead,
 )
+from app.services import dds as dds_service
 from app.services.attempt_audit import record_observations, reject_command
 from app.services.student import (
     attempt_read,
@@ -133,3 +136,43 @@ async def observations(
     attempt_id: UUID, payload: ObservationBatch, session: SessionDep, student: StudentDep
 ):
     return await record_observations(session, attempt_id, student.id, payload)
+
+
+@router.post("/attempts/{attempt_id}/dds/actions", response_model=StudentAttemptRead)
+async def dds_action(
+    attempt_id: UUID, payload: DDSAction, session: SessionDep, student: StudentDep
+):
+    try:
+        return await dds_service.act(session, attempt_id, student.id, payload)
+    except HTTPException as exc:
+        await reject_command(session, attempt_id, student.id, "dds_action", exc)
+        raise
+
+
+@router.post("/attempts/{attempt_id}/dds/submit", response_model=StudentAttemptRead)
+async def dds_submit(
+    attempt_id: UUID, payload: DDSFinish, session: SessionDep, student: StudentDep
+):
+    try:
+        return await dds_service.finish(session, attempt_id, student.id, payload)
+    except HTTPException as exc:
+        await reject_command(session, attempt_id, student.id, "dds_submit", exc)
+        raise
+
+
+@router.post("/attempts/{attempt_id}/recipients-preview", response_model=list[RecipientRead])
+async def preview_fields(
+    attempt_id: UUID, payload: RoutePreview, session: SessionDep, student: StudentDep
+):
+    from types import SimpleNamespace
+
+    row, _ = await owned_attempt(session, attempt_id, student.id)
+    card = await session.scalar(select(IncidentCard).where(IncidentCard.attempt_id == row.id))
+    preview_card = SimpleNamespace(
+        classifier_version_id=card.classifier_version_id,
+        classifier_entry_id=payload.classifier_entry_id,
+        features={"ekp": payload.answers},
+    )
+    return [
+        RecipientRead(service_id=s.id, name=s.name) for s in await recipients(session, preview_card)
+    ]

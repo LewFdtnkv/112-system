@@ -31,6 +31,7 @@ class ClassifierVersion(UUIDPrimaryKey, CreatedAt, Base):
         ),
     )
 
+    revision: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
     label: Mapped[str] = mapped_column(String(100), unique=True)
     source_filename: Mapped[str] = mapped_column(String(255))
     source_storage_key: Mapped[str] = mapped_column(Text)

@@ -60,6 +60,7 @@ class ServiceProfile(UUIDPrimaryKey, CreatedAt, Base):
     status: Mapped[PublicationStatus] = mapped_column(
         enum_column(PublicationStatus, "profile_publication"), default=PublicationStatus.DRAFT
     )
+    revision: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
     responsibility: Mapped[str] = mapped_column(Text)
     rules: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default="{}")
     approved_by_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))

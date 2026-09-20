@@ -31,6 +31,8 @@ async def validate_ai_decision(session, output: AIAssessmentOutput, evaluation):
         raise ValueError("AI evidence must refer to authoritative events in the frozen attempt")
     for item in output.criteria:
         allowed_paths = {f"submitted_card.data.{item.code}", f"reference.data.{item.code}"}
+        if item.code == "dds.comment":
+            allowed_paths = {"dds.comment"}
         if not set(item.evidence_field_paths) <= allowed_paths:
             raise ValueError("AI cited an unrelated field")
         if item.decision != "abstain" and not (

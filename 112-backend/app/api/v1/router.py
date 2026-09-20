@@ -5,8 +5,10 @@ from app.api.v1.auth import router as auth_router
 from app.api.v1.authoring import router as authoring_router
 from app.api.v1.catalog import router as catalog_router
 from app.api.v1.catalog_admin import router as catalog_admin_router
+from app.api.v1.catalog_editor import router as catalog_editor_router
 from app.api.v1.groups import router as groups_router
 from app.api.v1.lesson_evaluation import router as lesson_evaluation_router
+from app.api.v1.service_profiles import router as service_profiles_router
 from app.api.v1.student import router as student_router
 from app.api.v1.users import router as users_router
 from app.api.v1.views import router as views_router
@@ -20,6 +22,8 @@ protected_router.include_router(users_router)
 protected_router.include_router(groups_router)
 protected_router.include_router(authoring_router)
 protected_router.include_router(catalog_router)
+protected_router.include_router(service_profiles_router)
+protected_router.include_router(catalog_editor_router)
 protected_router.include_router(catalog_admin_router)
 protected_router.include_router(student_router)
 protected_router.include_router(lesson_evaluation_router)

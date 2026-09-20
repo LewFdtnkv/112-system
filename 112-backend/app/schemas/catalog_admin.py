@@ -50,4 +50,5 @@ class ClassifierAdminRead(BaseModel):
     id: UUID
     label: str
     status: PublicationStatus
+    revision: int
     source_sha256: str

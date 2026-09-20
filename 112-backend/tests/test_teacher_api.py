@@ -122,6 +122,16 @@ async def teaching(db_session, db_client):
                 "role": role,
                 "card_ids": [second["id"], first["id"], second["id"]],
                 "service_profile_id": str(profile.id) if role == "dds" else None,
+                "dds_policy": {
+                    "steps": [
+                        {
+                            "status": "accepted",
+                            "message": "Карточка относится к нашей службе. Примите её.",
+                        }
+                    ]
+                }
+                if role == "dds"
+                else None,
             },
         )
         payload = dict(
@@ -395,7 +405,13 @@ async def test_scenarios_enforce_owner_and_role_requirements(teaching, db_client
     assert (
         await db_client.get(f"/api/v1/cards/{card['id']}", headers=t.headers["other"])
     ).status_code == 404
-    payload |= {"role": "dds", "service_profile_id": str(t.profile.id)}
+    payload |= {
+        "role": "dds",
+        "service_profile_id": str(t.profile.id),
+        "dds_policy": {
+            "steps": [{"status": "accepted", "message": "Примите карточку нашей службы."}]
+        },
+    }
     t.profile.status = PublicationStatus.DRAFT
     await db_session.commit()
     await t.post("scenarios", payload, expected=409)

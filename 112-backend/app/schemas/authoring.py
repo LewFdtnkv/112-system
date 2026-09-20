@@ -14,6 +14,7 @@ from pydantic import (
 
 from app.models.enums import LessonStatus, PublicationStatus, TrainingMode, TrainingRole
 from app.schemas.assessment import AssessmentPolicy
+from app.schemas.dds import DDSPolicy
 from app.schemas.group import Title
 
 NonblankText = Annotated[
@@ -92,11 +93,14 @@ class ScenarioCreate(ScenarioMetadata):
     service_profile_id: UUID | None = None
     instructions: str = Field(default="", max_length=10000)
     assessment_policy: AssessmentPolicy = Field(default_factory=AssessmentPolicy)
+    dds_policy: DDSPolicy | None = None
 
     @model_validator(mode="after")
     def role_profile(self):
         if self.role == TrainingRole.DDS and self.service_profile_id is None:
             raise ValueError("DDS scenarios require a service profile")
+        if self.role == TrainingRole.DDS and self.dds_policy is None:
+            raise ValueError("DDS scenarios require exercise steps")
         return self
 
 
@@ -124,6 +128,7 @@ class ScenarioRead(ScenarioMetadata):
     created_at: datetime
     cards: list[ScenarioCardRead]
     assessment_policy: AssessmentPolicy
+    dds_policy: DDSPolicy | None = None
 
 
 class ScenarioListItem(ScenarioMetadata):

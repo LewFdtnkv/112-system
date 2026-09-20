@@ -28,7 +28,9 @@ from app.services.audit import append_event
 from app.services.field_evaluation import check_fields
 
 GROUPS = {
-    "classification": "Тип происшествия",
+    "dds_status": "Статусы ДДС по сообщениям задания",
+    "dds_crew": "Номер наряда",
+    "classification": "Тип и признаки происшествия",
     "notification": "Оповещение служб",
     "address": "Адрес происшествия",
     "caller": "Сведения о заявителе",
@@ -43,7 +45,7 @@ def context_hash(value):
 
 
 def field_group(path):
-    if path == "classifier_entry_id":
+    if path == "classifier_entry_id" or path.startswith("features.ekp."):
         return "classification"
     if path == "recipients":
         return "notification"
@@ -90,8 +92,14 @@ async def assess_submission(session, attempt, lesson, card_read, *, publish=True
         policy = AssessmentPolicy.model_validate(
             attempt.settings_snapshot.get("assessment_policy", {})
         )
-        check = check_fields(source.snapshot, card_read)
-        criteria = weighted_criteria(check, policy)
+        if card_read.role == "dds":
+            from app.services.dds_assessment import check_dds, criteria_dds
+
+            check = check_dds(attempt.settings_snapshot["dds_policy"], card_read)
+            criteria = criteria_dds(check)
+        else:
+            check = check_fields(source.snapshot, card_read)
+            criteria = weighted_criteria(check, policy)
         if not criteria:
             # Composed operator cards always have a classifier and recipients, so this means
             # damaged/incompatible source data. Do not publish an invented zero or 100.
@@ -99,14 +107,22 @@ async def assess_submission(session, attempt, lesson, card_read, *, publish=True
         audit_sequence = await session.scalar(
             select(func.max(AttemptEvent.sequence)).where(AttemptEvent.attempt_id == attempt.id)
         )
+        policy_snapshot = (
+            {"version": "dds-steps-v1", "weights": {"dds_status": 80, "dds_crew": 20}}
+            if card_read.role == "dds"
+            else policy.model_dump(mode="json")
+        )
         snapshot = {
-            "policy": policy.model_dump(mode="json"),
+            "policy": policy_snapshot,
             "source": source.snapshot,
             "card": card_read.card.model_dump(mode="json"),
             "notified_services": [r.model_dump(mode="json") for r in card_read.notified_services],
             "audit_sequence": audit_sequence,
             "unverified_fields": [f.field for f in check.fields if not f.scored],
         }
+        if card_read.role == "dds":
+            snapshot["dds"] = card_read.dds
+            snapshot["dds_policy"] = attempt.settings_snapshot["dds_policy"]
         snapshot["context_hash"] = context_hash(snapshot)
         evaluation = Evaluation(
             attempt_id=attempt.id,
@@ -126,10 +142,18 @@ async def assess_submission(session, attempt, lesson, card_read, *, publish=True
                 select(AttemptEvent.id)
                 .where(
                     AttemptEvent.attempt_id == attempt.id,
-                    AttemptEvent.kind.in_(["card.draft_saved", "card.notified"]),
+                    AttemptEvent.kind.in_(
+                        [
+                            "card.draft_saved",
+                            "card.notified",
+                            "dds.information",
+                            "dds.status_changed",
+                            "dds.submitted",
+                        ]
+                    ),
                 )
                 .order_by(AttemptEvent.sequence.desc())
-                .limit(2)
+                .limit(16 if card_read.role == "dds" else 2)
             )
         )
         for criterion in criteria:
@@ -141,7 +165,7 @@ async def assess_submission(session, attempt, lesson, card_read, *, publish=True
                 max_score=criterion["max_score"],
                 explanation=criterion["explanation"],
                 criterion_snapshot={
-                    "policy_version": policy.version,
+                    "policy_version": policy_snapshot["version"],
                     "label": criterion["label"],
                     "fields": [f.model_dump() for f in criterion["fields"]],
                 },
@@ -162,7 +186,7 @@ async def assess_submission(session, attempt, lesson, card_read, *, publish=True
             "assessment.rules_completed",
             {
                 "evaluation_id": str(evaluation.id),
-                "policy_version": policy.version,
+                "policy_version": policy_snapshot["version"],
                 "audit_sequence": audit_sequence,
             },
         )
@@ -243,7 +267,7 @@ async def publish_lesson_result(session, lesson, student_id):
         group["score"] += float(criterion.score)
         group["max_score"] += float(criterion.max_score)
     details = {
-        "policy_version": "weighted-fields-v1",
+        "policy_version": evaluations[0].context_snapshot["policy"]["version"],
         "scope": "formal_fields",
         "criteria": list(grouped.values()),
         "evaluated_cards": len(ids),

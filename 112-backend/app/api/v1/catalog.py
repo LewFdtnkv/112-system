@@ -95,7 +95,10 @@ async def list_services(
     return list(
         await session.scalars(
             select(Service)
-            .where(Service.is_active.is_(True))
+            .where(
+                Service.is_active.is_(True),
+                (Service.name.ilike(f"%{q}%") | Service.code.ilike(f"%{q}%")),
+            )
             .order_by(
                 Service.code,
                 Service.id,

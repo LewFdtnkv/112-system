@@ -87,6 +87,7 @@ PK — первичный ключ; `NULL` — допустимое отсутс
 
 | Колонка | Тип PostgreSQL | NULL | PK | SQL default |
 | --- | --- | --- | --- | --- |
+| `revision` | `INTEGER` | нет | — | `1` |
 | `label` | `VARCHAR(100)` | нет | — | `—` |
 | `source_filename` | `VARCHAR(255)` | нет | — | `—` |
 | `source_storage_key` | `TEXT` | нет | — | `—` |
@@ -119,6 +120,7 @@ PK — первичный ключ; `NULL` — допустимое отсутс
 
 | Колонка | Тип PostgreSQL | NULL | PK | SQL default |
 | --- | --- | --- | --- | --- |
+| `revision` | `INTEGER` | нет | — | `1` |
 | `service_id` | `UUID` | нет | — | `—` |
 | `version` | `INTEGER` | нет | — | `—` |
 | `name` | `VARCHAR(255)` | нет | — | `—` |
@@ -719,3 +721,5 @@ PK — первичный ключ; `NULL` — допустимое отсутс
 - FK `(criterion_result_id, attempt_id)` → `criterion_results.id, criterion_results.attempt_id`; DELETE `RESTRICT`.
 - INDEX `(attempt_event_id)`.
 - INDEX `(attempt_id)`.
+
+Миграция `0009_catalog_revision`: revision в ЕКП и профилях защищает правки черновиков от устаревших запросов. Публикация также увеличивает revision. См. [CATALOG_AND_DDS.md](CATALOG_AND_DDS.md).

@@ -54,6 +54,8 @@ class RecipientRead(BaseModel):
 
 
 class StudentAttemptRead(BaseModel):
+    role: TrainingRole = TrainingRole.OPERATOR_112
+    dds: dict[str, JsonValue] | None = None
     id: UUID
     assignment_id: UUID
     status: AttemptStatus

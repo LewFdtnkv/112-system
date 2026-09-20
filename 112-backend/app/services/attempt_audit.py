@@ -131,6 +131,8 @@ async def assessment_context(session, attempt):
         "reference": snapshot["source"],
         "submitted_card": snapshot["card"],
         "notified_services": snapshot["notified_services"],
+        "dds": snapshot.get("dds"),
+        "dds_policy": snapshot.get("dds_policy"),
         "policy": snapshot["policy"],
         "unverified_fields": snapshot["unverified_fields"],
         "audit_through_sequence": snapshot["audit_sequence"],
