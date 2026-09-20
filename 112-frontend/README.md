@@ -5,6 +5,18 @@ The frontend uses the current FastAPI backend for authentication and training.
 
 ## Run and verify in Docker
 
+The backend Compose includes this frontend, built from `../112-frontend` using
+the Dockerfile here. It serves the production build at `http://localhost:8080`
+(`FRONTEND_PORT` in backend Compose overrides the port). Nginx supports browser
+history routes and proxies `/api/` to the `api:8000` service without changing
+the request path. Local `.env` files and browser test workspaces are excluded from the image build.
+
+From the `112-backend` directory, run:
+
+```sh
+docker compose up --build -d --wait
+```
+
 ```sh
 docker run --rm -p 5174:5173 -v "$PWD":/app -v system112-design-node-modules:/app/node_modules -w /app node:24-bullseye-slim sh -c 'npm ci && npm run dev -- --host 0.0.0.0'
 docker run --rm -v "$PWD":/app -v system112-design-node-modules:/app/node_modules -w /app node:24-bullseye-slim npm run build
