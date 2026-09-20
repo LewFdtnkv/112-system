@@ -377,7 +377,13 @@ def run(base_url: str, state_path: Path, prefix: str, admin_password: str) -> di
     )
     # A second untouched lesson remains available for manual testing after the scripted exercise.
     ready_id = launch("ready-lesson", f"{prefix}: урок для ручной проверки")
+    if __package__:
+        from scripts.demo_catalog import populate
+    else:
+        from demo_catalog import populate
+    expanded = populate(state, admin, teacher, student, group_id)
     return {
+        **expanded,
         "teacher_login": state.data["accounts"]["teacher"]["username"],
         "student_login": state.data["accounts"]["student"]["username"],
         "group_id": group_id,
