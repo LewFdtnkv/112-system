@@ -254,5 +254,119 @@ test("student dashboard and teacher profile share real progress and performance"
     fullPage: true,
     animations: "disabled",
   });
+
+  // Mixed lesson types use the same server filter in both accounts.
+  const service = await call("admin/services", admin, {
+    code: `profile-dds-${suffix}`,
+    name: "Учебная пожарная служба",
+    short_name: "Служба 101",
+  });
+  const profile = await call("admin/service-profiles", admin, {
+    service_id: service.id,
+    name: "Учебная ДДС",
+    responsibility: "Учебная территория",
+  });
+  await call(`admin/service-profiles/${profile.id}/publish`, admin, {});
+  const ddsClassifier = await call("admin/classifiers", admin, {
+    label: `ДДС ${suffix}`,
+    source_filename: "dds.json",
+    entries: [
+      {
+        code: "DDS.01",
+        section: "Учебные",
+        name: "Пожар",
+        service_ids: [service.id],
+      },
+    ],
+  });
+  await call(`admin/classifiers/${ddsClassifier.id}/publish`, admin, {});
+  const ddsEntry = (
+    await call(`classifiers/${ddsClassifier.id}/entries`, teacher.token)
+  )[0];
+  const ddsCard = await call("cards", teacher.token, {
+    title: "Карточка для учебной ДДС",
+    classifier_version_id: ddsClassifier.id,
+    classifier_entry_id: ddsEntry.id,
+    data: { address_text: "Учебная улица, 7", description: "Учебная ситуация" },
+    recipient_service_ids: [service.id],
+  });
+  const dds = await call("scenarios", teacher.token, {
+    title: "Приём карточки в ДДС",
+    role: "dds",
+    service_profile_id: profile.id,
+    card_ids: [ddsCard.id],
+    dds_policy: {
+      steps: [{ status: "accepted", message: "Примите учебную карточку." }],
+    },
+  });
+  await call("lessons/start", teacher.token, {
+    request_id: crypto.randomUUID(),
+    group_id: group.id,
+    scenario_version_id: dds.id,
+    title: "Практика диспетчера",
+  });
+  await page.setViewportSize({ width: 1600, height: 1000 });
+  const chooseType = async (label: string) => {
+    await page
+      .getByRole("combobox", { name: "Тип занятия", exact: true })
+      .click();
+    await page.getByRole("option", { name: label, exact: true }).click();
+  };
+  for (const actor of ["teacher", "student"]) {
+    if (actor === "student") {
+      await page.getByRole("button", { name: "Выйти", exact: true }).click();
+      await login(student.username);
+    } else {
+      await page.goto("/sessions");
+    }
+    await expect(table.getByRole("row")).toHaveCount(11);
+    await expect(
+      table.getByRole("columnheader", { name: "Тип занятия" }),
+    ).toBeVisible();
+    await expect(
+      table.getByRole("columnheader", { name: "Завершено (МСК)" }),
+    ).toBeVisible();
+    const completed = table.getByRole("row").filter({ hasText: "Практика 1" });
+    const finishedAt = (
+      await call("views/student/lessons?status=submitted", student.token)
+    ).items.find(
+      (row: { title: string }) => row.title === "Практика 1",
+    ).completed_at;
+    await expect(completed.locator("time")).toHaveAttribute(
+      "datetime",
+      finishedAt,
+    );
+    await expect(completed.locator("time")).toHaveText(
+      new Date(finishedAt).toLocaleString("ru-RU", {
+        timeZone: "Europe/Moscow",
+        dateStyle: "short",
+        timeStyle: "short",
+      }),
+    );
+    await expect(
+      table
+        .getByRole("row")
+        .filter({ hasText: "Практика диспетчера" })
+        .getByRole("cell", { name: "—", exact: true }),
+    ).toBeVisible();
+    await table.scrollIntoViewIfNeeded();
+    await page.screenshot({
+      path: info.outputPath(`lessons-${actor}.png`),
+      animations: "disabled",
+    });
+    await chooseType("ДДС");
+    await expect(table.getByRole("row")).toHaveCount(2);
+    await expect(table).toContainText("Практика диспетчера");
+    await expect(table).not.toContainText("Оператор 112");
+    await page.screenshot({
+      path: info.outputPath(`lessons-${actor}-dds.png`),
+      animations: "disabled",
+    });
+    await chooseType("Оператор 112");
+    await expect(table.getByRole("row")).toHaveCount(10);
+    await expect(table).not.toContainText("Практика диспетчера");
+    await chooseType("Все типы");
+    await expect(table.getByRole("row")).toHaveCount(11);
+  }
   expect(errors).toEqual([]);
 });

@@ -41,11 +41,13 @@ export function LessonList({
   const [profile, setProfile] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState(resultsOnly ? "submitted" : "all");
+  const [role, setRole] = useState("all");
   const [page, setPage] = useState(0);
   const q = useDebounced(search);
   const params = {
     q,
     status,
+    role,
     limit: 20,
     offset: page * 20,
     ...(studentId ? { student_id: studentId } : {}),
@@ -58,7 +60,7 @@ export function LessonList({
   });
   return (
     <Stack spacing={2}>
-      <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+      <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
         <TextField
           label="Сценарий или ученик"
           type="search"
@@ -68,6 +70,20 @@ export function LessonList({
             setPage(0);
           }}
         />
+        <TextField
+          select
+          label="Тип занятия"
+          value={role}
+          sx={{ minWidth: 180 }}
+          onChange={(e) => {
+            setRole(e.target.value);
+            setPage(0);
+          }}
+        >
+          <MenuItem value="all">Все типы</MenuItem>
+          <MenuItem value="operator_112">Оператор 112</MenuItem>
+          <MenuItem value="dds">ДДС</MenuItem>
+        </TextField>
         {!resultsOnly && (
           <TextField
             select
@@ -120,8 +136,10 @@ export function LessonList({
                       {!student && !studentId && (
                         <TableCell>Ученик / группа</TableCell>
                       )}
+                      <TableCell>Тип занятия</TableCell>
                       <TableCell>Доступно (МСК)</TableCell>
                       <TableCell>Статус</TableCell>
+                      <TableCell>Завершено (МСК)</TableCell>
                       <TableCell>Карточки</TableCell>
                       <TableCell>Результат</TableCell>
                     </TableRow>
@@ -156,6 +174,9 @@ export function LessonList({
                               </small>
                             </TableCell>
                           )}
+                          <TableCell sx={{ whiteSpace: "nowrap" }}>
+                            {row.role === "dds" ? "ДДС" : "Оператор 112"}
+                          </TableCell>
                           <TableCell>
                             {(row.available_from ?? row.started_at)
                               ? new Date(
@@ -176,10 +197,21 @@ export function LessonList({
                           </TableCell>
                           <TableCell>
                             {workStatusLabels[row.work_status]}
-                            {row.role === "dds" && (
-                              <small className="block-detail">
-                                Диспетчер ДДС
-                              </small>
+                          </TableCell>
+                          <TableCell sx={{ whiteSpace: "nowrap" }}>
+                            {row.completed_at ? (
+                              <time dateTime={row.completed_at}>
+                                {new Date(row.completed_at).toLocaleString(
+                                  "ru-RU",
+                                  {
+                                    timeZone: "Europe/Moscow",
+                                    dateStyle: "short",
+                                    timeStyle: "short",
+                                  },
+                                )}
+                              </time>
+                            ) : (
+                              "—"
                             )}
                           </TableCell>
                           <TableCell>

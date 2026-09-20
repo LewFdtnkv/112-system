@@ -211,6 +211,7 @@ export function StudentOverviewPanel({
               <thead>
                 <tr>
                   <th>Урок</th>
+                  <th>Тип занятия</th>
                   <th>Завершение (МСК)</th>
                   <th>Результат</th>
                 </tr>
@@ -227,7 +228,10 @@ export function StudentOverviewPanel({
                         <small className="block-detail">{row.title}</small>
                       </Link>
                     </td>
-                    <td>{dateText(row.completed_at)}</td>
+                    <td>{row.role === "dds" ? "ДДС" : "Оператор 112"}</td>
+                    <td>
+                      {row.completed_at ? dateText(row.completed_at) : "—"}
+                    </td>
                     <td>
                       <strong>{percentText(lessonPercent(row))}</strong>
                       <small className="block-detail">
