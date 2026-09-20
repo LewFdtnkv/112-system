@@ -145,6 +145,7 @@ export interface ScenarioDetail extends Omit<ScenarioItem, "card_count"> {
   }[];
 }
 export interface LessonRow {
+  completed_at?: string | null;
   evaluation_method?: "rules" | "teacher" | null;
   lesson_id: string;
   title: string;

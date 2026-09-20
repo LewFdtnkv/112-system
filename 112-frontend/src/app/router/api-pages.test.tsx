@@ -28,6 +28,8 @@ it.each([
   ["/groups", "admin"],
   ["/catalogs", "teacher"],
   ["/student/sessions/lesson", "teacher"],
+  ["/teacher/students/student-id", "student"],
+  ["/teacher/students/student-id", "admin"],
 ])("denies %s to %s", async (path, role) => {
   const router = renderPage(path, role);
   await screen.findByRole("heading", { name: /Доступ запрещён/ });

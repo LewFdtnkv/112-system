@@ -113,17 +113,16 @@ test("BPMN: comments, separate proctoring, automatic deadline and administration
     fullPage: true,
     animations: "disabled",
   });
-  await page.getByRole("button", { name: /Ученик Тест · Подробнее/ }).click();
+  await page.getByRole("button", { name: /Ученик Тест · Профиль/ }).click();
   await expect(
     page.getByRole("dialog", { name: "Профиль ученика" }),
   ).toBeVisible();
+  await page.getByRole("link", { name: "Подробнее", exact: true }).click();
+  await expect(page).toHaveURL(`/teacher/students/${student.id}`);
   await page
     .getByLabel("Комментарий ученику")
     .fill("Индивидуальная рекомендация.");
-  await page
-    .getByRole("dialog", { name: "Профиль ученика" })
-    .getByRole("button", { name: "Отправить комментарий" })
-    .click();
+  await page.getByRole("button", { name: "Отправить комментарий" }).click();
   await page.screenshot({
     path: info.outputPath("bpmn-profile.png"),
     fullPage: true,

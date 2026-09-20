@@ -83,6 +83,7 @@ export const GroupsPage = () => {
         "group-options",
         "group-members",
         "student-profile",
+        "student-overview",
       ])
         void client.invalidateQueries({ queryKey: [key] });
     },
@@ -166,9 +167,7 @@ export const GroupsPage = () => {
         <StudentProfileDialog
           studentId={profile}
           onClose={() => setProfile(null)}
-        >
-          <MessageComposer studentId={profile} />
-        </StudentProfileDialog>
+        />
       )}
       <Dialog
         open={!!moveStudent}
@@ -261,7 +260,7 @@ export const GroupsPage = () => {
                     {members.data.items.map((u) => (
                       <li key={u.id}>
                         <Button onClick={() => setProfile(u.id)}>
-                          {userName(u)} · Подробнее
+                          {userName(u)} · Профиль
                         </Button>
                         <Button
                           onClick={() => {

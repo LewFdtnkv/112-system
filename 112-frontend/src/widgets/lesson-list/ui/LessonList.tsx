@@ -1,3 +1,4 @@
+import { StudentProfileDialog } from "@/features/student-profile";
 import { useState } from "react";
 import {
   Button,
@@ -13,7 +14,12 @@ import {
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { trainingApi, workStatusLabels } from "@/entities/training";
+import {
+  trainingApi,
+  workStatusLabels,
+  percentText,
+  lessonPercent,
+} from "@/entities/training";
 import { useDebounced } from "@/shared/lib/useDebounced";
 import { QueryState, PageControls } from "@/shared/ui/QueryState";
 import { EmptyState } from "@/shared/ui/EmptyState";
@@ -25,11 +31,14 @@ export function LessonList({
   student = false,
   resultsOnly = false,
   lessonId,
+  studentId,
 }: {
   student?: boolean;
   resultsOnly?: boolean;
   lessonId?: string;
+  studentId?: string;
 }) {
+  const [profile, setProfile] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState(resultsOnly ? "submitted" : "all");
   const [page, setPage] = useState(0);
@@ -39,6 +48,7 @@ export function LessonList({
     status,
     limit: 20,
     offset: page * 20,
+    ...(studentId ? { student_id: studentId } : {}),
     ...(lessonId ? { lesson_id: lessonId } : {}),
   };
   const query = useQuery({
@@ -83,6 +93,12 @@ export function LessonList({
           Обновить
         </Button>
       </Stack>
+      {profile && (
+        <StudentProfileDialog
+          studentId={profile}
+          onClose={() => setProfile(null)}
+        />
+      )}
       <QueryState
         pending={query.isPending}
         error={query.error}
@@ -101,7 +117,9 @@ export function LessonList({
                   <TableHead>
                     <TableRow>
                       <TableCell>Сценарий / занятие</TableCell>
-                      {!student && <TableCell>Ученик / группа</TableCell>}
+                      {!student && !studentId && (
+                        <TableCell>Ученик / группа</TableCell>
+                      )}
                       <TableCell>Доступно (МСК)</TableCell>
                       <TableCell>Статус</TableCell>
                       <TableCell>Карточки</TableCell>
@@ -120,12 +138,19 @@ export function LessonList({
                           <TableCell>
                             <Link className="table-block-link" to={target}>
                               {row.scenario_title}
-                              <small>{row.title}</small>
+                              <small className="block-detail">
+                                {row.title}
+                              </small>
                             </Link>
                           </TableCell>
-                          {!student && (
+                          {!student && !studentId && (
                             <TableCell>
-                              {row.student_name}
+                              <Button
+                                className="table-block-link"
+                                onClick={() => setProfile(row.student_id)}
+                              >
+                                {row.student_name}
+                              </Button>
                               <small className="block-detail">
                                 {row.group_name}
                               </small>
@@ -163,7 +188,7 @@ export function LessonList({
                           <TableCell>
                             <Link className="table-block-link" to={reviewPath}>
                               {row.score !== null
-                                ? `${row.score} / ${row.max_score}`
+                                ? percentText(lessonPercent(row))
                                 : row.work_status === "submitted"
                                   ? "Нет итоговой оценки"
                                   : "Открыть работу"}

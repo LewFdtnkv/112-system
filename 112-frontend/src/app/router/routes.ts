@@ -43,6 +43,12 @@ const staffRoutes: RouteObject = {
   Component: StaffRoute,
   children: [
     {
+      path: routePaths.studentProfile,
+      lazy: async () => ({
+        Component: (await import("@/pages/student-profile")).StudentProfilePage,
+      }),
+    },
+    {
       path: routePaths.groups,
       lazy: async () => ({
         Component: (await import("@/pages/groups")).GroupsPage,

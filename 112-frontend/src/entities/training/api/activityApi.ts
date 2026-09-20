@@ -1,3 +1,4 @@
+import type { StudentOverview } from "../model/studentOverview";
 import { backendApi } from "@/shared/api";
 import type { LessonPage, Page, UserDetail } from "../model/types";
 
@@ -25,20 +26,27 @@ export interface ProctoringEvent {
 export type FocusKind =
   "tab.visible" | "tab.hidden" | "window.focus" | "window.blur";
 export const activityApi = {
-  monitoring: (offset = 0) =>
+  overview: (studentId?: string, activeOffset = 0, signal?: AbortSignal) =>
     backendApi
-      .get("teaching/monitoring", { searchParams: { offset } })
-      .json<
-        Page<{
-          attempt_id: string;
-          student_name: string;
-          title: string;
-          visibility: string | null;
-          focus: string | null;
-          last_seen: string | null;
-          hidden_count: number;
-        }>
-      >(),
+      .get(
+        studentId
+          ? `teaching/students/${encodeURIComponent(studentId)}/overview`
+          : "student/overview",
+        { searchParams: { active_offset: activeOffset }, signal },
+      )
+      .json<StudentOverview>(),
+  monitoring: (offset = 0) =>
+    backendApi.get("teaching/monitoring", { searchParams: { offset } }).json<
+      Page<{
+        attempt_id: string;
+        student_name: string;
+        title: string;
+        visibility: string | null;
+        focus: string | null;
+        last_seen: string | null;
+        hidden_count: number;
+      }>
+    >(),
   messages: (offset = 0) =>
     backendApi
       .get("student/messages", { searchParams: { offset } })

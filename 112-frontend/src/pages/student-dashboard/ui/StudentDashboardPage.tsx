@@ -1,30 +1,41 @@
-import { StudentMessages } from "@/features/teaching-messages";
-import { UserPhoto, trainingApi, userName } from "@/entities/training";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Stack, Typography } from "@mui/material";
-
+import { StudentMessages } from "@/features/teaching-messages";
+import { activityApi } from "@/entities/training";
 import { PageHeader } from "@/shared/ui/PageHeader";
-import { useAuthStore } from "@/entities/user";
+import { QueryState } from "@/shared/ui/QueryState";
 import { LessonList } from "@/widgets/lesson-list";
+import { StudentOverviewPanel } from "@/widgets/student-overview";
 export const StudentDashboardPage = () => {
-  const user = useAuthStore((state) => state.session);
+  const [activePage, setActivePage] = useState(0);
   const profile = useQuery({
-    queryKey: ["my-profile"],
-    queryFn: () => trainingApi.me(),
-    enabled: !!user,
+    queryKey: ["student-overview", "me", activePage],
+    queryFn: ({ signal }) =>
+      activityApi.overview(undefined, activePage * 6, signal),
+    refetchInterval: 15000,
   });
   return (
-    <Stack spacing={2}>
-      <PageHeader title="Кабинет ученика" description={user?.name} />
-      {user && <UserPhoto userId={user.userId} />}
-      {profile.data && (
-        <Typography>
-          {userName(profile.data)} · {profile.data.username} ·{" "}
-          {profile.data.email ?? "Email не указан"}
-        </Typography>
-      )}
+    <Stack spacing={3}>
+      <PageHeader title="Кабинет ученика" />
+      <QueryState
+        pending={profile.isPending}
+        error={profile.error}
+        retry={() => void profile.refetch()}
+      >
+        {profile.data && (
+          <StudentOverviewPanel
+            data={profile.data}
+            own
+            onActivePage={setActivePage}
+          />
+        )}
+      </QueryState>
       <StudentMessages />
-      <LessonList student={true} />
+      <Typography variant="h6" component="h2">
+        Все уроки
+      </Typography>
+      <LessonList student />
     </Stack>
   );
 };

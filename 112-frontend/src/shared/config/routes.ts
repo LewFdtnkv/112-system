@@ -6,6 +6,7 @@ export const routePaths = {
   changePassword: "/change-password",
   studentDashboard: "/student",
   teacherDashboard: "/teacher",
+  studentProfile: "/teacher/students/:studentId",
   adminDashboard: "/admin",
   scenarios: "/scenarios",
   scenarioCreate: "/scenarios/new",
@@ -44,4 +45,9 @@ export const getStudentTrainingWorkspacePath = (sessionId: string) =>
 export const getTrainingResultPath = (sessionId: string) =>
   generatePath(routePaths.trainingResult, {
     sessionId: encodeURIComponent(sessionId),
+  });
+
+export const getStudentProfilePath = (studentId: string) =>
+  generatePath(routePaths.studentProfile, {
+    studentId: encodeURIComponent(studentId),
   });
