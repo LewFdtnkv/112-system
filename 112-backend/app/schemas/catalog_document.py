@@ -21,16 +21,20 @@ class StrictModel(BaseModel):
 class FeatureDefinition(StrictModel):
     key: str = Field(pattern=r"^[a-z][a-z0-9_]{0,49}$")
     label: Title
-    type: Literal["boolean", "array", "choice"] = "boolean"
+    type: Literal["boolean", "array", "choice", "text"] = "boolean"
     required: bool = True
     options: list[FeatureString] = Field(default_factory=list, max_length=30)
+    # OR between groups, AND within each group. Parents must precede this field.
+    visible_when: list[dict[str, FeatureAnswer]] = Field(default_factory=list, max_length=20)
 
     @model_validator(mode="after")
     def consistent(self):
         if len(self.options) != len(set(self.options)):
             raise ValueError("Feature options must be unique")
-        if self.type == "boolean" and self.options:
-            raise ValueError("Boolean features have no string options")
+        if self.type in ("boolean", "text") and self.options:
+            raise ValueError("Boolean and text features have no string options")
+        if any(not group or len(group) > 30 for group in self.visible_when):
+            raise ValueError("Visibility groups must contain 1 to 30 conditions")
         if self.type == "choice" and not self.options:
             raise ValueError("Choice features require options")
         return self
@@ -38,6 +42,8 @@ class FeatureDefinition(StrictModel):
     def accepts(self, value):
         if self.type == "boolean":
             return type(value) is bool
+        if self.type == "text":
+            return isinstance(value, str) and bool(value.strip()) and len(value) <= 200
         if self.type == "choice":
             return isinstance(value, str) and value in self.options
         return (
@@ -55,6 +61,18 @@ class RouteDefinition(StrictModel):
     when: dict[str, FeatureAnswer] = Field(default_factory=dict, max_length=30)
 
 
+def validate_feature_dependencies(features):
+    preceding = {}
+    for feature in features:
+        if feature.key in preceding:
+            raise ValueError("Feature keys must not repeat")
+        for group in feature.visible_when:
+            for key, value in group.items():
+                if key not in preceding or not preceding[key].accepts(value) or value == []:
+                    raise ValueError("Visibility must refer to preceding fields and valid values")
+        preceding[feature.key] = feature
+
+
 class EntryDefinition(EntryPresentation, StrictModel):
     code: str = Field(min_length=1, max_length=50, pattern=r"^\S+$")
     section: Title
@@ -65,6 +83,7 @@ class EntryDefinition(EntryPresentation, StrictModel):
 
     @model_validator(mode="after")
     def consistent(self):
+        validate_feature_dependencies(self.features)
         definitions = {f.key: f for f in self.features}
         if len(definitions) != len(self.features):
             raise ValueError("Feature keys must not repeat")
@@ -90,7 +109,7 @@ class EntryDefinition(EntryPresentation, StrictModel):
 class CatalogDocument(StrictModel):
     format: Literal["system112-ekp-v1"] = "system112-ekp-v1"
     label: str = Field(min_length=1, max_length=100, pattern=r"^\S(?:.*\S)?$")
-    services: list[ServiceCreate] = Field(default_factory=list, max_length=100)
+    services: list[ServiceCreate] = Field(default_factory=list, max_length=1000)
     entries: list[EntryDefinition] = Field(min_length=1, max_length=2000)
 
     @model_validator(mode="after")

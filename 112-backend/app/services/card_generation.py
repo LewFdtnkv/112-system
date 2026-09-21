@@ -14,7 +14,12 @@ from app.models.enums import AIPurpose, JobStatus, PublicationStatus
 from app.schemas.authoring import CardCreate
 from app.schemas.generation import GenerationCreate, GenerationRead
 from app.services.authoring import validate_card_definition
-from app.services.catalog_rules import applicable_routes, feature_definitions, validate_answers
+from app.services.catalog_rules import (
+    applicable_routes,
+    feature_definitions,
+    feature_is_visible,
+    validate_answers,
+)
 
 PROMPT_VERSION = "card-generation-v1"
 CHOICES = {
@@ -153,6 +158,8 @@ async def enqueue(session, teacher_id: UUID, request: GenerationCreate):
         validate_answers(definitions, p.feature_answers, require_complete=False)
         answers = dict(p.feature_answers)
         for f in definitions:
+            if not feature_is_visible(f, answers):
+                continue
             if f.key in answers:
                 continue
             if f.type == "boolean":

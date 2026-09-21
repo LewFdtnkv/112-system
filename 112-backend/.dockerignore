@@ -10,3 +10,8 @@ __pycache__
 .coverage
 tests
 README.md
+
+.demo-seed*.json
+state.json
+.catalog-check
+.backups

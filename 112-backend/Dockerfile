@@ -17,6 +17,7 @@ RUN uv sync --frozen --no-dev --no-cache \
     && install -d -o appuser -g appuser /home/appuser/logs
 
 COPY app ./app
+COPY scripts ./scripts
 COPY alembic ./alembic
 COPY alembic.ini ./
 

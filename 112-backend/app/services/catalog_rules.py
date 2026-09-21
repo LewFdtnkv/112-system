@@ -1,7 +1,7 @@
 from fastapi import HTTPException
 from pydantic import ValidationError
 
-from app.schemas.catalog_document import FeatureDefinition
+from app.schemas.catalog_document import FeatureDefinition, validate_feature_dependencies
 
 
 def feature_definitions(entry):
@@ -13,9 +13,31 @@ def feature_definitions(entry):
     ):
         raise HTTPException(409, "Unsupported classifier condition format")
     try:
-        return [FeatureDefinition.model_validate(f) for f in entry.conditions["features"]]
-    except (ValidationError, TypeError) as exc:
+        definitions = [FeatureDefinition.model_validate(f) for f in entry.conditions["features"]]
+        validate_feature_dependencies(definitions)
+        return definitions
+    except (ValidationError, TypeError, ValueError) as exc:
         raise HTTPException(409, "Invalid classifier feature definitions") from exc
+
+
+def feature_is_visible(definition, active_answers):
+    return not definition.visible_when or any(
+        all(
+            key in active_answers and condition_matches(value, active_answers[key])
+            for key, value in group.items()
+        )
+        for group in definition.visible_when
+    )
+
+
+def active_features(definitions, answers):
+    result, active_answers = [], {}
+    for definition in definitions:
+        if feature_is_visible(definition, active_answers):
+            result.append(definition)
+            if definition.key in answers:
+                active_answers[definition.key] = answers[definition.key]
+    return result
 
 
 def validate_answers(definitions, answers, *, require_complete=True):
@@ -24,7 +46,11 @@ def validate_answers(definitions, answers, *, require_complete=True):
     by_key = {f.key: f for f in definitions}
     if set(answers) - set(by_key):
         raise HTTPException(422, "Unknown classifier feature")
-    for key, definition in by_key.items():
+    active = active_features(definitions, answers)
+    if set(answers) - {f.key for f in active}:
+        raise HTTPException(422, "Answers for hidden classifier fields are not allowed")
+    for definition in active:
+        key = definition.key
         if key not in answers:
             if require_complete and definition.required:
                 raise HTTPException(422, f"Answer required feature: {definition.label}")

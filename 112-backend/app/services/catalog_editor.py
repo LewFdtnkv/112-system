@@ -57,6 +57,13 @@ async def export_document(session, version):
     services = {
         s.code: {"code": s.code, "name": s.name, "short_name": s.short_name} for _, s in pairs
     }
+    source_codes = [s["code"] for s in version.import_report.get("source", {}).get("services", [])]
+    for service in await session.scalars(select(Service).where(Service.code.in_(source_codes))):
+        services[service.code] = {
+            "code": service.code,
+            "name": service.name,
+            "short_name": service.short_name,
+        }
     grouped = {}
     for route, service in pairs:
         if route.conditions and set(route.conditions) != {"when"}:

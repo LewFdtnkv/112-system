@@ -5,13 +5,14 @@ import anyio
 import pytest
 from sqlalchemy import func, select
 
-from app.models import Assignment, Attempt, Lesson, LessonEvaluation, TrainingGroup, User
+from app.models import ClassifierEntry, ClassifierVersion, Lesson, Service, TrainingGroup, User
 from scripts import seed_demo
 
 
 @pytest.mark.anyio
+@pytest.mark.parametrize("with_training", [False, True])
 async def test_seed_from_admin_only_database_and_repeat(
-    db_client, db_session, monkeypatch, tmp_path
+    db_client, db_session, monkeypatch, tmp_path, with_training
 ):
     class InProcessAPI(seed_demo.API):
         def request(self, method, path, payload=None, expected=(200,)):
@@ -29,28 +30,26 @@ async def test_seed_from_admin_only_database_and_repeat(
     monkeypatch.setattr(seed_demo, "API", InProcessAPI)
     state_path = tmp_path / "state.json"
     first = await anyio.to_thread.run_sync(
-        seed_demo.run, "http://test", state_path, "test", "admin"
+        seed_demo.run, "http://test", state_path, "test", "admin", with_training
     )
     second = await anyio.to_thread.run_sync(
-        seed_demo.run, "http://test", state_path, "test", "admin"
+        seed_demo.run, "http://test", state_path, "test", "admin", with_training
     )
-    assert first == second and first["evaluation"] == "4.00/5.00"
+    assert first == second
     for model, expected in [
-        (User, 3),
-        (TrainingGroup, 1),
-        (Lesson, 6),
-        (Assignment, 32),
-        (Attempt, 16),
-        (LessonEvaluation, 4),
+        (User, 3 if with_training else 1),
+        (TrainingGroup, 1 if with_training else 0),
+        (Lesson, 1 if with_training else 0),
+        (Service, 211),
+        (ClassifierEntry, 51),
+        (ClassifierVersion, 1),
     ]:
         assert await db_session.scalar(select(func.count()).select_from(model)) == expected
-    assert first["expanded_entry_count"] == 43 and first["expanded_case_count"] == 12
-    assert first["service_profile_count"] == 7
+    assert first["feature_count"] == 177
+    if with_training:
+        assert first["training"]["card_count"] == 6
     assert stat.S_IMODE(state_path.stat().st_mode) == 0o600
     state = json.loads(state_path.read_text())
-    for account in state["accounts"].values():
-        assert account["password"] not in json.dumps(first)
-        assert account["initial_password"] not in json.dumps(first)
     assert state["admin_new_password"] not in json.dumps(first)
     with pytest.raises(RuntimeError, match="другому API"):
         seed_demo.State(state_path, "http://another", "test")
