@@ -91,7 +91,7 @@ test("real API: authoring, operator drafts, revision conflict, notification and 
   await account.getByLabel("Аккаунт активен").uncheck();
   await account.getByRole("button", { name: "Сохранить изменения" }).click();
   await page
-    .getByLabel("Причина изменения роли или блокировки")
+    .getByLabel("Причина изменения доступа")
     .fill("Учебная проверка доступа");
   await page.getByRole("button", { name: "Подтвердить", exact: true }).click();
   await expect(account).not.toBeVisible();
@@ -112,7 +112,7 @@ test("real API: authoring, operator drafts, revision conflict, notification and 
   });
   await account.getByRole("button", { name: "Сохранить изменения" }).click();
   await page
-    .getByLabel("Причина изменения роли или блокировки")
+    .getByLabel("Причина изменения доступа")
     .fill("Учебная проверка доступа");
   await page.getByRole("button", { name: "Подтвердить", exact: true }).click();
   await expect(account).not.toBeVisible();

@@ -65,6 +65,7 @@ The current frontend uses MUI and `shared/ui/arm`; it does not depend on `112-ui
 - `/results`, `/results/:sessionId`: own student results or teacher review and grading.
 - `/analytics`: aggregates from real submitted work and latest teacher evaluations.
 - `/admin`, `/users`, `/catalogs`: account administration, services and JSON EKP publication.
+  Account roles are selected at creation and are read-only afterwards; another role requires a new account.
 - `/403`, `/404`, `/500`: service pages. Unknown paths show 404.
 
 Teacher and administrator rights are independent. All business requests use the

@@ -36,7 +36,6 @@ export interface UserUpdate {
   last_name: string;
   middle_name: string | null;
   email: string | null;
-  role: UserRole;
   is_active: boolean;
 }
 

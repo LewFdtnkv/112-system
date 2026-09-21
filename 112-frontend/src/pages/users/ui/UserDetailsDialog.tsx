@@ -2,7 +2,6 @@ import {
   activityApi,
   trainingApi,
   UserPhoto,
-  type UserRole,
   type UserUpdate,
 } from "@/entities/training";
 import { getApiError } from "@/shared/api";
@@ -14,7 +13,6 @@ import {
   DialogContent,
   DialogTitle,
   FormControlLabel,
-  MenuItem,
   Stack,
   Switch,
   TextField,
@@ -64,14 +62,12 @@ function AccountForm({ user, onClose }: AccountFormProps) {
     last_name: user.last_name,
     middle_name: user.middle_name,
     email: user.email,
-    role: user.role,
     is_active: user.is_active,
   });
   const [reason, setReason] = useState("");
   const [confirm, setConfirm] = useState(false);
   const [history, setHistory] = useState(false);
-  const accessChanged =
-    form.role !== user.role || form.is_active !== user.is_active;
+  const accessChanged = form.is_active !== user.is_active;
   const client = useQueryClient();
   const upload = useMutation({
     mutationFn: (file: File) => activityApi.uploadPhoto(user.id, file),
@@ -138,7 +134,7 @@ function AccountForm({ user, onClose }: AccountFormProps) {
           <Stack spacing={2} sx={styles.stack2}>
             <TextField
               autoFocus
-              label="Причина изменения роли или блокировки"
+              label="Причина изменения доступа"
               required
               multiline
               value={reason}
@@ -183,17 +179,11 @@ function AccountForm({ user, onClose }: AccountFormProps) {
         />
       ))}
       <TextField
-        select
         label="Роль пользователя"
-        value={form.role}
-        onChange={(e) => setForm({ ...form, role: e.target.value as UserRole })}
-      >
-        {Object.entries(roleLabels).map(([value, label]) => (
-          <MenuItem key={value} value={value}>
-            {label}
-          </MenuItem>
-        ))}
-      </TextField>
+        value={roleLabels[user.role]}
+        slotProps={{ input: { readOnly: true } }}
+        helperText="Роль задаётся при создании. Для другой роли создайте нового пользователя."
+      />
       <FormControlLabel
         label="Аккаунт активен"
         control={
@@ -203,10 +193,9 @@ function AccountForm({ user, onClose }: AccountFormProps) {
           />
         }
       />
-      {(form.role !== user.role || form.is_active !== user.is_active) && (
+      {accessChanged && (
         <Alert severity="info">
-          При изменении роли или состояния текущие сеансы пользователя будут
-          завершены.
+          При изменении доступа текущие сеансы пользователя будут завершены.
         </Alert>
       )}
       <Stack spacing={0.5}>
