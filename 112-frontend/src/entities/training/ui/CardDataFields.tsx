@@ -1,14 +1,7 @@
-import type { CardData } from "../model/types";
-import type { FeatureDefinition } from "@/shared/lib/featureValues";
 import { flattenCardData } from "../model/cardFields";
+import type { CardDataFieldsProps } from "../types/CardDataFields";
 
-export function CardDataFields({
-  data,
-  features,
-}: {
-  data: CardData;
-  features?: FeatureDefinition[];
-}) {
+export function CardDataFields({ data, features }: CardDataFieldsProps) {
   return (
     <dl className="card-data-fields">
       {flattenCardData(data, features).map(({ field, label, value }) => (

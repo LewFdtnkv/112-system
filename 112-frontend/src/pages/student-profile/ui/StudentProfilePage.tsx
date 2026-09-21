@@ -1,15 +1,15 @@
-import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { Alert, Button, Stack, Typography } from "@mui/material";
-import { MessageComposer } from "@/features/teaching-messages";
 import { activityApi } from "@/entities/training";
+import { MessageComposer } from "@/features/teaching-messages";
 import { getApiError } from "@/shared/api";
 import { download } from "@/shared/lib/download";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { QueryState } from "@/shared/ui/QueryState";
 import { LessonList } from "@/widgets/lesson-list";
 import { StudentOverviewPanel } from "@/widgets/student-overview";
+import { Alert, Button, Stack, Typography } from "@mui/material";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { Link, useParams } from "react-router-dom";
 export function StudentProfilePage() {
   const { studentId } = useParams<{ studentId: string }>();
   const [activePage, setActivePage] = useState(0);

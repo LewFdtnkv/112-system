@@ -1,11 +1,20 @@
+import {
+  activityApi,
+  trainingApi,
+  type ScenarioItem,
+} from "@/entities/training";
+import { getApiError } from "@/shared/api";
+import { getScenarioEditPath, routePaths } from "@/shared/config/routes";
 import { rowAction } from "@/shared/lib/rowAction";
-import { useState } from "react";
+import { useDebounced } from "@/shared/lib/useDebounced";
+import { PageHeader } from "@/shared/ui/PageHeader";
+import { PageControls, QueryState } from "@/shared/ui/QueryState";
 import {
   Alert,
-  Dialog,
-  DialogTitle,
-  DialogContent,
   Button,
+  Dialog,
+  DialogContent,
+  DialogTitle,
   MenuItem,
   Stack,
   Table,
@@ -16,17 +25,8 @@ import {
   TextField,
 } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getApiError } from "@/shared/api";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import {
-  activityApi,
-  trainingApi,
-  type ScenarioItem,
-} from "@/entities/training";
-import { getScenarioEditPath, routePaths } from "@/shared/config/routes";
-import { useDebounced } from "@/shared/lib/useDebounced";
-import { PageHeader } from "@/shared/ui/PageHeader";
-import { QueryState, PageControls } from "@/shared/ui/QueryState";
 export const ScenariosPage = () => {
   const navigate = useNavigate();
   const client = useQueryClient();

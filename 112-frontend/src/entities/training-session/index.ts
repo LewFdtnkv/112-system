@@ -1,24 +1,12 @@
 export {
-  demoSessions,
   demoResults,
-  trainingStatusLabels,
-  getResultScore,
+  demoSessions,
   getResultMaxScore,
+  getResultScore,
+  trainingStatusLabels,
 } from "./model/demoSessions";
-export { useDemoTrainingStore } from "./model/demoTrainingStore";
-export {
-  clearWorkspaceSnapshot,
-  readWorkspaceSnapshot,
-  workspaceStorageKey,
-  writeWorkspaceSnapshot,
-} from "./model/workspaceState";
 export type {
-  PersistedCallState,
-  PersistedConnectionState,
-  WorkspaceSnapshot,
-} from "./model/workspaceState";
-export type {
-  DemoTrainingSession,
   DemoTrainingResult,
+  DemoTrainingSession,
   TrainingStatus,
 } from "./model/demoSessions";

@@ -1,5 +1,9 @@
-import { DDSPolicyFields } from "./DDSPolicyFields";
-import { useState } from "react";
+import { trainingApi, type ScenarioInput } from "@/entities/training";
+import { getApiError } from "@/shared/api";
+import { routePaths } from "@/shared/config/routes";
+import { PageHeader } from "@/shared/ui/PageHeader";
+import { QueryState } from "@/shared/ui/QueryState";
+import { ServerSelect, type SelectOption } from "@/shared/ui/ServerSelect";
 import {
   Alert,
   Button,
@@ -10,18 +14,12 @@ import {
   Typography,
 } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import {
-  trainingApi,
-  type ScenarioDetail,
-  type ScenarioInput,
-} from "@/entities/training";
-import { getApiError } from "@/shared/api";
-import { routePaths } from "@/shared/config/routes";
-import { PageHeader } from "@/shared/ui/PageHeader";
-import { QueryState } from "@/shared/ui/QueryState";
-import { ServerSelect, type SelectOption } from "@/shared/ui/ServerSelect";
+import { styles } from "../styles/ScenarioEditorPage";
+import type { EditorProps } from "../types/ScenarioEditorPage";
 import { AssessmentPolicyFields } from "./AssessmentPolicyFields";
+import { DDSPolicyFields } from "./DDSPolicyFields";
 export const ScenarioEditorPage = () => {
   const { scenarioId } = useParams();
   const query = useQuery({
@@ -48,7 +46,7 @@ export const ScenarioEditorPage = () => {
     </Stack>
   );
 };
-function Editor({ initial }: { initial?: ScenarioDetail }) {
+function Editor({ initial }: EditorProps) {
   const navigate = useNavigate();
   const client = useQueryClient();
   const [form, setForm] = useState<ScenarioInput>(() => ({
@@ -248,9 +246,9 @@ function Editor({ initial }: { initial?: ScenarioDetail }) {
         Добавить карточку
       </Button>
       {cards.map((c, i) => (
-        <Paper key={i} sx={{ p: 1 }}>
-          <Stack direction="row" sx={{ alignItems: "center" }} spacing={1}>
-            <Typography sx={{ flex: 1 }}>
+        <Paper key={i} sx={styles.paper}>
+          <Stack direction="row" sx={styles.stack} spacing={1}>
+            <Typography sx={styles.typography}>
               {i + 1}. {c.label}
             </Typography>
             <Button

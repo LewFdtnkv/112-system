@@ -1,5 +1,13 @@
-import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { trainingApi, type FeatureDefinition } from "@/entities/training";
+import { getApiError } from "@/shared/api";
+import {
+  activeFeatureDefinitions,
+  updateFeatureAnswer,
+} from "@/shared/lib/featureValues";
+import { randomUUID as createUuid } from "@/shared/lib/uuid";
+import { FeatureInput } from "@/shared/ui/FeatureInput";
+import { QueryState } from "@/shared/ui/QueryState";
+import { ServerSelect, type SelectOption } from "@/shared/ui/ServerSelect";
 import {
   Alert,
   Autocomplete,
@@ -13,56 +21,34 @@ import {
   Stack,
   TextField,
 } from "@mui/material";
-import {
-  generationApi,
-  trainingApi,
-  type GenerationParameters,
-  type FeatureDefinition,
-} from "@/entities/training";
-import { getApiError } from "@/shared/api";
-import { ServerSelect, type SelectOption } from "@/shared/ui/ServerSelect";
-import { QueryState } from "@/shared/ui/QueryState";
-import { FeatureInput } from "@/shared/ui/FeatureInput";
-import {
-  activeFeatureDefinitions,
-  updateFeatureAnswer,
-} from "@/shared/lib/featureValues";
-import { randomUUID as createUuid } from "@/shared/lib/uuid";
-import "./generation.scss";
+import { useCardGeneration } from "../model/useCardGeneration";
+import { styles } from "../styles/CardGenerationDialog";
+import "../styles/generation.scss";
+import type { CardGenerationDialogProps } from "../types/CardGenerationDialog";
 
 const random: SelectOption = { id: "", label: "Случайно" };
-export function CardGenerationDialog({ onClose }: { onClose: () => void }) {
-  const client = useQueryClient();
-  const [count, setCount] = useState(1);
-  const [requestId, setRequestId] = useState(createUuid);
-  const [p, setP] = useState<GenerationParameters>({});
-  const [version, setVersion] = useState<SelectOption | null>(random);
-  const [entry, setEntry] = useState<SelectOption | null>(random);
-  const [services, setServices] = useState<SelectOption[]>([]);
-  const [serviceChoice, setServiceChoice] = useState<SelectOption | null>(null);
-  const [manualServices, setManualServices] = useState(false);
-  const [features, setFeatures] = useState<FeatureDefinition[]>([]);
-  const options = useQuery({
-    queryKey: ["generation-options"],
-    queryFn: ({ signal }) => generationApi.options(signal),
-  });
-  function change(values: Partial<GenerationParameters>) {
-    setP((prev) => ({ ...prev, ...values }));
-    setRequestId(createUuid());
-  }
-  const save = useMutation({
-    mutationFn: () =>
-      generationApi.create(requestId, count, {
-        ...p,
-        classifier_version_id: version?.id || null,
-        classifier_entry_id: entry?.id || null,
-        service_ids: manualServices ? services.map((s) => s.id) : null,
-      }),
-    onSuccess: async () => {
-      await client.invalidateQueries({ queryKey: ["card-generations"] });
-      onClose();
-    },
-  });
+export function CardGenerationDialog({ onClose }: CardGenerationDialogProps) {
+  const {
+    count,
+    setCount,
+    setRequestId,
+    p,
+    version,
+    setVersion,
+    entry,
+    setEntry,
+    services,
+    setServices,
+    serviceChoice,
+    setServiceChoice,
+    manualServices,
+    setManualServices,
+    features,
+    setFeatures,
+    options,
+    change,
+    save,
+  } = useCardGeneration({ onClose });
   const textChoice = (
     key: "locality" | "street" | "house" | "object" | "caller_name",
     label: string,
@@ -207,7 +193,7 @@ export function CardGenerationDialog({ onClose }: { onClose: () => void }) {
                     Явно выбранные службы имеют приоритет над ЕКП. Пустой список
                     означает «Без оповещения».
                   </Alert>
-                  <Stack direction="row" sx={{ gap: 1, flexWrap: "wrap" }}>
+                  <Stack direction="row" sx={styles.stack}>
                     {services.map((s) => (
                       <Chip
                         key={s.id}

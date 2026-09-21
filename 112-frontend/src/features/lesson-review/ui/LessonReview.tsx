@@ -1,5 +1,8 @@
+import { trainingApi } from "@/entities/training";
+import { getApiError } from "@/shared/api";
+import { getStudentTrainingWorkspacePath } from "@/shared/config/routes";
 import { randomUUID } from "@/shared/lib/uuid";
-import { useState, type ReactNode } from "react";
+import { QueryState } from "@/shared/ui/QueryState";
 import {
   Alert,
   Button,
@@ -9,15 +12,19 @@ import {
   Typography,
 } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import { trainingApi, type Grade, type WorkReview } from "@/entities/training";
-import { getApiError } from "@/shared/api";
-import { getStudentTrainingWorkspacePath } from "@/shared/config/routes";
-import { QueryState } from "@/shared/ui/QueryState";
-import { CardComparison } from "./CardComparison";
-import type { ReviewedCard } from "../model/comparison";
+import { styles } from "../styles/LessonReview";
+import type {
+  GradeFormProps,
+  GradeViewProps,
+  LessonReviewProps,
+  ReviewProps,
+  StudentResultProps,
+} from "../types/LessonReview";
 import { AuditTrail } from "./AuditTrail";
-export function StudentResult({ lessonId }: { lessonId: string }) {
+import { CardComparison } from "./CardComparison";
+export function StudentResult({ lessonId }: StudentResultProps) {
   const grade = useQuery({
     queryKey: ["evaluation", lessonId],
     queryFn: ({ signal }) => trainingApi.evaluation(lessonId, signal),
@@ -52,16 +59,16 @@ export function StudentResult({ lessonId }: { lessonId: string }) {
     </QueryState>
   );
 }
-function GradeView({ grade }: { grade: Grade }) {
+function GradeView({ grade }: GradeViewProps) {
   return (
-    <Paper sx={{ p: 2 }}>
+    <Paper sx={styles.paper}>
       <Typography variant="h6" component="h2">
         {grade.method === "rules"
           ? "Автоматическая оценка"
           : "Оценка преподавателя"}
         : {grade.score} / {grade.max_score}
       </Typography>
-      <p style={{ whiteSpace: "pre-wrap" }}>{grade.comment}</p>
+      <p style={styles.p}>{grade.comment}</p>
       {grade.assessment_details && (
         <Stack spacing={1}>
           {!!grade.assessment_details.missed_cards && (
@@ -98,12 +105,7 @@ export function LessonReview({
   studentId,
   renderProctoring,
   renderCardActions,
-}: {
-  lessonId: string;
-  studentId: string;
-  renderProctoring?: (attemptId: string) => ReactNode;
-  renderCardActions?: (row: ReviewedCard, rows: ReviewedCard[]) => ReactNode;
-}) {
+}: LessonReviewProps) {
   const query = useQuery({
     queryKey: ["work-review", lessonId, studentId],
     queryFn: ({ signal }) => trainingApi.review(lessonId, studentId, signal),
@@ -131,12 +133,7 @@ function Review({
   reload,
   renderProctoring,
   renderCardActions,
-}: {
-  data: WorkReview;
-  reload: () => void;
-  renderProctoring?: (attemptId: string) => ReactNode;
-  renderCardActions?: (row: ReviewedCard, rows: ReviewedCard[]) => ReactNode;
-}) {
+}: ReviewProps) {
   const calculate = useMutation({
     mutationFn: () =>
       trainingApi.automaticGrade(data.lesson_id, data.student_id),
@@ -171,7 +168,7 @@ function Review({
         </Alert>
       )}
       {data.assignments.map((row) => (
-        <Paper key={row.assignment_id} sx={{ p: 2 }}>
+        <Paper key={row.assignment_id} sx={styles.paper2}>
           <Typography variant="h6" component="h2">
             {row.position}. {row.source_snapshot?.title ?? "Карточка"}
           </Typography>
@@ -209,7 +206,7 @@ function Review({
     </Stack>
   );
 }
-function GradeForm({ data, reload }: { data: WorkReview; reload: () => void }) {
+function GradeForm({ data, reload }: GradeFormProps) {
   const client = useQueryClient();
   const latest = data.evaluations.at(-1);
   const [score, setScore] = useState(latest?.score ?? "");

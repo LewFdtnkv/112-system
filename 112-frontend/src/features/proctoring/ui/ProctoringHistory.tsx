@@ -1,15 +1,16 @@
-import { useState } from "react";
-import { Alert, Stack, Typography } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
 import { activityApi } from "@/entities/training";
 import { PageControls, QueryState } from "@/shared/ui/QueryState";
+import { Alert, Stack, Typography } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import type { ProctoringHistoryProps } from "../types/ProctoringHistory";
 const labels: Record<string, string> = {
   "tab.hidden": "Вкладка скрыта",
   "tab.visible": "Вкладка видна",
   "window.blur": "Окно потеряло фокус",
   "window.focus": "Фокус возвращён",
 };
-export function ProctoringHistory({ attemptId }: { attemptId: string }) {
+export function ProctoringHistory({ attemptId }: ProctoringHistoryProps) {
   const [page, setPage] = useState(0);
   const query = useQuery({
     queryKey: ["proctoring", attemptId, page],

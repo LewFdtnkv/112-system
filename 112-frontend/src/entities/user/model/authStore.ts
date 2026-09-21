@@ -1,5 +1,6 @@
 import { create } from "zustand";
-import type { AuthSession, AuthState, TokenPair } from "./types";
+import type { AuthActions } from "../types/authStore";
+import type { AuthState, TokenPair } from "../types/types";
 
 export const authStorageKey = "dds112-auth";
 export const tokenStorageKey = "dds112-tokens-v1";
@@ -26,13 +27,6 @@ export const saveTokens = (value: TokenPair) => {
   tokens = value;
   sessionStorage.setItem(tokenStorageKey, JSON.stringify(value));
 };
-interface AuthActions {
-  initializationError?: string;
-  startChecking: () => void;
-  setSession: (session: AuthSession) => void;
-  requirePassword: () => void;
-  clearSession: () => void;
-}
 export const useAuthStore = create<AuthState & AuthActions>()((set) => ({
   status: tokens ? "checking" : "anonymous",
   session: null,

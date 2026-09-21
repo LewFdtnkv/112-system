@@ -8,22 +8,12 @@ import {
   TextField,
 } from "@mui/material";
 import { useState } from "react";
+import type {
+  CreateIncidentDialogProps,
+  NewIncidentDraft,
+} from "../types/CreateIncidentDialog";
 
 import { incidentCategories } from "@/entities/incident-card";
-
-export interface NewIncidentDraft {
-  categoryId: string;
-  street: string;
-  house: string;
-  description: string;
-}
-
-interface CreateIncidentDialogProps {
-  open: boolean;
-  disabled?: boolean;
-  onClose: () => void;
-  onCreate: (draft: NewIncidentDraft) => void;
-}
 
 const initialDraft: NewIncidentDraft = {
   categoryId: "other",
@@ -107,3 +97,5 @@ export const CreateIncidentDialog = ({
     </Dialog>
   );
 };
+
+export type { NewIncidentDraft } from "../types/CreateIncidentDialog";

@@ -1,21 +1,16 @@
-import { rowAction } from "@/shared/lib/rowAction";
-import "./incident-feed.scss";
-import { Fragment, useMemo, useState, type ReactNode } from "react";
 import {
   formatAddress,
   getCategoryName,
   incidentStatusLabels,
   type IncidentCard,
 } from "@/entities/incident-card";
+import { rowAction } from "@/shared/lib/rowAction";
 import { ArmField, ArmIcon, ArmIconButton } from "@/shared/ui/arm";
+import { Fragment, useMemo, useState } from "react";
+import "../styles/incident-feed.scss";
+import { styles } from "../styles/IncidentFeed";
+import type { IncidentFeedProps } from "../types/IncidentFeed";
 import { JournalClock } from "./JournalClock";
-
-interface IncidentFeedProps {
-  toolbar?: ReactNode;
-  incidents: readonly IncidentCard[];
-  selectedId?: string;
-  onOpen: (incident: IncidentCard) => void;
-}
 const emptyFilters = { query: "", address: "", district: "", status: "" };
 const sortKey = (card: IncidentCard) =>
   `${card.createdDate?.split(".").reverse().join("-") ?? ""} ${card.createdAt}`;
@@ -204,13 +199,13 @@ export function IncidentFeed({
               >
                 <colgroup>
                   {[32, 30, 32, 32, 32, 54, 44, 76, 76, 80].map((width, i) => (
-                    <col key={i} style={{ width }} />
+                    <col key={i} style={styles.col(width)} />
                   ))}
                   <col />
-                  <col style={{ width: 44 }} />
+                  <col style={styles.col2} />
                   <col className="arm-journal-table__address-col" />
-                  <col style={{ width: 166 }} />
-                  <col style={{ width: 44 }} />
+                  <col style={styles.col3} />
+                  <col style={styles.col4} />
                 </colgroup>
                 <thead>
                   <tr>

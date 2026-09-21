@@ -1,6 +1,18 @@
-import { rowAction } from "@/shared/lib/rowAction";
+import {
+  lessonPercent,
+  percentText,
+  trainingApi,
+  workStatusLabels,
+} from "@/entities/training";
 import { StudentProfileDialog } from "@/features/student-profile";
-import { useState } from "react";
+import {
+  getStudentTrainingWorkspacePath,
+  getTrainingResultPath,
+} from "@/shared/config/routes";
+import { rowAction } from "@/shared/lib/rowAction";
+import { useDebounced } from "@/shared/lib/useDebounced";
+import { EmptyState } from "@/shared/ui/EmptyState";
+import { PageControls, QueryState } from "@/shared/ui/QueryState";
 import {
   Button,
   MenuItem,
@@ -14,31 +26,16 @@ import {
   TextField,
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import {
-  trainingApi,
-  workStatusLabels,
-  percentText,
-  lessonPercent,
-} from "@/entities/training";
-import { useDebounced } from "@/shared/lib/useDebounced";
-import { QueryState, PageControls } from "@/shared/ui/QueryState";
-import { EmptyState } from "@/shared/ui/EmptyState";
-import {
-  getStudentTrainingWorkspacePath,
-  getTrainingResultPath,
-} from "@/shared/config/routes";
+import { styles } from "../styles/LessonList";
+import type { LessonListProps } from "../types/LessonList";
 export function LessonList({
   student = false,
   resultsOnly = false,
   lessonId,
   studentId,
-}: {
-  student?: boolean;
-  resultsOnly?: boolean;
-  lessonId?: string;
-  studentId?: string;
-}) {
+}: LessonListProps) {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -76,7 +73,7 @@ export function LessonList({
           select
           label="Тип занятия"
           value={role}
-          sx={{ minWidth: 180 }}
+          sx={styles.textField}
           onChange={(e) => {
             setRole(e.target.value);
             setPage(0);
@@ -179,7 +176,7 @@ export function LessonList({
                               </small>
                             </TableCell>
                           )}
-                          <TableCell sx={{ whiteSpace: "nowrap" }}>
+                          <TableCell sx={styles.tableCell}>
                             {row.role === "dds" ? "ДДС" : "Оператор 112"}
                           </TableCell>
                           <TableCell>
@@ -203,7 +200,7 @@ export function LessonList({
                           <TableCell>
                             {workStatusLabels[row.work_status]}
                           </TableCell>
-                          <TableCell sx={{ whiteSpace: "nowrap" }}>
+                          <TableCell sx={styles.tableCell2}>
                             {row.completed_at ? (
                               <time dateTime={row.completed_at}>
                                 {new Date(row.completed_at).toLocaleString(

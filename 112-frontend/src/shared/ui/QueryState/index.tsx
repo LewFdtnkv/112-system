@@ -1,17 +1,13 @@
-import { Alert, Button, Stack, TablePagination } from "@mui/material";
-import type { PropsWithChildren } from "react";
 import { getApiError } from "@/shared/api";
 import { LoadingScreen } from "@/shared/ui/LoadingScreen";
+import { Alert, Button, Stack, TablePagination } from "@mui/material";
+import type { PageControlsProps, QueryStateProps } from "./types/index";
 export function QueryState({
   pending,
   error,
   retry,
   children,
-}: PropsWithChildren<{
-  pending: boolean;
-  error: unknown;
-  retry?: () => void;
-}>) {
+}: QueryStateProps) {
   if (pending) return <LoadingScreen />;
   return (
     <>
@@ -31,12 +27,7 @@ export function PageControls({
   page,
   onPage,
   size = 20,
-}: {
-  total: number;
-  page: number;
-  size?: number;
-  onPage: (page: number) => void;
-}) {
+}: PageControlsProps) {
   return (
     <TablePagination
       component="div"

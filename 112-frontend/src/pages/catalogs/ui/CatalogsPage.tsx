@@ -1,5 +1,13 @@
+import { trainingApi } from "@/entities/training";
+import {
+  CatalogFiles,
+  CatalogRules,
+  ProfilesPanel,
+} from "@/features/catalog-management";
+import { getApiError } from "@/shared/api";
 import { rowAction } from "@/shared/lib/rowAction";
-import { useState } from "react";
+import { PageHeader } from "@/shared/ui/PageHeader";
+import { PageControls, QueryState } from "@/shared/ui/QueryState";
 import {
   Alert,
   Button,
@@ -13,15 +21,8 @@ import {
   Typography,
 } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  CatalogFiles,
-  CatalogRules,
-  ProfilesPanel,
-} from "@/features/catalog-management";
-import { trainingApi } from "@/entities/training";
-import { getApiError } from "@/shared/api";
-import { PageHeader } from "@/shared/ui/PageHeader";
-import { QueryState, PageControls } from "@/shared/ui/QueryState";
+import { useState } from "react";
+import { styles } from "../styles/CatalogsPage";
 export const CatalogsPage = () => {
   const client = useQueryClient();
   const [selected, setSelected] = useState<string>();
@@ -175,7 +176,7 @@ export const CatalogsPage = () => {
                         {s.short_name ? `${s.short_name} — ${s.name}` : s.name}
                       </Button>
                     </TableCell>
-                    <TableCell sx={{ userSelect: "text" }}>{s.id}</TableCell>
+                    <TableCell sx={styles.tableCell}>{s.id}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

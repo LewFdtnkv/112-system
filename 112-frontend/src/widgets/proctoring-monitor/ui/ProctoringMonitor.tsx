@@ -1,5 +1,7 @@
+import { activityApi } from "@/entities/training";
+import { ProctoringHistory } from "@/features/proctoring";
 import { rowAction } from "@/shared/lib/rowAction";
-import { useState } from "react";
+import { PageControls, QueryState } from "@/shared/ui/QueryState";
 import {
   Alert,
   Button,
@@ -15,9 +17,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
-import { activityApi } from "@/entities/training";
-import { ProctoringHistory } from "@/features/proctoring";
-import { PageControls, QueryState } from "@/shared/ui/QueryState";
+import { useState } from "react";
 export function ProctoringMonitor() {
   const [page, setPage] = useState(0);
   const [attempt, setAttempt] = useState<string | null>(null);

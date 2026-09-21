@@ -1,7 +1,7 @@
-import "./feature-input.scss";
+import "@/shared/styles/feature-input.scss";
+import type { FeatureInputProps } from "@/shared/types/features";
 import { useState } from "react";
 import { useFieldFeedback } from "./arm/FieldFeedback";
-import type { FeatureInputProps } from "@/shared/types/features";
 
 /** Generic structured input, shared by reference answers and ARM fields. */
 export function FeatureInput({

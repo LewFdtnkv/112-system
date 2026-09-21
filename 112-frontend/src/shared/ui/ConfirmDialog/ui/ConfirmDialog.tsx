@@ -1,4 +1,3 @@
-import { useId } from "react";
 import {
   Button,
   Dialog,
@@ -7,16 +6,8 @@ import {
   DialogContentText,
   DialogTitle,
 } from "@mui/material";
-
-export interface ConfirmDialogProps {
-  open: boolean;
-  title: string;
-  description?: string;
-  confirmLabel?: string;
-  isPending?: boolean;
-  onConfirm: () => void;
-  onCancel: () => void;
-}
+import { useId } from "react";
+import type { ConfirmDialogProps } from "./types/ConfirmDialog";
 
 export const ConfirmDialog = ({
   open,
@@ -56,3 +47,5 @@ export const ConfirmDialog = ({
     </Dialog>
   );
 };
+
+export type { ConfirmDialogProps } from "./types/ConfirmDialog";

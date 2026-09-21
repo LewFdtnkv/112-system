@@ -1,8 +1,9 @@
-import { useEffect, type PropsWithChildren } from "react";
-import { Alert, Button, Stack } from "@mui/material";
-import { useQueryClient } from "@tanstack/react-query";
+import { styles } from "@/app/styles/AuthProvider";
 import { restoreSession, useAuthStore } from "@/entities/user";
 import { LoadingScreen } from "@/shared/ui/LoadingScreen";
+import { Alert, Button, Stack } from "@mui/material";
+import { useQueryClient } from "@tanstack/react-query";
+import { useEffect, type PropsWithChildren } from "react";
 
 export const AuthProvider = ({ children }: PropsWithChildren) => {
   const status = useAuthStore((state) => state.status);
@@ -18,7 +19,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
   }, [queryClient]);
   if (error)
     return (
-      <Stack spacing={2} sx={{ p: 3 }}>
+      <Stack spacing={2} sx={styles.stack}>
         <Alert severity="error">Не удалось проверить сеанс. {error}</Alert>
         <Button onClick={() => void restoreSession()}>Повторить</Button>
         <Button onClick={() => useAuthStore.getState().clearSession()}>

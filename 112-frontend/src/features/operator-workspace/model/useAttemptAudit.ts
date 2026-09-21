@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
 import { trainingApi } from "@/entities/training";
+import { useEffect, useMemo, useState } from "react";
 import { createObservationBuffer } from "./observationBuffer";
 
 export function useAttemptAudit(

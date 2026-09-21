@@ -4,8 +4,8 @@ export type { ApiErrorInfo } from "./types";
 
 export {
   backendApi,
-  publicBackendApi,
   configureAuthentication,
+  publicBackendApi,
 } from "./backendApi";
 
 export { api } from "./api";

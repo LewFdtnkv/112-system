@@ -1,22 +1,8 @@
-import "./training-strip.scss";
 import { Button } from "@mui/material";
+import "../styles/training-strip.scss";
+import type { TrainingStripProps } from "../types/TrainingStrip";
 
 import { formatDuration } from "@/shared/lib/formatDuration";
-
-export type CallState = "incoming" | "accepted" | "declined";
-export type ConnectionState = "connected" | "reconnecting";
-
-interface TrainingStripProps {
-  scenarioTitle: string;
-  isSessionActive: boolean;
-  elapsedSeconds: number;
-  normSeconds: number;
-  callState: CallState;
-  connectionState: ConnectionState;
-  onAcceptCall: () => void;
-  onDeclineCall: () => void;
-  onToggleConnection: () => void;
-}
 
 export const TrainingStrip = ({
   scenarioTitle,
@@ -80,3 +66,5 @@ export const TrainingStrip = ({
     </section>
   );
 };
+
+export type { CallState, ConnectionState } from "../types/TrainingStrip";

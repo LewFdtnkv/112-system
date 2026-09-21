@@ -1,20 +1,6 @@
-import type { IncidentCard } from "@/entities/incident-card";
-import type { IncidentEditor } from "@/features/incident-editing";
-import { ArmField, ArmIcon, ArmIconButton } from "@/shared/ui/arm";
 import { formatDuration } from "@/shared/lib/formatDuration";
-
-interface Props {
-  card: IncidentCard;
-  editor: IncidentEditor;
-  disabled: boolean;
-  accepted: boolean;
-  elapsedSeconds: number;
-  normSeconds: number;
-  viewing: boolean;
-  submitted: boolean;
-  onViewChange: () => void;
-  onHistory: (kind: "calls" | "sms") => void;
-}
+import { ArmField, ArmIcon, ArmIconButton } from "@/shared/ui/arm";
+import type { Props } from "../types/CardTelephoneBar";
 export function CardTelephoneBar({
   card,
   editor,

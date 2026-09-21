@@ -1,12 +1,20 @@
-import { rowAction } from "@/shared/lib/rowAction";
-import "./cards.scss";
-import { TrainingCardPreview } from "@/widgets/incident-card";
+import {
+  CardDataFields,
+  generationApi,
+  trainingApi,
+  type FeatureDefinition,
+} from "@/entities/training";
+import { CardEditor } from "@/features/card-authoring";
 import {
   CardGenerationDialog,
   GenerationRows,
 } from "@/features/card-generation";
 import type { ReferenceCardSource } from "@/features/incident-editing";
-import { useState } from "react";
+import { rowAction } from "@/shared/lib/rowAction";
+import { useDebounced } from "@/shared/lib/useDebounced";
+import { PageHeader } from "@/shared/ui/PageHeader";
+import { PageControls, QueryState } from "@/shared/ui/QueryState";
+import { TrainingCardPreview } from "@/widgets/incident-card";
 import {
   Alert,
   Button,
@@ -18,23 +26,16 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableHead,
   TableContainer,
-  Tooltip,
+  TableHead,
   TableRow,
   TextField,
+  Tooltip,
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
-import {
-  trainingApi,
-  generationApi,
-  CardDataFields,
-  type FeatureDefinition,
-} from "@/entities/training";
-import { CardEditor } from "./CardEditor";
-import { useDebounced } from "@/shared/lib/useDebounced";
-import { PageHeader } from "@/shared/ui/PageHeader";
-import { QueryState, PageControls } from "@/shared/ui/QueryState";
+import { useState } from "react";
+import "../styles/cards.scss";
+import { styles } from "../styles/CardsPage";
 export const CardsPage = () => {
   const [q, setQ] = useState("");
   const search = useDebounced(q);
@@ -120,13 +121,13 @@ export const CardsPage = () => {
                 aria-label="Библиотека карточек"
               >
                 <colgroup>
-                  <col style={{ width: "23%" }} />
-                  <col style={{ width: "16%" }} />
-                  <col style={{ width: "21%" }} />
-                  <col style={{ width: "14%" }} />
-                  <col style={{ width: "8%" }} />
-                  <col style={{ width: "10%" }} />
-                  <col style={{ width: "8%" }} />
+                  <col style={styles.titleColumn} />
+                  <col style={styles.incidentColumn} />
+                  <col style={styles.addressColumn} />
+                  <col style={styles.servicesColumn} />
+                  <col style={styles.usageColumn} />
+                  <col style={styles.updatedColumn} />
+                  <col style={styles.actionsColumn} />
                 </colgroup>
                 <TableHead>
                   <TableRow>
@@ -385,7 +386,7 @@ export const CardsPage = () => {
             )}
           </QueryState>
           {(!editing || !detail.data?.can_edit) && (
-            <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
+            <Stack direction="row" spacing={1} sx={styles.actions}>
               {detail.data?.can_edit && (
                 <Button onClick={() => setEditing(true)}>
                   Редактировать карточку

@@ -1,13 +1,11 @@
 import { Stack, TextField, Typography } from "@mui/material";
-import type { AssessmentPolicy } from "@/entities/training";
+import { styles } from "../styles/AssessmentPolicyFields";
+import type { AssessmentPolicyFieldsProps } from "../types/AssessmentPolicyFields";
 
 export function AssessmentPolicyFields({
   value,
   onChange,
-}: {
-  value: AssessmentPolicy;
-  onChange: (value: AssessmentPolicy) => void;
-}) {
+}: AssessmentPolicyFieldsProps) {
   const labels = {
     classification: "Тип происшествия",
     notification: "Оповещение служб",
@@ -18,20 +16,14 @@ export function AssessmentPolicyFields({
   return (
     <details>
       <summary>Автоматическая оценка — веса критериев</summary>
-      <Stack spacing={2} sx={{ pt: 2 }}>
+      <Stack spacing={2} sx={styles.stack}>
         <Typography variant="body2">
           После сдачи оценка публикуется автоматически. Веса групп нормируются
           по доступным эталонам; поля внутри группы равнозначны. Тексты пока не
           входят в балл. Это учебная настройка, которую можно изменить для новой
           версии сценария.
         </Typography>
-        <Stack
-          sx={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-            gap: 2,
-          }}
-        >
+        <Stack sx={styles.stack2}>
           {Object.entries(labels).map(([code, label]) => (
             <TextField
               key={code}

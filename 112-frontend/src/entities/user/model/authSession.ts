@@ -1,16 +1,16 @@
 import { configureAuthentication, getApiError } from "@/shared/api";
 import {
   authApi,
-  type LoginRequest,
   type ChangePasswordRequest,
+  type LoginRequest,
 } from "../api/authApi";
+import type { UserProfile } from "../types/types";
 import {
   getAuthGeneration,
   getTokens,
   saveTokens,
   useAuthStore,
 } from "./authStore";
-import type { UserProfile } from "./types";
 
 export const sessionFromProfile = (user: UserProfile) => {
   if (user.is_admin && user.is_teacher)

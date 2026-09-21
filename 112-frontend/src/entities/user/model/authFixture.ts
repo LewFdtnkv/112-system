@@ -1,4 +1,4 @@
-import type { TokenPair, UserProfile } from "./types";
+import type { TokenPair, UserProfile } from "../types/types";
 export const testPair: TokenPair = {
   access_token: "test-access",
   refresh_token: "test-refresh",

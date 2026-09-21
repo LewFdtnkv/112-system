@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
 import { ArmIcon } from "@/shared/ui/arm";
+import { useEffect, useState } from "react";
 export function JournalClock() {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {

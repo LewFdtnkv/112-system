@@ -1,13 +1,6 @@
-import { backendApi, publicBackendApi, apiEndpoints } from "@/shared/api";
-import type { TokenPair, UserProfile } from "../model/types";
-export interface LoginRequest {
-  username: string;
-  password: string;
-}
-export interface ChangePasswordRequest {
-  current_password: string;
-  new_password: string;
-}
+import { apiEndpoints, backendApi, publicBackendApi } from "@/shared/api";
+import type { ChangePasswordRequest, LoginRequest } from "../types/authApi";
+import type { TokenPair, UserProfile } from "../types/types";
 export const authApi = {
   login: (payload: LoginRequest) =>
     publicBackendApi
@@ -25,3 +18,5 @@ export const authApi = {
   getCurrentUser: () =>
     backendApi.get(apiEndpoints.auth.me).json<UserProfile>(),
 };
+
+export type { ChangePasswordRequest, LoginRequest } from "../types/authApi";

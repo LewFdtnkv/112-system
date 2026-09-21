@@ -1,17 +1,13 @@
 import { Alert, Button, Stack, TextField } from "@mui/material";
 import { useForm } from "react-hook-form";
-export interface ChangePasswordValues {
-  currentPassword: string;
-  newPassword: string;
-  confirmation: string;
-}
+import type {
+  ChangePasswordFormProps,
+  ChangePasswordValues,
+} from "../types/ChangePasswordForm";
 export const ChangePasswordForm = ({
   error,
   onSubmit,
-}: {
-  error?: string;
-  onSubmit: (values: ChangePasswordValues) => Promise<void>;
-}) => {
+}: ChangePasswordFormProps) => {
   const {
     register,
     handleSubmit,
@@ -75,3 +71,5 @@ export const ChangePasswordForm = ({
     </Stack>
   );
 };
+
+export type { ChangePasswordValues } from "../types/ChangePasswordForm";

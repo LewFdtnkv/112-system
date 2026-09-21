@@ -1,15 +1,15 @@
-import { Dialog, DialogContent, DialogTitle } from "@mui/material";
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import type { RemoteEditor } from "@/features/incident-editing";
-import { useDebounced } from "@/shared/lib/useDebounced";
-import { getApiError } from "@/shared/api";
-import { PageControls } from "@/shared/ui/QueryState";
 import {
   responseServices,
   type ResponseService,
 } from "@/entities/incident-card";
+import { getApiError } from "@/shared/api";
+import { useDebounced } from "@/shared/lib/useDebounced";
 import { ArmField, ArmIconButton } from "@/shared/ui/arm";
+import { PageControls } from "@/shared/ui/QueryState";
+import { Dialog, DialogContent, DialogTitle } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import type { Props } from "../types/CardServicesDialog";
 
 const serviceNames: Record<ResponseService, string> = {
   "101": "Служба 101 (Пожарно-спасательная служба)",
@@ -17,19 +17,6 @@ const serviceNames: Record<ResponseService, string> = {
   "103": "Служба 103 (Скорая и неотложная медицинская помощь)",
   "104": "Служба 104 (Аварийная газовая служба)",
 };
-interface Props {
-  open: boolean;
-  selected: readonly ResponseService[];
-  onToggle: (
-    service: ResponseService,
-    name?: string,
-    short_name?: string | null,
-  ) => void;
-  remote?: RemoteEditor;
-  manual?: boolean;
-  onReset?: () => void;
-  onClose: () => void;
-}
 export function CardServicesDialog({
   open,
   selected,

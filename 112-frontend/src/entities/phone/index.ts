@@ -1,2 +1,2 @@
-import { editPhone } from "./ui/phone";
-export { editPhone };
+export * from "./lib/phone";
+export { usePhoneInput } from "./model/usePhoneInput";

@@ -33,6 +33,10 @@ Apply backend migration `0006_frontend_scenarios` before using this integration.
 
 ## Structure
 
+**FSD is mandatory.** See [frontend architecture rules](docs/FRONTEND_ARCHITECTURE.md)
+for layers, type/style segments, clickable rows and required interaction states.
+`npm run lint` also checks these architecture boundaries.
+
 ```text
 src/
   app/        Providers, layouts, routes, theme and global styles

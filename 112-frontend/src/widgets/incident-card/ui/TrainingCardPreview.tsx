@@ -1,26 +1,11 @@
-import { useState, type ReactNode } from "react";
-import { ArmIconButton } from "@/shared/ui/arm";
-import { CardServiceTile } from "./CardServiceTile";
-import { Button } from "@mui/material";
-import {
-  attemptCard,
-  referenceCard,
-  type ReferenceCardSource,
-} from "@/features/incident-editing";
-import type { Attempt } from "@/entities/training";
+import { attemptCard, referenceCard } from "@/features/incident-editing";
 import type { FeatureDefinition } from "@/shared/lib/featureValues";
-import type { FieldFeedbackMap } from "@/shared/ui/arm/FieldFeedback";
+import { ArmIconButton } from "@/shared/ui/arm";
+import { Button } from "@mui/material";
+import { useState } from "react";
+import type { Props } from "../types/TrainingCardPreview";
+import { CardServiceTile } from "./CardServiceTile";
 import { IncidentCardDialog } from "./IncidentCardDialog";
-
-type Props = (
-  | { attempt: Attempt; reference?: never }
-  | { reference: ReferenceCardSource; attempt?: never }
-) & {
-  onClose: () => void;
-  feedback?: FieldFeedbackMap;
-  navigation?: ReactNode;
-  unanswered?: boolean;
-};
 export function TrainingCardPreview({
   attempt,
   reference,

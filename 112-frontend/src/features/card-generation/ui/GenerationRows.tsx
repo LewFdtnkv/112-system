@@ -1,9 +1,10 @@
+import { generationApi } from "@/entities/training";
+import { getApiError } from "@/shared/api";
 import { Alert, Button, Chip, TableCell, TableRow } from "@mui/material";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { generationApi, type GenerationJob } from "@/entities/training";
-import { getApiError } from "@/shared/api";
+import type { GenerationRowsProps } from "../types/GenerationRows";
 
-export function GenerationRows({ jobs }: { jobs: GenerationJob[] }) {
+export function GenerationRows({ jobs }: GenerationRowsProps) {
   const client = useQueryClient();
   const retry = useMutation({
     mutationFn: generationApi.retry,

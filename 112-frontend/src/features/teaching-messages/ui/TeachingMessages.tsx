@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { activityApi } from "@/entities/training";
+import { getApiError } from "@/shared/api";
+import { PageControls, QueryState } from "@/shared/ui/QueryState";
 import {
   Alert,
   Button,
@@ -8,17 +10,14 @@ import {
   Typography,
 } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { activityApi } from "@/entities/training";
-import { getApiError } from "@/shared/api";
-import { PageControls, QueryState } from "@/shared/ui/QueryState";
+import { useState } from "react";
+import { styles } from "../styles/TeachingMessages";
+import type {
+  MessageComposerProps,
+  StudentMessagesProps,
+} from "../types/TeachingMessages";
 
-export function MessageComposer({
-  groupId,
-  studentId,
-}: {
-  groupId?: string;
-  studentId?: string;
-}) {
+export function MessageComposer({ groupId, studentId }: MessageComposerProps) {
   const [text, setText] = useState("");
   const send = useMutation({
     mutationFn: () =>
@@ -59,7 +58,7 @@ export function MessageComposer({
   );
 }
 
-export function StudentMessages({ compact = false }: { compact?: boolean }) {
+export function StudentMessages({ compact = false }: StudentMessagesProps) {
   const [page, setPage] = useState(0);
   const client = useQueryClient();
   const query = useQuery({
@@ -77,10 +76,10 @@ export function StudentMessages({ compact = false }: { compact?: boolean }) {
     <Paper
       component={compact ? "details" : "section"}
       variant="outlined"
-      sx={{ p: compact ? 1 : 2 }}
+      sx={styles.paper(compact)}
     >
       {compact && (
-        <summary style={{ cursor: "pointer", userSelect: "none" }}>
+        <summary style={styles.summary}>
           Сообщения преподавателя · {query.data?.total ?? 0}
         </summary>
       )}
@@ -112,7 +111,7 @@ export function StudentMessages({ compact = false }: { compact?: boolean }) {
               <strong>
                 {m.teacher_name} · {m.group_name ?? "Лично вам"}
               </strong>
-              <Typography sx={{ whiteSpace: "pre-wrap" }}>{m.text}</Typography>
+              <Typography sx={styles.typography}>{m.text}</Typography>
               <small>{new Date(m.created_at).toLocaleString("ru-RU")}</small>
             </Alert>
           ))}

@@ -1,19 +1,15 @@
+import { ddsStatusLabels } from "@/entities/training";
 import {
+  Alert,
   Button,
   MenuItem,
   Paper,
   Stack,
   TextField,
-  Alert,
 } from "@mui/material";
-import { ddsStatusLabels, type DDSPolicy } from "@/entities/training";
-export function DDSPolicyFields({
-  value,
-  onChange,
-}: {
-  value: DDSPolicy;
-  onChange: (value: DDSPolicy) => void;
-}) {
+import { styles } from "../styles/DDSPolicyFields";
+import type { DDSPolicyFieldsProps } from "../types/DDSPolicyFields";
+export function DDSPolicyFields({ value, onChange }: DDSPolicyFieldsProps) {
   return (
     <Stack spacing={2}>
       <Alert severity="info">
@@ -22,7 +18,7 @@ export function DDSPolicyFields({
         быть указан в сообщении. Звонки пока не подключены.
       </Alert>
       {value.steps.map((step, i) => (
-        <Paper key={i} sx={{ p: 2 }}>
+        <Paper key={i} sx={styles.paper}>
           <Stack spacing={1}>
             <b>Этап {i + 1}</b>
             <TextField

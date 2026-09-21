@@ -1,12 +1,4 @@
-export type DemoUserRole = "student" | "teacher" | "admin";
-
-export interface DemoUser {
-  id: string;
-  name: string;
-  email: string;
-  role: DemoUserRole;
-  group: string | null;
-}
+import type { DemoUser, DemoUserRole } from "../types/demoUsers";
 
 export const userRoleLabels: Record<DemoUserRole, string> = {
   student: "Ученик",
@@ -54,3 +46,5 @@ export const demoUsers: DemoUser[] = [
     group: null,
   },
 ];
+
+export type { DemoUser, DemoUserRole } from "../types/demoUsers";

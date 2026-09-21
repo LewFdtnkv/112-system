@@ -1,10 +1,10 @@
 import { backendApi } from "@/shared/api";
+import type { Page } from "../model/types";
 import type {
   GenerationJob,
   GenerationOptions,
   GenerationParameters,
-} from "../model/generation";
-import type { Page } from "../model/types";
+} from "../types/generation";
 
 export const generationApi = {
   options: (signal?: AbortSignal) =>

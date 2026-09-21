@@ -1,19 +1,8 @@
-export type TrainingStatus = "assigned" | "active" | "completed";
-
-export interface DemoTrainingSession {
-  id: string;
-  scenarioId: string;
-  studentId: string;
-  teacherId: string;
-  status: TrainingStatus;
-  scheduledAt: string;
-}
-
-export interface DemoTrainingResult {
-  sessionId: string;
-  criteria: { name: string; score: number; maxScore: number }[];
-  comment: string;
-}
+import type {
+  DemoTrainingResult,
+  DemoTrainingSession,
+  TrainingStatus,
+} from "../types/demoSessions";
 
 export const trainingStatusLabels: Record<TrainingStatus, string> = {
   assigned: "Назначено",
@@ -84,3 +73,9 @@ export const getResultScore = (result: DemoTrainingResult) =>
 
 export const getResultMaxScore = (result: DemoTrainingResult) =>
   result.criteria.reduce((total, criterion) => total + criterion.maxScore, 0);
+
+export type {
+  DemoTrainingResult,
+  DemoTrainingSession,
+  TrainingStatus,
+} from "../types/demoSessions";

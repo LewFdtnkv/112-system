@@ -1,16 +1,7 @@
-import { Alert, Button, Stack, TextField } from "@mui/material";
 import LoginIcon from "@mui/icons-material/Login";
+import { Alert, Button, Stack, TextField } from "@mui/material";
 import { useForm } from "react-hook-form";
-
-export interface LoginValues {
-  username: string;
-  password: string;
-}
-
-interface LoginFormProps {
-  error?: string;
-  onSubmit: (values: LoginValues) => void | Promise<void>;
-}
+import type { LoginFormProps, LoginValues } from "../types/LoginForm";
 
 export const LoginForm = ({ error, onSubmit }: LoginFormProps) => {
   const {
@@ -60,3 +51,5 @@ export const LoginForm = ({ error, onSubmit }: LoginFormProps) => {
     </Stack>
   );
 };
+
+export type { LoginValues } from "../types/LoginForm";

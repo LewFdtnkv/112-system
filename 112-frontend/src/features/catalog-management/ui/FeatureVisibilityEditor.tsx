@@ -1,5 +1,5 @@
-import { Alert, Button, Paper, Stack, Typography } from "@mui/material";
 import { FeatureInput } from "@/shared/ui/FeatureInput";
+import { Alert, Button, Paper, Stack, Typography } from "@mui/material";
 import type { FeatureVisibilityEditorProps } from "../types/visibility";
 
 export function FeatureVisibilityEditor({

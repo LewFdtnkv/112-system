@@ -1,10 +1,5 @@
-interface Props {
-  name: string;
-  shortName?: string | null;
-  status: string;
-  expanded: boolean;
-  onClick: () => void;
-}
+import type { Props } from "../types/CardServiceTile";
+
 export function CardServiceTile({
   name,
   shortName,

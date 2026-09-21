@@ -1,11 +1,11 @@
-import { AccountStatistics } from "@/features/account-statistics";
-import { Stack, Typography } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
 import { trainingApi } from "@/entities/training";
+import { AccountStatistics } from "@/features/account-statistics";
 import { routePaths } from "@/shared/config/routes";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { QueryState } from "@/shared/ui/QueryState";
+import { Stack, Typography } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 export const AdminDashboardPage = () => {
   const query = useQuery({
     queryKey: ["admin-summary"],

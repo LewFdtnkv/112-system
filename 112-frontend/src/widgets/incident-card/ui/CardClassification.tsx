@@ -1,24 +1,17 @@
-import { FeatureInput } from "@/shared/ui/FeatureInput";
 import {
-  activeFeatureDefinitions,
-  updateFeatureAnswer,
-} from "@/shared/lib/featureValues";
-import { featureText } from "@/shared/lib/featureValues";
-import { Fragment, useState } from "react";
-import {
+  frequentIncidentCategoryIds,
   getCategoryName,
   incidentCategories,
-  frequentIncidentCategoryIds,
 } from "@/entities/incident-card";
-import type { IncidentEditor } from "@/features/incident-editing";
+import {
+  activeFeatureDefinitions,
+  featureText,
+  updateFeatureAnswer,
+} from "@/shared/lib/featureValues";
 import { ArmField, ArmIconButton } from "@/shared/ui/arm";
-
-interface Props {
-  editor: IncidentEditor;
-  disabled: boolean;
-  viewing: boolean;
-  onVictims: () => void;
-}
+import { FeatureInput } from "@/shared/ui/FeatureInput";
+import { Fragment, useState } from "react";
+import type { Props } from "../types/CardClassification";
 export function CardClassification({
   editor,
   disabled,

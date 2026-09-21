@@ -1,11 +1,11 @@
-import { useState } from "react";
-import { Stack } from "@mui/material";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { signIn, useAuthStore } from "@/entities/user";
 import { LoginForm, authErrorMessage, type LoginValues } from "@/features/auth";
 import { routePaths } from "@/shared/config/routes";
 import { safeReturnPath } from "@/shared/lib/safeReturnPath";
 import { PageHeader } from "@/shared/ui/PageHeader";
+import { Stack } from "@mui/material";
+import { useState } from "react";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 export const LoginPage = () => {
   const [error, setError] = useState<string>();
   const status = useAuthStore((state) => state.status);
