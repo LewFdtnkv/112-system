@@ -13,7 +13,7 @@ import {
   TextField,
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   trainingApi,
   workStatusLabels,
@@ -38,6 +38,7 @@ export function LessonList({
   lessonId?: string;
   studentId?: string;
 }) {
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState(resultsOnly ? "submitted" : "all");
@@ -151,8 +152,22 @@ export function LessonList({
                         student && row.work_status !== "submitted"
                           ? getStudentTrainingWorkspacePath(row.lesson_id)
                           : reviewPath;
+                      const isNestedControl = (element: EventTarget | null) =>
+                        element instanceof Element &&
+                        element.closest(
+                          "a, button, input, select, textarea",
+                        ) !== null;
                       return (
-                        <TableRow key={`${row.lesson_id}:${row.student_id}`}>
+                        <TableRow
+                          className="table-clickable-row"
+                          hover
+                          key={`${row.lesson_id}:${row.student_id}`}
+                          onClick={(event) => {
+                            if (!isNestedControl(event.target)) {
+                              navigate(target);
+                            }
+                          }}
+                        >
                           <TableCell>
                             <Link className="table-block-link" to={target}>
                               {row.scenario_title}

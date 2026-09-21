@@ -81,7 +81,7 @@ export const components: Components<Theme> = {
           backgroundColor: "#f4f7f8",
         },
         "&:hover": {
-          backgroundColor: "#e2f1f7",
+          backgroundColor: "#d3e8f2",
         },
       },
     },

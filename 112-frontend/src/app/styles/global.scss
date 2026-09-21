@@ -2,7 +2,13 @@
   box-sizing: border-box;
 }
 
-// Interface controls are not selectable; incident text and form inputs are.
+body,
+body * {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none;
+}
+
 :where(.app-shell, .auth-shell) :is(ul, ol) {
   list-style: none;
   padding-left: 0;
@@ -581,7 +587,6 @@ a:hover {
   }
 }
 
-/* The visible navigation tile is one native link, including its padding. */
 .action-links {
   display: flex;
   flex-wrap: wrap;
@@ -630,8 +635,11 @@ a:hover {
   box-sizing: border-box;
 }
 .table-block-link:hover {
-  background: #d7eaf2;
-  text-decoration: none;
+  background: transparent;
+  text-decoration: underline;
+}
+.table-clickable-row {
+  cursor: pointer;
 }
 .block-detail {
   display: block;

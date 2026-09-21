@@ -8,13 +8,13 @@ Nginx из backend Compose проксирует `/api/` в API. Для Vite в D
 
 ## Контракт и поведение
 
-| Запрос | Назначение |
-| --- | --- |
-| `POST auth/login` | JSON `username`, `password`; получает пару токенов |
-| `GET users/me` | Профиль, `role` и совместимые флаги `is_teacher` / `is_admin` |
-| `POST auth/refresh` | JSON `refresh_token`; ротация пары при HTTP 401 |
-| `POST auth/change-password` | Bearer и JSON `current_password`, `new_password` |
-| `POST auth/logout` | Bearer; отзыв текущей сессии |
+| Запрос                      | Назначение                                                    |
+| --------------------------- | ------------------------------------------------------------- |
+| `POST auth/login`           | JSON `username`, `password`; получает пару токенов            |
+| `GET users/me`              | Профиль, `role` и совместимые флаги `is_teacher` / `is_admin` |
+| `POST auth/refresh`         | JSON `refresh_token`; ротация пары при HTTP 401               |
+| `POST auth/change-password` | Bearer и JSON `current_password`, `new_password`              |
+| `POST auth/logout`          | Bearer; отзыв текущей сессии                                  |
 
 Логин — 1–50 латинских букв, цифр, точек, дефисов и подчёркиваний. Email не служит
 идентификатором входа. Пароль передаётся без обрезки пробелов. Новый пароль —

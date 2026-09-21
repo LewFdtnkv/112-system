@@ -299,7 +299,8 @@ export function IncidentFeed({
                           {incident.createdAt}
                         </td>
                         <td className="arm-journal-table__category">
-                          {incident.categoryName ?? getCategoryName(incident.fields.categoryId)}
+                          {incident.categoryName ??
+                            getCategoryName(incident.fields.categoryId)}
                         </td>
                         <td>
                           {incident.fields.victimsCount

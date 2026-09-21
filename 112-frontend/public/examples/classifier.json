@@ -29,22 +29,14 @@
           "label": "Где произошло",
           "type": "choice",
           "required": true,
-          "options": [
-            "Дом",
-            "Улица",
-            "Транспорт"
-          ]
+          "options": ["Дом", "Улица", "Транспорт"]
         },
         {
           "key": "signs",
           "label": "Признаки",
           "type": "array",
           "required": false,
-          "options": [
-            "Дым",
-            "Пламя",
-            "Запах гари"
-          ]
+          "options": ["Дым", "Пламя", "Запах гари"]
         }
       ],
       "routes": [

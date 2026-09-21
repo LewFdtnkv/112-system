@@ -1,19 +1,194 @@
 <!doctype html>
-<html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Система-112 — варианты разбора карточки</title>
-<style>
-*{box-sizing:border-box}body{margin:0;font:15px/1.6 Arial,sans-serif;background:#eef2f5;color:#253640}
-header,main{max-width:1440px;margin:auto;padding:24px}h1{font-size:26px;margin:0 0 10px}p{margin:8px 0 16px}
-nav{display:flex;flex-wrap:wrap;gap:8px;margin:20px 0}button,a{font:inherit}button{padding:9px 14px;background:#fff;border:1px solid #acbdc7;color:#294553;cursor:pointer}button:hover{background:#dfedf4}button[aria-pressed=true]{background:#167bb1;color:#fff;border-color:#167bb1}button:focus-visible,a:focus-visible{outline:3px solid #e28e26;outline-offset:3px}a{color:#116f9e}main{padding-top:0}figure{margin:16px 0;background:#fff;border:1px solid #c9d8e1}img{display:block;max-width:100%;height:auto;margin:auto}h2{font-size:21px;margin:0}.legend{padding:12px 16px;background:#fff;border-left:4px solid #167bb1}noscript a{display:block}
-</style>
-<header><h1>Разбор карточки: варианты интерфейса</h1>
-<p>Все варианты реализованы и сняты в работающем приложении. По вашему уточнению по умолчанию выбрана таблица. «Рядом» и «Блоками» доступны переключателем, АРМ — кнопкой из разбора.</p>
-<p class="legend">✓ Зелёный — совпадение · ! Красный — расхождение или пропуск · ? Жёлтый — требуется проверка смысла. Жёлтый пока не означает оценку ИИ.</p>
-<nav aria-label="Скриншоты вариантов"></nav></header>
-<main><h2 id="name"></h2><p id="description" aria-live="polite"></p><a id="original" target="_blank" rel="noopener">Открыть скриншот в полном размере</a><figure><img id="screen" alt=""></figure>
-<noscript><a href="03-table.png">Таблица — по умолчанию</a><a href="01-paired.png">Рядом</a><a href="02-blocks.png">Блоками</a><a href="04-arm-answer.png">Ответ в АРМ</a><a href="05-arm-reference.png">Эталонное решение в АРМ</a><a href="06-paired-tablet.png">Узкий экран</a><a href="07-template-view.png">Библиотечная карточка</a><a href="08-template-editor.png">Подготовка карточки</a><a href="09-student-card.png">Просмотр учеником</a></noscript></main><script>
-const items=[["03-table", "Таблица — по умолчанию", "Компактный обзор: поле, ответ ученика, эталонное решение и результат проверки."], ["01-paired", "Рядом", "Построчное сравнение с группировкой по разделам карточки."], ["02-blocks", "Блоками", "Каждое поле показано отдельным блоком с ответом и эталонным значением."], ["04-arm-answer", "Ответ в АРМ", "Привычная форма с подсветкой, переходами между карточками и переключателем режима. Внизу — общие плитки служб."], ["05-arm-reference", "Эталонное решение в АРМ", "Тот же АРМ, открытый в режиме эталонного решения. Значения доступны только для чтения."], ["06-paired-tablet", "Узкий экран", "Режим «Рядом» при ширине окна 768 px. На снимке — область сравнения."], ["07-template-view", "Библиотечная карточка", "Условие слева, постоянно открытое эталонное решение справа."], ["08-template-editor", "Подготовка карточки", "Полная форма в окне высотой 1700 px: условие рядом с полями решения. В обычном окне форма прокручивается."], ["09-student-card", "Просмотр учеником", "Завершённая карточка в привычной форме, без эталонных данных и без возможности изменить ответ."]];
-const nav=document.querySelector('nav'),picture=document.querySelector('#screen');
-function select(i){const [file,title,description]=items[i];picture.src=file+'.png';picture.alt=title;document.querySelector('#name').textContent=title;document.querySelector('#description').textContent=description;document.querySelector('#original').href=file+'.png';[...nav.children].forEach((b,n)=>b.setAttribute('aria-pressed',String(n===i)));}
-items.forEach((item,i)=>{const b=document.createElement('button');b.type='button';b.textContent=item[1];b.onclick=()=>select(i);nav.append(b);});select(0);
-</script></html>
+<html lang="ru">
+  <meta charset="utf-8" /><meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  />
+  <title>Система-112 — варианты разбора карточки</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font:
+        15px/1.6 Arial,
+        sans-serif;
+      background: #eef2f5;
+      color: #253640;
+    }
+    header,
+    main {
+      max-width: 1440px;
+      margin: auto;
+      padding: 24px;
+    }
+    h1 {
+      font-size: 26px;
+      margin: 0 0 10px;
+    }
+    p {
+      margin: 8px 0 16px;
+    }
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 20px 0;
+    }
+    button,
+    a {
+      font: inherit;
+    }
+    button {
+      padding: 9px 14px;
+      background: #fff;
+      border: 1px solid #acbdc7;
+      color: #294553;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #dfedf4;
+    }
+    button[aria-pressed="true"] {
+      background: #167bb1;
+      color: #fff;
+      border-color: #167bb1;
+    }
+    button:focus-visible,
+    a:focus-visible {
+      outline: 3px solid #e28e26;
+      outline-offset: 3px;
+    }
+    a {
+      color: #116f9e;
+    }
+    main {
+      padding-top: 0;
+    }
+    figure {
+      margin: 16px 0;
+      background: #fff;
+      border: 1px solid #c9d8e1;
+    }
+    img {
+      display: block;
+      max-width: 100%;
+      height: auto;
+      margin: auto;
+    }
+    h2 {
+      font-size: 21px;
+      margin: 0;
+    }
+    .legend {
+      padding: 12px 16px;
+      background: #fff;
+      border-left: 4px solid #167bb1;
+    }
+    noscript a {
+      display: block;
+    }
+  </style>
+  <header>
+    <h1>Разбор карточки: варианты интерфейса</h1>
+    <p>
+      Все варианты реализованы и сняты в работающем приложении. По вашему
+      уточнению по умолчанию выбрана таблица. «Рядом» и «Блоками» доступны
+      переключателем, АРМ — кнопкой из разбора.
+    </p>
+    <p class="legend">
+      ✓ Зелёный — совпадение · ! Красный — расхождение или пропуск · ? Жёлтый —
+      требуется проверка смысла. Жёлтый пока не означает оценку ИИ.
+    </p>
+    <nav aria-label="Скриншоты вариантов"></nav>
+  </header>
+  <main>
+    <h2 id="name"></h2>
+    <p id="description" aria-live="polite"></p>
+    <a id="original" target="_blank" rel="noopener"
+      >Открыть скриншот в полном размере</a
+    >
+    <figure><img id="screen" alt="" /></figure>
+    <noscript
+      ><a href="03-table.png">Таблица — по умолчанию</a
+      ><a href="01-paired.png">Рядом</a><a href="02-blocks.png">Блоками</a
+      ><a href="04-arm-answer.png">Ответ в АРМ</a
+      ><a href="05-arm-reference.png">Эталонное решение в АРМ</a
+      ><a href="06-paired-tablet.png">Узкий экран</a
+      ><a href="07-template-view.png">Библиотечная карточка</a
+      ><a href="08-template-editor.png">Подготовка карточки</a
+      ><a href="09-student-card.png">Просмотр учеником</a></noscript
+    >
+  </main>
+  <script>
+    const items = [
+      [
+        "03-table",
+        "Таблица — по умолчанию",
+        "Компактный обзор: поле, ответ ученика, эталонное решение и результат проверки.",
+      ],
+      [
+        "01-paired",
+        "Рядом",
+        "Построчное сравнение с группировкой по разделам карточки.",
+      ],
+      [
+        "02-blocks",
+        "Блоками",
+        "Каждое поле показано отдельным блоком с ответом и эталонным значением.",
+      ],
+      [
+        "04-arm-answer",
+        "Ответ в АРМ",
+        "Привычная форма с подсветкой, переходами между карточками и переключателем режима. Внизу — общие плитки служб.",
+      ],
+      [
+        "05-arm-reference",
+        "Эталонное решение в АРМ",
+        "Тот же АРМ, открытый в режиме эталонного решения. Значения доступны только для чтения.",
+      ],
+      [
+        "06-paired-tablet",
+        "Узкий экран",
+        "Режим «Рядом» при ширине окна 768 px. На снимке — область сравнения.",
+      ],
+      [
+        "07-template-view",
+        "Библиотечная карточка",
+        "Условие слева, постоянно открытое эталонное решение справа.",
+      ],
+      [
+        "08-template-editor",
+        "Подготовка карточки",
+        "Полная форма в окне высотой 1700 px: условие рядом с полями решения. В обычном окне форма прокручивается.",
+      ],
+      [
+        "09-student-card",
+        "Просмотр учеником",
+        "Завершённая карточка в привычной форме, без эталонных данных и без возможности изменить ответ.",
+      ],
+    ];
+    const nav = document.querySelector("nav"),
+      picture = document.querySelector("#screen");
+    function select(i) {
+      const [file, title, description] = items[i];
+      picture.src = file + ".png";
+      picture.alt = title;
+      document.querySelector("#name").textContent = title;
+      document.querySelector("#description").textContent = description;
+      document.querySelector("#original").href = file + ".png";
+      [...nav.children].forEach((b, n) =>
+        b.setAttribute("aria-pressed", String(n === i)),
+      );
+    }
+    items.forEach((item, i) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = item[1];
+      b.onclick = () => select(i);
+      nav.append(b);
+    });
+    select(0);
+  </script>
+</html>

@@ -99,7 +99,23 @@ export const CardsPage = () => {
                 </TableHead>
                 <TableBody>
                   {query.data.items.map((c) => (
-                    <TableRow key={c.id} hover>
+                    <TableRow
+                      key={c.id}
+                      hover
+                      className="table-clickable-row"
+                      onClick={(event) => {
+                        if (
+                          event.target instanceof Element &&
+                          event.target.closest(
+                            "a, button, .card-library-actions",
+                          ) !== null
+                        ) {
+                          return;
+                        }
+                        setEditing(false);
+                        setDetailId(c.id);
+                      }}
+                    >
                       <TableCell>
                         <Button
                           className="card-library-title"
@@ -179,7 +195,10 @@ export const CardsPage = () => {
                           </small>
                         </time>
                       </TableCell>
-                      <TableCell align="center">
+                      <TableCell
+                        align="center"
+                        className="card-library-actions"
+                      >
                         <Tooltip
                           title={
                             c.scenario_count

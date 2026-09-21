@@ -171,7 +171,6 @@ features/catalog-management; сценарная форма — pages/scenario-ed
 Проверка файла, редактора, профиля, сценария, действий ДДС и условных получателей:
 `e2e/catalog-dds-real.spec.ts`. Просмотренные снимки — `docs/screenshots/catalog-*.png`.
 
-
 ## Начальные процессы BPMN
 
 Кабинеты используют `activityApi`: комментарии группы/ученика, профиль ученика,

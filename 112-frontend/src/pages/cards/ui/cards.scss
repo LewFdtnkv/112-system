@@ -134,6 +134,12 @@
   text-align: left;
   line-height: 1.5;
 }
+// Строка подсвечивается целиком (MuiTableRow:hover), поэтому у самой кнопки
+// собственный фон убираем — остаётся только подчёркивание названия.
+.card-library-table .card-library-title:hover {
+  background: transparent;
+  text-decoration: underline;
+}
 .card-library-table small {
   display: block;
   margin-top: 5px;

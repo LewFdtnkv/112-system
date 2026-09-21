@@ -262,3 +262,36 @@
     padding: 14px;
   }
 }
+
+// Строка целиком кликабельна (см. .table-clickable-row в global.scss);
+// подсветка при наведении — на всей строке сразу, а не на отдельных ячейках.
+.student-recent-table {
+  tbody tr.table-clickable-row:hover {
+    background: #edf7fc;
+  }
+
+  td {
+    vertical-align: middle;
+    line-height: 1.4;
+  }
+
+  // «100%» и подпись метода оценки — друг под другом, без перекоса по вертикали
+  td:last-child strong {
+    display: block;
+  }
+}
+
+.student-recent-link {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #1681b5;
+    outline-offset: 2px;
+  }
+}

@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   UserPhoto,
   userName,
@@ -71,6 +71,7 @@ export function StudentOverviewPanel({
   onActivePage: (page: number) => void;
 }) {
   const { user, groups, performance: p, active_lessons: active } = data;
+  const navigate = useNavigate();
   const resultPath = (lesson: string) =>
     `${getTrainingResultPath(lesson)}${own ? "" : `?student=${encodeURIComponent(user.id)}`}`;
   return (
@@ -218,15 +219,26 @@ export function StudentOverviewPanel({
               </thead>
               <tbody>
                 {p.recent_lessons.map((row) => (
-                  <tr key={row.lesson_id}>
+                  <tr
+                    key={row.lesson_id}
+                    className="table-clickable-row"
+                    onClick={(event) => {
+                      if (
+                        !(event.target instanceof Element) ||
+                        event.target.closest("a, button") === null
+                      ) {
+                        navigate(resultPath(row.lesson_id));
+                      }
+                    }}
+                  >
                     <td>
                       <Link
-                        className="table-block-link"
+                        className="student-recent-link"
                         to={resultPath(row.lesson_id)}
                       >
                         {row.scenario_title}
-                        <small className="block-detail">{row.title}</small>
                       </Link>
+                      <small className="block-detail">{row.title}</small>
                     </td>
                     <td>{row.role === "dds" ? "ДДС" : "Оператор 112"}</td>
                     <td>
