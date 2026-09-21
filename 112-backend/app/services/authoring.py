@@ -6,6 +6,7 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import (
+    AIJob,
     AnswerKey,
     CardTemplate,
     CardTemplateRecipient,
@@ -83,6 +84,9 @@ async def card_read(session: AsyncSession, card: CardTemplate) -> CardRead:
         .where(ScenarioCard.card_template_id == card.id)
     )
     return CardRead(
+        generated_by_ai=bool(
+            await session.scalar(select(AIJob.id).where(AIJob.card_template_id == card.id))
+        ),
         can_edit=scenario_count == 0,
         scenario_count=scenario_count,
         id=card.id,

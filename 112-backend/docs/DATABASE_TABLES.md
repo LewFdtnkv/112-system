@@ -462,6 +462,8 @@ PK — первичный ключ; `NULL` — допустимое отсутс
 | Колонка | Тип PostgreSQL | NULL | PK | SQL default |
 | --- | --- | --- | --- | --- |
 | `purpose` | `VARCHAR(10)` | нет | — | `—` |
+| `created_by_id` | `UUID` | да | — | `—` |
+| `card_template_id` | `UUID` | да | — | `—` |
 | `scenario_version_id` | `UUID` | да | — | `—` |
 | `attempt_id` | `UUID` | да | — | `—` |
 | `idempotency_key` | `UUID` | нет | — | `—` |
@@ -481,6 +483,8 @@ PK — первичный ключ; `NULL` — допустимое отсутс
 | `created_at` | `TIMESTAMP WITH TIME ZONE` | нет | — | `now()` |
 
 - CHECK `ai_jobs.purpose IN ('generation', 'evaluation')`.
+- FK `created_by_id` → `users.id`; DELETE `RESTRICT`; INDEX.
+- FK `card_template_id` → `card_templates.id`; DELETE `RESTRICT`; UNIQUE.
 - CHECK `ai_jobs.status IN ('queued', 'running', 'succeeded', 'failed')`.
 - CHECK `purpose != 'evaluation' OR attempt_id IS NOT NULL`.
 - CHECK `retry_count >= 0`.

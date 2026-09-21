@@ -18,6 +18,7 @@ class Page[T](BaseModel):
 
 
 class CardLibraryItem(CardListItem):
+    generated_by_ai: bool = False
     incident_name: str
     classifier_label: str
     address_text: str

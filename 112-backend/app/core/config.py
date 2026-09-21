@@ -15,6 +15,10 @@ class Settings(BaseSettings):
     jwt_audience: str = "system112-api"
     access_token_minutes: int = Field(default=15, ge=1, le=60)
     refresh_token_days: int = Field(default=7, ge=1, le=30)
+    llm_base_url: str = "http://llm:11434"
+    llm_model: str = "qwen3:1.7b"
+    llm_timeout_seconds: int = Field(default=300, ge=10, le=1800)
+    generation_poll_seconds: int = Field(default=2, ge=1, le=60)
 
 
 settings = Settings()

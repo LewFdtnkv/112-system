@@ -40,6 +40,12 @@ class AIJob(UUIDPrimaryKey, CreatedAt, Base):
     )
 
     purpose: Mapped[AIPurpose] = mapped_column(enum_column(AIPurpose, "ai_purpose"))
+    created_by_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT"), index=True
+    )
+    card_template_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("card_templates.id", ondelete="RESTRICT"), unique=True
+    )
     scenario_version_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("scenario_versions.id", ondelete="RESTRICT"), index=True
     )

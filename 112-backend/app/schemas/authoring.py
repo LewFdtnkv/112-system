@@ -70,6 +70,7 @@ class CardUpdate(CardCreate):
 
 
 class CardRead(CardDefinition):
+    generated_by_ai: bool = False
     can_edit: bool
     scenario_count: int
     revision: int

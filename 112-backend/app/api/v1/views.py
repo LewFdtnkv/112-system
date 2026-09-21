@@ -7,6 +7,7 @@ from sqlalchemy import func, select
 from app.api.dependencies import AdminDep, SessionDep, StaffDep, StudentDep, TeacherDep
 from app.api.v1.authoring import Limit, Offset
 from app.models import (
+    AIJob,
     CardTemplate,
     CardTemplateRecipient,
     ClassifierEntry,
@@ -205,10 +206,12 @@ async def cards(
             ClassifierEntry.display_name,
             ClassifierVersion.label,
             func.coalesce(usage.c.count, 0),
+            AIJob.id,
         )
         .join(ClassifierEntry, ClassifierEntry.id == CardTemplate.classifier_entry_id)
         .join(ClassifierVersion, ClassifierVersion.id == CardTemplate.classifier_version_id)
         .outerjoin(usage, usage.c.card_template_id == CardTemplate.id)
+        .outerjoin(AIJob, AIJob.card_template_id == CardTemplate.id)
         .where(CardTemplate.created_by_id == teacher.id)
     )
     if q:
@@ -246,8 +249,9 @@ async def cards(
                 address_text=card.data.get("address_text") or "",
                 recipients=services[card.id],
                 scenario_count=count,
+                generated_by_ai=job_id is not None,
             )
-            for card, name, display_name, label, count in rows
+            for card, name, display_name, label, count, job_id in rows
         ],
         total=total,
         limit=limit,
