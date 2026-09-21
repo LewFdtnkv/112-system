@@ -1,3 +1,4 @@
+@use "./interactions";
 * {
   box-sizing: border-box;
 }
@@ -701,4 +702,9 @@ td:has(> .table-block-link) {
   .review-columns {
     grid-template-columns: 1fr;
   }
+}
+
+:is(input, textarea, [contenteditable="true"], pre, [data-selectable]) {
+  -webkit-user-select: text !important;
+  user-select: text !important;
 }

@@ -1,3 +1,4 @@
+import { rowAction } from "@/shared/lib/rowAction";
 import { useState } from "react";
 import {
   Alert,
@@ -50,7 +51,10 @@ export function ProctoringMonitor() {
           </TableHead>
           <TableBody>
             {query.data?.items.map((r) => (
-              <TableRow key={r.attempt_id}>
+              <TableRow
+                key={r.attempt_id}
+                {...rowAction(() => setAttempt(r.attempt_id))}
+              >
                 <TableCell>{r.student_name}</TableCell>
                 <TableCell>{r.title}</TableCell>
                 <TableCell>

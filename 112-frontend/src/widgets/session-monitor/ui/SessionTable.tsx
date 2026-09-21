@@ -1,3 +1,4 @@
+import { rowAction } from "@/shared/lib/rowAction";
 import {
   Table,
   TableBody,
@@ -6,7 +7,7 @@ import {
   TableHead,
   TableRow,
 } from "@mui/material";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { useDemoScenarioStore } from "@/entities/scenario";
 import { getScorePercent } from "@/entities/evaluation/demoEvaluations";
@@ -40,6 +41,7 @@ export const SessionTable = ({
   label,
   emptyTitle = "Занятия не найдены",
 }: SessionTableProps) => {
+  const navigate = useNavigate();
   const scenarios = useDemoScenarioStore((state) => state.scenarios);
   const session = useAuthStore((state) => state.session);
   const evaluations = useDemoTrainingStore((state) => state.evaluations);
@@ -74,7 +76,18 @@ export const SessionTable = ({
             );
 
             return (
-              <TableRow key={session.id}>
+              <TableRow
+                key={session.id}
+                {...rowAction(() =>
+                  navigate(
+                    isStaff
+                      ? getTrainingSessionPath(session.id)
+                      : session.status === "completed"
+                        ? getTrainingResultPath(session.id)
+                        : getStudentTrainingWorkspacePath(session.id),
+                  ),
+                )}
+              >
                 <TableCell component="th" scope="row">
                   <Link
                     to={

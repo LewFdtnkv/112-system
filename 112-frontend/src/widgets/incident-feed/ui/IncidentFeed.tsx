@@ -1,3 +1,4 @@
+import { rowAction } from "@/shared/lib/rowAction";
 import "./incident-feed.scss";
 import { Fragment, useMemo, useState, type ReactNode } from "react";
 import {
@@ -237,21 +238,14 @@ export function IncidentFeed({
                   {shown.map((incident) => (
                     <Fragment key={incident.id}>
                       <tr
+                        {...rowAction(() => onOpen(incident))}
                         className={
-                          selectedId === incident.id ? "is-selected" : ""
+                          selectedId === incident.id
+                            ? "table-clickable-row is-selected"
+                            : "table-clickable-row"
                         }
                         tabIndex={0}
                         aria-label={`Карточка ${incident.id}`}
-                        onClick={() => onOpen(incident)}
-                        onKeyDown={(e) => {
-                          if (
-                            e.target === e.currentTarget &&
-                            ["Enter", " "].includes(e.key)
-                          ) {
-                            e.preventDefault();
-                            onOpen(incident);
-                          }
-                        }}
                       >
                         <td>
                           <ArmIconButton

@@ -1,3 +1,4 @@
+import { rowAction } from "@/shared/lib/rowAction";
 import { FeatureInput } from "@/shared/ui/FeatureInput";
 import { useState } from "react";
 import {
@@ -192,7 +193,10 @@ export function CatalogRules({
                   </TableHead>
                   <TableBody>
                     {query.data.items.map((e) => (
-                      <TableRow key={e.id}>
+                      <TableRow
+                        key={e.id}
+                        {...rowAction(() => setEntryId(e.id))}
+                      >
                         <TableCell>{e.code}</TableCell>
                         <TableCell>{e.section}</TableCell>
                         <TableCell>

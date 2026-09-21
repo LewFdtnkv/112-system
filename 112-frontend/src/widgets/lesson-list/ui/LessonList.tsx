@@ -1,3 +1,4 @@
+import { rowAction } from "@/shared/lib/rowAction";
 import { StudentProfileDialog } from "@/features/student-profile";
 import { useState } from "react";
 import {
@@ -152,21 +153,10 @@ export function LessonList({
                         student && row.work_status !== "submitted"
                           ? getStudentTrainingWorkspacePath(row.lesson_id)
                           : reviewPath;
-                      const isNestedControl = (element: EventTarget | null) =>
-                        element instanceof Element &&
-                        element.closest(
-                          "a, button, input, select, textarea",
-                        ) !== null;
                       return (
                         <TableRow
-                          className="table-clickable-row"
-                          hover
                           key={`${row.lesson_id}:${row.student_id}`}
-                          onClick={(event) => {
-                            if (!isNestedControl(event.target)) {
-                              navigate(target);
-                            }
-                          }}
+                          {...rowAction(() => navigate(target))}
                         >
                           <TableCell>
                             <Link className="table-block-link" to={target}>

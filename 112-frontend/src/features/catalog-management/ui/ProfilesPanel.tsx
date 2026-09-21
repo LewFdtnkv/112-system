@@ -1,3 +1,4 @@
+import { rowAction } from "@/shared/lib/rowAction";
 import { useState } from "react";
 import {
   Alert,
@@ -97,7 +98,7 @@ export function ProfilesPanel() {
               </TableHead>
               <TableBody>
                 {query.data.items.map((p) => (
-                  <TableRow key={p.id}>
+                  <TableRow key={p.id} {...rowAction(() => setSelected(p.id))}>
                     <TableCell>
                       <Button
                         className="table-block-link"

@@ -1,3 +1,4 @@
+import { rowAction } from "@/shared/lib/rowAction";
 import "./cards.scss";
 import { TrainingCardPreview } from "@/widgets/incident-card";
 import {
@@ -144,19 +145,10 @@ export const CardsPage = () => {
                     <TableRow
                       key={c.id}
                       hover
-                      className="table-clickable-row"
-                      onClick={(event) => {
-                        if (
-                          event.target instanceof Element &&
-                          event.target.closest(
-                            "a, button, .card-library-actions",
-                          ) !== null
-                        ) {
-                          return;
-                        }
+                      {...rowAction(() => {
                         setEditing(false);
                         setDetailId(c.id);
-                      }}
+                      })}
                     >
                       <TableCell>
                         <Button

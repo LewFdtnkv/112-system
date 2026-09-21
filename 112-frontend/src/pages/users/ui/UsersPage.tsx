@@ -1,3 +1,4 @@
+import { rowAction } from "@/shared/lib/rowAction";
 import { AccountStatistics } from "@/features/account-statistics";
 import { useState } from "react";
 import {
@@ -133,7 +134,10 @@ export const UsersPage = () => {
                 </TableHead>
                 <TableBody>
                   {query.data.items.map((user) => (
-                    <TableRow key={user.id}>
+                    <TableRow
+                      key={user.id}
+                      {...rowAction(() => setSelected(user))}
+                    >
                       <TableCell>
                         <Button
                           className="table-block-link"

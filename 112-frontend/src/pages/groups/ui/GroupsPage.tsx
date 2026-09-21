@@ -1,3 +1,4 @@
+import { rowAction } from "@/shared/lib/rowAction";
 import { Link } from "react-router-dom";
 import { MessageComposer } from "@/features/teaching-messages";
 import { StudentProfileDialog } from "@/features/student-profile";
@@ -137,7 +138,14 @@ export const GroupsPage = () => {
               </TableHead>
               <TableBody>
                 {groups.data.items.map((item) => (
-                  <TableRow key={item.id}>
+                  <TableRow
+                    key={item.id}
+                    {...rowAction(() => {
+                      setGroup(item);
+                      setMemberPage(0);
+                      add.reset();
+                    })}
+                  >
                     <TableCell>
                       <Button
                         className="table-block-link"

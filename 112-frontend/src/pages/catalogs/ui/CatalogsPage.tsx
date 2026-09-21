@@ -1,3 +1,4 @@
+import { rowAction } from "@/shared/lib/rowAction";
 import { useState } from "react";
 import {
   Alert,
@@ -152,7 +153,15 @@ export const CatalogsPage = () => {
               </TableHead>
               <TableBody>
                 {services.data.items.map((s) => (
-                  <TableRow key={s.id}>
+                  <TableRow
+                    key={s.id}
+                    {...rowAction(() => {
+                      setEditingService(s.id);
+                      setCode(s.code);
+                      setName(s.name);
+                      setShortName(s.short_name ?? "");
+                    })}
+                  >
                     <TableCell>{s.code}</TableCell>
                     <TableCell>
                       <Button
@@ -259,7 +268,7 @@ export const CatalogsPage = () => {
               </TableHead>
               <TableBody>
                 {classifiers.data.items.map((c) => (
-                  <TableRow key={c.id}>
+                  <TableRow key={c.id} {...rowAction(() => setSelected(c.id))}>
                     <TableCell>
                       <Button
                         className="table-block-link"

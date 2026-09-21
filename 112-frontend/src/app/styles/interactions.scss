@@ -1,0 +1,52 @@
+:root {
+  --interaction-duration: 150ms;
+}
+
+:is(
+  button,
+  a[href],
+  summary,
+  input,
+  select,
+  textarea,
+  [role="button"],
+  [role="tab"],
+  [role="option"],
+  [role="checkbox"],
+  [role="radio"],
+  [role="combobox"],
+  [data-row-control],
+  .table-clickable-row
+) {
+  transition:
+    background-color var(--interaction-duration) ease-out,
+    border-color var(--interaction-duration) ease-out,
+    color var(--interaction-duration) ease-out,
+    box-shadow var(--interaction-duration) ease-out,
+    filter var(--interaction-duration) ease-out;
+
+  &:not(:disabled, [aria-disabled="true"]):hover {
+    filter: brightness(0.96);
+    box-shadow: inset 0 0 0 9999px rgb(0 100 155 / 5%);
+  }
+
+  &:not(:disabled, [aria-disabled="true"]):active {
+    filter: brightness(0.9);
+    box-shadow: inset 0 0 0 9999px rgb(0 100 155 / 12%);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #008bc5;
+    outline-offset: -2px;
+  }
+}
+
+.table-clickable-row {
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --interaction-duration: 0ms;
+  }
+}

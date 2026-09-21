@@ -1,3 +1,4 @@
+import { rowAction } from "@/shared/lib/rowAction";
 import { Link, useNavigate } from "react-router-dom";
 import {
   UserPhoto,
@@ -221,15 +222,7 @@ export function StudentOverviewPanel({
                 {p.recent_lessons.map((row) => (
                   <tr
                     key={row.lesson_id}
-                    className="table-clickable-row"
-                    onClick={(event) => {
-                      if (
-                        !(event.target instanceof Element) ||
-                        event.target.closest("a, button") === null
-                      ) {
-                        navigate(resultPath(row.lesson_id));
-                      }
-                    }}
+                    {...rowAction(() => navigate(resultPath(row.lesson_id)))}
                   >
                     <td>
                       <Link
