@@ -95,6 +95,7 @@ export interface CardData {
   additional_fields: Record<string, unknown>;
 }
 export interface CardTemplate {
+  generated_by_ai?: boolean;
   revision: number;
   updated_at: string;
   created_at: string;
@@ -123,6 +124,7 @@ export type CardListItem = Pick<
   | "created_at"
   | "scenario_count"
   | "classifier_label"
+  | "generated_by_ai"
 > & { incident_name: string; address_text: string; recipients: Recipient[] };
 export type CardTemplateInput = Pick<
   CardTemplate,

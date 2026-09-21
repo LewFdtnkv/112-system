@@ -76,6 +76,13 @@ an evaluation shows “Ожидает проверки”. Training notification
 See [the API integration](docs/API.md), [authentication](docs/AUTH.md), and
 [backend page contracts](../112-backend/docs/FRONTEND_API.md).
 
+The card library also supports **«Сгенерировать нейросетью»**: teachers choose
+1–10 cards and shared fixed/random parameters. Queued/running/failed rows are
+shown in the library; generated cards remain editable until used in a scenario.
+This requires backend migration `0015_card_generation`, the worker and a downloaded
+local model. See [setup and CPU resource settings](../112-backend/docs/CARD_GENERATION.md)
+and the reviewed [generation screenshots](docs/screenshots/card-generation/).
+
 ## Browser integration checks
 
 `e2e/integration-real.spec.ts` requires `AUTH_ISOLATED_API=true` and a disposable,

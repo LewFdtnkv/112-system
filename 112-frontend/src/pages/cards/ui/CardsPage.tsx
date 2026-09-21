@@ -1,5 +1,9 @@
 import "./cards.scss";
 import { TrainingCardPreview } from "@/widgets/incident-card";
+import {
+  CardGenerationDialog,
+  GenerationRows,
+} from "@/features/card-generation";
 import type { ReferenceCardSource } from "@/features/incident-editing";
 import { useState } from "react";
 import {
@@ -22,6 +26,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import {
   trainingApi,
+  generationApi,
   CardDataFields,
   type FeatureDefinition,
 } from "@/entities/training";
@@ -34,6 +39,13 @@ export const CardsPage = () => {
   const search = useDebounced(q);
   const [page, setPage] = useState(0);
   const [open, setOpen] = useState(false);
+  const [generate, setGenerate] = useState(false);
+  const [jobPage, setJobPage] = useState(0);
+  const jobs = useQuery({
+    queryKey: ["card-generations", jobPage],
+    queryFn: ({ signal }) => generationApi.jobs(jobPage * 10, signal),
+    refetchInterval: 5000,
+  });
   const [preview, setPreview] = useState<ReferenceCardSource>();
   const [detailId, setDetailId] = useState<string>();
   const [editing, setEditing] = useState(false);
@@ -41,6 +53,7 @@ export const CardsPage = () => {
     queryKey: ["cards", search, page],
     queryFn: ({ signal }) =>
       trainingApi.cards({ q: search, offset: page * 20 }, signal),
+    refetchInterval: 5000,
   });
   const detail = useQuery({
     queryKey: ["card", detailId],
@@ -56,7 +69,35 @@ export const CardsPage = () => {
           onClose={() => setPreview(undefined)}
         />
       )}
-      <Button onClick={() => setOpen(true)}>Создать карточку</Button>
+      <Stack direction="row" spacing={2}>
+        <Button onClick={() => setOpen(true)}>Создать карточку</Button>
+        <Button variant="contained" onClick={() => setGenerate(true)}>
+          Сгенерировать нейросетью
+        </Button>
+      </Stack>
+      {generate && <CardGenerationDialog onClose={() => setGenerate(false)} />}
+      {jobs.error && (
+        <Alert severity="error">
+          Не удалось загрузить состояния генерации.{" "}
+          <Button onClick={() => void jobs.refetch()}>Повторить</Button>
+        </Alert>
+      )}
+      {!!jobs.data?.total && (
+        <div>
+          <p role="status">
+            В подготовке или требуют внимания: {jobs.data.total}. После
+            генерации карточки появятся в библиотеке автоматически.
+          </p>
+          {jobs.data.total > 10 && (
+            <PageControls
+              page={jobs.data.offset / 10}
+              size={10}
+              total={jobs.data.total}
+              onPage={setJobPage}
+            />
+          )}
+        </div>
+      )}
       <TextField
         label="Поиск карточки"
         value={q}
@@ -98,6 +139,7 @@ export const CardsPage = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
+                  <GenerationRows jobs={jobs.data?.items ?? []} />
                   {query.data.items.map((c) => (
                     <TableRow
                       key={c.id}
@@ -126,6 +168,7 @@ export const CardsPage = () => {
                         >
                           {c.title}
                         </Button>
+                        {c.generated_by_ai && <small>Создана нейросетью</small>}
                         <small>
                           {c.scenario_count
                             ? "Используется · только просмотр"
@@ -223,7 +266,7 @@ export const CardsPage = () => {
                       </TableCell>
                     </TableRow>
                   ))}
-                  {!query.data.items.length && (
+                  {!query.data.items.length && !jobs.data?.items.length && (
                     <TableRow>
                       <TableCell colSpan={7}>Карточки не найдены.</TableCell>
                     </TableRow>
@@ -231,11 +274,13 @@ export const CardsPage = () => {
                 </TableBody>
               </Table>
             </TableContainer>
-            <PageControls
-              total={query.data.total}
-              page={page}
-              onPage={setPage}
-            />
+            {query.data.total > 0 && (
+              <PageControls
+                total={query.data.total}
+                page={page}
+                onPage={setPage}
+              />
+            )}
           </>
         )}
       </QueryState>
@@ -267,6 +312,12 @@ export const CardsPage = () => {
             error={detail.error}
             retry={() => void detail.refetch()}
           >
+            {detail.data?.generated_by_ai && (
+              <Alert severity="info">
+                Материал сгенерирован ИИ. Проверьте условие и эталонное решение
+                перед включением в сценарий.
+              </Alert>
+            )}
             {detail.data && editing && detail.data.can_edit && (
               <CardEditor
                 key={`${detail.data.id}:${detail.data.revision}`}

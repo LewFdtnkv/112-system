@@ -13,4 +13,6 @@ export { activityApi } from "./api/activityApi";
 export type { FocusKind } from "./api/activityApi";
 export { UserPhoto } from "./ui/UserPhoto";
 export type { StudentOverview } from "./model/studentOverview";
+export * from "./model/generation";
+export { generationApi } from "./api/generationApi";
 export { percentText, lessonPercent } from "./model/studentOverview";
