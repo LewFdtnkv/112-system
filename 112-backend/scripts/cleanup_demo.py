@@ -159,10 +159,12 @@ async def cleanup(session, *, prefix="demo", apply=False):
     candidates += [
         ("users", (uid,))
         for uid in await session.scalars(
-            select(users.c.id).where(
+            select(users.c.id)
+            .where(
                 users.c.username.in_([f"{prefix}-student", f"{prefix}-teacher"]),
                 users.c.is_admin.is_(False),
             )
+            .order_by(users.c.is_teacher, users.c.id)
         )
     ]
     safe_extras = {

@@ -200,3 +200,25 @@ async def test_local_training_uses_source_catalog_and_repeats(db_session, tmp_pa
         validate_answers(feature_definitions(entry), answers)
         if answers["where"] == "Транспорт":
             assert "street_sign" not in answers and "street_object" not in answers
+
+
+@pytest.mark.anyio
+async def test_cleanup_removes_demo_teacher_after_private_recipients(db_session):
+    from sqlalchemy import select
+
+    from app.models import MessageRecipient, TeachingMessage, User
+    from scripts.cleanup_demo import cleanup
+
+    teacher = User(username="demo-teacher", password_hash="test-only", is_teacher=True)
+    student = User(username="demo-student", password_hash="test-only")
+    db_session.add_all([teacher, student])
+    await db_session.flush()
+    message = TeachingMessage(teacher_id=teacher.id, text="Учебное сообщение")
+    db_session.add(message)
+    await db_session.flush()
+    db_session.add(MessageRecipient(message_id=message.id, student_id=student.id))
+    await db_session.flush()
+    result = await cleanup(db_session, apply=True)
+    assert result["records"]["users"] == 2
+    assert result["preserved_with_other_data"] == []
+    assert list(await db_session.scalars(select(User.username))) == ["admin"]
