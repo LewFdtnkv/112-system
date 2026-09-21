@@ -63,11 +63,10 @@ async def update_user(
         raise HTTPException(status_code=404, detail="User not found")
     changes = payload.model_dump(exclude_unset=True)
     reason = (changes.pop("reason", None) or "").strip()
-    role = changes.pop("role", user.role)
     active = changes.get("is_active", user.is_active)
-    if user.id == admin_id and (not active or role != "admin"):
-        raise HTTPException(status_code=409, detail="You cannot disable or demote your own account")
-    if user.is_admin and user.is_active and (not active or role != "admin"):
+    if user.id == admin_id and not active:
+        raise HTTPException(status_code=409, detail="You cannot disable your own account")
+    if user.is_admin and user.is_active and not active:
         count = await session.scalar(
             select(func.count())
             .select_from(User)
@@ -77,9 +76,9 @@ async def update_user(
             raise HTTPException(
                 status_code=409, detail="The last active administrator must be retained"
             )
-    revoke = role != user.role or active != user.is_active
+    revoke = active != user.is_active
     if revoke and not reason:
-        raise HTTPException(status_code=422, detail="A reason is required to change role or access")
+        raise HTTPException(status_code=422, detail="A reason is required to change access")
     before = {key: getattr(user, key) for key in changes} | {"role": user.role}
     session.add(
         UserActivity(
@@ -87,12 +86,11 @@ async def update_user(
             actor_id=admin_id,
             kind="account.access_changed" if revoke else "account.updated",
             reason=reason,
-            details={"before": before, "after": changes | {"role": role}},
+            details={"before": before, "after": changes | {"role": user.role}},
         )
     )
     for key, value in changes.items():
         setattr(user, key, value)
-    user.is_admin, user.is_teacher = role == "admin", role == "teacher"
     if revoke:
         await session.execute(
             update(AuthSession)

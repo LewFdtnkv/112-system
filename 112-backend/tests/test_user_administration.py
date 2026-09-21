@@ -88,26 +88,51 @@ async def test_disable_reenable_revokes_old_tokens(teaching, db_client):
     assert (await db_client.post("/api/v1/auth/login", json=credentials)).status_code == 200
 
 
-async def test_role_change_revokes_sessions_and_self_lockout_is_rejected(teaching, db_client):
+@pytest.mark.parametrize("original", ["student", "teacher", "admin"])
+@pytest.mark.parametrize("target", ["student", "teacher", "admin"])
+async def test_existing_role_cannot_be_submitted_or_changed(teaching, db_client, original, target):
     t = teaching
-    path = f"/api/v1/users/{t.accounts['teacher'].id}"
-    changed = await db_client.patch(
+    path = f"/api/v1/users/{t.accounts[original].id}"
+    before = (await db_client.get(path, headers=t.headers["admin"])).json()
+    response = await db_client.patch(
         path,
         headers=t.headers["admin"],
-        json={"role": "admin", "reason": "Назначение администратора"},
+        json={"role": target, "first_name": "Must not be saved", "reason": "Change role"},
     )
-    assert changed.status_code == 200 and changed.json()["role"] == "admin"
-    assert not changed.json()["is_teacher"]
-    assert (await db_client.get("/api/v1/groups", headers=t.headers["teacher"])).status_code == 401
+    assert response.status_code == 422
+    after = (await db_client.get(path, headers=t.headers["admin"])).json()
+    assert after == before
+    # Rejected changes do not revoke the existing account's session.
+    me = await db_client.get("/api/v1/users/me", headers=t.headers[original])
+    assert me.status_code == 200 and me.json()["role"] == original
+
+
+@pytest.mark.parametrize("original", ["student", "teacher", "admin"])
+async def test_profile_edit_preserves_role(teaching, db_client, original):
+    t = teaching
+    path = f"/api/v1/users/{t.accounts[original].id}"
+    changed = await db_client.patch(
+        path, headers=t.headers["admin"], json={"first_name": "Новое имя"}
+    )
+    assert changed.status_code == 200
+    assert changed.json()["role"] == original
+    assert changed.json()["first_name"] == "Новое имя"
+    assert changed.json()["is_admin"] == (original == "admin")
+    assert changed.json()["is_teacher"] == (original == "teacher")
+
+
+async def test_self_lockout_and_invalid_updates_are_rejected(teaching, db_client):
+    t = teaching
     own = f"/api/v1/users/{t.accounts['admin'].id}"
-    for payload in ({"role": "student"}, {"is_active": False}):
-        assert (
-            await db_client.patch(own, headers=t.headers["admin"], json=payload)
-        ).status_code == 409
+    assert (
+        await db_client.patch(own, headers=t.headers["admin"], json={"is_active": False})
+    ).status_code == 409
+    path = f"/api/v1/users/{t.accounts['teacher'].id}"
     for payload in (
         {"role": None},
         {"is_active": None},
-        {"is_teacher": True},
+        {"is_teacher": False},
+        {"is_admin": True},
         {"email": "invalid"},
         {"first_name": None},
     ):
@@ -116,7 +141,7 @@ async def test_role_change_revokes_sessions_and_self_lockout_is_rejected(teachin
         ).status_code == 422
 
 
-async def test_concurrent_admin_demotion_keeps_one_authorized_admin(auth_settings):
+async def test_concurrent_admin_disabling_keeps_one_authorized_admin(auth_settings):
     import asyncio
     import os
 
@@ -169,7 +194,7 @@ async def test_concurrent_admin_demotion_keeps_one_authorized_admin(auth_setting
                         client.patch(
                             f"/api/v1/users/{ids[1 - index]}",
                             headers={"Authorization": f"Bearer {pair['access_token']}"},
-                            json={"role": "teacher", "reason": "Изменение обязанностей"},
+                            json={"is_active": False, "reason": "Отключение доступа"},
                         )
                         for index, pair in enumerate(pairs)
                     ]
@@ -179,8 +204,8 @@ async def test_concurrent_admin_demotion_keeps_one_authorized_admin(auth_setting
             assert sorted(r.status_code for r in responses) in ([200, 401], [200, 403])
         async with factory() as session:
             accounts = list(await session.scalars(select(User).where(User.id.in_(ids))))
-            assert sum(user.is_admin for user in accounts) == 1
-            assert sum(user.is_teacher for user in accounts) == 1
+            assert all(user.is_admin and not user.is_teacher for user in accounts)
+            assert sum(user.is_active for user in accounts) == 1
     finally:
         app.dependency_overrides.pop(get_session, None)
         async with factory() as session:
