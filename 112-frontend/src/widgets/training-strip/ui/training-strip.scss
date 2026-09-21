@@ -14,43 +14,53 @@
   border-top: 1px solid #687a86;
   background: #35454e;
   color: #e2e9ed;
-  font: 11px Arial;
+  font: 11px Arial,sans-serif;
   user-select: none;
 }
+
 .training-strip > div {
   display: flex;
   align-items: center;
   gap: 9px;
 }
+
 .training-strip > div:first-child {
   flex: 1;
 }
+
 .training-strip span {
   color: #c2d2dc;
 }
+
 .training-strip .MuiButton-root {
   min-height: 22px;
   padding: 1px 8px;
   font-size: 11px;
   color: #fff;
 }
+
 .training-strip .MuiButton-contained {
   background: #187daf;
 }
+
 .training-strip .training-strip__connection--connected {
   color: #bce2c1;
 }
+
 .training-strip .training-strip__connection--reconnecting {
   color: #ffcf8b;
 }
+
 .training-strip__timer--overdue strong {
   color: #ffd0bc;
 }
-@media (max-width: 760px) {
+
+@media (width <= 760px) {
   .training-strip {
     position: static;
     font-size: 10px;
   }
+
   .training-strip > div:first-child {
     flex-basis: 100%;
   }

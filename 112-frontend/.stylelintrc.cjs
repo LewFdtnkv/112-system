@@ -1,0 +1,22 @@
+module.exports = {
+  customSyntax: "postcss-scss",
+
+  extends: ["stylelint-config-standard-scss"],
+
+  plugins: ["stylelint-scss"],
+
+  ignoreFiles: [
+    "**/*.{js,ts,tsx,json}",
+    "**/*.{png,jpg,jpeg,glb,wasm,xodr}",
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/public/**",
+    "**/*.lock",
+    "**/*.map",
+  ],
+
+  rules: {
+    "no-empty-source": null,
+    "selector-class-pattern": null,
+  },
+};

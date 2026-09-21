@@ -7,6 +7,7 @@
   --arm-blue: #167fba;
   --arm-orange: #f26532;
 }
+
 .visually-hidden {
   position: absolute !important;
   width: 1px !important;
@@ -18,6 +19,7 @@
   white-space: nowrap !important;
   border: 0 !important;
 }
+
 .arm-field {
   display: flex;
   flex-direction: column;
@@ -28,12 +30,14 @@
     sans-serif;
   color: #101820;
 }
+
 .arm-field > span {
   color: #666;
   font-size: 12px;
   line-height: 16px;
   user-select: none;
 }
+
 .arm-field input,
 .arm-field select,
 .arm-field textarea {
@@ -50,12 +54,14 @@
   font: inherit;
   user-select: text;
 }
+
 .arm-field input:hover:not(:disabled),
 .arm-field select:hover:not(:disabled),
 .arm-field textarea:hover:not(:disabled) {
   border-bottom-color: #8096a4;
   background: #ffffff45;
 }
+
 .arm-field input:focus,
 .arm-field select:focus,
 .arm-field textarea:focus {
@@ -63,6 +69,7 @@
   box-shadow: 0 1px #008cc8;
   background: #ffffff60;
 }
+
 .arm-field input:disabled,
 .arm-field select:disabled,
 .arm-field textarea:disabled {
@@ -70,14 +77,17 @@
   -webkit-text-fill-color: #515b61;
   opacity: 1;
 }
+
 .arm-field input::placeholder,
 .arm-field textarea::placeholder {
   color: #7e8287;
   opacity: 1;
 }
+
 .arm-field input[type="number"] {
   appearance: textfield;
 }
+
 .arm-field--inline > span {
   position: absolute;
   width: 1px;
@@ -85,13 +95,16 @@
   overflow: hidden;
   clip-path: inset(50%);
 }
+
 .arm-field--textarea textarea {
   resize: none;
   line-height: 1.45;
 }
+
 .arm-field select {
   cursor: pointer;
 }
+
 .arm-icon-button {
   display: inline-flex;
   align-items: center;
@@ -107,22 +120,27 @@
   cursor: pointer;
   user-select: none;
 }
+
 .arm-icon-button svg {
   width: 1em;
   height: 1em;
 }
+
 .arm-icon-button:hover:not(:disabled) {
   background: #ffffff30;
-  border-color: currentColor;
+  border-color: currentcolor;
 }
+
 .arm-icon-button[aria-pressed="true"] {
   color: #fff;
   background: var(--arm-blue);
 }
+
 .arm-icon-button:disabled {
   opacity: 0.5;
   cursor: default;
 }
+
 .arm-small-button {
   min-height: 24px;
   border: 1px solid #aeb3b7;
@@ -135,19 +153,23 @@
   cursor: pointer;
   user-select: none;
 }
+
 .arm-small-button:hover:not(:disabled) {
   background: #dce8ef;
   border-color: #68889c;
 }
+
 .arm-small-button:disabled {
   opacity: 0.5;
   cursor: default;
 }
+
 :where(.arm-workspace, .arm-card-dialog, .arm-aux-dialog) button:focus-visible,
 :where(.arm-workspace, .arm-card-dialog) select:focus-visible {
   outline: 2px solid #008fce;
   outline-offset: 2px;
 }
+
 :where(
     .app-shell,
     .auth-shell,
@@ -159,6 +181,7 @@
   list-style: none;
   padding-left: 0;
 }
+
 :where(
     .app-shell,
     .auth-shell,
@@ -169,19 +192,23 @@
   :is(button, nav, summary, th, [role="tab"], .MuiDialogTitle-root) {
   user-select: none;
 }
+
 :where(.app-shell, .auth-shell) :is(a, button, summary):focus-visible {
   outline: 2px solid #008fce;
   outline-offset: 2px;
 }
+
 :where(.app-shell, .auth-shell) a:hover {
   color: #0085be;
 }
+
 :where(.arm-workspace, .arm-card-dialog) button {
   transition:
     background-color 100ms,
     border-color 100ms,
     color 100ms;
 }
+
 @media (prefers-reduced-motion: reduce) {
   :where(.arm-workspace, .arm-card-dialog) button {
     transition: none;

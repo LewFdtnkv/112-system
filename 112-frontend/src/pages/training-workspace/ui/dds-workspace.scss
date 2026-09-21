@@ -6,34 +6,41 @@
   font:
     13px Arial,
     sans-serif;
+
   p {
     margin: 6px 0;
     white-space: pre-wrap;
   }
+
   summary {
     cursor: pointer;
   }
 }
+
 .dds-footer .dds-service-active {
   background: #187eb6;
 }
+
 .dds-footer .dds-history {
   width: min(660px, calc(100vw - 32px));
   max-height: 260px;
   overflow: auto;
 }
+
 .dds-history-row {
   display: grid;
   grid-template-columns: 70px 145px 1fr;
   gap: 8px;
   padding: 6px 0;
 }
+
 .dds-status-dialog form {
   display: grid;
   gap: 12px;
   padding: 10px 0;
 }
-@media (max-width: 600px) {
+
+@media (width <= 600px) {
   .dds-history-row {
     grid-template-columns: 60px 110px 1fr;
     font-size: 11px;

@@ -8,7 +8,7 @@ it("uses server page search and encodes identifiers", async () => {
   vi.stubGlobal("fetch", fetch);
   await trainingApi.lessons(true, { q: "пожар", offset: 20 });
   const request = fetch.mock.calls[0][0] as Request;
-  expect(new URL(request.url).pathname).toBe("/api/v1/views/student/lessons");
+  expect(new URL(request.url).pathname).toBe("/api/views/student/lessons");
   expect(new URL(request.url).searchParams.get("q")).toBe("пожар");
   await trainingApi.attempt("id /?");
   expect((fetch.mock.calls[1][0] as Request).url).toContain(

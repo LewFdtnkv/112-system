@@ -1,11 +1,16 @@
 import "@testing-library/jest-dom/vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, configure, render, screen } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import { afterEach, expect, it, vi } from "vitest";
 import { useAuthStore } from "@/entities/user";
 import { trainingApi } from "@/entities/training";
 import { AppProviders } from "../providers/AppProviders";
 import { routes } from "./routes";
+
+// Маршруты грузятся лениво (lazy import), и первый тест в файле оплачивает
+// «холодную» загрузку модулей. На медленной машине это дольше стандартной
+// секунды ожидания findBy*, из-за чего тест падал на экране «Загрузка...».
+configure({ asyncUtilTimeout: 5_000 });
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();

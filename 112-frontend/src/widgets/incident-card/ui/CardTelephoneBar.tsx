@@ -1,7 +1,8 @@
 import type { IncidentCard } from "@/entities/incident-card";
 import type { IncidentEditor } from "@/features/incident-editing";
-import { ArmField, ArmIcon, ArmIconButton } from "@/shared/ui/arm";
+import { ArmIcon, ArmIconButton } from "@/shared/ui/arm";
 import { formatDuration } from "@/shared/lib/formatDuration";
+import { PhoneField } from "./PhoneField";
 
 interface Props {
   card: IncidentCard;
@@ -66,15 +67,12 @@ export function CardTelephoneBar({
             />
           </div>
           <div className="arm-phone__field">
-            <ArmField
+            <PhoneField
               label={label}
-              type="tel"
               value={editor.fields.phones[key]}
-              placeholder="+7 (   )   -  -"
+              placeholder="+7 ___ ___-__-__"
               disabled={disabled}
-              onChange={(event) =>
-                editor.setPhoneField(key, event.target.value)
-              }
+              onValueChange={(value) => editor.setPhoneField(key, value)}
             />
             <span className="arm-phone__globe">
               <ArmIcon name="globe" />

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   Alert,
   Button,
@@ -22,6 +22,7 @@ import { getApiError } from "@/shared/api";
 import { QueryState } from "@/shared/ui/QueryState";
 import { ServerSelect, type SelectOption } from "@/shared/ui/ServerSelect";
 import { TemplateAddress } from "./TemplateAddress";
+import { usePhoneInput } from "@/shared/lib/phone/usePhoneInput";
 
 export function CardEditor({
   onClose,
@@ -95,6 +96,10 @@ export function CardEditor({
     caller_name: initial?.data.caller_name ?? "",
     caller_phone: initial?.data.caller_phone ?? "",
   });
+  const phoneRef = useRef<HTMLInputElement>(null);
+  const callerPhone = usePhoneInput(form.caller_phone, (caller_phone) =>
+    setForm((current) => ({ ...current, caller_phone })),
+  );
   const routes = useQuery({
     queryKey: ["routes", version?.id, entry?.id],
     queryFn: ({ signal }) => trainingApi.routes(version!.id, entry!.id, signal),
@@ -147,7 +152,8 @@ export function CardEditor({
             ),
           },
           caller_name: form.caller_name,
-          caller_phone: form.caller_phone,
+          caller_phone:
+            form.caller_phone.trim() === "+" ? "" : form.caller_phone,
           additional_fields: initial?.data.additional_fields ?? {},
         },
       };
@@ -214,6 +220,11 @@ export function CardEditor({
       className="template-editor"
       onSubmit={(e) => {
         e.preventDefault();
+        if (callerPhone.invalid) {
+          callerPhone.reveal();
+          phoneRef.current?.focus();
+          return;
+        }
         save.mutate();
       }}
     >
@@ -233,7 +244,20 @@ export function CardEditor({
         </p>
         <h4>Заявитель и содержание обращения</h4>
         <div className="template-input-grid">
-          {renderFields(["caller_name", "caller_phone"])}
+          {renderFields(["caller_name"])}
+          <TextField
+            label={labels.caller_phone}
+            type="tel"
+            autoComplete="off"
+            placeholder="+7 900 123-45-67"
+            value={form.caller_phone}
+            onChange={callerPhone.inputProps.onChange}
+            onBlur={callerPhone.inputProps.onBlur}
+            inputRef={phoneRef}
+            error={callerPhone.issue !== null}
+            helperText={callerPhone.issue?.message}
+            slotProps={{ htmlInput: { inputMode: "tel", spellCheck: false } }}
+          />
         </div>
         {renderFields(["description"])}
 
