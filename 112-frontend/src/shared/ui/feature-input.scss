@@ -33,3 +33,20 @@
   cursor: default;
   opacity: 0.6;
 }
+
+.structured-feature input {
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  border: 0;
+  border-bottom: 1px solid #b7bcc1;
+  background: transparent;
+  padding: 5px 2px;
+  color: inherit;
+  font: inherit;
+  user-select: text;
+}
+.structured-feature input:focus-visible {
+  outline: 1px solid #4286bb;
+  outline-offset: 2px;
+}

@@ -23,6 +23,10 @@ import { getApiError } from "@/shared/api";
 import { ServerSelect, type SelectOption } from "@/shared/ui/ServerSelect";
 import { QueryState } from "@/shared/ui/QueryState";
 import { FeatureInput } from "@/shared/ui/FeatureInput";
+import {
+  activeFeatureDefinitions,
+  updateFeatureAnswer,
+} from "@/shared/lib/featureValues";
 import { randomUUID as createUuid } from "@/shared/lib/uuid";
 import "./generation.scss";
 
@@ -227,30 +231,41 @@ export function CardGenerationDialog({ onClose }: { onClose: () => void }) {
                     выбор.
                   </p>
                   <div className="generation-grid">
-                    {features.map((feature) => (
-                      <div key={feature.key}>
-                        <FeatureInput
-                          feature={feature}
-                          value={p.feature_answers?.[feature.key]}
-                          onChange={(value) => {
-                            const next = { ...p.feature_answers };
-                            if (value === undefined) delete next[feature.key];
-                            else next[feature.key] = value;
-                            change({ feature_answers: next });
-                          }}
-                        />
-                        <Button
-                          size="small"
-                          onClick={() => {
-                            const next = { ...p.feature_answers };
-                            delete next[feature.key];
-                            change({ feature_answers: next });
-                          }}
-                        >
-                          Случайно
-                        </Button>
-                      </div>
-                    ))}
+                    {activeFeatureDefinitions(features, p.feature_answers).map(
+                      (feature) => (
+                        <div key={feature.key}>
+                          <FeatureInput
+                            feature={feature}
+                            value={p.feature_answers?.[feature.key]}
+                            onChange={(value) => {
+                              change({
+                                feature_answers: updateFeatureAnswer(
+                                  features,
+                                  p.feature_answers,
+                                  feature.key,
+                                  value,
+                                ),
+                              });
+                            }}
+                          />
+                          <Button
+                            size="small"
+                            onClick={() => {
+                              change({
+                                feature_answers: updateFeatureAnswer(
+                                  features,
+                                  p.feature_answers,
+                                  feature.key,
+                                  undefined,
+                                ),
+                              });
+                            }}
+                          >
+                            Случайно
+                          </Button>
+                        </div>
+                      ),
+                    )}
                   </div>
                 </>
               )}

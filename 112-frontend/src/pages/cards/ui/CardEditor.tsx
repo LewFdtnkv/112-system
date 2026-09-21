@@ -17,7 +17,12 @@ import {
 } from "@/entities/training";
 import { emptyIncidentAddress, formatAddress } from "@/entities/incident-card";
 import { FeatureInput } from "@/shared/ui/FeatureInput";
-import { matchesFeature, type FeatureValue } from "@/shared/lib/featureValues";
+import {
+  activeFeatureDefinitions,
+  updateFeatureAnswer,
+  matchesFeature,
+  type FeatureValue,
+} from "@/shared/lib/featureValues";
 import { getApiError } from "@/shared/api";
 import { QueryState } from "@/shared/ui/QueryState";
 import { ServerSelect, type SelectOption } from "@/shared/ui/ServerSelect";
@@ -336,16 +341,13 @@ export function CardEditor({
             }));
           }}
         />
-        {features.map((f) => (
+        {activeFeatureDefinitions(features, answers).map((f) => (
           <FeatureInput
             key={f.key}
             feature={f}
             value={answers[f.key]}
             onChange={(value) => {
-              const next = { ...answers };
-              if (value === undefined) delete next[f.key];
-              else next[f.key] = value;
-              setAnswers(next);
+              setAnswers(updateFeatureAnswer(features, answers, f.key, value));
             }}
           />
         ))}

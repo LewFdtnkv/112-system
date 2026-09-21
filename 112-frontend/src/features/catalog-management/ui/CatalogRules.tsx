@@ -24,6 +24,7 @@ import { getApiError } from "@/shared/api";
 import { useDebounced } from "@/shared/lib/useDebounced";
 import { QueryState, PageControls } from "@/shared/ui/QueryState";
 import { ServerSelect } from "@/shared/ui/ServerSelect";
+import { FeatureVisibilityEditor } from "./FeatureVisibilityEditor";
 export function CatalogFiles({ onImported }: { onImported: () => void }) {
   const [error, setError] = useState("");
   const upload = useMutation({
@@ -378,9 +379,18 @@ function RuleForm({
                 onChange={(e) =>
                   setForm({
                     ...form,
-                    features: form.features.map((x, j) =>
-                      j === i ? { ...x, key: e.target.value } : x,
-                    ),
+                    features: form.features.map((x, j) => ({
+                      ...x,
+                      key: j === i ? e.target.value : x.key,
+                      visible_when: x.visible_when?.map((group) =>
+                        Object.fromEntries(
+                          Object.entries(group).map(([key, value]) => [
+                            key === f.key ? e.target.value : key,
+                            value,
+                          ]),
+                        ),
+                      ),
+                    })),
                     routes: form.routes.map((r) => ({
                       ...r,
                       when: Object.fromEntries(
@@ -410,9 +420,13 @@ function RuleForm({
               <TextField
                 select
                 label={`Формат признака ${i + 1}`}
+                disabled={form.features.some((x) =>
+                  x.visible_when?.some((g) => f.key in g),
+                )}
                 value={f.type ?? "boolean"}
                 onChange={(e) => {
-                  const type = e.target.value as "boolean" | "choice" | "array";
+                  const type = e.target.value as
+                    "boolean" | "choice" | "array" | "text";
                   setForm({
                     ...form,
                     features: form.features.map((x, j) =>
@@ -430,6 +444,7 @@ function RuleForm({
                 <MenuItem value="boolean">Да / Нет</MenuItem>
                 <MenuItem value="choice">Одно значение</MenuItem>
                 <MenuItem value="array">Список значений</MenuItem>
+                <MenuItem value="text">Текст</MenuItem>
               </TextField>
               <FormControlLabel
                 label="Обязательный признак"
@@ -447,7 +462,7 @@ function RuleForm({
                   />
                 }
               />
-              {f.type && f.type !== "boolean" && (
+              {(f.type === "choice" || f.type === "array") && (
                 <TextField
                   multiline
                   label={`Варианты признака ${i + 1}`}
@@ -466,7 +481,30 @@ function RuleForm({
                   }
                 />
               )}
+              <FeatureVisibilityEditor
+                feature={f}
+                parents={form.features.slice(0, i)}
+                onChange={(visible_when) =>
+                  setForm({
+                    ...form,
+                    features: form.features.map((x, j) =>
+                      j === i ? { ...x, visible_when } : x,
+                    ),
+                  })
+                }
+              />
+              {form.features.some((x) =>
+                x.visible_when?.some((g) => f.key in g),
+              ) && (
+                <Alert severity="info">
+                  От этого поля зависят другие признаки. Для удаления или смены
+                  формата сначала измените их условия показа.
+                </Alert>
+              )}
               <Button
+                disabled={form.features.some((x) =>
+                  x.visible_when?.some((g) => f.key in g),
+                )}
                 onClick={() =>
                   setForm({
                     ...form,

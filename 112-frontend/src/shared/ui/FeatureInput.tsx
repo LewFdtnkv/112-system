@@ -1,10 +1,7 @@
 import "./feature-input.scss";
 import { useState } from "react";
 import { useFieldFeedback } from "./arm/FieldFeedback";
-import {
-  type FeatureDefinition,
-  type FeatureValue,
-} from "@/shared/lib/featureValues";
+import type { FeatureInputProps } from "@/shared/types/features";
 
 /** Generic structured input, shared by reference answers and ARM fields. */
 export function FeatureInput({
@@ -13,13 +10,7 @@ export function FeatureInput({
   onChange,
   disabled,
   condition = false,
-}: {
-  feature: FeatureDefinition;
-  value: FeatureValue | undefined;
-  onChange: (value: FeatureValue | undefined) => void;
-  disabled?: boolean;
-  condition?: boolean;
-}) {
+}: FeatureInputProps) {
   const [draft, setDraft] = useState("");
   const feedback = useFieldFeedback(`feature:${feature.key}`);
   const multiple = feature.type === "array";
@@ -34,11 +25,28 @@ export function FeatureInput({
       data-feedback={feedback?.tone}
       title={feedback?.text}
     >
-      <span>
+      <span
+        title={
+          !condition && feature.required === false
+            ? "Необязательное поле"
+            : undefined
+        }
+      >
         {feature.label}
-        {!condition && (feature.required !== false ? " *" : " (необязательно)")}
+        {!condition && feature.required !== false && " *"}
       </span>
       <div>
+        {feature.type === "text" && (
+          <input
+            aria-label={feature.label}
+            value={typeof value === "string" ? value : ""}
+            maxLength={200}
+            disabled={disabled}
+            onChange={(e) =>
+              onChange(e.target.value.trim() ? e.target.value : undefined)
+            }
+          />
+        )}
         {options.map((option) => {
           const label =
             typeof option === "boolean" ? (option ? "Да" : "Нет") : option;
