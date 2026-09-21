@@ -176,14 +176,3 @@
 :where(.app-shell, .auth-shell) a:hover {
   color: #0085be;
 }
-:where(.arm-workspace, .arm-card-dialog) button {
-  transition:
-    background-color 100ms,
-    border-color 100ms,
-    color 100ms;
-}
-@media (prefers-reduced-motion: reduce) {
-  :where(.arm-workspace, .arm-card-dialog) button {
-    transition: none;
-  }
-}
