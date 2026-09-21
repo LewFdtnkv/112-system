@@ -19,6 +19,15 @@ TEXT = GeneratedText(
 )
 
 
+def test_generated_text_rejects_foreign_script():
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError):
+        GeneratedText.model_validate(
+            TEXT.model_dump() | {"description": "Пожар начался 晚上 в жилом доме"}
+        )
+
+
 def payload(t, **parameters):
     return {
         "request_id": str(uuid4()),

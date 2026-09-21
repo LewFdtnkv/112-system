@@ -91,7 +91,7 @@ def call_model(job):
                 "options": {
                     "num_ctx": 4096,
                     "num_predict": 1000,
-                    "temperature": 0.8,
+                    "temperature": 0.4,
                     "seed": seed,
                 },
             }

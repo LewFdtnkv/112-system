@@ -32,7 +32,7 @@ docker compose up --build -d --wait
 ```
 
 Для генерации карточек один раз загрузите локальную модель:
-`docker compose exec llm ollama pull qwen3:1.7b`.
+`docker compose exec llm ollama pull qwen3:4b-instruct-2507-q4_K_M`.
 Compose также запускает `llm` и отдельный `worker`; очередь хранится в PostgreSQL.
 Настройки, ограничения памяти и API: [Генерация карточек](docs/CARD_GENERATION.md).
 

@@ -1,3 +1,4 @@
+import re
 from datetime import datetime
 from typing import Annotated, Literal
 from uuid import UUID
@@ -52,6 +53,15 @@ class GeneratedText(BaseModel):
     title: str = Field(min_length=3, max_length=120)
     caller_message: str = Field(min_length=30, max_length=2500)
     description: str = Field(min_length=10, max_length=1500)
+
+    @model_validator(mode="after")
+    def russian_text(self):
+        for value in (self.title, self.caller_message, self.description):
+            if not re.search(r"[А-Яа-яЁё]", value) or re.search(
+                r"[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]", value
+            ):
+                raise ValueError("Модель должна ответить на русском языке")
+        return self
 
 
 class GenerationRead(BaseModel):
