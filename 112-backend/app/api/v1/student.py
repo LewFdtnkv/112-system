@@ -10,6 +10,7 @@ from app.schemas.audit import ObservationBatch
 from app.schemas.catalog import ClassifierEntryRead, ServiceRead
 from app.schemas.catalog_document import RoutePreview
 from app.schemas.dds import CrewCommand, DDSAction, DDSFinish
+from app.schemas.learning import HintRead, HintRequest
 from app.schemas.student import (
     CardSubmit,
     DraftSave,
@@ -226,3 +227,10 @@ async def preview_fields(
         RecipientRead(service_id=s.id, name=s.name, short_name=s.short_name)
         for s in await recipients(session, preview_card)
     ]
+
+
+@router.post("/attempts/{attempt_id}/hints", response_model=HintRead)
+async def hint(attempt_id: UUID, payload: HintRequest, session: SessionDep, student: StudentDep):
+    from app.services.learning_hints import issue_hint
+
+    return await issue_hint(session, attempt_id, student.id, payload)

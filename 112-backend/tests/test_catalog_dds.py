@@ -204,7 +204,16 @@ async def dds(api, teaching):
         "card_ids": [card["id"]],
     }
     await t.post("scenarios", base, expected=422)
-    scenario = await t.post("scenarios", base | {"dds_policy": {"steps": steps}})
+    scenario = await t.post(
+        "scenarios",
+        base
+        | {
+            "dds_policy": {
+                "steps": steps,
+                "required_crews": [{"crew_code": "main", "status": "completed"}],
+            }
+        },
+    )
     lesson = await t.post(
         "lessons/start",
         {
@@ -213,6 +222,22 @@ async def dds(api, teaching):
             "scenario_version_id": scenario["id"],
         },
     )
+    # A persisted pre-workflow lesson: retain regression coverage for historical DDS attempts.
+    from sqlalchemy import update
+
+    from app.models import Assignment
+
+    await t.db_session.execute(
+        update(Assignment)
+        .where(Assignment.lesson_id == UUID(lesson["id"]))
+        .values(settings={"learning": {"version": "learning-v2", "kind": "practice"}})
+    )
+    # Historical scenario did not have crew goals.
+    from app.models import ScenarioVersion
+
+    version = await t.db_session.get(ScenarioVersion, UUID(scenario["id"]))
+    version.completion_rules = {"dds": {"steps": steps}}
+    await t.db_session.commit()
     work = await api("GET", f"student/lessons/{lesson['id']}", actor="student")
     attempt = await api(
         "POST",

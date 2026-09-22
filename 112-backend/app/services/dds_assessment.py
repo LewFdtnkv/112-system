@@ -22,6 +22,8 @@ def crew_goal_met(crew, expected):
 
 
 def check_dds(policy, read):
+    if policy.get("workflow") == "crews-v1":
+        return check_crew_exercise(policy, read)
     history = read.dds["history"]
     fields = []
     for index, step in enumerate(policy["steps"]):
@@ -121,3 +123,55 @@ def criteria_dds(check):
                 }
             )
     return criteria
+
+
+def check_crew_exercise(policy, read):
+    from app.services.learning_scope import skills_for
+
+    skills = skills_for(read.learning.model_dump(mode="json"), "dds")
+    crews = {c["crew_code"]: c for c in read.dds.get("crews", [])}
+    names = {c["code"]: c["name"] for c in read.dds["profile"].get("crews", [])}
+    fields = []
+    for goal in policy["required_crews"]:
+        code = goal["crew_code"]
+        crew = crews.get(code)
+        for skill, prefix, expected, matched in (
+            (
+                "dds_crews",
+                "dds.assignment.",
+                "Назначена",
+                bool(crew and (crew["status"] != "cancelled" or goal["status"] == "cancelled")),
+            ),
+            (
+                "dds_response",
+                "dds.status.",
+                CREW_LABELS[goal["status"]],
+                crew_goal_met(crew, goal["status"]),
+            ),
+        ):
+            if skill in skills and not (skill == "dds_response" and goal["status"] == "assigned"):
+                fields.append(
+                    FieldCheck(
+                        field=prefix + code,
+                        label=f"Бригада: {names[code]}",
+                        expected=expected,
+                        actual=CREW_LABELS[crew["status"]] if crew else "",
+                        scored=True,
+                        status="matched" if matched else "different" if crew else "missing",
+                    )
+                )
+    required = {g["crew_code"] for g in policy["required_crews"]}
+    if "dds_crews" in skills:
+        for code, crew in crews.items():
+            if code not in required and crew["status"] != "cancelled":
+                fields.append(
+                    FieldCheck(
+                        field=f"dds.assignment.extra.{code}",
+                        label=f"Лишняя бригада: {crew['name']}",
+                        expected="Не назначать",
+                        actual=CREW_LABELS[crew["status"]],
+                        scored=True,
+                        status="different",
+                    )
+                )
+    return summarize(fields)

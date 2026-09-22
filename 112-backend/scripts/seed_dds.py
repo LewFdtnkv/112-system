@@ -29,7 +29,7 @@ STEPS = [
         "status": "completed",
         "message": (
             "Старший расчёта № 1 сообщает: наряд УЧ-101 ликвидировал пожар, "
-            "работы завершены. Завершите работу расчёта и службы."
+            "работы завершены. Зафиксируйте завершение работ расчёта. Статус службы не меняйте."
         ),
         "crew_number": "УЧ-101",
     },
@@ -149,7 +149,8 @@ async def complete_attempt(gateway, attempt):
                 crew = next(c for c in attempt["dds"]["crews"] if c["crew_code"] == "fire-1")
             if status not in {h["status"] for h in crew["history"]}:
                 await command("crews", status, step["message"])
-        await command("actions", status, step["message"])
+        if attempt["dds"].get("workflow") != "crews-v1":
+            await command("actions", status, step["message"])
     await gateway.command(attempt["id"], "submit", {"revision": attempt["dds"]["revision"]})
 
 

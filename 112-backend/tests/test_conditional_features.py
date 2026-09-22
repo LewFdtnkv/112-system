@@ -181,19 +181,20 @@ async def test_local_training_uses_source_catalog_and_repeats(db_session, tmp_pa
 
     changed = await dds.command(
         attempt["id"],
-        "actions",
+        "crews",
         {
+            "crew_code": "fire-1",
             "request_id": str(uuid4()),
             "revision": attempt["dds"]["revision"],
             "information_event_id": attempt["dds"]["information"]["id"],
-            "status": "accepted",
-            "comment": "Карточка принята учеником вручную",
+            "status": "assigned",
+            "comment": "Бригада назначена учеником вручную",
         },
     )
     await populate_training(gateway, state, catalog["classifier_id"], load_catalog())
     unchanged = await dds.start(assignment_id)
     assert unchanged["dds"]["revision"] == changed["dds"]["revision"]
-    assert unchanged["dds"]["comment"] == "Карточка принята учеником вручную"
+    assert unchanged["dds"]["crews"][0]["comment"] == "Бригада назначена учеником вручную"
     from app.services.auth import login
 
     for role in ("teacher", "student"):

@@ -36,6 +36,7 @@ GROUPS = {
     "address": "Адрес происшествия",
     "caller": "Сведения о заявителе",
     "victims": "Количество пострадавших",
+    "description": "Наличие описания (без оценки смысла)",
 }
 
 
@@ -54,6 +55,8 @@ def field_group(path):
         return "address"
     if path.startswith("caller"):
         return "caller"
+    if path in {"description", "address_text"}:
+        return "description" if path == "description" else "address"
     return "victims"
 
 
@@ -64,7 +67,7 @@ def weighted_criteria(check, policy):
             grouped.setdefault(field_group(field.field), []).append(field)
     result = []
     for code, fields in grouped.items():
-        maximum = Decimal(getattr(policy.weights, code))
+        maximum = Decimal(getattr(policy.weights, code, 10))
         correct = sum(field.status == "matched" for field in fields)
         points = (maximum * correct / len(fields)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
         result.append(
@@ -99,7 +102,9 @@ async def assess_submission(session, attempt, lesson, card_read, *, publish=True
             check = check_dds(attempt.settings_snapshot["dds_policy"], card_read)
             criteria = criteria_dds(check)
         else:
-            check = check_fields(source.snapshot, card_read)
+            from app.services.learning_scope import scoped_check
+
+            check = scoped_check(check_fields(source.snapshot, card_read), card_read)
             criteria = weighted_criteria(check, policy)
         if not criteria:
             # Composed operator cards always have a classifier and recipients, so this means
@@ -126,8 +131,31 @@ async def assess_submission(session, attempt, lesson, card_read, *, publish=True
             if attempt.settings_snapshot["dds_policy"].get("required_crews"):
                 policy_snapshot["version"] = "dds-crews-v2"
                 policy_snapshot["weights"]["dds_assignment"] = 20
+            if attempt.settings_snapshot["dds_policy"].get("workflow") == "crews-v1":
+                policy_snapshot["version"] = "dds-crew-workflow-v1"
+                policy_snapshot["weights"] = {c["code"]: float(c["max_score"]) for c in criteria}
             snapshot["dds"] = card_read.dds
             snapshot["dds_policy"] = attempt.settings_snapshot["dds_policy"]
+        hint_events = list(
+            await session.scalars(
+                select(AttemptEvent)
+                .where(
+                    AttemptEvent.attempt_id == attempt.id,
+                    AttemptEvent.kind == "learning.hint_issued",
+                )
+                .order_by(AttemptEvent.sequence)
+            )
+        )
+        snapshot["assistance"] = {
+            "issued_count": len(hint_events),
+            "levels": {
+                level: sum(e.payload["level"] == level for e in hint_events)
+                for level in ("goal", "explanation", "solution")
+            },
+            "event_ids": [str(e.id) for e in hint_events],
+            "scoring": "recorded_without_penalty",
+        }
+        snapshot["exercise_scope"] = attempt.settings_snapshot.get("exercise_scope")
         snapshot["context_hash"] = context_hash(snapshot)
         evaluation = Evaluation(
             attempt_id=attempt.id,
@@ -293,6 +321,19 @@ async def publish_lesson_result(session, lesson, student_id):
         "criteria": list(grouped.values()),
         "evaluated_cards": len(ids),
         "unverified_fields": sum(len(e.context_snapshot["unverified_fields"]) for e in evaluations),
+        "assistance": {
+            "issued_count": sum(
+                e.context_snapshot.get("assistance", {}).get("issued_count", 0) for e in evaluations
+            ),
+            "levels": {
+                level: sum(
+                    e.context_snapshot.get("assistance", {}).get("levels", {}).get(level, 0)
+                    for e in evaluations
+                )
+                for level in ("goal", "explanation", "solution")
+            },
+            "scoring": "recorded_without_penalty",
+        },
         "source_evaluation_ids": [str(e.id) for e in evaluations],
     }
     session.add(

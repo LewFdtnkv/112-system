@@ -206,6 +206,7 @@ async def attempt_read(
 
     return StudentAttemptRead(
         learning=attempt.settings_snapshot.get("learning", {}),
+        exercise_scope=attempt.settings_snapshot.get("exercise_scope"),
         role=scenario.role,
         dds=await dds_context(session, attempt, responses)
         if scenario.role == TrainingRole.DDS
@@ -333,6 +334,7 @@ async def start_attempt(session: AsyncSession, assignment_id: UUID, student_id: 
         started_at=now,
         settings_snapshot={
             "learning": assignment.settings.get("learning", {}),
+            "learning_engine": assignment.settings.get("learning_engine"),
             "deadline_policy": "bpmn-v1",
             "time_limit_seconds": assignment.time_limit_seconds,
             "hint_delay_seconds": assignment.hint_delay_seconds,
@@ -350,8 +352,19 @@ async def start_attempt(session: AsyncSession, assignment_id: UUID, student_id: 
         source = await session.get(ScenarioCard, assignment.scenario_card_id)
         await initialize(session, attempt, scenario, source, now)
     else:
+        from app.services.learning_scope import focused, prepared_card, skills_for
+
+        initial = {}
+        policy = attempt.settings_snapshot["learning"]
+        if attempt.settings_snapshot.get("learning_engine") and focused(policy):
+            source = await session.get(ScenarioCard, assignment.scenario_card_id)
+            initial = prepared_card(source.snapshot, policy)
+            attempt.settings_snapshot = attempt.settings_snapshot | {
+                "exercise_scope": sorted(skills_for(policy))
+            }
         session.add(
             IncidentCard(
+                **initial,
                 attempt_id=attempt.id,
                 origin=CardOrigin.STUDENT,
                 created_by_id=student_id,
@@ -360,6 +373,18 @@ async def start_attempt(session: AsyncSession, assignment_id: UUID, student_id: 
             )
         )
     await event(session, attempt, student_id, "attempt.started", {})
+    if scenario.role != TrainingRole.DDS and attempt.settings_snapshot.get("exercise_scope"):
+        from app.services.audit import append_event
+
+        await append_event(
+            session,
+            attempt.id,
+            "learning.prepared",
+            {
+                "editable_skills": attempt.settings_snapshot["exercise_scope"],
+                "source": "scenario_card_snapshot",
+            },
+        )
     await session.commit()
     return await attempt_read(session, attempt), True
 
@@ -465,6 +490,9 @@ async def save_card(session: AsyncSession, attempt_id: UUID, student_id: UUID, p
     card = await session.scalar(select(IncidentCard).where(IncidentCard.attempt_id == attempt.id))
     if card.revision != payload.revision:
         raise HTTPException(status_code=409, detail="Card revision is stale; reload the card")
+    from app.services.learning_scope import constrain_draft
+
+    payload = constrain_draft(attempt, card, payload)
     if payload.classifier_entry_id is not None:
         entry = await session.get(ClassifierEntry, payload.classifier_entry_id)
         if entry is None or entry.classifier_version_id != card.classifier_version_id:

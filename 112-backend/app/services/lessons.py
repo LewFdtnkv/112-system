@@ -157,6 +157,9 @@ async def start_lesson(
             .order_by(ScenarioCard.position)
         )
     )
+    from app.services.learning_scope import validate_exercise
+
+    validate_exercise(payload.learning, scenario, cards)
     if not cards:
         raise HTTPException(status_code=409, detail="The scenario has no cards")
     recipient_ids = {
@@ -234,9 +237,12 @@ async def start_lesson(
                     mode=TrainingMode.ASSESSMENT
                     if payload.learning.kind == "assessment"
                     else TrainingMode.PRACTICE,
-                    settings={"learning": payload.learning.model_dump(mode="json")},
+                    settings={
+                        "learning": payload.learning.model_dump(mode="json"),
+                        "learning_engine": "workflow-v1",
+                    },
                     time_limit_seconds=payload.time_limit_seconds,
-                    hint_delay_seconds=payload.learning.assistance.idle_seconds,
+                    hint_delay_seconds=None,
                 )
                 for student in students
                 for card in cards

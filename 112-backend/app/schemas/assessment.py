@@ -30,7 +30,14 @@ class AssessmentCriterion(BaseModel):
     explanation: str
 
 
+class AssistanceSummary(BaseModel):
+    issued_count: int = 0
+    levels: dict[str, int] = Field(default_factory=dict)
+    scoring: Literal["recorded_without_penalty"] = "recorded_without_penalty"
+
+
 class AssessmentDetails(BaseModel):
+    assistance: AssistanceSummary = Field(default_factory=AssistanceSummary)
     policy_version: str
     scope: Literal["formal_fields"] = "formal_fields"
     criteria: list[AssessmentCriterion]

@@ -7,6 +7,14 @@ def learning_result(attempts, grade=None):
     completed = [a for a in attempts if a.ended_at is not None]
     seconds = sum(max(0, (a.ended_at - a.started_at).total_seconds()) for a in completed)
     return LearningResult(
+        assistance_available=any(
+            a.settings_snapshot.get("learning_engine")
+            and a.settings_snapshot.get("learning", {})
+            .get("assistance", {})
+            .get("max_level", "none")
+            != "none"
+            for a in attempts
+        ),
         correctness=LearningMeasure(
             status="available" if grade else "pending",
             value=round(float(grade.score * 100 / grade.max_score), 2) if grade else None,

@@ -37,10 +37,8 @@ async def test_learning_policy_launch_snapshot_and_permissions(exercise, db_sess
         objective="Точно указать адрес",
         target_skills=["address"],
         assistance={
-            "mode": "visual",
             "max_level": "explanation",
             "on_request": True,
-            "idle_seconds": 45,
         },
     ).model_dump(mode="json")
     payload = e.d.payload | {
@@ -125,7 +123,7 @@ async def test_results_distinguish_unknown_dimensions_and_freeze_learning_contex
 async def test_performance_does_not_mix_training_and_assessment(exercise, db_session):
     e = exercise
     for kind, score in [("practice", 20), ("assessment", 90), ("review", 40)]:
-        policy = {"kind": kind, "target_skills": ["address"]}
+        policy = {"kind": kind, "target_skills": ["address"] if kind == "review" else []}
         lesson = await e.t.post(
             "lessons/start",
             e.d.payload

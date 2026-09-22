@@ -40,6 +40,17 @@ async def crews(dds, api):
             "scenario_version_id": scenario["id"],
         },
     )
+    # Regression fixture for a historical lesson using the service workflow.
+    from sqlalchemy import update
+
+    from app.models import Assignment
+
+    await d.t.db_session.execute(
+        update(Assignment)
+        .where(Assignment.lesson_id == UUID(lesson["id"]))
+        .values(settings={"learning": {"version": "learning-v2", "kind": "practice"}})
+    )
+    await d.t.db_session.commit()
     work = await api("GET", f"student/lessons/{lesson['id']}", actor="student")
     a = await api(
         "POST",

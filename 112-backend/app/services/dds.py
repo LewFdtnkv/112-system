@@ -72,7 +72,64 @@ async def initialize(session, attempt, scenario, source, now):
         {"service_id": str(profile.service_id), "sent_at": now.isoformat()},
         actor=EventActor.SIMULATION,
     )
-    await information(session, attempt, 0)
+    if attempt.settings_snapshot.get("learning_engine"):
+        from app.models import CrewAssignment
+        from app.services.learning_scope import focused, skills_for
+
+        learning = attempt.settings_snapshot["learning"]
+        skills = skills_for(learning, "dds")
+        effective = policy.model_dump(mode="json") | {"workflow": "crews-v1"}
+        if "dds_response" not in skills:
+            effective["required_crews"] = [
+                {**r, "status": "assigned"} for r in effective["required_crews"]
+            ]
+        attempt.settings_snapshot = attempt.settings_snapshot | {"dds_policy": effective}
+        if focused(learning):
+            attempt.settings_snapshot = attempt.settings_snapshot | {
+                "exercise_scope": sorted(skills)
+            }
+        if "dds_crews" not in skills:
+            response = await session.scalar(
+                select(ServiceResponse).where(
+                    ServiceResponse.attempt_id == attempt.id,
+                    ServiceResponse.service_id == profile.service_id,
+                )
+            )
+            for goal in effective["required_crews"]:
+                crew = next(c for c in profile_data["crews"] if c["code"] == goal["crew_code"])
+                session.add(
+                    CrewAssignment(
+                        attempt_id=attempt.id,
+                        response_id=response.id,
+                        crew_code=crew["code"],
+                        snapshot=crew,
+                        status="assigned",
+                        comment="",
+                    )
+                )
+                await append_event(
+                    session,
+                    attempt.id,
+                    "dds.crew_changed",
+                    {
+                        "crew_code": crew["code"],
+                        "name": crew["name"],
+                        "status": "assigned",
+                        "crew_number": None,
+                        "comment": "Подготовлено для отработки статусов",
+                        "prepared": True,
+                    },
+                    actor=EventActor.SIMULATION,
+                )
+        await append_event(
+            session,
+            attempt.id,
+            "dds.information",
+            {"step": 0, "message": "\n\n".join(step.message for step in policy.steps)},
+            actor=EventActor.SIMULATION,
+        )
+    else:
+        await information(session, attempt, 0)
 
 
 async def information(session, attempt, index):
@@ -122,9 +179,13 @@ async def context(session, attempt, responses):
     )
     crews = await crew_context(session, attempt)
     requirements = attempt.settings_snapshot["dds_policy"].get("required_crews", [])
+    crew_workflow = attempt.settings_snapshot["dds_policy"].get("workflow") == "crews-v1"
     return {
+        "workflow": "crews-v1" if crew_workflow else "service-v1",
         "crews": crews,
-        "crew_goals": [
+        "crew_goals": []
+        if crew_workflow
+        else [
             {
                 **r,
                 "name": next(
@@ -134,7 +195,9 @@ async def context(session, attempt, responses):
             for r in requirements
         ],
         "profile": profile,
-        "goal": STATUS_LABELS[attempt.settings_snapshot["dds_policy"]["steps"][-1]["status"]],
+        "goal": "Обработать бригады по сведениям задания"
+        if crew_workflow
+        else STATUS_LABELS[attempt.settings_snapshot["dds_policy"]["steps"][-1]["status"]],
         "response_id": str(own.id),
         "revision": own.revision,
         "status": own.status.value,
@@ -142,8 +205,12 @@ async def context(session, attempt, responses):
         "first_decision_at": own.first_decision_at.isoformat() if own.first_decision_at else None,
         "crew_number": own.crew_number,
         "comment": own.comment,
-        "allowed_statuses": sorted(TRANSITIONS.get(own.status.value, set())),
-        "can_finish": bool(history)
+        "allowed_statuses": []
+        if crew_workflow
+        else sorted(TRANSITIONS.get(own.status.value, set())),
+        "can_finish": True
+        if crew_workflow
+        else bool(history)
         and (
             own.status.value in {"not_accepted", "completed", "refused"}
             or len(history) >= len(attempt.settings_snapshot["dds_policy"]["steps"])
@@ -190,6 +257,8 @@ async def act(session, attempt_id, student_id, data):
     from app.services.student import attempt_read
 
     attempt, lesson, response = await owned_dds(session, attempt_id, student_id)
+    if attempt.settings_snapshot["dds_policy"].get("workflow") == "crews-v1":
+        raise HTTPException(409, "В этом занятии меняются только статусы бригад.")
     existing = await session.scalar(
         select(AttemptEvent).where(
             AttemptEvent.attempt_id == attempt.id, AttemptEvent.command_id == data.request_id

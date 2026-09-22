@@ -218,4 +218,4 @@ Pre-commit запускает Ruff, проверку lock-файла, YAML/TOML,
 - [Контракт аудита](docs/ATTEMPT_AUDIT.md)
 - [Аудит кода и незавершённых функций](docs/CODE_ARCHITECTURE_AUDIT.md)
 
-Основа режимов занятий и раздельных результатов: [learning-v1](docs/LEARNING_FOUNDATION.md).
+Четыре учебных режима, контекстная помощь и оценивание выбранных навыков: [learning-v2](docs/LEARNING_FOUNDATION.md).

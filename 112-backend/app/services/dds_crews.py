@@ -77,7 +77,14 @@ async def act(session, attempt_id, student_id, data):
         raise HTTPException(409, "This attempt is no longer editable")
     if response.revision != data.revision:
         raise HTTPException(409, "DDS response revision is stale; reload the card")
-    if response.status.value not in {"accepted", "responding", "arrived", "in_progress"}:
+    if attempt.settings_snapshot["dds_policy"].get(
+        "workflow"
+    ) != "crews-v1" and response.status.value not in {
+        "accepted",
+        "responding",
+        "arrived",
+        "in_progress",
+    }:
         raise HTTPException(409, "Accept the service response before managing crews")
     source = await session.scalar(
         select(AttemptEvent).where(
@@ -98,6 +105,13 @@ async def act(session, attempt_id, student_id, data):
             CrewAssignment.crew_code == data.crew_code,
         )
     )
+    scope = attempt.settings_snapshot.get("exercise_scope")
+    if scope and "dds_crews" not in scope and row is None:
+        raise HTTPException(
+            422, "В этом упражнении состав бригад подготовлен; отрабатываются их статусы."
+        )
+    if scope and "dds_response" not in scope and data.status not in {"assigned", "cancelled"}:
+        raise HTTPException(422, "В этом упражнении отрабатывается только назначение бригад.")
     previous = row.status if row else None
     allowed = CREW_TRANSITIONS[row.status] if row else {"assigned"}
     if data.status not in allowed:

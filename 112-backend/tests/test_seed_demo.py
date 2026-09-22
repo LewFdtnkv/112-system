@@ -101,7 +101,7 @@ async def assert_dds_seed(session, result):
             select(Evaluation).where(Evaluation.attempt_id == attempt.id)
         )
         assert evaluation.score == evaluation.max_score
-        assert evaluation.context_snapshot["policy"]["version"] == "dds-crews-v2"
+        assert evaluation.context_snapshot["policy"]["version"] == "dds-crew-workflow-v1"
         crew = await session.scalar(
             select(CrewAssignment).where(CrewAssignment.attempt_id == attempt.id)
         )

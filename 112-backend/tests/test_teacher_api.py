@@ -58,6 +58,16 @@ async def teaching(db_session, db_client):
         version=1,
         name=service.name,
         responsibility="Учебная территория",
+        rules={
+            "crews": [
+                {
+                    "code": "main",
+                    "name": "Учебная бригада",
+                    "description": "Учебная территория",
+                    "is_active": True,
+                }
+            ]
+        },
         **approval,
     )
     classifier = await add(
@@ -123,12 +133,13 @@ async def teaching(db_session, db_client):
                 "card_ids": [second["id"], first["id"], second["id"]],
                 "service_profile_id": str(profile.id) if role == "dds" else None,
                 "dds_policy": {
+                    "required_crews": [{"crew_code": "main", "status": "completed"}],
                     "steps": [
                         {
                             "status": "accepted",
                             "message": "Карточка относится к нашей службе. Примите её.",
                         }
-                    ]
+                    ],
                 }
                 if role == "dds"
                 else None,

@@ -2,6 +2,7 @@
 
 from enum import StrEnum
 from typing import Literal
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -28,25 +29,13 @@ class LearningSkill(StrEnum):
 
 class AssistancePolicy(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    mode: Literal["none", "text", "visual"] = "none"
-    max_level: Literal["goal", "explanation", "solution"] = "goal"
-    on_request: bool = False
-    idle_seconds: int | None = Field(default=None, ge=10, le=3600)
-
-    @model_validator(mode="after")
-    def coherent(self):
-        if self.mode == "none" and (
-            self.on_request or self.idle_seconds is not None or self.max_level != "goal"
-        ):
-            raise ValueError("Disabled assistance cannot have triggers or reveal a solution")
-        if self.mode != "none" and not self.on_request and self.idle_seconds is None:
-            raise ValueError("Assistance needs a request or inactivity trigger")
-        return self
+    max_level: Literal["none", "goal", "explanation", "solution"] = "none"
+    on_request: bool = True
 
 
 class LearningPolicy(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    version: Literal["learning-v1"] = "learning-v1"
+    version: Literal["learning-v2"] = "learning-v2"
     kind: LessonKind = LessonKind.PRACTICE
     objective: str = Field(default="", max_length=2000)
     target_skills: list[LearningSkill] = Field(default_factory=list, max_length=8)
@@ -58,9 +47,35 @@ class LearningPolicy(BaseModel):
             raise ValueError("Target skills must not repeat")
         if self.kind in (LessonKind.SKILL_PRACTICE, LessonKind.REVIEW) and not self.target_skills:
             raise ValueError("Choose target skills for focused practice or review")
-        if self.kind == LessonKind.ASSESSMENT and self.assistance.mode != "none":
+        if self.kind == LessonKind.ASSESSMENT and self.assistance.max_level != "none":
             raise ValueError("Assessment lessons cannot provide learning assistance")
+        if self.kind in (LessonKind.PRACTICE, LessonKind.ASSESSMENT) and self.target_skills:
+            raise ValueError("Whole scenarios cannot select individual skills")
+        if LearningSkill.INTERFACE in self.target_skills:
+            raise ValueError("Interface training is not available yet")
         return self
+
+
+class HintRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    request_id: UUID
+    trigger: Literal["request", "automatic"] = "request"
+    level: Literal["goal", "explanation", "solution"] = "goal"
+
+
+class LearningHint(BaseModel):
+    id: str
+    task: str
+    level: Literal["goal", "explanation", "solution"]
+    text: str
+    target: str | None = None
+    presentation: Literal["text", "highlight"] = "text"
+
+
+class HintRead(BaseModel):
+    status: Literal["ready", "waiting", "disabled", "complete"]
+    revision: int
+    hint: LearningHint | None = None
 
 
 class LearningMeasure(BaseModel):

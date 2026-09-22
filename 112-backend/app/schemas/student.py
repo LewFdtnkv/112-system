@@ -68,6 +68,7 @@ class RecipientRead(BaseModel):
 
 
 class StudentAttemptRead(BaseModel):
+    exercise_scope: list[str] | None = None
     learning: LearningPolicy = Field(default_factory=LearningPolicy)
     role: TrainingRole = TrainingRole.OPERATOR_112
     dds: dict[str, JsonValue] | None = None
