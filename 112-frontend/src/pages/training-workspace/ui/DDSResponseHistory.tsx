@@ -1,9 +1,10 @@
 import { crewStatusLabels } from "@/entities/training";
 import { ArmIconButton } from "@/shared/ui/arm";
-import type { DDSControlsProps } from "../types/DDSControls";
+import { useDDSWorkspaceContext } from "../model/DDSWorkspaceContext";
 import { DDSHistoryRow } from "./DDSHistoryRow";
 
-export function DDSResponseHistory({ workspace: w }: DDSControlsProps) {
+export function DDSResponseHistory() {
+  const w = useDDSWorkspaceContext();
   const crew = w.dds.crews?.find((c) => c.crew_code === w.activeCrew);
   if (!crew) return null;
   return (

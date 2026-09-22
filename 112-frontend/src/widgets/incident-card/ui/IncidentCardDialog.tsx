@@ -1,8 +1,8 @@
+import { IncidentCardContext } from "../model/IncidentCardContext";
 import {
   formatAddress,
   incidentStatuses,
   incidentStatusLabels,
-  type IncidentCard,
 } from "@/entities/incident-card";
 import { useIncidentEditor } from "@/features/incident-editing";
 import { LocationPicker } from "@/features/location-picker";
@@ -14,9 +14,12 @@ import {
 } from "@/shared/ui/arm";
 import { FieldFeedbackContext } from "@/shared/ui/arm/FieldFeedback";
 import { Dialog, DialogContent, DialogTitle } from "@mui/material";
-import { useState } from "react";
+import { useId, useState } from "react";
 import "../styles/incident-card.scss";
-import type { IncidentCardDialogProps } from "../types/IncidentCardDialog";
+import type {
+  IncidentCardDialogProps,
+  IncidentCardFormProps,
+} from "../types/IncidentCardDialog";
 import { CardAddressPanel } from "./CardAddressPanel";
 import { CardClassification } from "./CardClassification";
 import { CardServicesDialog } from "./CardServicesDialog";
@@ -26,26 +29,31 @@ export function IncidentCardDialog({
   card,
   ...props
 }: IncidentCardDialogProps) {
+  const titleId = useId();
   return (
     <Dialog
       open={Boolean(card)}
       onClose={(_, reason) => {
-        if ((!props.remote || props.readOnly) && reason === "escapeKeyDown")
-          props.onClose();
+        if (props.readOnly && reason === "escapeKeyDown") props.onClose();
       }}
       fullScreen
       className={`arm-card-dialog ${props.readOnlyLayout === "form" ? "arm-card-dialog--readonly-form" : ""}`}
-      aria-labelledby="incident-card-title"
+      aria-labelledby={titleId}
     >
       <FieldFeedbackContext.Provider value={props.fieldFeedback ?? {}}>
-        {card && <IncidentCardForm key={card.id} card={card} {...props} />}
+        {card && (
+          <IncidentCardForm
+            key={card.id}
+            card={card}
+            titleId={titleId}
+            {...props}
+          />
+        )}
       </FieldFeedbackContext.Provider>
     </Dialog>
   );
 }
-function IncidentCardForm(
-  props: Omit<IncidentCardDialogProps, "card"> & { card: IncidentCard },
-) {
+function IncidentCardForm(props: IncidentCardFormProps) {
   const {
     card,
     onClose,
@@ -55,6 +63,7 @@ function IncidentCardForm(
     elapsedSeconds,
     normSeconds,
     renderMap,
+    titleId,
   } = props;
   const editor = useIncidentEditor(props);
   const [preview, setPreview] = useState(false);
@@ -70,7 +79,6 @@ function IncidentCardForm(
   const close = () => {
     if (editor.pending) return;
     if (
-      props.remote &&
       !isSubmitted &&
       editor.dirty &&
       !window.confirm(
@@ -82,15 +90,12 @@ function IncidentCardForm(
   };
   const { fields } = editor;
   return (
-    <>
-      <DialogTitle id="incident-card-title" className="visually-hidden">
+    <IncidentCardContext value={{ editor, disabled }}>
+      <DialogTitle id={titleId} className="visually-hidden">
         Карточка происшествия № {card.id}
       </DialogTitle>
       <CardTelephoneBar
         card={card}
-        editor={editor}
-        disabled={disabled}
-        accepted={isCallAccepted}
         elapsedSeconds={elapsedSeconds}
         normSeconds={normSeconds}
         viewing={viewing}
@@ -98,7 +103,7 @@ function IncidentCardForm(
         onViewChange={() => setPreview(!preview)}
         onHistory={setModal}
       />
-      {props.remote?.message && (
+      {props.remote.message && (
         <div className="arm-source-message">
           <b>Сообщение заявителя:</b> {props.remote.message}
         </div>
@@ -106,14 +111,10 @@ function IncidentCardForm(
       {props.trainingNotice}
       <div className="arm-card-body" key={viewing ? "view" : "edit"}>
         <CardAddressPanel
-          editor={editor}
-          disabled={disabled}
           viewing={summaryLayout}
           onMap={() => setModal("map")}
         />
         <CardClassification
-          editor={editor}
-          disabled={disabled}
           viewing={summaryLayout}
           onVictims={() => setModal("victims")}
         />
@@ -123,7 +124,7 @@ function IncidentCardForm(
           Черновик сохранён на сервере.
         </p>
       )}
-      {props.remote?.error && (
+      {props.remote.error && (
         <p className="arm-card-notice arm-card-notice--error" role="alert">
           {props.remote.error}
         </p>
@@ -149,13 +150,11 @@ function IncidentCardForm(
         >
           <div className="arm-service-tiles">
             <strong>Службы:</strong>
-            {editor.remote?.notificationRequired === false && (
+            {editor.remote.notificationRequired === false && (
               <span>Оповещение не требуется</span>
             )}
             {fields.services.map((service) => {
-              const info = editor.remote?.services.find(
-                (s) => s.id === service,
-              );
+              const info = editor.remote.services.find((s) => s.id === service);
               return (
                 <CardServiceTile
                   key={service}
@@ -171,7 +170,7 @@ function IncidentCardForm(
                 />
               );
             })}
-            {!viewing && (!props.remote || props.remote.loadServices) && (
+            {!viewing && props.remote.loadServices && (
               <ArmIconButton
                 icon="plus"
                 label="Добавить службы"
@@ -182,7 +181,7 @@ function IncidentCardForm(
             )}
           </div>
           <div className="arm-footer-tools">
-            {!viewing && props.remote && (
+            {!viewing && (
               <button
                 className="arm-small-button"
                 disabled={disabled}
@@ -195,7 +194,7 @@ function IncidentCardForm(
               <button
                 className="arm-save"
                 aria-label={
-                  editor.remote?.notificationRequired === false
+                  editor.remote.notificationRequired === false
                     ? "Сохранить без оповещения"
                     : "Оповестить и сохранить карточку"
                 }
@@ -243,7 +242,7 @@ function IncidentCardForm(
               aria-label={`История службы ${activeService}`}
             >
               <h3>
-                {editor.remote?.services.find((s) => s.id === activeService)
+                {editor.remote.services.find((s) => s.id === activeService)
                   ?.name ?? `Служба ${activeService}`}
                 <ArmIconButton
                   icon="close"
@@ -279,7 +278,7 @@ function IncidentCardForm(
               </h3>
               <ArmSelect
                 label="Статус обработки"
-                disabled={disabled || !!props.remote}
+                disabled
                 value={fields.status}
                 onChange={(e) =>
                   editor.setField(
@@ -306,11 +305,9 @@ function IncidentCardForm(
               <button
                 className="arm-small-button"
                 disabled={disabled}
-                onClick={props.remote ? editor.saveDraft : editor.commitAction}
+                onClick={editor.saveDraft}
               >
-                {props.remote
-                  ? "Сохранить комментарий"
-                  : "Зафиксировать действие"}
+                Сохранить комментарий
               </button>
               {!viewing && (
                 <button
@@ -339,11 +336,6 @@ function IncidentCardForm(
       )}
       <CardServicesDialog
         open={servicesOpen && !viewing}
-        selected={fields.services}
-        remote={editor.remote}
-        manual={fields.manualServices != null}
-        onReset={editor.useRecommendedServices}
-        onToggle={editor.toggleService}
         onClose={() => setServicesOpen(false)}
       />
       <Dialog
@@ -351,10 +343,10 @@ function IncidentCardForm(
         onClose={() => setModal(undefined)}
         fullWidth
         maxWidth={modal === "map" ? "md" : "sm"}
-        aria-labelledby="card-aux-dialog-title"
+        aria-labelledby={`${titleId}-aux`}
         className="arm-aux-dialog"
       >
-        <DialogTitle id="card-aux-dialog-title">
+        <DialogTitle id={`${titleId}-aux`}>
           {modal === "victims"
             ? "Пострадавшие"
             : modal === "map"
@@ -403,11 +395,8 @@ function IncidentCardForm(
             ))}
           {modal === "calls" && (
             <p>
-              {props.remote
-                ? "SIP-звонки и аудиозапись пока не подключены. Условие задания передаётся текстом."
-                : isCallAccepted
-                  ? `Учебный вызов · ${card.channel}. Аудиозапись в этом задании не предусмотрена.`
-                  : "Учебный вызов ещё не принят."}
+              SIP-звонки и аудиозапись пока не подключены. Условие задания
+              передаётся текстом.
             </p>
           )}
           {modal === "timing" && (
@@ -418,6 +407,6 @@ function IncidentCardForm(
           {modal === "sms" && <p>В этом учебном задании SMS отсутствуют.</p>}
         </DialogContent>
       </Dialog>
-    </>
+    </IncidentCardContext>
   );
 }

@@ -1,3 +1,4 @@
+import { useIncidentCardContext } from "../model/IncidentCardContext";
 import { emptyIncidentAddress, formatAddress } from "@/entities/incident-card";
 import {
   ArmField,
@@ -6,7 +7,8 @@ import {
   ArmTextarea,
 } from "@/shared/ui/arm";
 import type { Props } from "../types/CardAddressPanel";
-export function CardAddressPanel({ editor, disabled, viewing, onMap }: Props) {
+export function CardAddressPanel({ viewing, onMap }: Props) {
+  const { editor, disabled } = useIncidentCardContext();
   const { fields, setField, setDetail, setAddressField } = editor;
   const address = fields.address;
   const country = address.country ?? (disabled ? "" : "Россия");

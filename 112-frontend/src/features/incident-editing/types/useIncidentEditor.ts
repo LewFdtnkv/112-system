@@ -33,14 +33,17 @@ export interface RemoteEditor {
 }
 
 export interface IncidentEditorOptions {
-  remote?: RemoteEditor;
+  remote: RemoteEditor;
   card: IncidentCard;
-  sessionId?: string;
   log: readonly string[];
   isSubmitted: boolean;
   isCallAccepted: boolean;
-  onCommitAction: (fields: IncidentCardFields, action: string) => void;
   onSubmit: (fields: IncidentCardFields) => void | Promise<void>;
 }
 
 export type IncidentEditor = ReturnType<typeof useIncidentEditor>;
+
+export interface EditorCommand {
+  kind: "save" | "submit";
+  fields: IncidentCardFields;
+}

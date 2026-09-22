@@ -1,26 +1,11 @@
-import type { IncidentCard } from "@/entities/incident-card";
-import type { IncidentEditor } from "@/features/incident-editing";
+import { useIncidentCardContext } from "../model/IncidentCardContext";
 import { ArmIcon, ArmIconButton } from "@/shared/ui/arm";
+import type { Props } from "../types/CardTelephoneBar";
 import { formatDuration } from "@/shared/lib/formatDuration";
 import { PhoneField } from "./PhoneField";
 
-interface Props {
-  card: IncidentCard;
-  editor: IncidentEditor;
-  disabled: boolean;
-  accepted: boolean;
-  elapsedSeconds: number;
-  normSeconds: number;
-  viewing: boolean;
-  submitted: boolean;
-  onViewChange: () => void;
-  onHistory: (kind: "calls" | "sms") => void;
-}
 export function CardTelephoneBar({
   card,
-  editor,
-  disabled,
-  accepted,
   elapsedSeconds,
   normSeconds,
   viewing,
@@ -28,18 +13,13 @@ export function CardTelephoneBar({
   onViewChange,
   onHistory,
 }: Props) {
+  const { editor, disabled } = useIncidentCardContext();
   return (
     <header className="arm-telephone-bar">
       <div className="arm-call-status">
         <ArmIcon name="callEnd" />
         <div>
-          <span>
-            {editor.remote
-              ? "Учебное сообщение"
-              : accepted
-                ? "Отключение"
-                : "Ожидание вызова"}
-          </span>
+          <span>Учебное сообщение</span>
           <div>
             <button onClick={() => onHistory("calls")}>записи звонков</button>
             <button onClick={() => onHistory("sms")}>список SMS</button>

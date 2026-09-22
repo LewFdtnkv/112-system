@@ -41,7 +41,6 @@ export function TrainingCardPreview({
       elapsedSeconds={0}
       normSeconds={0}
       onClose={onClose}
-      onCommitAction={() => {}}
       onSubmit={() => {}}
       fieldFeedback={feedback}
       trainingNotice={

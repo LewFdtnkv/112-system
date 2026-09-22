@@ -17,3 +17,8 @@ export interface IncidentCardDialogProps extends Omit<
   responseFooter?: ReactNode;
   trainingNotice?: ReactNode;
 }
+
+export type IncidentCardFormProps = Omit<IncidentCardDialogProps, "card"> & {
+  card: IncidentCard;
+  titleId: string;
+};

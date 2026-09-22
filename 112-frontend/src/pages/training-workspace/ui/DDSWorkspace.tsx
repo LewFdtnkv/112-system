@@ -1,3 +1,4 @@
+import { DDSWorkspaceContext } from "../model/DDSWorkspaceContext";
 import { crewStatusLabels } from "@/entities/training";
 import { attemptCard } from "@/features/incident-editing";
 import { getApiError } from "@/shared/api";
@@ -13,7 +14,7 @@ export function DDSWorkspace(props: DDSWorkspaceProps) {
   const { attempt, dds, completed, elapsed, error, busy, reload, close } =
     workspace;
   return (
-    <>
+    <DDSWorkspaceContext value={workspace}>
       <IncidentCardDialog
         card={attemptCard(attempt)}
         log={[]}
@@ -21,7 +22,6 @@ export function DDSWorkspace(props: DDSWorkspaceProps) {
         isSubmitted={completed}
         isCallAccepted
         onClose={close}
-        onCommitAction={() => {}}
         onSubmit={() => {}}
         elapsedSeconds={elapsed}
         normSeconds={attempt.norm_seconds}
@@ -99,9 +99,9 @@ export function DDSWorkspace(props: DDSWorkspaceProps) {
             )}
           </section>
         }
-        responseFooter={<DDSFooter workspace={workspace} />}
+        responseFooter={<DDSFooter />}
       />
-      <DDSStatusEditor workspace={workspace} />
-    </>
+      <DDSStatusEditor />
+    </DDSWorkspaceContext>
   );
 }

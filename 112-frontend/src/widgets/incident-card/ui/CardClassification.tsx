@@ -1,8 +1,4 @@
-import {
-  frequentIncidentCategoryIds,
-  getCategoryName,
-  incidentCategories,
-} from "@/entities/incident-card";
+import { useIncidentCardContext } from "../model/IncidentCardContext";
 import {
   activeFeatureDefinitions,
   featureText,
@@ -10,41 +6,25 @@ import {
 } from "@/shared/lib/featureValues";
 import { ArmField, ArmIconButton } from "@/shared/ui/arm";
 import { FeatureInput } from "@/shared/ui/FeatureInput";
-import { Fragment, useState } from "react";
+import { useState } from "react";
 import type { Props } from "../types/CardClassification";
-export function CardClassification({
-  editor,
-  disabled,
-  viewing,
-  onVictims,
-}: Props) {
+export function CardClassification({ viewing, onVictims }: Props) {
+  const { editor, disabled } = useIncidentCardContext();
   const { fields, setDetail } = editor;
   const [query, setQuery] = useState("");
   const [choosing, setChoosing] = useState(false);
   const term = query.trim();
   const showResults = choosing && term.length >= 2;
-  const popular = editor.remote
-    ? (editor.remote.popularCategories ?? [])
-    : frequentIncidentCategoryIds.map((id) =>
-        incidentCategories.find((category) => category.id === id)!,
-      );
   const choices = showResults
-    ? editor.remote
-      ? editor.remote.categories
-      : incidentCategories.filter((category) =>
-          category.name
-            .toLocaleLowerCase("ru")
-            .includes(term.toLocaleLowerCase("ru")),
-        )
-    : popular.slice(0, 11);
+    ? editor.remote.categories
+    : (editor.remote.popularCategories ?? []).slice(0, 11);
   const choose = (id: string) => {
     editor.setCategory(id);
     setQuery("");
-    editor.remote?.search("");
+    editor.remote.search("");
     setChoosing(false);
   };
-  const categoryName =
-    editor.remote?.categoryName || getCategoryName(fields.categoryId);
+  const categoryName = editor.remote.categoryName || "Тип не выбран";
   const answers = fields.details?.clarifications ?? {};
   return (
     <section className="arm-classification" aria-label="Что случилось">
@@ -111,11 +91,9 @@ export function CardClassification({
       )}
       {viewing ? (
         <div className="arm-classification-view">
-          <h3>
-            {fields.categoryId === "fire" ? "Происшествие 101" : categoryName}
-          </h3>
+          <h3>{categoryName}</h3>
           <p>
-            {editor.remote?.features?.length
+            {editor.remote.features?.length
               ? editor.remote.features
                   .map(
                     (f) =>
@@ -156,7 +134,7 @@ export function CardClassification({
               onFocus={() => setChoosing(true)}
               onChange={(e) => {
                 setQuery(e.target.value);
-                editor.remote?.search(e.target.value);
+                editor.remote.search(e.target.value);
                 setChoosing(true);
               }}
             />
@@ -185,13 +163,13 @@ export function CardClassification({
                     Значимые типы происшествий:
                   </p>
                 )}
-                {editor.remote?.searching && <span>Загрузка…</span>}
-                {editor.remote?.error && (
+                {editor.remote.searching && <span>Загрузка…</span>}
+                {editor.remote.error && (
                   <span role="alert">{editor.remote.error}</span>
                 )}
                 {showResults &&
                   choices.length === 0 &&
-                  !editor.remote?.searching && (
+                  !editor.remote.searching && (
                     <span>Тип происшествия не найден.</span>
                   )}
               </div>
@@ -200,11 +178,7 @@ export function CardClassification({
           {fields.categoryId && (
             <>
               <div className="arm-category-tab">
-                <span>
-                  {fields.categoryId === "fire"
-                    ? "Происшествие 101"
-                    : categoryName}
-                </span>
+                <span>{categoryName}</span>
                 <ArmIconButton
                   icon="close"
                   label="Убрать тип происшествия"
@@ -212,31 +186,23 @@ export function CardClassification({
                   onClick={() => editor.setCategory("")}
                 />
               </div>
-              <div
-                className={`arm-questionnaire ${editor.remote ? "arm-questionnaire--server" : ""}`}
-              >
-                <h3>
-                  {fields.categoryId === "fire"
-                    ? "Происшествие 101"
-                    : categoryName}
-                </h3>
+              <div className="arm-questionnaire arm-questionnaire--server">
+                <h3>{categoryName}</h3>
                 <div className="arm-questionnaire__body">
-                  {editor.remote && (
-                    <div className="arm-question">
-                      <span>Уточнение</span>
-                      <ArmField
-                        label="Уточнение типа происшествия"
-                        inline
-                        disabled={disabled}
-                        value={fields.details?.classificationDescription ?? ""}
-                        onChange={(e) =>
-                          setDetail("classificationDescription", e.target.value)
-                        }
-                      />
-                    </div>
-                  )}
+                  <div className="arm-question">
+                    <span>Уточнение</span>
+                    <ArmField
+                      label="Уточнение типа происшествия"
+                      inline
+                      disabled={disabled}
+                      value={fields.details?.classificationDescription ?? ""}
+                      onChange={(e) =>
+                        setDetail("classificationDescription", e.target.value)
+                      }
+                    />
+                  </div>
                   {activeFeatureDefinitions(
-                    editor.remote?.features ?? [],
+                    editor.remote.features ?? [],
                     fields.ekpAnswers,
                   ).map((feature) => (
                     <FeatureInput
@@ -248,7 +214,7 @@ export function CardClassification({
                         editor.setField(
                           "ekpAnswers",
                           updateFeatureAnswer(
-                            editor.remote?.features ?? [],
+                            editor.remote.features ?? [],
                             fields.ekpAnswers,
                             feature.key,
                             value,
@@ -257,62 +223,6 @@ export function CardClassification({
                       }}
                     />
                   ))}
-                  {editor.tagGroups.map((group) => (
-                    <Fragment key={group.label}>
-                      <div className="arm-question">
-                        <span>{group.label}</span>
-                        <div>
-                          {group.options.map((option) => (
-                            <button
-                              disabled={disabled}
-                              key={option}
-                              aria-pressed={
-                                answers[group.label]?.includes(option) ?? false
-                              }
-                              onClick={() =>
-                                editor.toggleTag(group.label, option)
-                              }
-                            >
-                              {option}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                      {group.label === "Дом (пламя, дым)" && (
-                        <div className="arm-question">
-                          <span>Этажность здания</span>
-                          <ArmField
-                            label="Этажность здания"
-                            inline
-                            type="number"
-                            min={1}
-                            disabled={disabled}
-                            value={fields.details?.buildingFloors ?? ""}
-                            onChange={(event) =>
-                              setDetail("buildingFloors", event.target.value)
-                            }
-                          />
-                        </div>
-                      )}
-                    </Fragment>
-                  ))}
-                  {fields.categoryId === "fire" && (
-                    <div className="arm-question">
-                      <span>Описание</span>
-                      <ArmField
-                        label="Описание типа происшествия"
-                        inline
-                        disabled={disabled}
-                        value={fields.details?.classificationDescription ?? ""}
-                        onChange={(event) =>
-                          setDetail(
-                            "classificationDescription",
-                            event.target.value,
-                          )
-                        }
-                      />
-                    </div>
-                  )}
                 </div>
               </div>
             </>

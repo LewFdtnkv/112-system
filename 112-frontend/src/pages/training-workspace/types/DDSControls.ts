@@ -1,5 +1,3 @@
 import type { useDDSWorkspace } from "../model/useDDSWorkspace";
 
-export interface DDSControlsProps {
-  workspace: ReturnType<typeof useDDSWorkspace>;
-}
+export type DDSWorkspaceContextValue = ReturnType<typeof useDDSWorkspace>;

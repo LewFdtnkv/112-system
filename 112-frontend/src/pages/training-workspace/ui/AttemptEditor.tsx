@@ -26,7 +26,6 @@ export function AttemptEditor(props: AttemptEditorProps) {
         readOnlyLayout={completed ? "form" : undefined}
         isCallAccepted={attempt.status === "in_progress" || completed}
         onClose={onClose}
-        onCommitAction={() => {}}
         onSubmit={submit}
         elapsedSeconds={Math.max(
           0,

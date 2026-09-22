@@ -1,50 +1,33 @@
-import {
-  responseServices,
-  type ResponseService,
-} from "@/entities/incident-card";
 import { getApiError } from "@/shared/api";
 import { useDebounced } from "@/shared/lib/useDebounced";
 import { ArmField, ArmIconButton } from "@/shared/ui/arm";
 import { PageControls } from "@/shared/ui/QueryState";
 import { Dialog, DialogContent, DialogTitle } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useId, useState } from "react";
 import type { Props } from "../types/CardServicesDialog";
+import { useIncidentCardContext } from "../model/IncidentCardContext";
 
-const serviceNames: Record<ResponseService, string> = {
-  "101": "Служба 101 (Пожарно-спасательная служба)",
-  "102": "Служба 102 (Полиция)",
-  "103": "Служба 103 (Скорая и неотложная медицинская помощь)",
-  "104": "Служба 104 (Аварийная газовая служба)",
-};
-export function CardServicesDialog({
-  open,
-  selected,
-  onToggle,
-  onClose,
-  remote,
-  manual,
-  onReset,
-}: Props) {
+export function CardServicesDialog({ open, onClose }: Props) {
+  const titleId = useId();
+  const { editor } = useIncidentCardContext();
+  const {
+    fields,
+    remote,
+    toggleService: onToggle,
+    useRecommendedServices: onReset,
+  } = editor;
+  const selected = fields.services;
+  const manual = fields.manualServices != null;
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
   const search = useDebounced(query.trim());
   const result = useQuery({
-    queryKey: ["card-service-options", remote?.serviceQueryKey, search, page],
-    enabled: open && !!remote?.loadServices,
-    queryFn: ({ signal }) => remote!.loadServices!(search, page * 20, signal),
+    queryKey: ["card-service-options", remote.serviceQueryKey, search, page],
+    enabled: open && !!remote.loadServices,
+    queryFn: ({ signal }) => remote.loadServices!(search, page * 20, signal),
   });
-  const visible = remote
-    ? search === query.trim()
-      ? (result.data?.items ?? [])
-      : []
-    : responseServices
-        .filter((service) =>
-          serviceNames[service]
-            .toLocaleLowerCase("ru")
-            .includes(query.toLocaleLowerCase("ru")),
-        )
-        .map((id) => ({ id, name: serviceNames[id], short_name: null }));
+  const visible = search === query.trim() ? (result.data?.items ?? []) : [];
   return (
     <Dialog
       open={open}
@@ -52,9 +35,9 @@ export function CardServicesDialog({
       fullWidth
       maxWidth="xs"
       className="arm-services-dialog"
-      aria-labelledby="services-dialog-title"
+      aria-labelledby={titleId}
     >
-      <DialogTitle id="services-dialog-title">
+      <DialogTitle id={titleId}>
         Добавьте службы
         <ArmIconButton
           icon="close"
@@ -73,13 +56,11 @@ export function CardServicesDialog({
             setPage(0);
           }}
         />
-        {remote && (
-          <p className="arm-services-help">
-            ЕКП рекомендует службы. Можно добавить или убрать службу перед
-            сохранением карточки.
-          </p>
-        )}
-        {remote && manual && (
+        <p className="arm-services-help">
+          ЕКП рекомендует службы. Можно добавить или убрать службу перед
+          сохранением карточки.
+        </p>
+        {manual && (
           <button className="arm-small-button" onClick={onReset}>
             Вернуть рекомендации ЕКП
           </button>
@@ -88,13 +69,9 @@ export function CardServicesDialog({
           {visible.map((service) => (
             <li key={service.id}>
               <button
-                aria-label={
-                  remote
-                    ? [service.short_name, service.name]
-                        .filter(Boolean)
-                        .join(" — ")
-                    : service.id
-                }
+                aria-label={[service.short_name, service.name]
+                  .filter(Boolean)
+                  .join(" — ")}
                 aria-pressed={selected.includes(service.id)}
                 onClick={() =>
                   onToggle(service.id, service.name, service.short_name)
@@ -115,11 +92,11 @@ export function CardServicesDialog({
             <li className="arm-services-empty">Служба не найдена.</li>
           )}
         </ul>
-        {result.isFetching && remote && <p role="status">Загрузка…</p>}
-        {result.error && remote && (
+        {result.isFetching && <p role="status">Загрузка…</p>}
+        {result.error && (
           <p role="alert">{getApiError(result.error).message}</p>
         )}
-        {remote && result.data && (
+        {result.data && (
           <PageControls
             total={result.data.total}
             page={page}
