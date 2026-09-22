@@ -1,13 +1,17 @@
-import { createPointMap } from "@/shared/lib/maps/yandex";
 import { useEffect, useRef, useState } from "react";
+import { createPointMap, type MapPoint } from "@/shared/lib/maps/osm";
 import "../styles/location-picker.scss";
-import type { LocationPickerProps } from "../types/LocationPicker";
 export function LocationPicker({
   initial,
   readOnly = false,
   onConfirm,
   onCancel,
-}: LocationPickerProps) {
+}: {
+  initial: MapPoint | null;
+  readOnly?: boolean;
+  onConfirm: (point: MapPoint) => void;
+  onCancel: () => void;
+}) {
   const host = useRef<HTMLDivElement>(null);
   const map = useRef<Awaited<ReturnType<typeof createPointMap>>>(undefined);
   const [latitude, setLatitude] = useState(initial?.latitude.toString() ?? "");
@@ -39,9 +43,11 @@ export function LocationPicker({
           setLoading(false);
         }
       })
-      .catch((e) => {
+      .catch(() => {
         if (!disposed) {
-          setError(e instanceof Error ? e.message : "Карта недоступна");
+          setError(
+            "Не удалось загрузить карту. Проверьте подключение к интернету.",
+          );
           setLoading(false);
         }
       });
