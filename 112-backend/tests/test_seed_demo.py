@@ -39,7 +39,7 @@ async def test_seed_from_admin_only_database_and_repeat(
     for model, expected in [
         (User, 3 if with_training else 1),
         (TrainingGroup, 1 if with_training else 0),
-        (Lesson, 3 if with_training else 0),
+        (Lesson, 11 if with_training else 0),
         (Service, 211),
         (ClassifierEntry, 51),
         (ClassifierVersion, 1),
@@ -47,8 +47,9 @@ async def test_seed_from_admin_only_database_and_repeat(
         assert await db_session.scalar(select(func.count()).select_from(model)) == expected
     assert first["feature_count"] == 177
     if with_training:
-        assert first["training"]["card_count"] == 6
+        assert first["training"]["card_count"] == 8
         await assert_dds_seed(db_session, first["training"]["dds"])
+        await assert_learning_seed(db_session, first["training"]["learning"])
     assert stat.S_IMODE(state_path.stat().st_mode) == 0o600
     state = json.loads(state_path.read_text())
     if with_training:
@@ -186,3 +187,95 @@ async def test_upgrade_old_seed_credentials(db_client, db_session, tmp_path, dat
     )
     assert response.status_code == 200
     assert response.json()["must_change_password"] is False
+
+
+async def assert_learning_seed(session, result):
+    from uuid import UUID
+
+    from app.models import Assignment, Attempt, ScenarioCard, ScenarioVersion
+
+    assert len(result["card_ids"]) == 2
+    assert set(result["lessons"]) == {"operator_112", "dds"}
+    seen_students = set()
+    for role, lesson_ids in result["lessons"].items():
+        assert set(lesson_ids) == {"practice", "skill_practice", "review", "assessment"}
+        skills = set()
+        for kind, lesson_id in lesson_ids.items():
+            lesson = await session.get(Lesson, UUID(lesson_id))
+            assert lesson.status.value == "active" and lesson.ended_at is None
+            assert lesson.learning["kind"] == kind
+            assert (lesson.learning["assistance"]["max_level"] == "none") == (kind == "assessment")
+            assert bool(lesson.learning["target_skills"]) == (kind in {"skill_practice", "review"})
+            skills.update(lesson.learning["target_skills"])
+            assignments = list(
+                await session.scalars(select(Assignment).where(Assignment.lesson_id == lesson.id))
+            )
+            assert len(assignments) == 2
+            for assignment in assignments:
+                seen_students.add(assignment.student_id)
+                scenario = await session.get(ScenarioVersion, assignment.scenario_version_id)
+                assert scenario.role.value == role
+                assert assignment.settings["learning_engine"] == "workflow-v1"
+                assert (
+                    await session.scalar(
+                        select(Attempt.id).where(Attempt.assignment_id == assignment.id)
+                    )
+                    is None
+                )
+                source = await session.get(ScenarioCard, assignment.scenario_card_id)
+                data = source.snapshot["data"]
+                assert data["caller_name"] in source.snapshot["caller_message"]
+                assert data["caller_phone"] in source.snapshot["caller_message"]
+                assert data["address_details"]["street"] in source.snapshot["caller_message"]
+        assert skills == (
+            {"address", "caller", "classification", "notification", "description"}
+            if role == "operator_112"
+            else {"dds_crews", "dds_response"}
+        )
+    assert len(seen_students) == 1
+
+
+@pytest.mark.anyio
+async def test_add_learning_formats_to_existing_seed(
+    db_session, tmp_path, monkeypatch, auth_settings
+):
+    from app.models import Assignment
+    from scripts import seed_training
+    from scripts.source_catalog import load_catalog, populate_database
+
+    original = seed_training.populate_learning
+
+    async def legacy_plan(*args):
+        return {"card_ids": []}
+
+    monkeypatch.setattr(seed_training, "populate_learning", legacy_plan)
+    admin = await db_session.scalar(select(User).where(User.username == "admin"))
+    catalog = await populate_database(db_session)
+    state = seed_demo.State(tmp_path / "state.json", "http://local", "demo")
+    gateway = seed_training.DatabaseGateway(db_session, admin)
+    old = await seed_training.populate_training(
+        gateway, state, catalog["classifier_id"], load_catalog()
+    )
+    assert await db_session.scalar(select(func.count()).select_from(Lesson)) == 3
+    # An existing group can have other students; the new set is only for the seed student.
+    extra = User(username="other-student", password_hash="test-only")
+    db_session.add(extra)
+    await db_session.flush()
+    await gateway.enroll(state.data["ids"]["source-training-group"], str(extra.id))
+    monkeypatch.setattr(seed_training, "populate_learning", original)
+    new = await seed_training.populate_training(
+        gateway, state, catalog["classifier_id"], load_catalog()
+    )
+    assert old["lesson_id"] == new["lesson_id"] and old["dds"] == new["dds"]
+    assert await db_session.scalar(select(func.count()).select_from(Lesson)) == 11
+    assert (
+        await db_session.scalar(select(Assignment.id).where(Assignment.student_id == extra.id))
+        is None
+    )
+    await assert_learning_seed(db_session, new["learning"])
+    assert (
+        await seed_training.populate_training(
+            gateway, state, catalog["classifier_id"], load_catalog()
+        )
+        == new
+    )

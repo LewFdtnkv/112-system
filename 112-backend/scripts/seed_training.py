@@ -5,8 +5,10 @@ from uuid import NAMESPACE_URL, UUID, uuid5
 
 if __package__:
     from scripts.seed_dds import DatabaseDDSGateway, HTTPDDSGateway, populate_dds
+    from scripts.seed_learning import populate_learning
 else:
     from seed_dds import DatabaseDDSGateway, HTTPDDSGateway, populate_dds
+    from seed_learning import populate_learning
 
 
 def cases():
@@ -120,6 +122,7 @@ async def populate_training(gateway, state, catalog_id, document):
     services = {s["code"]: s["id"] for s in services}
     definitions = {e["name"]: e for e in document["entries"]}
     card_ids = []
+    source_cards = []
     fire_service_id = None
     for i, (name, title, message, answers) in enumerate(cases()):
         entry = definitions[name]
@@ -139,6 +142,7 @@ async def populate_training(gateway, state, catalog_id, document):
             "recipient_service_ids": recipients,
         }
         card_ids.append(await create(f"card-{i}", "cards", payload))
+        source_cards.append(payload)
         if i == 0:
             fire_service_id = recipients[0]
     scenario_id = await create(
@@ -164,12 +168,16 @@ async def populate_training(gateway, state, catalog_id, document):
         },
     )
     dds = await populate_dds(gateway.dds(), state, create, group_id, card_ids, fire_service_id)
+    learning = await populate_learning(
+        state, create, group_id, ids["student"], source_cards, dds["profile_id"]
+    )
     return {
         "teacher": accounts["teacher"]["username"],
         "student": accounts["student"]["username"],
-        "card_count": len(card_ids),
+        "card_count": len(card_ids) + len(learning["card_ids"]),
         "lesson_id": lesson_id,
         "dds": dds,
+        "learning": learning,
         "credentials_file": str(state.path.resolve()),
         "accounts": {
             role: {"username": accounts[role]["username"], "password": accounts[role]["password"]}

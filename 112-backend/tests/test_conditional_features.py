@@ -166,11 +166,12 @@ async def test_local_training_uses_source_catalog_and_repeats(db_session, tmp_pa
     assert (
         await populate_training(gateway, state, catalog["classifier_id"], load_catalog()) == first
     )
-    for model, count in [(User, 3), (CardTemplate, 6), (Lesson, 3), (ClassifierVersion, 1)]:
+    for model, count in [(User, 3), (CardTemplate, 8), (Lesson, 11), (ClassifierVersion, 1)]:
         assert await db_session.scalar(select(func.count()).select_from(model)) == count
-    from test_seed_demo import assert_dds_seed
+    from test_seed_demo import assert_dds_seed, assert_learning_seed
 
     await assert_dds_seed(db_session, first["dds"])
+    await assert_learning_seed(db_session, first["learning"])
     # Repeating seed must preserve the student's ongoing DDS work.
     dds = gateway.dds()
     await dds.use_student(state.data["accounts"]["student"])
@@ -191,7 +192,44 @@ async def test_local_training_uses_source_catalog_and_repeats(db_session, tmp_pa
             "comment": "Бригада назначена учеником вручную",
         },
     )
+    # Every seeded format must actually open, with the intended preparation.
+    opened = []
+    for role, lesson_ids in first["learning"]["lessons"].items():
+        for kind, lesson_id in lesson_ids.items():
+            work = await dds.lesson(lesson_id)
+            started = await dds.start(work["assignments"][0]["id"])
+            opened.append(started)
+            assert started["learning"]["kind"] == kind
+            if role == "operator_112":
+                data = started["card"]["data"]
+                assert bool(data["caller_name"]) == (kind == "review")
+                assert bool(data["address_details"]) == (kind == "review")
+                assert bool(started["card"]["classifier_entry_id"]) == (kind == "skill_practice")
+            else:
+                assert started["dds"]["workflow"] == "crews-v1"
+                assert bool(started["dds"]["crews"]) == (kind == "review")
+    from uuid import UUID
+
+    from app.schemas.student import DraftSave
+    from app.services.student import save_card
+
+    focused = next(a for a in opened if a["exercise_scope"] == ["address", "caller"])
+    saved = await save_card(
+        db_session,
+        UUID(focused["id"]),
+        dds.student_id,
+        DraftSave(
+            revision=focused["card"]["revision"],
+            data={"caller_name": "Введено учеником", "address_text": "Незавершённый адрес"},
+        ),
+    )
     await populate_training(gateway, state, catalog["classifier_id"], load_catalog())
+    for started in opened:
+        resumed = await dds.start(started["assignment_id"])
+        assert resumed["id"] == started["id"]
+        if started["id"] == focused["id"]:
+            assert resumed["card"]["revision"] == saved.card.revision
+            assert resumed["card"]["data"]["caller_name"] == "Введено учеником"
     unchanged = await dds.start(assignment_id)
     assert unchanged["dds"]["revision"] == changed["dds"]["revision"]
     assert unchanged["dds"]["crews"][0]["comment"] == "Бригада назначена учеником вручную"
