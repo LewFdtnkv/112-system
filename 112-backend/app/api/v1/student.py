@@ -9,7 +9,7 @@ from app.models import Assignment, ClassifierEntry, IncidentCard, Lesson, Servic
 from app.schemas.audit import ObservationBatch
 from app.schemas.catalog import ClassifierEntryRead, ServiceRead
 from app.schemas.catalog_document import RoutePreview
-from app.schemas.dds import DDSAction, DDSFinish
+from app.schemas.dds import CrewCommand, DDSAction, DDSFinish
 from app.schemas.student import (
     CardSubmit,
     DraftSave,
@@ -18,6 +18,7 @@ from app.schemas.student import (
     StudentLessonRead,
 )
 from app.services import dds as dds_service
+from app.services import dds_crews
 from app.services.attempt_audit import record_observations, reject_command
 from app.services.student import (
     attempt_read,
@@ -194,6 +195,17 @@ async def dds_submit(
         return await dds_service.finish(session, attempt_id, student.id, payload)
     except HTTPException as exc:
         await reject_command(session, attempt_id, student.id, "dds_submit", exc)
+        raise
+
+
+@router.post("/attempts/{attempt_id}/dds/crews", response_model=StudentAttemptRead)
+async def dds_crew(
+    attempt_id: UUID, payload: CrewCommand, session: SessionDep, student: StudentDep
+):
+    try:
+        return await dds_crews.act(session, attempt_id, student.id, payload)
+    except HTTPException as exc:
+        await reject_command(session, attempt_id, student.id, "dds_crew", exc)
         raise
 
 

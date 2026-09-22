@@ -30,6 +30,7 @@ from app.services.field_evaluation import check_fields
 GROUPS = {
     "dds_status": "Статусы ДДС по сообщениям задания",
     "dds_crew": "Номер наряда",
+    "dds_assignment": "Назначение и результат работы бригад",
     "classification": "Тип и признаки происшествия",
     "notification": "Оповещение служб",
     "address": "Адрес происшествия",
@@ -121,6 +122,9 @@ async def assess_submission(session, attempt, lesson, card_read, *, publish=True
             "unverified_fields": [f.field for f in check.fields if not f.scored],
         }
         if card_read.role == "dds":
+            if attempt.settings_snapshot["dds_policy"].get("required_crews"):
+                policy_snapshot["version"] = "dds-crews-v2"
+                policy_snapshot["weights"]["dds_assignment"] = 20
             snapshot["dds"] = card_read.dds
             snapshot["dds_policy"] = attempt.settings_snapshot["dds_policy"]
         snapshot["context_hash"] = context_hash(snapshot)
@@ -150,6 +154,7 @@ async def assess_submission(session, attempt, lesson, card_read, *, publish=True
                             "card.services_changed",
                             "dds.information",
                             "dds.status_changed",
+                            "dds.crew_changed",
                             "dds.submitted",
                         ]
                     ),

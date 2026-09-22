@@ -9,6 +9,7 @@ from app.models.activity import (
 from app.models.auth_session import AuthSession
 from app.models.authoring import CardTemplate, CardTemplateRecipient, ScenarioCard
 from app.models.classifier import ClassifierEntry, ClassifierRoute, ClassifierVersion
+from app.models.crew import CrewAssignment
 from app.models.directory import (
     Service,
     ServiceObject,
@@ -51,6 +52,7 @@ __all__ = [
     "ClassifierVersion",
     "CriterionEvidence",
     "CriterionResult",
+    "CrewAssignment",
     "Evaluation",
     "GroupMembership",
     "IncidentCard",

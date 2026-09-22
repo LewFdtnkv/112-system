@@ -22,6 +22,7 @@ from app.models.enums import (
 )
 from app.schemas.dds import STATUS_LABELS, TRANSITIONS, DDSPolicy
 from app.services.audit import append_event
+from app.services.dds_crews import crew_context
 from app.services.service_profiles import profile_read
 
 
@@ -100,8 +101,28 @@ async def context(session, attempt, responses):
     history = [e for e in events if e.kind == "dds.status_changed"]
     info = next((e for e in reversed(events) if e.kind == "dds.information"), None)
     profile = attempt.settings_snapshot["service_profile"]
+    responses = sorted(
+        responses,
+        key=lambda r: (
+            str(r.service_id) != profile["service_id"],
+            r.service_short_name or r.service_name,
+            str(r.service_id),
+        ),
+    )
     own = next(r for r in responses if str(r.service_id) == profile["service_id"])
+    crews = await crew_context(session, attempt)
+    requirements = attempt.settings_snapshot["dds_policy"].get("required_crews", [])
     return {
+        "crews": crews,
+        "crew_goals": [
+            {
+                **r,
+                "name": next(
+                    c["name"] for c in profile.get("crews", []) if c["code"] == r["crew_code"]
+                ),
+            }
+            for r in requirements
+        ],
         "profile": profile,
         "goal": STATUS_LABELS[attempt.settings_snapshot["dds_policy"]["steps"][-1]["status"]],
         "response_id": str(own.id),
@@ -125,6 +146,7 @@ async def context(session, attempt, responses):
             {
                 "service_id": str(r.service_id),
                 "name": r.service_name,
+                "short_name": r.service_short_name,
                 "status": r.status.value,
                 "crew_number": r.crew_number,
                 "comment": r.comment,
@@ -169,6 +191,10 @@ async def act(session, attempt_id, student_id, data):
         raise HTTPException(409, "DDS response revision is stale; reload the card")
     if data.status not in TRANSITIONS.get(response.status.value, set()):
         raise HTTPException(422, "Invalid DDS status transition")
+    if data.status in {"completed", "refused", "not_accepted"}:
+        crews = await crew_context(session, attempt)
+        if any(c["status"] not in {"completed", "cancelled"} for c in crews):
+            raise HTTPException(409, "Complete or cancel active crew assignments first")
     latest = await session.scalar(
         select(AttemptEvent)
         .where(AttemptEvent.attempt_id == attempt.id, AttemptEvent.kind == "dds.information")
@@ -181,7 +207,11 @@ async def act(session, attempt_id, student_id, data):
             ResponseEvent.information_event_id == data.information_event_id,
         )
     )
-    if latest is None or latest.id != data.information_event_id or used:
+    if (
+        latest is None
+        or latest.id != data.information_event_id
+        or (used and response.status != ResponseStatus.NOT_ACCEPTED)
+    ):
         raise HTTPException(409, "Read the next scenario message before updating status")
     response.status = ResponseStatus(data.status)
     response.crew_number, response.comment = data.crew_number, data.comment
@@ -212,7 +242,7 @@ async def act(session, attempt_id, student_id, data):
         .select_from(AttemptEvent)
         .where(AttemptEvent.attempt_id == attempt.id, AttemptEvent.kind == "dds.status_changed")
     )
-    if data.status not in {"not_accepted", "completed", "refused"}:
+    if data.status not in {"completed", "refused"}:
         await information(session, attempt, count)
     # One service's completion never completes other services' work.
     responses = list(

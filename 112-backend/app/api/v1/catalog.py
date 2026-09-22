@@ -14,9 +14,16 @@ from app.schemas.catalog import (
     ServiceProfileRead,
     ServiceRead,
 )
-from app.services.authoring import published_classifier
+from app.schemas.service_profile import ProfileRead
+from app.services.authoring import published_classifier, published_profile
+from app.services.service_profiles import profile_read
 
 router = APIRouter(tags=["teaching catalogs"])
+
+
+@router.get("/service-profiles/{profile_id}", response_model=ProfileRead)
+async def read_profile(profile_id: UUID, session: SessionDep, teacher: TeacherDep):
+    return await profile_read(session, await published_profile(session, profile_id))
 
 
 @router.get("/classifiers", response_model=list[ClassifierRead])

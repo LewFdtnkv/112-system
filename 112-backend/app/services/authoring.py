@@ -280,6 +280,10 @@ async def create_scenario(
     profile = None
     if payload.service_profile_id is not None:
         profile = await published_profile(session, payload.service_profile_id)
+        if payload.dds_policy:
+            active_crews = {c["code"] for c in profile.rules.get("crews", []) if c["is_active"]}
+            if any(c.crew_code not in active_crews for c in payload.dds_policy.required_crews):
+                raise HTTPException(422, "Required crews must be active in the selected profile")
     recipients = (
         await session.execute(
             select(CardTemplateRecipient.card_template_id, Service)

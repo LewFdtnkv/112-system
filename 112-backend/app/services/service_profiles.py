@@ -52,6 +52,7 @@ async def profile_read(session, row):
         status=row.status,
         responsibility=row.responsibility,
         procedure=row.rules.get("procedure", ""),
+        crews=row.rules.get("crews", []),
         territories=[
             {"code": t.code, "name": t.name, "description": t.description} for t in territories
         ],
@@ -130,7 +131,7 @@ async def create_profile(session, data):
         version=number,
         name=data.name,
         responsibility=data.responsibility,
-        rules={"procedure": data.procedure},
+        rules={"procedure": data.procedure, "crews": [c.model_dump() for c in data.crews]},
     )
     session.add(row)
     await session.flush()
@@ -149,7 +150,7 @@ async def update_profile(session, profile_id, data):
     row.name, row.responsibility, row.rules = (
         data.name,
         data.responsibility,
-        {"procedure": data.procedure},
+        {"procedure": data.procedure, "crews": [c.model_dump() for c in data.crews]},
     )
     row.revision += 1
     await write_children(session, row, data)

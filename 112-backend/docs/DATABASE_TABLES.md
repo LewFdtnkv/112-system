@@ -761,3 +761,23 @@ null следует ЕКП, пустой массив фиксирует руч�
   `classifier_entries.conditions` (`typed-features-v1`); старая схема boolean читается.
 - Точка карты — JSON `incident_cards.additional_fields.location` с latitude/longitude,
   валидируется API; отдельной таблицы или координат, выведенных из адреса, нет.
+
+## Дополнение `0016_dds_crews`: `crew_assignments`
+
+| Колонка | Тип PostgreSQL | NULL | Назначение |
+| --- | --- | --- | --- |
+| id | UUID | нет | PK |
+| attempt_id | UUID | нет | FK attempts, индекс |
+| response_id | UUID | нет | Ответ службы, индекс |
+| crew_code | VARCHAR(100) | нет | Код в снимке профиля |
+| snapshot | JSONB | нет | Снимок определения бригады |
+| status | VARCHAR(30) | нет | assigned/responding/arrived/in_progress/completed/cancelled |
+| crew_number | VARCHAR(100) | да | Номер наряда |
+| comment | TEXT | нет | Последний комментарий |
+| assigned_at | TIMESTAMPTZ | нет | Время назначения, SQL default now() |
+| revision | INTEGER | нет | Оптимистическая ревизия, SQL default 1 |
+
+UNIQUE (response_id, crew_code); составной FK (response_id, attempt_id) →
+service_responses(id, attempt_id), RESTRICT. CHECK допустимых статусов и revision > 0.
+История — неизменяемые attempt_events вида dds.crew_changed. Определения бригад —
+проверяемый список crews в service_profiles.rules; отдельной миграции JSONB не требуется.

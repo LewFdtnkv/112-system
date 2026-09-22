@@ -2,6 +2,10 @@
 
 FastAPI · SQLAlchemy (asyncpg) · PostgreSQL 17 · Alembic · Docker Compose · uv.
 
+Бригады ДДС: настройка в профиле службы, ручное назначение, независимая история и
+автоматическая проверка целей — [описание и API](docs/DDS_CREWS.md). Миграция `0016_dds_crews`
+сохраняет существующие задания и оценки.
+
 Все команды выполняются из `112-backend`. Нужны **uv** и **Docker Compose**; Python 3.13 выбирается через `.python-version`.
 
 ## Первая настройка
