@@ -96,6 +96,4 @@ class CrewCommand(StrictModel):
     crew_code: str = Field(pattern=r"^[A-Za-z0-9_-]{1,100}$")
     status: Literal["assigned", "responding", "arrived", "in_progress", "completed", "cancelled"]
     crew_number: str | None = Field(default=None, max_length=100)
-    comment: Annotated[
-        str, StringConstraints(strip_whitespace=True, min_length=1, max_length=10000)
-    ]
+    comment: Annotated[str, StringConstraints(strip_whitespace=True, max_length=10000)] = ""

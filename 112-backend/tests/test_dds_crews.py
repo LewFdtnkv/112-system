@@ -173,6 +173,24 @@ async def test_missing_required_crew_is_scored_zero(crews, api, db_session):
     assert evaluation.score == 100 and evaluation.max_score == 120
 
 
+@pytest.mark.parametrize("comment", [None, "", "   "])
+async def test_crew_comment_can_be_omitted_or_blank(crews, api, comment):
+    c = crews
+    a = await api("POST", c.path + "/dds/actions", c.d.action(c.a, "accepted"), actor="student")
+    payload = c.command(a)
+    if comment is None:
+        payload.pop("comment")
+    else:
+        payload["comment"] = comment
+    a = await api("POST", c.path + "/dds/crews", payload, actor="student")
+    assert a["dds"]["crews"][0]["comment"] == ""
+    assert a["dds"]["crews"][0]["history"][-1]["comment"] == ""
+    assert a["dds"]["status"] == "accepted"
+    a = await c.act(a, status="cancelled", comment="")
+    assert a["dds"]["crews"][0]["status"] == "cancelled"
+    assert a["dds"]["crews"][0]["comment"] == ""
+
+
 async def test_profile_versions_and_attempt_snapshot(crews, api):
     c = crews
     await api("GET", f"service-profiles/{c.profile['id']}", actor="student", status=403)
