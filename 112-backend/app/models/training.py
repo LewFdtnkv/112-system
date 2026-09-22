@@ -73,6 +73,7 @@ class Lesson(UUIDPrimaryKey, CreatedAt, Base):
     )
     available_from: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     available_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    learning: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default="{}")
     start_request_id: Mapped[UUID | None] = mapped_column()
     start_fingerprint: Mapped[str | None] = mapped_column(String(64))
 

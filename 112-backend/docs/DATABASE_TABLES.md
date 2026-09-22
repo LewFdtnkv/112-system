@@ -199,6 +199,7 @@ PK — первичный ключ; `NULL` — допустимое отсутс
 
 | Колонка | Тип PostgreSQL | NULL | PK | SQL default |
 | --- | --- | --- | --- | --- |
+| `learning` | `JSONB` | нет | — | `{} (политика learning-v1)` |
 | `title` | `VARCHAR(255)` | нет | — | `—` |
 | `teacher_id` | `UUID` | нет | — | `—` |
 | `group_id` | `UUID` | да | — | `—` |

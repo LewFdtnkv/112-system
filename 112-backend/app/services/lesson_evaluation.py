@@ -12,6 +12,7 @@ from app.services.audit import append_event
 from app.services.automatic_assessment import publish_lesson_result
 from app.services.dds_assessment import check_dds
 from app.services.field_evaluation import check_fields, summarize
+from app.services.learning import learning_result
 from app.services.student import review_attempts
 
 
@@ -110,6 +111,10 @@ async def review_work(session: AsyncSession, lesson_id: UUID, student_id: UUID, 
         )
     )
     return LessonWorkReview(
+        learning=lesson.learning,
+        learning_result=learning_result(
+            [a for _, a in rows if a], evaluations[-1] if evaluations else None
+        ),
         lesson_id=lesson_id,
         student_id=student_id,
         submitted=lesson.status == LessonStatus.FINISHED

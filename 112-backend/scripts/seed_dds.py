@@ -103,7 +103,7 @@ async def populate_dds(gateway, state, create, group_id, card_ids, service_id):
                 "group_id": group_id,
                 "scenario_version_id": scenario_id,
                 "title": f"{prefix}: {title}",
-                "mode": "practice",
+                "learning": {"kind": "practice"},
             },
         )
         lessons[kind] = lesson_id

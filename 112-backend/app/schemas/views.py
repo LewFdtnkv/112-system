@@ -7,6 +7,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict
 
 from app.schemas.authoring import CardListItem
+from app.schemas.learning import LearningPolicy
 from app.schemas.student import RecipientRead
 
 
@@ -49,6 +50,7 @@ class GroupItem(BaseModel):
 
 
 class LessonRow(BaseModel):
+    learning: LearningPolicy
     lesson_id: UUID
     title: str
     student_id: UUID

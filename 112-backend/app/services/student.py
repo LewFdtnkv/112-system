@@ -12,6 +12,7 @@ from app.models import (
     ClassifierRoute,
     IncidentCard,
     Lesson,
+    LessonEvaluation,
     ScenarioCard,
     ScenarioVersion,
     Service,
@@ -39,6 +40,7 @@ from app.schemas.student import (
 )
 from app.services.assessment_policy import scenario_policy
 from app.services.audit import append_event, field_changes
+from app.services.learning import learning_result
 
 
 async def student_lesson(
@@ -138,7 +140,15 @@ async def lesson_work(session: AsyncSession, lesson: Lesson, student_id: UUID) -
         if lesson.status == LessonStatus.FINISHED or (assignments and previous_complete)
         else ("in_progress" if any(item.attempt_id for item in assignments) else "assigned")
     )
+    grade = await session.scalar(
+        select(LessonEvaluation)
+        .where(LessonEvaluation.lesson_id == lesson.id, LessonEvaluation.student_id == student_id)
+        .order_by(LessonEvaluation.revision.desc())
+        .limit(1)
+    )
     return StudentLessonRead(
+        learning=lesson.learning,
+        learning_result=learning_result([row[3] for row in rows if row[3]], grade),
         id=lesson.id,
         title=lesson.title,
         status=lesson.status,
@@ -195,6 +205,7 @@ async def attempt_read(
     from app.services.dds import context as dds_context
 
     return StudentAttemptRead(
+        learning=attempt.settings_snapshot.get("learning", {}),
         role=scenario.role,
         dds=await dds_context(session, attempt, responses)
         if scenario.role == TrainingRole.DDS
@@ -321,6 +332,7 @@ async def start_attempt(session: AsyncSession, assignment_id: UUID, student_id: 
         mode=assignment.mode,
         started_at=now,
         settings_snapshot={
+            "learning": assignment.settings.get("learning", {}),
             "deadline_policy": "bpmn-v1",
             "time_limit_seconds": assignment.time_limit_seconds,
             "hint_delay_seconds": assignment.hint_delay_seconds,

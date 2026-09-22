@@ -138,7 +138,7 @@ async def teaching(db_session, db_client):
             request_id=str(uuid4()),
             group_id=group["id"],
             scenario_version_id=scenario["id"],
-            mode="practice",
+            learning={"kind": "practice"},
             time_limit_seconds=180,
         )
         return SimpleNamespace(

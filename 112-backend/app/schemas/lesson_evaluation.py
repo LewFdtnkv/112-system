@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field, JsonValue, model_validator
 from app.schemas.assessment import AssessmentDetails
 from app.schemas.authoring import NonblankText
 from app.schemas.catalog import ClassifierEntryRead
+from app.schemas.learning import LearningPolicy, LearningResult
 from app.schemas.student import StudentAttemptRead
 
 
@@ -78,6 +79,8 @@ class AssignmentReview(BaseModel):
 
 
 class LessonWorkReview(BaseModel):
+    learning: LearningPolicy = Field(default_factory=LearningPolicy)
+    learning_result: LearningResult | None = None
     lesson_id: UUID
     student_id: UUID
     submitted: bool

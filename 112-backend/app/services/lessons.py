@@ -18,7 +18,7 @@ from app.models import (
     TrainingGroup,
     User,
 )
-from app.models.enums import LessonStatus, PublicationStatus
+from app.models.enums import LessonStatus, PublicationStatus, TrainingMode
 from app.schemas.authoring import LessonRead, LessonStart
 from app.services.authoring import owned_scenario, published_classifier, published_profile
 from app.services.groups import owned_group
@@ -59,6 +59,7 @@ async def lesson_reads(session: AsyncSession, lessons: list[Lesson]) -> list[Les
     }
     return [
         LessonRead(
+            learning=lesson.learning,
             id=lesson.id,
             title=lesson.title,
             teacher_id=lesson.teacher_id,
@@ -95,6 +96,8 @@ async def replay(
 async def start_lesson(
     session: AsyncSession, teacher_id: UUID, payload: LessonStart
 ) -> tuple[LessonRead, bool]:
+    if payload.learning.kind in ("introduction", "worked_example"):
+        raise HTTPException(422, "Guided learning is not available yet")
     fingerprint_payload = payload.model_dump(mode="json", exclude={"request_id"})
     for key in ("group_ids", "student_ids", "available_from", "available_until"):
         if not fingerprint_payload[key]:
@@ -124,6 +127,17 @@ async def start_lesson(
     if existing is not None:
         return await lesson_read(session, existing), False
     scenario = await owned_scenario(session, payload.scenario_version_id, teacher_id)
+    skills = set(payload.learning.target_skills)
+    if scenario.role == "operator_112" and skills & {"dds_response", "dds_crews"}:
+        raise HTTPException(422, "DDS skills require a DDS scenario")
+    if scenario.role == "dds" and skills & {
+        "address",
+        "caller",
+        "classification",
+        "notification",
+        "description",
+    }:
+        raise HTTPException(422, "Card entry skills require an operator 112 scenario")
     parent = await session.scalar(
         select(Scenario).where(Scenario.id == scenario.scenario_id).with_for_update()
     )
@@ -194,6 +208,7 @@ async def start_lesson(
         raise HTTPException(422, "Assignment end must be in the future")
     scheduled = payload.available_from is not None and payload.available_from > now
     lesson = Lesson(
+        learning=payload.learning.model_dump(mode="json"),
         title=payload.title or scenario.title,
         teacher_id=teacher_id,
         group_id=groups[0] if len(groups) == 1 and not payload.student_ids else None,
@@ -216,9 +231,12 @@ async def start_lesson(
                     scenario_version_id=scenario.id,
                     scenario_card_id=card.id,
                     position=card.position,
-                    mode=payload.mode,
+                    mode=TrainingMode.ASSESSMENT
+                    if payload.learning.kind == "assessment"
+                    else TrainingMode.PRACTICE,
+                    settings={"learning": payload.learning.model_dump(mode="json")},
                     time_limit_seconds=payload.time_limit_seconds,
-                    hint_delay_seconds=payload.hint_delay_seconds,
+                    hint_delay_seconds=payload.learning.assistance.idle_seconds,
                 )
                 for student in students
                 for card in cards

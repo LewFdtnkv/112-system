@@ -18,6 +18,7 @@ from app.schemas.assessment import AssessmentPolicy
 from app.schemas.catalog import ClassifierEntryRead
 from app.schemas.dds import DDSPolicy
 from app.schemas.group import Title
+from app.schemas.learning import LearningPolicy
 from app.schemas.location import validate_location
 from app.schemas.student import RecipientRead
 
@@ -181,9 +182,8 @@ class LessonStart(BaseModel):
     student_id: UUID | None = None
     scenario_version_id: UUID
     title: Title | None = None
-    mode: TrainingMode = TrainingMode.PRACTICE
+    learning: LearningPolicy = Field(default_factory=LearningPolicy)
     time_limit_seconds: int | None = Field(default=None, ge=1, le=86400)
-    hint_delay_seconds: int | None = Field(default=None, ge=1, le=86400)
 
     @model_validator(mode="after")
     def targets_and_window(self):
@@ -203,6 +203,7 @@ class LessonStart(BaseModel):
 
 
 class LessonRead(BaseModel):
+    learning: LearningPolicy = Field(default_factory=LearningPolicy)
     id: UUID
     title: str
     teacher_id: UUID

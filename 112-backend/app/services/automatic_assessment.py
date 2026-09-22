@@ -114,6 +114,7 @@ async def assess_submission(session, attempt, lesson, card_read, *, publish=True
             else policy.model_dump(mode="json")
         )
         snapshot = {
+            "learning": attempt.settings_snapshot.get("learning", {}),
             "policy": policy_snapshot,
             "source": source.snapshot,
             "card": card_read.card.model_dump(mode="json"),

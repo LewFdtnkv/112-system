@@ -7,7 +7,7 @@ from sqlalchemy import case, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import GroupMembership, TrainingGroup, User
-from app.schemas.student_overview import PerformanceSummary, StudentOverview
+from app.schemas.student_overview import PerformanceSummary, PerformanceTrack, StudentOverview
 from app.schemas.user import UserRead
 from app.schemas.views import LessonRow, Page
 from app.services.views import lesson_rows_query
@@ -54,6 +54,47 @@ async def student_overview(
         .mappings()
         .all()
     )
+    tracks = []
+    kind = func.coalesce(rows.c.learning["kind"].astext, "practice")
+    # Two bounded projections, never an unbounded download of a student's history.
+    for track, kinds in (
+        ("training", ["practice", "skill_practice", "review"]),
+        ("assessment", ["assessment"]),
+    ):
+        filtered = select(rows).where(kind.in_(kinds), rows.c.score.is_not(None)).subquery()
+        count, average = (
+            await session.execute(
+                select(
+                    func.count(),
+                    func.avg(filtered.c.score * 100 / func.nullif(filtered.c.max_score, 0)),
+                )
+            )
+        ).one()
+        latest = (
+            (
+                await session.execute(
+                    select(filtered)
+                    .order_by(filtered.c.completed_at.desc().nulls_last(), filtered.c.lesson_id)
+                    .limit(5)
+                )
+            )
+            .mappings()
+            .all()
+        )
+        tracks.append(
+            PerformanceTrack(
+                track=track,
+                graded_lessons=count,
+                overall_percent=round(float(average), 2) if average is not None else None,
+                recent_percent=round(
+                    sum(float(r.score * 100 / r.max_score) for r in latest) / len(latest), 2
+                )
+                if latest
+                else None,
+                recent_count=len(latest),
+                recent_lessons=[LessonRow.model_validate(r) for r in latest],
+            )
+        )
     active_total = await session.scalar(select(func.count()).select_from(active))
     # A lesson can finish between polling requests; keep the current page valid.
     active_offset = min(active_offset, max(0, (active_total - 1) // 6) * 6)
@@ -89,6 +130,7 @@ async def student_overview(
             offset=active_offset,
         ),
         performance=PerformanceSummary(
+            tracks=tracks,
             total_lessons=stats.total,
             completed_lessons=stats.completed,
             graded_lessons=stats.graded,

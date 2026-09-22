@@ -63,6 +63,7 @@ def lesson_rows_query(*, teacher_id: UUID | None = None, student_id: UUID | None
         select(
             Lesson.id.label("lesson_id"),
             Lesson.title,
+            Lesson.learning,
             counts.c.student_id,
             func.coalesce(
                 func.nullif(
@@ -131,6 +132,7 @@ async def lesson_page(
     q="",
     status="all",
     role="all",
+    kind="all",
     limit=20,
     offset=0,
 ):
@@ -148,6 +150,8 @@ async def lesson_page(
         query = query.where(rows.c.work_status == status)
     if role != "all":
         query = query.where(rows.c.role == role)
+    if kind != "all":
+        query = query.where(rows.c.learning["kind"].astext == kind)
     filtered = query.subquery()
     stats = (
         await session.execute(

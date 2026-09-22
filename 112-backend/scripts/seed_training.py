@@ -160,7 +160,7 @@ async def populate_training(gateway, state, catalog_id, document):
             "group_id": group_id,
             "scenario_version_id": scenario_id,
             "title": f"{prefix}: практика оператора 112",
-            "mode": "practice",
+            "learning": {"kind": "practice"},
         },
     )
     dds = await populate_dds(gateway.dds(), state, create, group_id, card_ids, fire_service_id)

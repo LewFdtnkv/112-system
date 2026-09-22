@@ -134,6 +134,7 @@ async def assessment_context(session, attempt):
         "dds": snapshot.get("dds"),
         "dds_policy": snapshot.get("dds_policy"),
         "policy": snapshot["policy"],
+        "learning": snapshot.get("learning", {}),
         "unverified_fields": snapshot["unverified_fields"],
         "audit_through_sequence": snapshot["audit_sequence"],
         "audit": (

@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field, JsonValue, field_validator
 
 from app.models.enums import AttemptStatus, CardStatus, LessonStatus, TrainingRole
 from app.schemas.catalog import ClassifierEntryRead
+from app.schemas.learning import LearningPolicy, LearningResult
 from app.schemas.location import validate_location
 
 
@@ -67,6 +68,7 @@ class RecipientRead(BaseModel):
 
 
 class StudentAttemptRead(BaseModel):
+    learning: LearningPolicy = Field(default_factory=LearningPolicy)
     role: TrainingRole = TrainingRole.OPERATOR_112
     dds: dict[str, JsonValue] | None = None
     id: UUID
@@ -110,6 +112,8 @@ class StudentAssignmentRead(BaseModel):
 
 
 class StudentLessonRead(BaseModel):
+    learning: LearningPolicy = Field(default_factory=LearningPolicy)
+    learning_result: LearningResult | None = None
     id: UUID
     title: str
     status: LessonStatus

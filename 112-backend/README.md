@@ -217,3 +217,5 @@ Pre-commit запускает Ruff, проверку lock-файла, YAML/TOML,
 - [Политика оценки и архитектура участия ИИ](docs/ASSESSMENT_ARCHITECTURE.md)
 - [Контракт аудита](docs/ATTEMPT_AUDIT.md)
 - [Аудит кода и незавершённых функций](docs/CODE_ARCHITECTURE_AUDIT.md)
+
+Основа режимов занятий и раздельных результатов: [learning-v1](docs/LEARNING_FOUNDATION.md).

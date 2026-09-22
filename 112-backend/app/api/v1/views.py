@@ -22,6 +22,7 @@ from app.models import (
 )
 from app.schemas.catalog import ServiceRead
 from app.schemas.catalog_admin import ClassifierAdminRead
+from app.schemas.learning import LessonKind
 from app.schemas.student import RecipientRead
 from app.schemas.views import (
     AnalyticsRead,
@@ -266,6 +267,7 @@ async def teacher_lessons(
     q: Search = "",
     status: Literal["all", "assigned", "in_progress", "submitted"] = "all",
     role: Literal["all", "operator_112", "dds"] = "all",
+    kind: LessonKind | Literal["all"] = "all",
     lesson_id: UUID | None = None,
     student_id: UUID | None = None,
     limit: Limit = 20,
@@ -281,6 +283,7 @@ async def teacher_lessons(
         q=q,
         status=status,
         role=role,
+        kind=kind,
         limit=limit,
         offset=offset,
     )
@@ -293,6 +296,7 @@ async def student_lessons(
     q: Search = "",
     status: Literal["all", "assigned", "in_progress", "submitted"] = "all",
     role: Literal["all", "operator_112", "dds"] = "all",
+    kind: LessonKind | Literal["all"] = "all",
     limit: Limit = 20,
     offset: Offset = 0,
 ):
@@ -302,6 +306,7 @@ async def student_lessons(
         q=q,
         status=status,
         role=role,
+        kind=kind,
         limit=limit,
         offset=offset,
     )
@@ -312,11 +317,13 @@ async def analytics(
     session: SessionDep,
     teacher: TeacherDep,
     scenario_version_id: UUID | None = None,
+    track: Literal["training", "assessment"] = "training",
     limit: Limit = 20,
     offset: Offset = 0,
 ):
     base = lesson_rows_query(teacher_id=teacher.id).subquery()
-    query = select(base)
+    kinds = ["assessment"] if track == "assessment" else ["practice", "skill_practice", "review"]
+    query = select(base).where(func.coalesce(base.c.learning["kind"].astext, "practice").in_(kinds))
     if scenario_version_id:
         query = query.where(base.c.scenario_version_id == scenario_version_id)
     rows = query.subquery()
