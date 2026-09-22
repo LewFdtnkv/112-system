@@ -36,6 +36,19 @@
     width: 104px;
     flex: 0 0 104px;
     padding: 5px;
+    height: 64px;
+    gap: 3px;
+    small {
+      display: block;
+      width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 10px;
+    }
+    time {
+      font-variant-numeric: tabular-nums;
+    }
     transition:
       background-color 150ms ease,
       box-shadow 150ms ease;
@@ -59,6 +72,10 @@
   .dds-expand {
     margin: 8px;
     align-self: center;
+    width: 40px;
+    min-width: 40px;
+    padding: 2px;
+    line-height: 13px;
   }
   .arm-footer-tools {
     flex-shrink: 0;
@@ -82,21 +99,24 @@
     left: 72px;
     display: flex;
     max-width: calc(100vw - 96px);
-    height: 72px;
+    height: 64px;
     overflow-x: auto;
     background: #46545e;
     z-index: 4;
   }
+  &--expanded .dds-crew-strip {
+    bottom: calc(100% + 64px);
+  }
   &--expanded .dds-response-panel {
-    bottom: calc(100% + 72px);
+    bottom: calc(100% + 128px);
   }
 }
 .dds-response-panel {
   position: absolute;
-  bottom: 100%;
+  bottom: calc(100% + 64px);
   left: 72px;
   z-index: 3;
-  width: min(800px, calc(100vw - 96px));
+  width: min(600px, calc(100vw - 96px));
   max-height: min(55vh, 450px);
   overflow: auto;
   background: #177fb8;
@@ -113,6 +133,9 @@
     padding: 5px 8px;
     gap: 8px;
   }
+  .dds-history-tools {
+    display: flex;
+  }
   p {
     margin: 6px 8px;
   }
@@ -123,10 +146,10 @@
   }
   .dds-history-row {
     display: grid;
-    grid-template-columns: 66px 145px minmax(0, 1fr);
-    gap: 8px;
-    padding: 6px 0;
-    border-top: 1px solid #ffffff25;
+    grid-template-columns: 142px 126px minmax(0, 1fr);
+    gap: 6px;
+    padding: 4px 0;
+    font-size: 11px;
     span {
       white-space: pre-wrap;
       overflow-wrap: anywhere;
@@ -137,10 +160,15 @@
   }
 }
 .dds-crew-strip {
+  position: absolute;
+  bottom: 100%;
+  left: 72px;
+  z-index: 4;
   display: flex;
   align-items: stretch;
   overflow-x: auto;
-  min-height: 74px;
+  height: 64px;
+  max-width: calc(100vw - 96px);
   background: #46545e;
   .arm-small-button {
     margin: 8px;
@@ -150,6 +178,13 @@
   .arm-service-tile {
     width: 136px;
     flex-basis: 136px;
+  }
+  .dds-empty-crews {
+    align-self: center;
+    padding: 0 10px;
+    font:
+      12px Arial,
+      sans-serif;
   }
 }
 .dds-status-dialog {
@@ -218,10 +253,14 @@
     display: block;
   }
   .dds-response-panel .dds-history-row {
-    grid-template-columns: 60px 110px minmax(0, 1fr);
+    grid-template-columns: 130px minmax(0, 1fr);
     font-size: 11px;
+    > span {
+      grid-column: 1 / -1;
+    }
   }
-  .dds-footer .dds-extra-services {
+  .dds-footer .dds-extra-services,
+  .dds-footer .dds-crew-strip {
     left: 8px;
     max-width: calc(100vw - 32px);
   }

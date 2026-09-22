@@ -342,6 +342,14 @@ test("real API: EKP file roundtrip, rule editing, profile publication and DDS ex
   await expect(
     page.getByText("Пожар в учебном доме", { exact: true }),
   ).toBeVisible();
+  await expect(page.locator(".dds-response-panel")).toHaveCount(0);
+  await expect(page.locator(".dds-service-grid time").first()).toHaveText(
+    /\d{2}:\d{2}/,
+  );
+  await page.screenshot({
+    path: info.outputPath("dds-initial.png"),
+    animations: "disabled",
+  });
   await page
     .getByRole("button", { name: "Все службы (9)", exact: true })
     .click();
@@ -369,6 +377,8 @@ test("real API: EKP file roundtrip, rule editing, profile publication and DDS ex
     .getByRole("button")
     .filter({ hasText: "Служба 101" })
     .click();
+  await expect(page.getByLabel("Бригады службы")).toBeVisible();
+  await expect(page.locator(".dds-response-panel")).toHaveCount(0);
   for (const [status, comment] of [
     ["accepted", "Карточка принята"],
     ["completed", "Работы завершены"],
@@ -422,6 +432,29 @@ test("real API: EKP file roundtrip, rule editing, profile publication and DDS ex
           }),
         ).not.toBeVisible();
       }
+      await expect(page.locator(".dds-crew-strip time").first()).toHaveText(
+        /\d{2}:\d{2}/,
+      );
+      await expect(page.locator(".dds-response-panel")).toHaveCount(0);
+      await page.screenshot({
+        path: info.outputPath("dds-crews-collapsed.png"),
+        animations: "disabled",
+      });
+      await page
+        .getByLabel("Бригады службы")
+        .getByRole("button")
+        .filter({ hasText: "Резерв" })
+        .click();
+      await expect(page.getByLabel("История бригады")).toBeVisible();
+      await page
+        .getByRole("button", { name: "Закрыть историю бригады", exact: true })
+        .click();
+      await expect(page.locator(".dds-response-panel")).toHaveCount(0);
+      await page
+        .getByLabel("Бригады службы")
+        .getByRole("button")
+        .filter({ hasText: "Резерв" })
+        .click();
       await page
         .getByRole("button", { name: "Изменить статус бригады", exact: true })
         .click();

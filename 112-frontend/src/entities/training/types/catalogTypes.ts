@@ -95,6 +95,8 @@ export interface CrewAssignment {
   description: string;
   contact_code: string | null;
   status: string;
+  assigned_at?: string;
+  status_updated_at?: string;
   crew_number: string | null;
   comment: string;
   allowed_statuses: string[];
@@ -128,6 +130,9 @@ export interface DDSContext {
     name: string;
     short_name?: string | null;
     status: string;
+    added_at?: string;
+    received_at?: string | null;
+    status_updated_at?: string;
     crew_number: string | null;
     comment: string;
   }[];

@@ -10,10 +10,9 @@ export function useDDSWorkspace({
   onClose,
 }: DDSWorkspaceProps) {
   const [attempt, setAttempt] = useState(initial);
-  const [activeService, setActiveService] = useState(
-    initial.dds!.profile.service_id,
-  );
+  const [activeService, setActiveService] = useState("");
   const [activeCrew, setActiveCrew] = useState("");
+  const [serviceHistory, setServiceHistory] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [editing, setEditing] = useState(false);
   const [target, setTarget] = useState<"service" | "crew">("service");
@@ -52,7 +51,13 @@ export function useDDSWorkspace({
         : trainingApi.ddsCrew(attempt.id, { ...data, crew_code: crewCode });
     },
     onSuccess: (value) => {
-      if (target === "crew") setActiveCrew(crewCode);
+      if (target === "crew") {
+        setActiveService(dds.profile.service_id);
+        setActiveCrew(
+          dds.crews?.some((c) => c.crew_code === crewCode) ? crewCode : "",
+        );
+        setServiceHistory(false);
+      }
       update(value);
     },
   });
@@ -97,6 +102,8 @@ export function useDDSWorkspace({
     activeCrew,
     setActiveService,
     setActiveCrew,
+    serviceHistory,
+    setServiceHistory,
     expanded,
     setExpanded,
     editing,
