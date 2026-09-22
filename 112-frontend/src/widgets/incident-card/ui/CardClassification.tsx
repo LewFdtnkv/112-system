@@ -13,7 +13,7 @@ import { ArmField, ArmIconButton } from "@/shared/ui/arm";
 import { FeatureInput } from "@/shared/ui/FeatureInput";
 import { useState } from "react";
 import type { Props } from "../types/CardClassification";
-export function CardClassification({ viewing, onVictims }: Props) {
+export function CardClassification({ viewing }: Props) {
   const { editor } = useIncidentCardContext();
   const disabled = useCardSkillDisabled("classification");
   const { fields, setDetail } = editor;
@@ -56,7 +56,7 @@ export function CardClassification({ viewing, onVictims }: Props) {
                     ? "неизвестно"
                     : key === "hasVictims"
                       ? hasVictims
-                        ? String(fields.victimsCount || "да, число неизвестно")
+                        ? "да"
                         : "нет"
                       : fields.details?.[key]
                         ? "да"
@@ -81,17 +81,7 @@ export function CardClassification({ viewing, onVictims }: Props) {
               className={hasVictims ? "is-selected" : ""}
             >
               Пострадавшие
-              {fields.victimsCount ? `: ${fields.victimsCount}` : ""}
             </button>
-            {hasVictims && (
-              <button
-                disabled={disabled}
-                onClick={onVictims}
-                aria-label="Указать количество пострадавших"
-              >
-                Число: {fields.victimsCount ?? "?"}
-              </button>
-            )}
             <button
               disabled={disabled}
               aria-pressed={fields.details?.refusedAmbulance ?? false}

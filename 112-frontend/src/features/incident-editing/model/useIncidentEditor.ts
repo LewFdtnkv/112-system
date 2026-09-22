@@ -108,10 +108,10 @@ export function useIncidentEditor({
           : remote.notificationRequired,
     },
     useRecommendedServices: () => setField("manualServices", null),
-    setVictims: (present: boolean, count: number | null = null) =>
+    setVictims: (present: boolean) =>
       setFields((current) => ({
         ...current,
-        victimsCount: present ? count : null,
+        victimsCount: null,
         details: { ...current.details, hasVictims: present },
       })),
     pending: command.isPending,

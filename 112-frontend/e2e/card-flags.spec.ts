@@ -26,7 +26,7 @@ test("ARM flags toggle, persist and remain visible on small screens", async ({
   await expect(victims).toHaveAttribute("aria-pressed", "true");
   await expect(
     bar.getByRole("button", { name: "Указать количество пострадавших" }),
-  ).toContainText("?");
+  ).toHaveCount(0);
   await victims.click();
   await expect(victims).toHaveAttribute("aria-pressed", "false");
   for (const name of [
@@ -39,6 +39,15 @@ test("ARM flags toggle, persist and remain visible on small screens", async ({
     const button = bar.getByRole("button", { name, exact: true });
     await button.click();
     await expect(button).toHaveAttribute("aria-pressed", "true");
+  }
+  await expect(bar.getByRole("button")).toHaveCount(5);
+  for (const name of ["нет контакта", "срыв звонка"]) {
+    const button = bar.getByRole("button", { name, exact: true });
+    await expect(button).toHaveCSS("border-color", "rgb(244, 102, 68)");
+    await expect(button).toHaveCSS("background-color", "rgb(255, 240, 233)");
+    await button.click();
+    await expect(button).toHaveAttribute("aria-pressed", "false");
+    await button.click();
   }
   // noContact with a known incident is intentionally not a valid final answer;
   // drafts preserve mistakes, so learners can correct them before submission.

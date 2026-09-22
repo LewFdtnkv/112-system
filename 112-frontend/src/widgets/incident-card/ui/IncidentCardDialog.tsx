@@ -6,12 +6,7 @@ import {
 } from "@/entities/incident-card";
 import { useIncidentEditor } from "@/features/incident-editing";
 import { LocationPicker } from "@/features/location-picker";
-import {
-  ArmField,
-  ArmIconButton,
-  ArmSelect,
-  ArmTextarea,
-} from "@/shared/ui/arm";
+import { ArmIconButton, ArmSelect, ArmTextarea } from "@/shared/ui/arm";
 import { FieldFeedbackContext } from "@/shared/ui/arm/FieldFeedback";
 import { Dialog, DialogContent, DialogTitle } from "@mui/material";
 import { useId, useState } from "react";
@@ -71,9 +66,7 @@ function IncidentCardForm(props: IncidentCardFormProps) {
   const [servicesOpen, setServicesOpen] = useState(false);
   const [commentOpen, setCommentOpen] = useState(false);
   const [activeService, setActiveService] = useState<string>();
-  const [modal, setModal] = useState<
-    "victims" | "map" | "calls" | "sms" | "timing"
-  >();
+  const [modal, setModal] = useState<"map" | "calls" | "sms" | "timing">();
   const viewing = preview || isSubmitted || !!props.readOnly;
   const summaryLayout = viewing && props.readOnlyLayout !== "form";
   const disabled = viewing || !isCallAccepted || editor.pending;
@@ -119,10 +112,7 @@ function IncidentCardForm(props: IncidentCardFormProps) {
           viewing={summaryLayout}
           onMap={() => setModal("map")}
         />
-        <CardClassification
-          viewing={summaryLayout}
-          onVictims={() => setModal("victims")}
-        />
+        <CardClassification viewing={summaryLayout} />
       </div>
       {editor.saved && (
         <p className="arm-card-notice" role="status">
@@ -356,15 +346,13 @@ function IncidentCardForm(props: IncidentCardFormProps) {
         className="arm-aux-dialog"
       >
         <DialogTitle id={`${titleId}-aux`}>
-          {modal === "victims"
-            ? "Пострадавшие"
-            : modal === "map"
-              ? "Карта происшествия"
-              : modal === "calls"
-                ? "Записи звонков"
-                : modal === "timing"
-                  ? "Время заполнения карточки"
-                  : "Список SMS"}
+          {modal === "map"
+            ? "Карта происшествия"
+            : modal === "calls"
+              ? "Записи звонков"
+              : modal === "timing"
+                ? "Время заполнения карточки"
+                : "Список SMS"}
           <ArmIconButton
             icon="close"
             label="Закрыть окно"
@@ -372,24 +360,6 @@ function IncidentCardForm(props: IncidentCardFormProps) {
           />
         </DialogTitle>
         <DialogContent>
-          {modal === "victims" && (
-            <ArmField
-              label="Пострадавших"
-              type="number"
-              min={0}
-              step={1}
-              disabled={locked("classification")}
-              value={fields.victimsCount ?? ""}
-              onChange={(e) =>
-                editor.setVictims(
-                  e.target.value === "" || Number(e.target.value) > 0,
-                  e.target.value === ""
-                    ? null
-                    : Math.max(0, Number(e.target.value)),
-                )
-              }
-            />
-          )}
           {modal === "map" &&
             (renderMap?.(formatAddress(fields.address)) ?? (
               <LocationPicker
