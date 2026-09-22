@@ -1,4 +1,8 @@
-import { trainingApi, type Attempt } from "@/entities/training";
+import {
+  trainingApi,
+  useAttemptSnapshot,
+  type Attempt,
+} from "@/entities/training";
 import { randomUUID } from "@/shared/lib/uuid";
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -9,7 +13,8 @@ export function useDDSWorkspace({
   onSaved,
   onClose,
 }: DDSWorkspaceProps) {
-  const [attempt, setAttempt] = useState(initial);
+  const snapshot = useAttemptSnapshot(initial);
+  const attempt = snapshot.data;
   const [activeService, setActiveService] = useState("");
   const [activeCrew, setActiveCrew] = useState("");
   const [expanded, setExpanded] = useState(false);
@@ -29,18 +34,21 @@ export function useDDSWorkspace({
     return () => clearInterval(timer);
   }, [completed, dds.first_decision_at]);
   const update = (value: Attempt) => {
-    setAttempt(value);
+    snapshot.update(value);
     setEditing(false);
     setComment("");
     setRequestId(randomUUID());
     onSaved();
   };
   const save = useMutation({
+    scope: { id: `attempt:${attempt.id}` },
+    onMutate: snapshot.cancelRead,
     mutationFn: () => {
+      const current = snapshot.latest().dds!;
       const data = {
         request_id: requestId,
-        revision: dds.revision,
-        information_event_id: dds.information!.id,
+        revision: current.revision,
+        information_event_id: current.information!.id,
         status,
         crew_number: number.trim() || null,
         comment,
@@ -60,14 +68,18 @@ export function useDDSWorkspace({
     },
   });
   const finish = useMutation({
-    mutationFn: () => trainingApi.ddsSubmit(attempt.id, dds.revision),
+    scope: { id: `attempt:${attempt.id}` },
+    onMutate: snapshot.cancelRead,
+    mutationFn: () =>
+      trainingApi.ddsSubmit(attempt.id, snapshot.latest().dds!.revision),
     onSuccess: update,
   });
-  const reload = useMutation({
-    mutationFn: () => trainingApi.attempt(attempt.id),
-    onSuccess: update,
-  });
-  const busy = save.isPending || finish.isPending || reload.isPending;
+  const reload = () => {
+    save.reset();
+    finish.reset();
+    void snapshot.refetch();
+  };
+  const busy = save.isPending || finish.isPending || snapshot.isFetching;
   const openEditor = (code?: string) => {
     const crew = dds.crews?.find((c) => c.crew_code === code);
     setTarget(code === undefined ? "service" : "crew");
@@ -123,7 +135,7 @@ export function useDDSWorkspace({
     save,
     finish,
     reload,
-    error: save.error || finish.error || reload.error,
+    error: save.error || finish.error || snapshot.error,
     close: () => {
       if (
         !busy &&

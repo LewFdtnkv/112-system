@@ -1,4 +1,10 @@
 export { trainingApi } from "./api/trainingApi";
+export {
+  trainingKeys,
+  attemptQueryOptions,
+  studentLessonQueryOptions,
+  useAttemptSnapshot,
+} from "./model/trainingQueries";
 export type { Params } from "./api/trainingApi";
 export * from "./model/types";
 

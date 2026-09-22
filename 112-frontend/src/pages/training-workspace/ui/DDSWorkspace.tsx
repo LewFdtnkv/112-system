@@ -90,7 +90,7 @@ export function DDSWorkspace(props: DDSWorkspaceProps) {
                 {getApiError(error).message}{" "}
                 <button
                   className="arm-small-button"
-                  onClick={() => reload.mutate()}
+                  onClick={reload}
                   disabled={busy}
                 >
                   Обновить карточку

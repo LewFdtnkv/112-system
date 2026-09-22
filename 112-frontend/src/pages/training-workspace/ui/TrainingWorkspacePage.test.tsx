@@ -13,39 +13,12 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import {
   activityApi,
   trainingApi,
-  type Attempt,
+  trainingKeys,
   type StudentLesson,
 } from "@/entities/training";
 import { TrainingWorkspacePage } from "./TrainingWorkspacePage";
-const initial: Attempt = {
-  id: "attempt",
-  assignment_id: "assignment",
-  status: "in_progress",
-  started_at: "2026-09-19T10:00:00Z",
-  ended_at: null,
-  instructions: "Заполните карточку",
-  caller_message: "На Учебной улице дым",
-  time_limit_seconds: null,
-  norm_seconds: 60,
-  card: {
-    id: "card",
-    revision: 3,
-    classifier_version_id: "version",
-    classifier_entry_id: null,
-    status: "draft",
-    data: {
-      description: "Серверный черновик",
-      address_text: "Учебная улица, 7",
-      additional_fields: {},
-    },
-    opened_at: null,
-    saved_at: null,
-  },
-  classifier_entry: null,
-  notified_services: [],
-  recipient_services: [],
-  recipient_error: null,
-};
+import { initialAttempt as initial } from "../model/attemptFixture";
+
 const lesson: StudentLesson = {
   id: "lesson",
   title: "Реальное занятие",
@@ -119,6 +92,43 @@ it("restores server fields and ignores prototype localStorage", async () => {
   ).toHaveValue("Серверный черновик");
   expect(within(card).getByText(/На Учебной улице дым/)).toBeVisible();
 });
+it("does not overwrite edited fields when the shared server snapshot updates", async () => {
+  const client = open();
+  await userEvent.click(
+    await screen.findByRole("button", { name: "Продолжить заполнение" }),
+  );
+  const input = within(await screen.findByRole("dialog")).getByLabelText(
+    "Сообщение со слов заявителя",
+    { exact: true },
+  );
+  await userEvent.clear(input);
+  await userEvent.type(input, "Несохранённые слова ученика");
+  client.setQueryData(trainingKeys.attempt(initial.id), {
+    ...initial,
+    card: {
+      ...initial.card,
+      revision: 4,
+      data: {
+        ...initial.card.data,
+        description: "Обновлённый серверный снимок",
+      },
+    },
+  });
+  await waitFor(() => expect(input).toHaveValue("Несохранённые слова ученика"));
+});
+
+it("retries a failed attempt query when the student opens it again", async () => {
+  vi.mocked(trainingApi.attempt).mockRejectedValueOnce(new Error("offline"));
+  open();
+  const button = await screen.findByRole("button", {
+    name: "Продолжить заполнение",
+  });
+  await userEvent.click(button);
+  await waitFor(() => expect(button).toBeEnabled());
+  await userEvent.click(button);
+  expect(await screen.findByRole("dialog")).toBeVisible();
+  expect(trainingApi.attempt).toHaveBeenCalledTimes(2);
+});
 it("keeps entered values when saving fails", async () => {
   vi.spyOn(trainingApi, "saveDraft").mockRejectedValue(new Error("offline"));
   open();
@@ -169,7 +179,7 @@ it("submits only after saving and uses the returned revision", async () => {
     expect(trainingApi.submit).toHaveBeenCalledWith("attempt", 4),
   );
   expect(
-    await within(card).findByText("Карточка передана на учебную проверку."),
+    await screen.findByText("Карточка передана на учебную проверку."),
   ).toBeVisible();
 });
 it("does not start an unavailable legacy DDS assignment", async () => {
