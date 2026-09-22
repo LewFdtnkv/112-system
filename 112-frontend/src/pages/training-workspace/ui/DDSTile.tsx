@@ -27,10 +27,10 @@ export function DDSTile({
           <time dateTime={updatedAt}>{ddsTime(updatedAt)}</time> {status}
         </small>
       </button>
-      {onEdit && (
+      {kind === "crew" && onEdit && (
         <ArmIconButton
           icon="edit"
-          label={`Изменить статус ${kind === "crew" ? "бригады" : "службы"} «${name}»`}
+          label={`Изменить статус бригады «${name}»`}
           className="dds-tile-edit"
           disabled={editDisabled}
           onClick={onEdit}

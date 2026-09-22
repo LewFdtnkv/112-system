@@ -337,8 +337,8 @@ test("real API: EKP file roundtrip, rule editing, profile publication and DDS ex
     .click();
   await page.getByRole("button", { name: "Подтвердить начало" }).click();
   await expect(
-    page.getByRole("button", { name: "Изменить статус службы «Служба 101»" }),
-  ).toBeVisible();
+    page.getByRole("button", { name: /Изменить статус службы/ }),
+  ).toHaveCount(0);
   await expect(
     page.getByText("Пожар в учебном доме", { exact: true }),
   ).toBeVisible();
@@ -383,33 +383,42 @@ test("real API: EKP file roundtrip, rule editing, profile publication and DDS ex
     ["accepted", "Карточка принята"],
     ["completed", "Работы завершены"],
   ]) {
+    // Service transitions remain API setup; the ARM exposes pencils only on crews.
+    const currentLesson = await call(
+      "GET",
+      `student/lessons/${lesson.id}`,
+      student.token,
+    );
+    const attemptId = currentLesson.assignments[0].attempt_id;
+    const attempt = await call(
+      "GET",
+      `student/attempts/${attemptId}`,
+      student.token,
+    );
+    await call(
+      "POST",
+      `student/attempts/${attemptId}/dds/actions`,
+      student.token,
+      {
+        request_id: crypto.randomUUID(),
+        revision: attempt.dds.revision,
+        information_event_id: attempt.dds.information.id,
+        status,
+        comment,
+        crew_number: status === "completed" ? "УЧ-42" : null,
+      },
+    );
     await page
-      .getByRole("button", { name: "Изменить статус службы «Служба 101»" })
+      .getByRole("button", { name: "Закрыть карточку ДДС", exact: true })
       .click();
     await page
-      .getByRole("combobox", { name: "Статус реагирования", exact: true })
-      .selectOption(status);
-    if (status === "completed")
-      await page
-        .getByRole("textbox", { name: "Номер наряда", exact: true })
-        .fill("УЧ-42");
-    await page
-      .getByRole("textbox", { name: "Комментарий ДДС", exact: true })
-      .fill(comment);
-    if (status === "completed")
-      await page
-        .getByRole("dialog")
-        .last()
-        .screenshot({
-          path: info.outputPath("catalog-dds-status.png"),
-          animations: "disabled",
-        });
-    await page
-      .getByRole("button", { name: "Сохранить статус", exact: true })
+      .locator(".arm-journal-table tbody .table-clickable-row")
+      .first()
       .click();
-    await expect(
-      page.getByRole("textbox", { name: "Комментарий ДДС", exact: true }),
-    ).not.toBeVisible();
+    await page
+      .locator(".dds-service-grid .arm-service-tile")
+      .filter({ hasText: "Служба 101" })
+      .click();
     if (status === "accepted") {
       for (const code of ["water", "reserve"]) {
         await page
@@ -558,7 +567,7 @@ test("real API: EKP file roundtrip, rule editing, profile publication and DDS ex
       }
       await expect(
         page.locator(".dds-service-grid .dds-service-active"),
-      ).toContainText("Принята");
+      ).toContainText("Добавлена");
       await expect(page.locator(".dds-history-row").first()).toContainText(
         /оп\. 0.*\d{2}\.\d{2}\.\d{4}.*Назначена/,
       );

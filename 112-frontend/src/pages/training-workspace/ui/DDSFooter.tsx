@@ -1,4 +1,4 @@
-import { crewStatusLabels, ddsStatusLabels } from "@/entities/training";
+import { crewStatusLabels } from "@/entities/training";
 import { ArmIconButton } from "@/shared/ui/arm";
 import type { DDSControlsProps } from "../types/DDSControls";
 import { DDSResponseHistory } from "./DDSResponseHistory";
@@ -27,14 +27,8 @@ export function DDSFooter({ workspace: w }: DDSControlsProps) {
       key={r.service_id}
       name={r.short_name || r.name}
       title={r.name}
-      status={ddsStatusLabels[r.status]}
-      updatedAt={r.status_updated_at}
-      onEdit={
-        r.service_id === dds.profile.service_id
-          ? () => w.openEditor()
-          : undefined
-      }
-      editDisabled={busy || completed || !dds.allowed_statuses.length}
+      status="Добавлена"
+      updatedAt={r.added_at}
       selected={activeService === r.service_id}
       onClick={() => selectService(r.service_id)}
     />
