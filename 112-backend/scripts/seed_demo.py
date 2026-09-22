@@ -206,7 +206,7 @@ def main():
     parser.add_argument(
         "--with-training",
         action="store_true",
-        help="Также создать преподавателя, ученика, 6 карточек, сценарий и урок на новом ЕКП",
+        help="Также создать аккаунты, 6 карточек, активные уроки 112/ДДС и оценённый урок ДДС",
     )
     args = parser.parse_args()
     try:

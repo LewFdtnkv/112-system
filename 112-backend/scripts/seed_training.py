@@ -3,6 +3,11 @@
 import secrets
 from uuid import NAMESPACE_URL, UUID, uuid5
 
+if __package__:
+    from scripts.seed_dds import DatabaseDDSGateway, HTTPDDSGateway, populate_dds
+else:
+    from seed_dds import DatabaseDDSGateway, HTTPDDSGateway, populate_dds
+
 
 def cases():
     return [
@@ -115,6 +120,7 @@ async def populate_training(gateway, state, catalog_id, document):
     services = {s["code"]: s["id"] for s in services}
     definitions = {e["name"]: e for e in document["entries"]}
     card_ids = []
+    fire_service_id = None
     for i, (name, title, message, answers) in enumerate(cases()):
         entry = definitions[name]
         recipients = [
@@ -133,6 +139,8 @@ async def populate_training(gateway, state, catalog_id, document):
             "recipient_service_ids": recipients,
         }
         card_ids.append(await create(f"card-{i}", "cards", payload))
+        if i == 0:
+            fire_service_id = recipients[0]
     scenario_id = await create(
         "scenario",
         "scenarios",
@@ -155,11 +163,13 @@ async def populate_training(gateway, state, catalog_id, document):
             "mode": "practice",
         },
     )
+    dds = await populate_dds(gateway.dds(), state, create, group_id, card_ids, fire_service_id)
     return {
         "teacher": accounts["teacher"]["username"],
         "student": accounts["student"]["username"],
         "card_count": len(card_ids),
         "lesson_id": lesson_id,
+        "dds": dds,
         "credentials_file": str(state.path.resolve()),
         "accounts": {
             role: {"username": accounts[role]["username"], "password": accounts[role]["password"]}
@@ -169,12 +179,17 @@ async def populate_training(gateway, state, catalog_id, document):
 
 
 class HTTPGateway:
+    def dds(self):
+        return HTTPDDSGateway(self)
+
     def __init__(self, admin, api_class):
         self.admin, self.api_class = admin, api_class
         self.teacher = None
 
     async def create(self, resource, payload):
-        client = self.admin if resource == "users" else self.teacher
+        client = (
+            self.admin if resource == "users" or resource.startswith("admin/") else self.teacher
+        )
         return client.request("POST", resource, payload, (200, 201))
 
     async def prepare_account(self, user_id, account):
@@ -215,6 +230,9 @@ class HTTPGateway:
 
 
 class DatabaseGateway:
+    def dds(self):
+        return DatabaseDDSGateway(self)
+
     def __init__(self, session, admin):
         self.session, self.admin, self.teacher = session, admin, None
 
@@ -222,15 +240,19 @@ class DatabaseGateway:
         from app.api.v1.groups import create_group
         from app.schemas.authoring import CardCreate, LessonStart, ScenarioCreate
         from app.schemas.group import GroupCreate
+        from app.schemas.service_profile import ProfileInput
         from app.schemas.user import UserCreate
         from app.services.authoring import create_card, create_scenario
         from app.services.lessons import start_lesson
+        from app.services.service_profiles import create_profile
         from app.services.users import create_user
 
         if resource == "users":
             result = await create_user(
                 self.session, UserCreate.model_validate(payload), self.admin.id
             )
+        elif resource == "admin/service-profiles":
+            result = await create_profile(self.session, ProfileInput.model_validate(payload))
         elif resource == "groups":
             result = await create_group(
                 GroupCreate.model_validate(payload), self.session, self.teacher

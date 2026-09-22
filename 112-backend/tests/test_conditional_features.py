@@ -166,8 +166,34 @@ async def test_local_training_uses_source_catalog_and_repeats(db_session, tmp_pa
     assert (
         await populate_training(gateway, state, catalog["classifier_id"], load_catalog()) == first
     )
-    for model, count in [(User, 3), (CardTemplate, 6), (Lesson, 1), (ClassifierVersion, 1)]:
+    for model, count in [(User, 3), (CardTemplate, 6), (Lesson, 3), (ClassifierVersion, 1)]:
         assert await db_session.scalar(select(func.count()).select_from(model)) == count
+    from test_seed_demo import assert_dds_seed
+
+    await assert_dds_seed(db_session, first["dds"])
+    # Repeating seed must preserve the student's ongoing DDS work.
+    dds = gateway.dds()
+    await dds.use_student(state.data["accounts"]["student"])
+    active = await dds.lesson(first["dds"]["lessons"]["active"])
+    assignment_id = active["assignments"][0]["id"]
+    attempt = await dds.start(assignment_id)
+    from uuid import uuid4
+
+    changed = await dds.command(
+        attempt["id"],
+        "actions",
+        {
+            "request_id": str(uuid4()),
+            "revision": attempt["dds"]["revision"],
+            "information_event_id": attempt["dds"]["information"]["id"],
+            "status": "accepted",
+            "comment": "Карточка принята учеником вручную",
+        },
+    )
+    await populate_training(gateway, state, catalog["classifier_id"], load_catalog())
+    unchanged = await dds.start(assignment_id)
+    assert unchanged["dds"]["revision"] == changed["dds"]["revision"]
+    assert unchanged["dds"]["comment"] == "Карточка принята учеником вручную"
     from app.services.auth import login
 
     for role in ("teacher", "student"):
@@ -176,8 +202,6 @@ async def test_local_training_uses_source_catalog_and_repeats(db_session, tmp_pa
         assert not pair.must_change_password
         assert account["password"] == f"demo-{role}-123"
     # Random generation must choose only fields in the selected branch.
-    from uuid import uuid4
-
     from app.models import AIJob, ClassifierEntry
     from app.schemas.generation import GenerationCreate
     from app.services.card_generation import enqueue

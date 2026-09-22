@@ -39,7 +39,7 @@ async def test_seed_from_admin_only_database_and_repeat(
     for model, expected in [
         (User, 3 if with_training else 1),
         (TrainingGroup, 1 if with_training else 0),
-        (Lesson, 1 if with_training else 0),
+        (Lesson, 3 if with_training else 0),
         (Service, 211),
         (ClassifierEntry, 51),
         (ClassifierVersion, 1),
@@ -48,6 +48,7 @@ async def test_seed_from_admin_only_database_and_repeat(
     assert first["feature_count"] == 177
     if with_training:
         assert first["training"]["card_count"] == 6
+        await assert_dds_seed(db_session, first["training"]["dds"])
     assert stat.S_IMODE(state_path.stat().st_mode) == 0o600
     state = json.loads(state_path.read_text())
     if with_training:
@@ -70,6 +71,51 @@ async def test_seed_from_admin_only_database_and_repeat(
     with pytest.raises(RuntimeError, match="другому API"):
         seed_demo.State(state_path, "http://another", "test")
     assert json.loads(state_path.read_text()) == state
+
+
+async def assert_dds_seed(session, result):
+    from uuid import UUID
+
+    from app.models import Assignment, Attempt, CrewAssignment, Evaluation, ServiceProfile
+
+    completed = await session.get(Lesson, UUID(result["lessons"]["completed"]))
+    active = await session.get(Lesson, UUID(result["lessons"]["active"]))
+    assert completed.status.value == "finished" and completed.ended_at is not None
+    assert active.status.value == "active" and active.ended_at is None
+    profile = await session.get(ServiceProfile, UUID(result["profile_id"]))
+    assert profile.status.value == "published"
+    assert len(profile.rules["crews"]) == 2
+    attempts = list(
+        await session.scalars(
+            select(Attempt)
+            .join(Assignment)
+            .where(
+                Assignment.lesson_id == completed.id,
+            )
+        )
+    )
+    assert len(attempts) == 2
+    for attempt in attempts:
+        assert attempt.status.value == "completed"
+        evaluation = await session.scalar(
+            select(Evaluation).where(Evaluation.attempt_id == attempt.id)
+        )
+        assert evaluation.score == evaluation.max_score
+        assert evaluation.context_snapshot["policy"]["version"] == "dds-crews-v2"
+        crew = await session.scalar(
+            select(CrewAssignment).where(CrewAssignment.attempt_id == attempt.id)
+        )
+        assert crew.status == "completed"
+    active_attempts = list(
+        await session.scalars(
+            select(Attempt)
+            .join(Assignment)
+            .where(
+                Assignment.lesson_id == active.id,
+            )
+        )
+    )
+    assert len(active_attempts) == 1 and active_attempts[0].status.value == "in_progress"
 
 
 @pytest.mark.anyio
