@@ -1,8 +1,7 @@
 import { trainingApi, userName } from "@/entities/training";
 import { getApiError } from "@/shared/api";
-import { getTrainingSessionPath } from "@/shared/config/routes";
 import { randomUUID } from "@/shared/lib/uuid";
-import { ServerSelect, type SelectOption } from "@/shared/ui/ServerSelect";
+import { ServerSelect } from "@/shared/ui/ServerSelect";
 import {
   Alert,
   Button,
@@ -10,71 +9,41 @@ import {
   Dialog,
   DialogContent,
   DialogTitle,
-  MenuItem,
   Stack,
   TextField,
 } from "@mui/material";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
 import { styles } from "../styles/LessonLaunch";
+import { useLessonLaunch } from "../model/useLessonLaunch";
+import { LearningSettings } from "./LearningSettings";
+import { LearningSummary } from "@/entities/training";
+
 export function LessonLaunch() {
-  const [params] = useSearchParams();
-  const [group, setGroup] = useState<SelectOption | null>(() =>
-    params.get("group")
-      ? { id: params.get("group")!, label: "Выбранная группа" }
-      : null,
-  );
-  const [targets, setTargets] = useState<
-    { id: string; label: string; kind: "group" | "student" }[]
-  >([]);
-  const [from, setFrom] = useState("");
-  const [until, setUntil] = useState("");
-  const [confirm, setConfirm] = useState(false);
-  const [student, setStudent] = useState<SelectOption | null>(null);
-  const [scenario, setScenario] = useState<SelectOption | null>(() =>
-    params.get("scenario")
-      ? {
-          id: params.get("scenario")!,
-          label: params.get("title") ?? "Выбранный сценарий",
-        }
-      : null,
-  );
-  const [mode, setMode] = useState("practice");
-  const [limit, setLimit] = useState("");
-  const [hint, setHint] = useState("");
-  const [title, setTitle] = useState("");
-  const [requestId, setRequestId] = useState(() => randomUUID());
-  const client = useQueryClient();
-  const navigate = useNavigate();
-  const mutation = useMutation({
-    mutationFn: () =>
-      trainingApi.startLesson({
-        request_id: requestId,
-        ...(targets.length
-          ? {
-              group_ids: targets
-                .filter((t) => t.kind === "group")
-                .map((t) => t.id),
-              student_ids: targets
-                .filter((t) => t.kind === "student")
-                .map((t) => t.id),
-            }
-          : { group_id: group!.id }),
-        ...(from ? { available_from: new Date(from).toISOString() } : {}),
-        ...(until ? { available_until: new Date(until).toISOString() } : {}),
-        scenario_version_id: scenario!.id,
-        mode,
-        ...(!targets.length && student ? { student_id: student.id } : {}),
-        ...(title.trim() ? { title } : {}),
-        ...(limit ? { time_limit_seconds: Number(limit) } : {}),
-        ...(hint ? { hint_delay_seconds: Number(hint) } : {}),
-      }),
-    onSuccess: (lesson) => {
-      void client.invalidateQueries({ queryKey: ["lessons"] });
-      navigate(getTrainingSessionPath(lesson.id));
-    },
-  });
+  const {
+    scenarioRole,
+    group,
+    setGroup,
+    targets,
+    setTargets,
+    from,
+    setFrom,
+    until,
+    setUntil,
+    confirm,
+    setConfirm,
+    student,
+    setStudent,
+    scenario,
+    setScenario,
+    learning,
+    setLearning,
+    learningValid,
+    limit,
+    setLimit,
+    title,
+    setTitle,
+    setRequestId,
+    mutation,
+  } = useLessonLaunch();
   return (
     <Stack
       component="form"
@@ -82,7 +51,7 @@ export function LessonLaunch() {
       onChange={() => setRequestId(randomUUID())}
       onSubmit={(e) => {
         e.preventDefault();
-        setConfirm(true);
+        if (learningValid) setConfirm(true);
       }}
     >
       <h2>Назначить задание</h2>
@@ -159,6 +128,7 @@ export function LessonLaunch() {
         value={scenario}
         onChange={(v) => {
           setScenario(v);
+          setLearning({ ...learning, target_skills: [] });
           setRequestId(randomUUID());
         }}
         load={async (q, signal) =>
@@ -166,6 +136,7 @@ export function LessonLaunch() {
             await trainingApi.scenarios({ q, status: "published" }, signal)
           ).items.map((item) => ({
             id: item.id,
+            metadata: { role: item.role },
             label: `${item.title} · версия ${item.version}${item.role === "dds" ? " · ДДС" : ""}`,
           }))
         }
@@ -194,30 +165,17 @@ export function LessonLaunch() {
         }}
         helperText="По окончании срока изменения запрещаются, непройденные карточки учитываются как 0."
       />
-      <TextField
-        select
-        label="Режим"
-        value={mode}
-        onChange={(e) => setMode(e.target.value)}
-      >
-        <MenuItem value="introduction">Знакомство с интерфейсом</MenuItem>
-        <MenuItem value="practice">Практика</MenuItem>
-        <MenuItem value="assessment">Проверка знаний</MenuItem>
-      </TextField>
+      <LearningSettings
+        value={learning}
+        onChange={setLearning}
+        role={scenarioRole}
+      />
       <TextField
         label="Лимит времени на карточку, с (необязательно)"
         type="number"
         value={limit}
         onChange={(e) => setLimit(e.target.value)}
         slotProps={{ htmlInput: { min: 1, max: 86400 } }}
-      />
-      <TextField
-        label="Задержка подсказки, с (необязательно)"
-        type="number"
-        value={hint}
-        onChange={(e) => setHint(e.target.value)}
-        slotProps={{ htmlInput: { min: 1, max: 86400 } }}
-        helperText="Настройка сохраняется; автоматические подсказки пока не подключены."
       />
       {mutation.error && (
         <Alert severity="error">{getApiError(mutation.error).message}</Alert>
@@ -226,7 +184,10 @@ export function LessonLaunch() {
         type="submit"
         variant="contained"
         disabled={
-          (!group && !targets.length) || !scenario || mutation.isPending
+          (!group && !targets.length) ||
+          !scenario ||
+          !learningValid ||
+          mutation.isPending
         }
       >
         Назначить задание
@@ -235,6 +196,7 @@ export function LessonLaunch() {
         <DialogTitle>Назначить задание?</DialogTitle>
         <DialogContent>
           <Stack spacing={2}>
+            <LearningSummary policy={learning} />
             <p>
               {scenario?.label} →{" "}
               {targets.length
@@ -251,7 +213,7 @@ export function LessonLaunch() {
               </Alert>
             )}
             <Button
-              disabled={mutation.isPending}
+              disabled={mutation.isPending || !learningValid}
               onClick={() => mutation.mutate()}
             >
               Подтвердить назначение

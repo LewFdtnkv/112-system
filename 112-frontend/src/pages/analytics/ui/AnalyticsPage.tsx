@@ -1,6 +1,5 @@
-import { activityApi, trainingApi } from "@/entities/training";
+import { useAnalytics } from "../model/useAnalytics";
 import { getApiError } from "@/shared/api";
-import { download } from "@/shared/lib/download";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { PageControls, QueryState } from "@/shared/ui/QueryState";
 import {
@@ -13,28 +12,35 @@ import {
   TableHead,
   TableRow,
   Typography,
+  ToggleButton,
+  ToggleButtonGroup,
 } from "@mui/material";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { useState } from "react";
 export const AnalyticsPage = () => {
-  const exportReport = useMutation({
-    mutationFn: async () =>
-      download(await activityApi.report("xlsx"), "training-report.xlsx"),
-  });
-  const [page, setPage] = useState(0);
-  const query = useQuery({
-    queryKey: ["analytics", page],
-    queryFn: ({ signal }) =>
-      trainingApi.analytics({ offset: page * 20 }, signal),
-  });
+  const { exportReport, page, setPage, track, setTrack, query } =
+    useAnalytics();
   return (
     <Stack spacing={2}>
       <PageHeader title="Аналитика обучения" />
+      <ToggleButtonGroup
+        exclusive
+        value={track}
+        onChange={(_, value: string | null) => {
+          if (value) {
+            setTrack(value);
+            setPage(0);
+          }
+        }}
+        aria-label="Раздел аналитики"
+        size="small"
+      >
+        <ToggleButton value="training">Тренировки</ToggleButton>
+        <ToggleButton value="assessment">Контрольные занятия</ToggleButton>
+      </ToggleButtonGroup>
       <Button
         disabled={exportReport.isPending}
         onClick={() => exportReport.mutate()}
       >
-        Скачать отчёт XLSX
+        Скачать отчёт по всем занятиям XLSX
       </Button>
       {exportReport.error && (
         <Alert severity="error">

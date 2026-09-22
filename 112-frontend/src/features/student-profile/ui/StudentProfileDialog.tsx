@@ -54,19 +54,16 @@ export function StudentProfileDialog({
                 <strong>{query.data.active_lessons.total}</strong> · Завершено:{" "}
                 <strong>{query.data.performance.completed_lessons}</strong>
               </Typography>
-              <Typography>
-                Последние 5 оценённых уроков:{" "}
-                <strong>
-                  {percentText(query.data.performance.recent_percent)}
-                </strong>
-              </Typography>
-              <Typography>
-                За всё время:{" "}
-                <strong>
-                  {percentText(query.data.performance.overall_percent)}
-                </strong>{" "}
-                · Оценено: {query.data.performance.graded_lessons}
-              </Typography>
+              {query.data.performance.tracks.map((track) => (
+                <Typography key={track.track}>
+                  {track.track === "training"
+                    ? "Тренировки"
+                    : "Контрольные занятия"}
+                  : <strong>{percentText(track.overall_percent)}</strong>
+                  {" · Последние 5: "}
+                  {percentText(track.recent_percent)}
+                </Typography>
+              ))}
               <Typography variant="caption" color="text.secondary">
                 Учитываются уроки, назначенные вами.
               </Typography>

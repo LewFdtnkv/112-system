@@ -94,6 +94,18 @@ const messages: Record<string, string> = {
     "Для этого типа нет подготовленных действующих маршрутов. Обратитесь к преподавателю.",
   "All cards must use the same classifier version":
     "Все карточки сценария должны использовать одну версию ЕКП.",
+  "Guided learning is not available yet":
+    "Пошаговое обучение пока недоступно. Выберите практику, отработку навыка, повторение или контроль.",
+  "DDS skills require a DDS scenario":
+    "Для навыков ДДС выберите сценарий диспетчера ДДС.",
+  "Card entry skills require an operator 112 scenario":
+    "Для заполнения исходной карточки выберите сценарий оператора 112.",
+  "Value error, Choose target skills for focused practice or review":
+    "Выберите хотя бы один целевой навык.",
+  "Value error, Assistance needs a request or inactivity trigger":
+    "Разрешите запрос помощи или укажите паузу перед её предложением.",
+  "Value error, Assessment lessons cannot provide learning assistance":
+    "Контрольное занятие должно проходить без учебных подсказок.",
   "A published classifier version is required":
     "Нужна опубликованная версия ЕКП.",
   "This attempt is no longer editable":

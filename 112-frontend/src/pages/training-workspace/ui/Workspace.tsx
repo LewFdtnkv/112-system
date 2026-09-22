@@ -1,3 +1,4 @@
+import { LearningSummary, lessonKindLabels } from "@/entities/training";
 import { useStudentWorkspace } from "../model/useStudentWorkspace";
 import { StudentMessages } from "@/features/teaching-messages";
 import { getApiError } from "@/shared/api";
@@ -38,6 +39,7 @@ export function Workspace({ lesson }: WorkspaceProps) {
     return (
       <Stack spacing={2} sx={styles.stack}>
         <h1>{lesson.title}</h1>
+        <LearningSummary policy={lesson.learning} />
         <p>
           Карточек: {lesson.assignments.length}. Выполняйте их последовательно.
           Срок задания общий; лимит карточки начинается при её открытии.
@@ -103,7 +105,9 @@ export function Workspace({ lesson }: WorkspaceProps) {
   return (
     <div className="incident-desk">
       <div className="operator-training-bar">
-        <strong>{lesson.title}</strong>
+        <strong>
+          {lesson.title} · {lessonKindLabels[lesson.learning.kind]}
+        </strong>
         {remaining !== null && lesson.work_status !== "submitted" && (
           <strong role="timer">
             Осталось: {Math.floor(remaining / 60)}:

@@ -1,3 +1,4 @@
+import type { LearningPolicy, LearningResult } from "./learning";
 import type { DDSContext, DDSPolicy } from "../model/catalogTypes";
 export interface Page<T> {
   items: T[];
@@ -190,6 +191,7 @@ export interface ScenarioDetail extends Omit<ScenarioItem, "card_count"> {
 }
 
 export interface LessonRow {
+  learning: LearningPolicy;
   completed_at?: string | null;
   evaluation_method?: "rules" | "teacher" | null;
   lesson_id: string;
@@ -245,6 +247,8 @@ export interface Assignment {
 }
 
 export interface StudentLesson {
+  learning: LearningPolicy;
+  learning_result?: LearningResult | null;
   id: string;
   title: string;
   status: string;
@@ -257,6 +261,7 @@ export interface StudentLesson {
 }
 
 export interface Attempt {
+  learning: LearningPolicy;
   role?: "operator_112" | "dds";
   dds?: DDSContext | null;
   id: string;
@@ -347,6 +352,8 @@ export interface AuditPage {
 }
 
 export interface WorkReview {
+  learning: LearningPolicy;
+  learning_result?: LearningResult | null;
   automatic_check: Omit<AutomaticCheck, "fields">;
   lesson_id: string;
   student_id: string;
@@ -407,9 +414,8 @@ export interface LessonStart {
   student_id?: string;
   scenario_version_id: string;
   title?: string;
-  mode: string;
+  learning: LearningPolicy;
   time_limit_seconds?: number;
-  hint_delay_seconds?: number;
 }
 
 export interface Analytics {

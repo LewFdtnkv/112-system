@@ -1,5 +1,7 @@
+import { defaultLearningPolicy } from "@/entities/training";
 import type { Attempt } from "@/entities/training";
 export const initialAttempt: Attempt = {
+  learning: defaultLearningPolicy(),
   id: "attempt",
   assignment_id: "assignment",
   status: "in_progress",

@@ -1,3 +1,4 @@
+import { defaultLearningPolicy } from "@/entities/training";
 import "@testing-library/jest-dom/vitest";
 import { cleanup, configure, render, screen } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router-dom";
@@ -62,6 +63,7 @@ it("shows an empty real student account without fixture lessons", async () => {
 it("shows a fallback for legacy work without a persisted grade", async () => {
   vi.spyOn(trainingApi, "evaluation").mockResolvedValue(null);
   vi.spyOn(trainingApi, "studentLesson").mockResolvedValue({
+    learning: defaultLearningPolicy(),
     id: "lesson",
     title: "Сданная работа",
     status: "finished",

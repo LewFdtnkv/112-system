@@ -1,7 +1,9 @@
+import { useLessonList } from "../model/useLessonList";
 import {
   lessonPercent,
+  lessonKindLabels,
+  assistanceLabels,
   percentText,
-  trainingApi,
   workStatusLabels,
 } from "@/entities/training";
 import { StudentProfileDialog } from "@/features/student-profile";
@@ -10,7 +12,6 @@ import {
   getTrainingResultPath,
 } from "@/shared/config/routes";
 import { rowAction } from "@/shared/lib/rowAction";
-import { useDebounced } from "@/shared/lib/useDebounced";
 import { EmptyState } from "@/shared/ui/EmptyState";
 import { PageControls, QueryState } from "@/shared/ui/QueryState";
 import {
@@ -25,7 +26,6 @@ import {
   TableRow,
   TextField,
 } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { styles } from "../styles/LessonList";
@@ -38,25 +38,19 @@ export function LessonList({
 }: LessonListProps) {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState(resultsOnly ? "submitted" : "all");
-  const [role, setRole] = useState("all");
-  const [page, setPage] = useState(0);
-  const q = useDebounced(search);
-  const params = {
-    q,
+  const {
+    search,
+    setSearch,
     status,
+    setStatus,
     role,
-    limit: 20,
-    offset: page * 20,
-    ...(studentId ? { student_id: studentId } : {}),
-    ...(lessonId ? { lesson_id: lessonId } : {}),
-  };
-  const query = useQuery({
-    queryKey: ["lessons", student, params],
-    queryFn: ({ signal }) => trainingApi.lessons(student, params, signal),
-    refetchInterval: student ? 15000 : 10000,
-  });
+    setRole,
+    kind,
+    setKind,
+    page,
+    setPage,
+    query,
+  } = useLessonList({ student, resultsOnly, lessonId, studentId });
   return (
     <Stack spacing={2}>
       <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
@@ -71,7 +65,7 @@ export function LessonList({
         />
         <TextField
           select
-          label="Тип занятия"
+          label="Учебная роль"
           value={role}
           sx={styles.textField}
           onChange={(e) => {
@@ -79,9 +73,26 @@ export function LessonList({
             setPage(0);
           }}
         >
-          <MenuItem value="all">Все типы</MenuItem>
+          <MenuItem value="all">Все роли</MenuItem>
           <MenuItem value="operator_112">Оператор 112</MenuItem>
           <MenuItem value="dds">ДДС</MenuItem>
+        </TextField>
+        <TextField
+          select
+          label="Вид занятия"
+          value={kind}
+          sx={styles.textField}
+          onChange={(e) => {
+            setKind(e.target.value);
+            setPage(0);
+          }}
+        >
+          <MenuItem value="all">Все виды</MenuItem>
+          {Object.entries(lessonKindLabels).map(([value, label]) => (
+            <MenuItem key={value} value={value}>
+              {label}
+            </MenuItem>
+          ))}
         </TextField>
         {!resultsOnly && (
           <TextField
@@ -135,7 +146,8 @@ export function LessonList({
                       {!student && !studentId && (
                         <TableCell>Ученик / группа</TableCell>
                       )}
-                      <TableCell>Тип занятия</TableCell>
+                      <TableCell>Учебная роль</TableCell>
+                      <TableCell>Вид занятия / помощь</TableCell>
                       <TableCell>Доступно (МСК)</TableCell>
                       <TableCell>Статус</TableCell>
                       <TableCell>Завершено (МСК)</TableCell>
@@ -178,6 +190,15 @@ export function LessonList({
                           )}
                           <TableCell sx={styles.tableCell}>
                             {row.role === "dds" ? "ДДС" : "Оператор 112"}
+                          </TableCell>
+                          <TableCell>
+                            {lessonKindLabels[row.learning.kind]}
+                            <small className="block-detail">
+                              {assistanceLabels[row.learning.assistance.mode]}
+                              {row.learning.assistance.mode !== "none"
+                                ? " · запланированы"
+                                : ""}
+                            </small>
                           </TableCell>
                           <TableCell>
                             {(row.available_from ?? row.started_at)

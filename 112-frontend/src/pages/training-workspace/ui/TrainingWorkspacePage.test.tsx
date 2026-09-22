@@ -1,3 +1,4 @@
+import { defaultLearningPolicy } from "@/entities/training";
 import "@testing-library/jest-dom/vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
@@ -20,6 +21,7 @@ import { TrainingWorkspacePage } from "./TrainingWorkspacePage";
 import { initialAttempt as initial } from "../model/attemptFixture";
 
 const lesson: StudentLesson = {
+  learning: defaultLearningPolicy(),
   id: "lesson",
   title: "Реальное занятие",
   status: "active",

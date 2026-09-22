@@ -1,3 +1,6 @@
+import { useState } from "react";
+import { ToggleButton, ToggleButtonGroup } from "@mui/material";
+import { lessonKindLabels } from "@/entities/training";
 import {
   UserPhoto,
   lessonPercent,
@@ -64,6 +67,8 @@ export function StudentOverviewPanel({
 }: StudentOverviewPanelProps) {
   const { user, groups, performance: p, active_lessons: active } = data;
   const navigate = useNavigate();
+  const [track, setTrack] = useState("training");
+  const selected = p.tracks.find((item) => item.track === track)!;
   const resultPath = (lesson: string) =>
     `${getTrainingResultPath(lesson)}${own ? "" : `?student=${encodeURIComponent(user.id)}`}`;
   return (
@@ -112,7 +117,8 @@ export function StudentOverviewPanel({
                     {row.work_status === "in_progress"
                       ? "В процессе"
                       : "Можно начать"}{" "}
-                    · {row.role === "dds" ? "ДДС" : "Оператор 112"}
+                    · {row.role === "dds" ? "ДДС" : "Оператор 112"} ·{" "}
+                    {lessonKindLabels[row.learning.kind]}
                   </span>
                   <h3>{row.scenario_title}</h3>
                   <p>{row.title}</p>
@@ -166,51 +172,62 @@ export function StudentOverviewPanel({
           <h2 id="student-performance-title">Успеваемость</h2>
           <span>Средний результат урока</span>
         </div>
+        <ToggleButtonGroup
+          exclusive
+          value={track}
+          onChange={(_, value: string | null) => value && setTrack(value)}
+          aria-label="Раздел успеваемости"
+          size="small"
+        >
+          <ToggleButton value="training">Тренировки</ToggleButton>
+          <ToggleButton value="assessment">Контрольные занятия</ToggleButton>
+        </ToggleButtonGroup>
         <div className="student-performance-grid">
           <PerformanceRing
-            value={p.recent_percent}
+            value={selected.recent_percent}
             title="Текущая успеваемость"
-            description={`Последние ${p.recent_limit} оценённых уроков · учтено ${p.recent_count}`}
+            description={`Последние ${p.recent_limit} оценённых уроков · учтено ${selected.recent_count}`}
           />
           <PerformanceRing
-            value={p.overall_percent}
+            value={selected.overall_percent}
             title="Общая успеваемость"
-            description={`За всё время · оценено ${p.graded_lessons}`}
+            description={`За всё время · оценено ${selected.graded_lessons}`}
           />
           <dl className="student-summary-counts">
             <div>
-              <dt>Всего уроков</dt>
+              <dt>Всего занятий</dt>
               <dd>{p.total_lessons}</dd>
             </div>
             <div>
-              <dt>Завершено</dt>
+              <dt>Завершено всего</dt>
               <dd>{p.completed_lessons}</dd>
             </div>
             <div>
-              <dt>Оценено</dt>
-              <dd>{p.graded_lessons}</dd>
+              <dt>Оценено в разделе</dt>
+              <dd>{selected.graded_lessons}</dd>
             </div>
           </dl>
         </div>
         <p className="student-performance-note">
-          Оценки приведены к процентам. Каждый оценённый урок имеет одинаковый
-          вес; учитывается последняя итоговая оценка.
+          Тренировки и контрольные занятия учитываются раздельно. Оценки
+          приведены к процентам. Каждый оценённый урок имеет одинаковый вес;
+          учитывается последняя итоговая оценка.
           {!own && " Показаны занятия этого преподавателя."}
         </p>
-        {p.recent_lessons.length > 0 && (
+        {selected.recent_lessons.length > 0 && (
           <div className="student-recent-table">
             <table aria-label="Последние результаты">
               <caption>Последние оценённые уроки</caption>
               <thead>
                 <tr>
                   <th>Урок</th>
-                  <th>Тип занятия</th>
+                  <th>Роль / вид занятия</th>
                   <th>Завершение (МСК)</th>
                   <th>Результат</th>
                 </tr>
               </thead>
               <tbody>
-                {p.recent_lessons.map((row) => (
+                {selected.recent_lessons.map((row) => (
                   <tr
                     key={row.lesson_id}
                     {...rowAction(() => navigate(resultPath(row.lesson_id)))}
@@ -224,7 +241,12 @@ export function StudentOverviewPanel({
                       </Link>
                       <small className="block-detail">{row.title}</small>
                     </td>
-                    <td>{row.role === "dds" ? "ДДС" : "Оператор 112"}</td>
+                    <td>
+                      {row.role === "dds" ? "ДДС" : "Оператор 112"}
+                      <small className="block-detail">
+                        {lessonKindLabels[row.learning.kind]}
+                      </small>
+                    </td>
                     <td>
                       {row.completed_at ? dateText(row.completed_at) : "—"}
                     </td>

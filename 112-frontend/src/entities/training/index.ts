@@ -22,3 +22,7 @@ export { lessonPercent, percentText } from "./model/studentOverview";
 export type { StudentOverview } from "./model/studentOverview";
 export * from "./types/generation";
 export { UserPhoto } from "./ui/UserPhoto";
+
+export * from "./types/learning";
+export * from "./model/learning";
+export { LearningSummary } from "./ui/LearningSummary";

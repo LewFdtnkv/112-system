@@ -1,4 +1,4 @@
-import { trainingApi } from "@/entities/training";
+import { trainingApi, LearningSummary } from "@/entities/training";
 import { getApiError } from "@/shared/api";
 import { getStudentTrainingWorkspacePath } from "@/shared/config/routes";
 import { randomUUID } from "@/shared/lib/uuid";
@@ -33,6 +33,7 @@ export function StudentResult({ lessonId }: StudentResultProps) {
   const lesson = useQuery({
     queryKey: ["student-lesson", lessonId],
     queryFn: ({ signal }) => trainingApi.studentLesson(lessonId, signal),
+    refetchInterval: 15000,
   });
   return (
     <QueryState
@@ -43,6 +44,12 @@ export function StudentResult({ lessonId }: StudentResultProps) {
         void lesson.refetch();
       }}
     >
+      {lesson.data && (
+        <LearningSummary
+          policy={lesson.data.learning}
+          result={lesson.data.learning_result}
+        />
+      )}
       {grade.data ? (
         <GradeView grade={grade.data} />
       ) : (
@@ -142,6 +149,7 @@ function Review({
   const latest = data.evaluations.at(-1);
   return (
     <Stack spacing={2}>
+      <LearningSummary policy={data.learning} result={data.learning_result} />
       {latest && <GradeView grade={latest} />}
       {!latest && data.submitted && (
         <Stack spacing={1}>
