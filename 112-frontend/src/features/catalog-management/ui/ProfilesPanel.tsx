@@ -31,6 +31,7 @@ const empty: ProfileInput = {
   territories: [],
   objects: [],
   contacts: [],
+  crews: [],
 };
 const input = (p: ServiceProfile): ProfileInput => ({
   service_id: p.service_id,
@@ -40,6 +41,7 @@ const input = (p: ServiceProfile): ProfileInput => ({
   territories: p.territories,
   objects: p.objects,
   contacts: p.contacts,
+  crews: p.crews ?? [],
 });
 export function ProfilesPanel() {
   const client = useQueryClient();

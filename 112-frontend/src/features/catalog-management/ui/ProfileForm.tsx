@@ -6,6 +6,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { styles } from "../styles/ProfileForm";
 import type { ProfileFormProps } from "../types/ProfilesPanel";
+import { ProfileCrews } from "./ProfileCrews";
 export function ProfileForm({ initial, existing, onSaved }: ProfileFormProps) {
   const [form, setForm] = useState(initial);
   const [serviceLabel, setServiceLabel] = useState("Назначенная служба");
@@ -297,6 +298,11 @@ export function ProfileForm({ initial, existing, onSaved }: ProfileFormProps) {
         Контакты предназначены для локального учебного контура. Звонки пока не
         подключены.
       </small>
+      <ProfileCrews
+        value={form.crews ?? []}
+        contacts={form.contacts}
+        onChange={(crews) => setForm({ ...form, crews })}
+      />
       {save.error && (
         <Alert severity="error">{getApiError(save.error).message}</Alert>
       )}

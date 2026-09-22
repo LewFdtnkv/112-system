@@ -3,6 +3,23 @@ import { isHTTPError, isNetworkError, isTimeoutError } from "ky";
 import type { ApiErrorInfo } from "./types";
 
 const messages: Record<string, string> = {
+  "Accept the service response before managing crews":
+    "Сначала примите карточку своей службой. Завершённое реагирование менять нельзя.",
+  "Complete or cancel active crew assignments first":
+    "Сначала завершите работы назначенных бригад или отмените их назначения с комментарием.",
+  "Crew must be active in the attempt profile":
+    "Бригада недоступна в профиле этого задания.",
+  "Crew action requires a message from this attempt":
+    "Обновите карточку: для действия нужно сообщение текущего задания.",
+  "Invalid crew status transition":
+    "Недопустимый переход статуса бригады. Обновите карточку.",
+  "Required crews must be active in the selected profile":
+    "Выберите доступные бригады выбранного профиля службы.",
+  "Value error, Crew contact must belong to this profile":
+    "Контакт старшего бригады должен быть добавлен в этот профиль.",
+  "Value error, Required crews must not repeat":
+    "Бригада не должна повторяться в целях задания.",
+
   "Unknown classifier feature":
     "В ответах есть признак, которого нет в выбранном правиле ЕКП. Выберите тип происшествия заново.",
   "Catalog label, service or incident code already exists":

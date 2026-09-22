@@ -1,4 +1,9 @@
-import { ddsStatusLabels, fieldLabels, trainingApi } from "@/entities/training";
+import {
+  crewStatusLabels,
+  ddsStatusLabels,
+  fieldLabels,
+  trainingApi,
+} from "@/entities/training";
 import { QueryState } from "@/shared/ui/QueryState";
 import {
   Alert,
@@ -21,6 +26,7 @@ const kinds: Record<string, string> = {
   "dds.card_received": "Получение карточки ДДС",
   "dds.information": "Сообщение по сценарию",
   "dds.status_changed": "Изменение статуса ДДС",
+  "dds.crew_changed": "Назначение / статус бригады",
   "dds.submitted": "Сдача упражнения ДДС",
   "attempt.started": "Начало карточки",
   "card.draft_saved": "Сохранение черновика",
@@ -76,6 +82,15 @@ function EventDetails({ event }: EventDetailsProps) {
     );
   if (event.kind === "dds.information")
     return <>{String(event.payload.message)}</>;
+  if (event.kind === "dds.crew_changed")
+    return (
+      <>
+        {String(event.payload.name)} ·{" "}
+        {crewStatusLabels[String(event.payload.status)]} · Наряд:{" "}
+        {String(event.payload.crew_number ?? "—")} ·{" "}
+        {String(event.payload.comment)}
+      </>
+    );
   if (event.kind === "dds.status_changed")
     return (
       <>

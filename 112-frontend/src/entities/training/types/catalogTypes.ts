@@ -27,6 +27,7 @@ export interface CatalogVersion {
 }
 
 export interface ProfileInput {
+  crews?: CrewDefinition[];
   service_id: string;
   name: string;
   responsibility: string;
@@ -58,9 +59,51 @@ export interface ServiceProfile extends ProfileInput {
 
 export interface DDSPolicy {
   steps: { status: string; message: string; crew_number: string | null }[];
+  required_crews?: { crew_code: string; status: string }[];
+}
+
+export interface CrewDefinition {
+  code: string;
+  name: string;
+  description: string;
+  contact_code: string | null;
+  is_active: boolean;
+}
+
+export interface CrewCommand {
+  request_id: string;
+  revision: number;
+  information_event_id: string;
+  crew_code: string;
+  status: string;
+  crew_number: string | null;
+  comment: string;
+}
+
+export interface DDSHistoryEntry {
+  id: string;
+  at: string;
+  status: string;
+  comment: string;
+  crew_number: string | null;
+}
+
+export interface CrewAssignment {
+  id: string;
+  crew_code: string;
+  name: string;
+  description: string;
+  contact_code: string | null;
+  status: string;
+  crew_number: string | null;
+  comment: string;
+  allowed_statuses: string[];
+  history: DDSHistoryEntry[];
 }
 
 export interface DDSContext {
+  crews?: CrewAssignment[];
+  crew_goals?: { crew_code: string; name: string; status: string }[];
   profile: ServiceProfile;
   response_id: string;
   revision: number;
@@ -83,6 +126,7 @@ export interface DDSContext {
   responses: {
     service_id: string;
     name: string;
+    short_name?: string | null;
     status: string;
     crew_number: string | null;
     comment: string;

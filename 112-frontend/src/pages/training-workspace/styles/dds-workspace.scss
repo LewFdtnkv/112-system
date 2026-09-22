@@ -6,43 +6,228 @@
   font:
     13px Arial,
     sans-serif;
-
   p {
     margin: 6px 0;
     white-space: pre-wrap;
   }
-
   summary {
     cursor: pointer;
   }
 }
-
-.dds-footer .dds-service-active {
-  background: #187eb6;
+.dds-footer {
+  gap: 0;
+  .dds-service-list {
+    display: flex;
+    align-items: stretch;
+    min-width: 0;
+    flex: 1;
+  }
+  .dds-service-list > strong {
+    align-self: center;
+    padding: 0 9px;
+    font-size: 12px;
+  }
+  .dds-service-grid {
+    display: flex;
+    min-width: 0;
+    overflow-x: auto;
+  }
+  .arm-service-tile {
+    width: 104px;
+    flex: 0 0 104px;
+    padding: 5px;
+    transition:
+      background-color 150ms ease,
+      box-shadow 150ms ease;
+    strong {
+      width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    &:focus-visible {
+      outline: 2px solid white;
+      outline-offset: -3px;
+    }
+    &:active {
+      box-shadow: inset 0 0 0 2px #ffffff80;
+    }
+  }
+  .dds-service-active {
+    background: #187eb6;
+  }
+  .dds-expand {
+    margin: 8px;
+    align-self: center;
+  }
+  .arm-footer-tools {
+    flex-shrink: 0;
+  }
+  .arm-save {
+    font-size: 14px;
+  }
+  .arm-small-button {
+    color: #fff;
+    border-color: #ffffffa0;
+    &:hover:not(:disabled) {
+      background: #ffffff25;
+    }
+    &:disabled {
+      opacity: 0.45;
+    }
+  }
+  .dds-extra-services {
+    position: absolute;
+    bottom: 100%;
+    left: 72px;
+    display: flex;
+    max-width: calc(100vw - 96px);
+    height: 72px;
+    overflow-x: auto;
+    background: #46545e;
+    z-index: 4;
+  }
+  &--expanded .dds-response-panel {
+    bottom: calc(100% + 72px);
+  }
 }
-
-.dds-footer .dds-history {
-  width: min(660px, calc(100vw - 32px));
-  max-height: 260px;
+.dds-response-panel {
+  position: absolute;
+  bottom: 100%;
+  left: 72px;
+  z-index: 3;
+  width: min(800px, calc(100vw - 96px));
+  max-height: min(55vh, 450px);
   overflow: auto;
-}
-
-.dds-history-row {
-  display: grid;
-  grid-template-columns: 70px 145px 1fr;
-  gap: 8px;
-  padding: 6px 0;
-}
-
-.dds-status-dialog form {
-  display: grid;
-  gap: 12px;
-  padding: 10px 0;
-}
-
-@media (width <= 600px) {
+  background: #177fb8;
+  color: #fff;
+  box-shadow: 0 0 0 1px #ffffff60;
+  font:
+    12px Arial,
+    sans-serif;
+  > header,
+  .dds-history > header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5px 8px;
+    gap: 8px;
+  }
+  p {
+    margin: 6px 8px;
+  }
+  .dds-history {
+    max-height: 240px;
+    padding: 0 8px 8px;
+    overflow: auto;
+  }
   .dds-history-row {
-    grid-template-columns: 60px 110px 1fr;
+    display: grid;
+    grid-template-columns: 66px 145px minmax(0, 1fr);
+    gap: 8px;
+    padding: 6px 0;
+    border-top: 1px solid #ffffff25;
+    span {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+  }
+  .dds-panel-note {
+    opacity: 0.9;
+  }
+}
+.dds-crew-strip {
+  display: flex;
+  align-items: stretch;
+  overflow-x: auto;
+  min-height: 74px;
+  background: #46545e;
+  .arm-small-button {
+    margin: 8px;
+    align-self: center;
+    flex-shrink: 0;
+  }
+  .arm-service-tile {
+    width: 136px;
+    flex-basis: 136px;
+  }
+}
+.dds-status-dialog {
+  .MuiDialog-container {
+    align-items: flex-end;
+  }
+  .MuiDialog-paper {
+    margin: 16px 16px 86px;
+    background: #d0d5d8;
+  }
+  .MuiDialogTitle-root {
+    padding: 6px 12px;
+    font:
+      bold 14px Arial,
+      sans-serif;
+  }
+  .MuiDialogContent-root {
+    padding: 6px 12px 12px;
+  }
+  .dds-source-message {
+    margin: 0 0 8px;
+    font:
+      12px Arial,
+      sans-serif;
+  }
+  form {
+    display: flex;
+    align-items: end;
+    gap: 10px;
+    padding: 0;
+  }
+  form > * {
+    flex: 1;
+    min-width: 0;
+  }
+  form > button {
+    flex: 0 0 auto;
+    height: 34px;
+  }
+  textarea {
+    min-height: 54px;
+  }
+}
+@media (max-width: 800px) {
+  .dds-footer .arm-footer-tools {
+    max-width: 190px;
+    flex-wrap: wrap;
+    padding: 4px;
+  }
+  .dds-response-panel {
+    left: 8px;
+    width: calc(100vw - 32px);
+  }
+  .dds-status-dialog form {
+    flex-wrap: wrap;
+  }
+  .dds-status-dialog form > * {
+    flex-basis: 45%;
+  }
+  .dds-status-dialog .MuiDialog-paper {
+    margin-bottom: 90px;
+  }
+}
+@media (max-width: 600px) {
+  .dds-crew-strip .arm-service-tile small {
+    display: block;
+  }
+  .dds-response-panel .dds-history-row {
+    grid-template-columns: 60px 110px minmax(0, 1fr);
     font-size: 11px;
+  }
+  .dds-footer .dds-extra-services {
+    left: 8px;
+    max-width: calc(100vw - 32px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dds-footer .arm-service-tile {
+    transition: none;
   }
 }

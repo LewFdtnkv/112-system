@@ -197,6 +197,7 @@ function Editor({ initial }: EditorProps) {
             действия ДДС. Звонки пока не подключены.
           </Alert>
           <DDSPolicyFields
+            profileId={profile?.id}
             value={form.dds_policy!}
             onChange={(dds_policy) => setForm({ ...form, dds_policy })}
           />
@@ -204,7 +205,13 @@ function Editor({ initial }: EditorProps) {
             label="Профиль службы"
             queryKey={["profiles"]}
             value={profile}
-            onChange={setProfile}
+            onChange={(next) => {
+              setProfile(next);
+              setForm({
+                ...form,
+                dds_policy: { ...form.dds_policy!, required_crews: [] },
+              });
+            }}
             load={async (q, signal) =>
               (await trainingApi.profiles(q, signal)).map((p) => ({
                 id: p.id,

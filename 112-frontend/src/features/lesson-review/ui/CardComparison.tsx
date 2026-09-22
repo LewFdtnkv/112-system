@@ -1,5 +1,6 @@
 import { Button, ToggleButton, ToggleButtonGroup } from "@mui/material";
 import { useState } from "react";
+import { CrewResults } from "./CrewResults";
 import { comparisonFields, fieldVerdict } from "../model/comparison";
 import "../styles/card-comparison.scss";
 import type {
@@ -97,6 +98,7 @@ export function CardComparison({ row, actions }: CardComparisonProps) {
           Расхождений и полей для проверки нет.
         </p>
       )}
+      <CrewResults crews={row.attempt?.dds?.crews ?? []} />
       {layout === "table" ? (
         <div className="comparison-table-wrap">
           <table aria-label="Автоматическая проверка полей">

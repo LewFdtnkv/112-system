@@ -81,11 +81,27 @@ test("real API: EKP file roundtrip, rule editing, profile publication and DDS ex
   const label = `ЕКП браузер ${suffix}`;
   const fire = `fire${suffix}`,
     med = `med${suffix}`;
+  const extraNames = [
+    "Деп. ЖКХ",
+    "ЦЭМП",
+    "ЦОДД",
+    "Мос. Без.",
+    "Мослифт",
+    "ОАТИ",
+    "Поселение Вороновское",
+    "Поселение ТиНАО",
+  ];
+  const extraServices = extraNames.map((name, i) => ({
+    code: `extra${suffix}-${i}`,
+    name: `Учебная служба: ${name}`,
+    short_name: name,
+  }));
   const document = {
     format: "system112-ekp-v1",
     label,
     services: [
-      { code: fire, name: "Учебная пожарная служба" },
+      { code: fire, name: "Учебная пожарная служба", short_name: "Служба 101" },
+      ...extraServices,
       { code: med, name: "Учебная скорая помощь" },
     ],
     entries: [
@@ -97,6 +113,11 @@ test("real API: EKP file roundtrip, rule editing, profile publication and DDS ex
         features: [{ key: "victims", label: "Есть пострадавшие" }],
         routes: [
           { service_code: fire, is_main: true, when: {} },
+          ...extraServices.map((s) => ({
+            service_code: s.code,
+            is_main: false,
+            when: {},
+          })),
           { service_code: med, is_main: false, when: { victims: true } },
         ],
       },
@@ -137,7 +158,11 @@ test("real API: EKP file roundtrip, rule editing, profile publication and DDS ex
   await download.saveAs(file);
   const exported = JSON.parse(await readFile(file, "utf8"));
   expect(exported.entries[0].name).toBe("Пожар в жилом доме (учебный)");
-  expect(exported.entries[0].routes).toEqual(document.entries[0].routes);
+  expect(exported.entries[0].routes).toEqual(
+    document.entries[0].routes.toSorted((a, b) =>
+      a.service_code.localeCompare(b.service_code),
+    ),
+  );
   await page.getByRole("button", { name: "Закрыть справочник" }).click();
   await page
     .getByRole("row")
@@ -166,6 +191,23 @@ test("real API: EKP file roundtrip, rule editing, profile publication and DDS ex
     .fill(
       "Проверьте принадлежность карточки, примите её и фиксируйте сообщения наряда.",
     );
+  for (const [index, code, name] of [
+    [1, "water", "Аварийная бригада"],
+    [2, "reserve", "Резервная бригада"],
+  ] as const) {
+    await page
+      .getByRole("button", { name: "Добавить бригаду", exact: true })
+      .click();
+    await page
+      .getByRole("textbox", { name: `Код бригады ${index}`, exact: true })
+      .fill(code);
+    await page
+      .getByRole("textbox", { name: `Название бригады ${index}`, exact: true })
+      .fill(name);
+    await page
+      .getByLabel(`Назначение бригады ${index}`, { exact: true })
+      .fill("Учебное реагирование в районе Вороновское");
+  }
   await page.getByRole("dialog").screenshot({
     path: info.outputPath("catalog-service-profile.png"),
     animations: "disabled",
@@ -195,6 +237,9 @@ test("real API: EKP file roundtrip, rule editing, profile publication and DDS ex
   );
   const services = await call("GET", `views/admin/services?q=${fire}`, admin);
   const fireId = services.items[0].id;
+  const extraIds = (
+    await call("GET", `views/admin/services?q=extra${suffix}`, admin)
+  ).items.map((s: { id: string }) => s.id);
   const card = await call("POST", "cards", teacher.token, {
     title: `Пожар ${suffix}`,
     classifier_version_id: version.id,
@@ -213,7 +258,7 @@ test("real API: EKP file roundtrip, rule editing, profile publication and DDS ex
       caller_name: "Учебный заявитель",
       features: { ekp: { victims: false } },
     },
-    recipient_service_ids: [fireId],
+    recipient_service_ids: [fireId, ...extraIds],
   });
   await page.getByRole("button", { name: "Выйти", exact: true }).click();
   await login(page, teacher.username, password + "-final");
@@ -242,6 +287,15 @@ test("real API: EKP file roundtrip, rule editing, profile publication and DDS ex
     })
     .fill("УЧ-42");
   await choose(page, "Профиль службы", profileName);
+  await page
+    .getByRole("combobox", {
+      name: "Цель для бригады «Аварийная бригада»",
+      exact: true,
+    })
+    .click();
+  await page
+    .getByRole("option", { name: "Работы завершены", exact: true })
+    .click();
   await choose(page, "Карточка из библиотеки", card.title);
   await page
     .getByRole("button", { name: "Добавить карточку", exact: true })
@@ -287,6 +341,33 @@ test("real API: EKP file roundtrip, rule editing, profile publication and DDS ex
   await expect(
     page.getByText("Пожар в учебном доме", { exact: true }),
   ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Все службы (9)", exact: true })
+    .click();
+  await expect(page.getByLabel("Дополнительные службы")).toBeVisible();
+  await page
+    .getByLabel("Дополнительные службы")
+    .getByRole("button")
+    .first()
+    .click();
+  await expect(
+    page.getByRole("button", {
+      name: "Редактировать статус службы",
+      exact: true,
+    }),
+  ).not.toBeVisible();
+  await page.screenshot({
+    path: info.outputPath("dds-services-expanded.png"),
+    animations: "disabled",
+  });
+  await page
+    .getByRole("button", { name: "Свернуть службы", exact: true })
+    .click();
+  await page
+    .locator(".dds-service-grid")
+    .getByRole("button")
+    .filter({ hasText: "Служба 101" })
+    .click();
   for (const [status, comment] of [
     ["accepted", "Карточка принята"],
     ["completed", "Работы завершены"],
@@ -316,6 +397,93 @@ test("real API: EKP file roundtrip, rule editing, profile publication and DDS ex
     await expect(
       page.getByRole("textbox", { name: "Комментарий ДДС", exact: true }),
     ).not.toBeVisible();
+    if (status === "accepted") {
+      for (const code of ["water", "reserve"]) {
+        await page
+          .getByRole("button", { name: "+ Назначить бригаду", exact: true })
+          .click();
+        await page
+          .getByRole("combobox", { name: "Бригада", exact: true })
+          .selectOption(code);
+        await page
+          .getByRole("textbox", { name: "Номер наряда", exact: true })
+          .fill(code === "water" ? "23" : "24");
+        await page
+          .getByRole("textbox", { name: "Комментарий бригады", exact: true })
+          .fill("Назначена по сведениям задания");
+        await page
+          .getByRole("button", { name: "Назначить бригаду", exact: true })
+          .click();
+        await expect(
+          page.getByRole("textbox", {
+            name: "Комментарий бригады",
+            exact: true,
+          }),
+        ).not.toBeVisible();
+      }
+      await page
+        .getByRole("button", { name: "Изменить статус бригады", exact: true })
+        .click();
+      await page
+        .getByRole("combobox", { name: "Статус бригады", exact: true })
+        .selectOption("cancelled");
+      await page
+        .getByRole("textbox", { name: "Комментарий бригады", exact: true })
+        .fill("Резерв не требуется после уточнения");
+      await page
+        .getByRole("button", { name: "Сохранить статус", exact: true })
+        .click();
+      await expect(
+        page.getByRole("textbox", { name: "Комментарий бригады", exact: true }),
+      ).not.toBeVisible();
+      await page
+        .getByRole("button")
+        .filter({ hasText: "Аварийная бригада" })
+        .click();
+      for (const crewStatus of [
+        "responding",
+        "arrived",
+        "in_progress",
+        "completed",
+      ]) {
+        await page
+          .getByRole("button", { name: "Изменить статус бригады", exact: true })
+          .click();
+        await page
+          .getByRole("combobox", { name: "Статус бригады", exact: true })
+          .selectOption(crewStatus);
+        await page
+          .getByRole("textbox", { name: "Комментарий бригады", exact: true })
+          .fill(
+            {
+              responding: "Старший сообщил: бригада выехала",
+              arrived: "Бригада прибыла на место",
+              in_progress: "Приступили к устранению аварии",
+              completed: "Авария устранена, работы завершены",
+            }[crewStatus] ?? crewStatus,
+          );
+        if (crewStatus === "in_progress")
+          await page.screenshot({
+            path: info.outputPath("dds-crew-editor.png"),
+            animations: "disabled",
+          });
+        await page
+          .getByRole("button", { name: "Сохранить статус", exact: true })
+          .click();
+        await expect(
+          page.getByRole("textbox", {
+            name: "Комментарий бригады",
+            exact: true,
+          }),
+        ).not.toBeVisible();
+      }
+      await page.screenshot({ path: info.outputPath("dds-crews-desktop.png") });
+      await page.setViewportSize({ width: 1366, height: 768 });
+      await page.screenshot({ path: info.outputPath("dds-crews-laptop.png") });
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.screenshot({ path: info.outputPath("dds-crews-mobile.png") });
+      await page.setViewportSize({ width: 1920, height: 964 });
+    }
   }
   await page.screenshot({
     path: info.outputPath("catalog-dds-workplace.png"),
@@ -381,9 +549,7 @@ test("real API: EKP file roundtrip, rule editing, profile publication and DDS ex
       .filter({ hasText: "Учебная скорая помощь" }),
   ).not.toBeVisible();
   await expect(
-    editor
-      .locator(".arm-service-tile")
-      .filter({ hasText: "Учебная пожарная служба" }),
+    editor.locator(".arm-service-tile").filter({ hasText: "Служба 101" }),
   ).toBeVisible();
   await editor
     .getByRole("button", { name: "Сохранить черновик", exact: true })
@@ -400,5 +566,21 @@ test("real API: EKP file roundtrip, rule editing, profile publication and DDS ex
   await expect(
     page.getByRole("button", { name: "Есть пострадавшие: Нет", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: "Закрыть", exact: true }).click();
+  await page.goto("/student");
+  await page.getByRole("button", { name: "Выйти", exact: true }).click();
+  await login(page, teacher.username, password + "-final");
+  await expect(page).toHaveURL(/teacher$/);
+  await page.goto(`/results/${lesson.id}?student=${student.id}`);
+  await expect(
+    page.getByRole("region", { name: "Работа бригад" }),
+  ).toContainText("Аварийная бригада");
+  await expect(
+    page.getByRole("region", { name: "Работа бригад" }),
+  ).toContainText("Назначение отменено");
+  await page.getByRole("region", { name: "Работа бригад" }).screenshot({
+    path: info.outputPath("dds-crews-review.png"),
+    animations: "disabled",
+  });
   expect(errors).toEqual([]);
 });

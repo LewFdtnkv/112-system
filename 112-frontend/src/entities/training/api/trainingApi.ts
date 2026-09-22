@@ -3,6 +3,7 @@ import type { FeatureValue } from "@/shared/lib/featureValues";
 import type {
   CatalogRule,
   CatalogVersion,
+  CrewCommand,
   ProfileInput,
   ServiceProfile,
 } from "../model/catalogTypes";
@@ -119,6 +120,10 @@ export const trainingApi = {
   ) => post<Attempt>(`student/attempts/${id(attemptId)}/dds/actions`, data),
   ddsSubmit: (attemptId: string, revision: number) =>
     post<Attempt>(`student/attempts/${id(attemptId)}/dds/submit`, { revision }),
+  ddsCrew: (attemptId: string, data: CrewCommand) =>
+    post<Attempt>(`student/attempts/${id(attemptId)}/dds/crews`, data),
+  profile: (profileId: string, signal?: AbortSignal) =>
+    get<ServiceProfile>(`service-profiles/${id(profileId)}`, {}, signal),
 
   automaticGrade: (lessonId: string, studentId: string) =>
     post<Grade | null>(
