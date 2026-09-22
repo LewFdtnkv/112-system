@@ -12,7 +12,6 @@ export function useDDSWorkspace({
   const [attempt, setAttempt] = useState(initial);
   const [activeService, setActiveService] = useState("");
   const [activeCrew, setActiveCrew] = useState("");
-  const [serviceHistory, setServiceHistory] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [editing, setEditing] = useState(false);
   const [target, setTarget] = useState<"service" | "crew">("service");
@@ -56,7 +55,6 @@ export function useDDSWorkspace({
         setActiveCrew(
           dds.crews?.some((c) => c.crew_code === crewCode) ? crewCode : "",
         );
-        setServiceHistory(false);
       }
       update(value);
     },
@@ -102,8 +100,6 @@ export function useDDSWorkspace({
     activeCrew,
     setActiveService,
     setActiveCrew,
-    serviceHistory,
-    setServiceHistory,
     expanded,
     setExpanded,
     editing,

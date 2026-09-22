@@ -20,7 +20,6 @@ export function DDSFooter({ workspace: w }: DDSControlsProps) {
   const selectService = (id: string) => {
     w.setActiveService(activeService === id ? "" : id);
     w.setActiveCrew("");
-    w.setServiceHistory(false);
   };
   const serviceTile = (r: (typeof dds.responses)[number]) => (
     <DDSTile
@@ -91,11 +90,8 @@ export function DDSFooter({ workspace: w }: DDSControlsProps) {
           disabled={busy}
         />
       </div>
-      {service && (
-        <div
-          className="dds-crew-strip"
-          aria-label={own ? "Бригады службы" : "Действия службы"}
-        >
+      {own && service && (
+        <div className="dds-crew-strip" aria-label="Бригады службы">
           {own &&
             dds.crews?.map((c) => (
               <DDSTile
@@ -111,7 +107,6 @@ export function DDSFooter({ workspace: w }: DDSControlsProps) {
                   w.setActiveCrew(
                     activeCrew === c.crew_code ? "" : c.crew_code,
                   );
-                  w.setServiceHistory(false);
                 }}
               />
             ))}
@@ -131,21 +126,9 @@ export function DDSFooter({ workspace: w }: DDSControlsProps) {
                 : "В профиле нет бригад"}
             </span>
           )}
-          <button
-            className="arm-small-button"
-            aria-expanded={w.serviceHistory}
-            onClick={() => {
-              w.setServiceHistory(!w.serviceHistory);
-              w.setActiveCrew("");
-            }}
-          >
-            История службы
-          </button>
         </div>
       )}
-      {service && (crew || w.serviceHistory) && (
-        <DDSResponseHistory workspace={w} />
-      )}
+      {crew && <DDSResponseHistory workspace={w} />}
     </footer>
   );
 }
