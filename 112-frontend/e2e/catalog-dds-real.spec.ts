@@ -307,6 +307,7 @@ test("real API: EKP file roundtrip, rule editing, profile publication and DDS ex
   await page.screenshot({
     path: info.outputPath("catalog-dds-scenario.png"),
     fullPage: true,
+    animations: "disabled",
   });
   const scenarioResponse = page.waitForResponse(
     (r) =>
