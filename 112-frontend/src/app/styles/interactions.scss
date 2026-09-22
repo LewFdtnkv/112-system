@@ -7,9 +7,7 @@
   a[href],
   summary,
   label:has(input:is([type="checkbox"], [type="radio"], [type="file"])),
-  input,
-  select,
-  textarea,
+  input:is([type="checkbox"], [type="radio"], [type="button"], [type="submit"]),
   [role="button"],
   [role="link"],
   [role="menuitem"],
@@ -20,7 +18,6 @@
   [role="option"],
   [role="checkbox"],
   [role="radio"],
-  [role="combobox"],
   [data-row-control],
   .table-clickable-row
 ) {
@@ -44,6 +41,18 @@
   &:focus-visible {
     outline: 2px solid #008bc5;
     outline-offset: -2px;
+  }
+}
+
+// Fields use their own border/underline, not the button overlay and focus box.
+:where(
+  input:not([type="checkbox"], [type="radio"]),
+  textarea,
+  select,
+  [role="combobox"]
+) {
+  &:focus-visible {
+    outline: none;
   }
 }
 

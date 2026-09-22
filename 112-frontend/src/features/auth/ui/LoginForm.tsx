@@ -1,20 +1,25 @@
 import LoginIcon from "@mui/icons-material/Login";
 import { Alert, Button, Stack, TextField } from "@mui/material";
-import { useForm } from "react-hook-form";
-import type { LoginFormProps, LoginValues } from "../types/LoginForm";
+import { useLoginForm } from "../model/useLoginForm";
+import type { LoginFormProps } from "../types/LoginForm";
 
 export const LoginForm = ({ error, onSubmit }: LoginFormProps) => {
   const {
-    register,
+    username,
+    usernameRef,
+    password,
+    passwordRef,
     handleSubmit,
+    onKeyDown,
     formState: { errors, isSubmitting },
-  } = useForm<LoginValues>({ defaultValues: { username: "", password: "" } });
+  } = useLoginForm();
 
   return (
     <Stack
       component="form"
       spacing={2}
       onSubmit={handleSubmit(onSubmit)}
+      onKeyDown={onKeyDown}
       noValidate
     >
       {error && <Alert severity="error">{error}</Alert>}
@@ -24,14 +29,9 @@ export const LoginForm = ({ error, onSubmit }: LoginFormProps) => {
         label="Логин"
         type="text"
         autoComplete="username"
-        {...register("username", {
-          required: "Укажите логин.",
-          pattern: {
-            value: /^[A-Za-z0-9_.-]{1,50}$/,
-            message:
-              "Используйте латинские буквы, цифры, точку, дефис или подчёркивание.",
-          },
-        })}
+        autoFocus
+        inputRef={usernameRef}
+        {...username}
         error={Boolean(errors.username)}
         helperText={errors.username?.message}
       />
@@ -41,7 +41,8 @@ export const LoginForm = ({ error, onSubmit }: LoginFormProps) => {
         label="Пароль"
         type="password"
         autoComplete="current-password"
-        {...register("password", { required: "Укажите пароль." })}
+        inputRef={passwordRef}
+        {...password}
         error={Boolean(errors.password)}
         helperText={errors.password?.message}
       />

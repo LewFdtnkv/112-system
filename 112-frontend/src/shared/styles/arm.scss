@@ -59,15 +59,12 @@
 .arm-field select:hover:not(:disabled),
 .arm-field textarea:hover:not(:disabled) {
   border-bottom-color: #8096a4;
-  background: #ffffff45;
 }
 
 .arm-field input:focus,
 .arm-field select:focus,
 .arm-field textarea:focus {
   border-bottom-color: #008cc8;
-  box-shadow: 0 1px #008cc8;
-  background: #ffffff60;
 }
 
 .arm-field input:disabled,
@@ -163,9 +160,7 @@
   opacity: 0.5;
   cursor: default;
 }
-
-:where(.arm-workspace, .arm-card-dialog, .arm-aux-dialog) button:focus-visible,
-:where(.arm-workspace, .arm-card-dialog) select:focus-visible {
+:where(.arm-workspace, .arm-card-dialog, .arm-aux-dialog) button:focus-visible {
   outline: 2px solid #008fce;
   outline-offset: 2px;
 }

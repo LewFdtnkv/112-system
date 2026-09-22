@@ -23,6 +23,38 @@ const profile = {
   must_change_password: false,
 };
 
+test("copy login into password, append suffix and submit with Enter", async ({
+  page,
+}) => {
+  let calls = 0;
+  await page.route("**/api/v1/auth/login", async (route) => {
+    calls++;
+    expect(route.request().postDataJSON()).toEqual({
+      username: "teacher",
+      password: "teacher-123",
+    });
+    await route.fulfill({ json: pair });
+  });
+  await page.route("**/api/v1/users/me", (route) =>
+    route.fulfill({ json: profile }),
+  );
+  await page.goto("/login");
+  const username = page.getByLabel("Логин", { exact: true });
+  const password = page.getByLabel("Пароль", { exact: true });
+  await expect(username).toBeFocused();
+  await username.fill("teacher");
+  await username.press("ControlOrMeta+A");
+  await username.press("ControlOrMeta+C");
+  await password.click();
+  await password.press("ControlOrMeta+V");
+  await expect(password).toHaveValue("teacher");
+  await password.press("End");
+  await password.pressSequentially("-123");
+  await password.press("Enter");
+  await expect(page).toHaveURL(/teacher$/);
+  expect(calls).toBe(1);
+});
+
 test("API login, mandatory password change, reload, block links and logout", async ({
   page,
 }, testInfo) => {

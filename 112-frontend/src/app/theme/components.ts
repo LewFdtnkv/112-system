@@ -47,6 +47,10 @@ export const components: Components<Theme> = {
       root: {
         backgroundColor: "#ffffff",
         borderRadius: 0,
+        "&.Mui-focused:not(.Mui-error) .MuiOutlinedInput-notchedOutline": {
+          borderWidth: 1,
+          borderColor: "#8096a4",
+        },
       },
     },
   },
