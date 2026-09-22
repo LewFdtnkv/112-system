@@ -17,7 +17,7 @@ GOALS = {
         "Уточните место происшествия: по карточке должно быть понятно, куда направить помощь."
     ),
     "caller": "Проверьте сведения о заявителе и возможность связаться с ним по данным условия.",
-    "classification": "Определите тип происшествия и существенные признаки по сообщению заявителя.",
+    "classification": "Отразите известные обстоятельства происшествия и результат разговора.",
     "notification": (
         "Определите, какие службы должны получить карточку, и проверьте список оповещения."
     ),
@@ -79,7 +79,14 @@ def operator_task(source, read):
         return (
             field.field,
             skill,
-            GOALS[skill],
+            "Зафиксируйте результат вызова, не придумывая неизвестных сведений."
+            if (
+                source.get("data", {})
+                .get("additional_fields", {})
+                .get("details", {})
+                .get("noContact")
+            )
+            else GOALS[skill],
             f"Проверьте «{field.label}»: {reason}. "
             "Найдите соответствующие сведения в сообщении заявителя.",
             f"Для «{field.label}» в эталонном решении указано: {reference}.",
@@ -247,9 +254,15 @@ async def issue_hint(session, attempt_id, student_id, command):
     if not read.dds:
         from app.models import ClassifierEntry
 
-        entry = await session.get(ClassifierEntry, source.snapshot["classifier_entry_id"])
+        entry = (
+            await session.get(ClassifierEntry, source.snapshot["classifier_entry_id"])
+            if source.snapshot.get("classifier_entry_id")
+            else None
+        )
         source_data = source.snapshot | {
-            "classifier_entry": {"name": entry.display_name or entry.name}
+            "classifier_entry": {
+                "name": (entry.display_name or entry.name) if entry else "Не установлен"
+            }
         }
     if read.dds:
         names = {c["code"]: c["name"] for c in read.dds["profile"]["crews"]}

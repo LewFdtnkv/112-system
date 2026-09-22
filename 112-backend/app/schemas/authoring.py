@@ -15,6 +15,7 @@ from pydantic import (
 
 from app.models.enums import LessonStatus, PublicationStatus, TrainingMode, TrainingRole
 from app.schemas.assessment import AssessmentPolicy
+from app.schemas.card_flags import validate_count, validate_flags
 from app.schemas.catalog import ClassifierEntryRead
 from app.schemas.dds import DDSPolicy
 from app.schemas.group import Title
@@ -41,6 +42,8 @@ class CardData(BaseModel):
     additional_fields: dict[str, JsonValue] = Field(default_factory=dict)
 
     _validate_location = field_validator("additional_fields")(validate_location)
+    _validate_flags = field_validator("additional_fields")(validate_flags)
+    _validate_count = field_validator("features")(validate_count)
 
 
 class CardDefinition(BaseModel):
@@ -48,7 +51,7 @@ class CardDefinition(BaseModel):
 
     title: Title
     classifier_version_id: UUID
-    classifier_entry_id: UUID
+    classifier_entry_id: UUID | None = None
     caller_message: NonblankText | None = None
     instructions: str = Field(default="", max_length=10000)
     data: CardData
@@ -90,7 +93,7 @@ class CardListItem(BaseModel):
     id: UUID
     title: str
     classifier_version_id: UUID
-    classifier_entry_id: UUID
+    classifier_entry_id: UUID | None = None
     created_at: datetime
     revision: int
     updated_at: datetime

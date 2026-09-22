@@ -8,6 +8,7 @@ from the immutable scenario snapshot. This module is used only by teacher review
 import re
 import unicodedata
 
+from app.schemas.card_flags import FLAG_LABELS, flags
 from app.schemas.lesson_evaluation import AutomaticCheck, FieldCheck
 from app.schemas.student import StudentAttemptRead
 
@@ -189,8 +190,32 @@ def check_fields(
         "features.victimsCount",
         "Количество пострадавших",
         (expected.get("features") or {}).get("victimsCount"),
-        (actual.get("features") or {}).get("victimsCount"),
+        (
+            (actual.get("features") or {}).get("victimsCount")
+            if (actual.get("features") or {}).get("victimsCount") is not None
+            else None
+            if flags(actual).get("hasVictims")
+            else 0
+        ),
     )
+    for key, label in FLAG_LABELS.items():
+        reference = flags(expected).get(key)
+        if reference is not None:
+            answer = flags(actual).get(key, False)
+            if key == "hasVictims" and key not in flags(actual):
+                answer = ((actual.get("features") or {}).get("victimsCount") or 0) > 0
+            add(f"additional_fields.details.{key}", label, reference, answer)
+    if flags(expected).get("noContact"):
+        add(
+            "classifier_entry_id",
+            "Тип при молчаливом вызове",
+            True,
+            attempt.card.classifier_entry_id is None,
+            reference_text="Не установлен",
+            answer_text="Не установлен"
+            if attempt.card.classifier_entry_id is None
+            else "Указан тип",
+        )
     feature_labels = {f["key"]: f["label"] for f in snapshot.get("feature_definitions", [])}
     reference_answers = (expected.get("features") or {}).get("ekp") or {}
     actual_answers = (actual.get("features") or {}).get("ekp") or {}

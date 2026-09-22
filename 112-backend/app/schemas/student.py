@@ -5,6 +5,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, JsonValue, field_validator
 
 from app.models.enums import AttemptStatus, CardStatus, LessonStatus, TrainingRole
+from app.schemas.card_flags import validate_count, validate_flags
 from app.schemas.catalog import ClassifierEntryRead
 from app.schemas.learning import LearningPolicy, LearningResult
 from app.schemas.location import validate_location
@@ -24,6 +25,8 @@ class DraftData(BaseModel):
     additional_fields: dict[str, JsonValue] = Field(default_factory=dict)
 
     _validate_location = field_validator("additional_fields")(validate_location)
+    _validate_flags = field_validator("additional_fields")(validate_flags)
+    _validate_count = field_validator("features")(validate_count)
 
 
 class DraftSave(BaseModel):

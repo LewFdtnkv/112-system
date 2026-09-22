@@ -47,7 +47,11 @@ def context_hash(value):
 
 
 def field_group(path):
-    if path == "classifier_entry_id" or path.startswith("features.ekp."):
+    if (
+        path == "classifier_entry_id"
+        or path.startswith("features.ekp.")
+        or path.startswith("additional_fields.details.")
+    ):
         return "classification"
     if path == "recipients":
         return "notification"

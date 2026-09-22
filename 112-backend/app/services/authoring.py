@@ -108,13 +108,25 @@ async def card_read(session: AsyncSession, card: CardTemplate) -> CardRead:
         ],
         classifier_entry=ClassifierEntryRead.model_validate(
             await session.get(ClassifierEntry, card.classifier_entry_id)
-        ),
+        )
+        if card.classifier_entry_id
+        else None,
     )
 
 
 async def validate_card_definition(session: AsyncSession, payload: CardCreate) -> list[Service]:
     await published_classifier(session, payload.classifier_version_id)
-    entry = await session.get(ClassifierEntry, payload.classifier_entry_id)
+    from app.schemas.card_flags import check_consistency, check_silent, flags
+
+    check_consistency(payload.data)
+    check_silent(payload.data, payload.classifier_entry_id, payload.recipient_service_ids)
+    if flags(payload.data).get("noContact"):
+        return []
+    entry = (
+        await session.get(ClassifierEntry, payload.classifier_entry_id)
+        if payload.classifier_entry_id
+        else None
+    )
     if entry is None or entry.classifier_version_id != payload.classifier_version_id:
         raise HTTPException(
             status_code=422, detail="The incident code must belong to the selected classifier"
@@ -380,11 +392,15 @@ async def create_scenario(
                     "caller_message": card.caller_message,
                     "data": card.data,
                     "classifier_version_id": str(card.classifier_version_id),
-                    "classifier_entry_id": str(card.classifier_entry_id),
+                    "classifier_entry_id": str(card.classifier_entry_id)
+                    if card.classifier_entry_id
+                    else None,
                     "recipients": by_card[card.id],
                     "feature_definitions": entry_settings[
                         str(card.classifier_entry_id)
-                    ].conditions.get("features", []),
+                    ].conditions.get("features", [])
+                    if card.classifier_entry_id
+                    else [],
                     "notification_required": bool(by_card[card.id]),
                 },
             )

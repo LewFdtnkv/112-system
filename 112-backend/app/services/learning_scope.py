@@ -17,6 +17,9 @@ DETAIL_KEYS = {
     "classification": {
         "classificationDescription",
         "clarifications",
+        "hasVictims",
+        "noContact",
+        "callDropped",
         "blocked",
         "refusedAmbulance",
     },
@@ -36,7 +39,11 @@ def skills_for(policy, role="operator_112"):
 
 
 def field_skill(path):
-    if path == "classifier_entry_id" or path.startswith("features."):
+    if (
+        path == "classifier_entry_id"
+        or path.startswith("features.")
+        or path.startswith("additional_fields.details.")
+    ):
         return "classification"
     if path == "recipients":
         return "notification"
@@ -70,7 +77,10 @@ def validate_exercise(policy, scenario, cards):
                     data.get("address_text") or any((data.get("address_details") or {}).values())
                 ),
                 "caller": bool(data.get("caller_name") or data.get("caller_phone")),
-                "classification": bool(card.snapshot.get("classifier_entry_id")),
+                "classification": bool(
+                    card.snapshot.get("classifier_entry_id")
+                    or data.get("additional_fields", {}).get("details", {}).get("noContact")
+                ),
                 "notification": bool(card.snapshot.get("recipients")),
                 "description": bool(data.get("description")),
             }[skill]

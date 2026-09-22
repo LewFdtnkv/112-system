@@ -474,6 +474,10 @@ async def selected_services(session, ids):
 
 
 async def final_recipients(session, card):
+    from app.schemas.card_flags import flags
+
+    if flags(card).get("noContact"):
+        return []
     if card.recipient_service_ids is None:
         return await recipients(session, card)
     # The operator decides who to notify independently of route recommendations.
@@ -578,14 +582,21 @@ async def submit_card(
     card = await session.scalar(select(IncidentCard).where(IncidentCard.attempt_id == attempt.id))
     if card.revision != payload.revision:
         raise HTTPException(status_code=409, detail="Card revision is stale; reload the card")
-    entry = await selected_entry(session, card)
-    if (entry.notification_required and not (card.address_text or "").strip()) or not (
+    from app.schemas.card_flags import check_silent, flags
+
+    silent = flags(card).get("noContact") is True
+    check_silent(
+        DraftData.model_validate(card), card.classifier_entry_id, card.recipient_service_ids
+    )
+    entry = None if silent else await selected_entry(session, card)
+    if (entry and entry.notification_required and not (card.address_text or "").strip()) or not (
         card.description or ""
     ).strip():
         raise HTTPException(status_code=422, detail="Address and incident description are required")
     from app.services.catalog_rules import feature_definitions, validate_answers
 
-    validate_answers(feature_definitions(entry), (card.features or {}).get("ekp", {}))
+    if entry:
+        validate_answers(feature_definitions(entry), (card.features or {}).get("ekp", {}))
     targets = await final_recipients(session, card)
     now = datetime.now(UTC)
     card.saved_at = now

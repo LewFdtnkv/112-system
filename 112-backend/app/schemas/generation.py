@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, StringConstraints, model_validator
 
 from app.schemas.catalog_document import FeatureAnswer
 
@@ -18,6 +18,12 @@ class GenerationParameters(BaseModel):
     classifier_version_id: UUID | None = None
     classifier_entry_id: UUID | None = None
     service_ids: list[UUID] | None = Field(default=None, max_length=24)
+    has_victims: StrictBool | None = None
+    victims_count: int | None = Field(default=None, ge=0, le=100000, strict=True)
+    refused_ambulance: StrictBool | None = None
+    blocked: StrictBool | None = None
+    no_contact: StrictBool | None = None
+    call_dropped: StrictBool | None = None
     gender: Literal["male", "female"] | None = None
     age: int | None = Field(default=None, ge=8, le=95)
     caller_name: ShortText | None = None

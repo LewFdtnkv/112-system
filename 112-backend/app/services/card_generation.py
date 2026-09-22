@@ -21,7 +21,7 @@ from app.services.catalog_rules import (
     validate_answers,
 )
 
-PROMPT_VERSION = "card-generation-v1"
+PROMPT_VERSION = "card-generation-v2"
 CHOICES = {
     "locality": ["Москва", "Зеленоград", "Троицк"],
     "street": [
@@ -151,19 +151,27 @@ async def enqueue(session, teacher_id: UUID, request: GenerationCreate):
             if set(p.service_ids) == {r.service_id for r in routes_by_entry[e.id]}
         ]
         entries = preferred or entries
+    from app.services import generation_flags
+
     jobs = []
     for i, key in enumerate(keys):
+        silent = generation_flags.is_silent(p, rng)
         entry = rng.choice(entries)
-        definitions = feature_definitions(entry)
+        definitions = [] if silent else feature_definitions(entry)
         validate_answers(definitions, p.feature_answers, require_complete=False)
         answers = dict(p.feature_answers)
+        flags, victims_count = generation_flags.resolve(p, rng, answers, definitions, silent=silent)
         for f in definitions:
             if not feature_is_visible(f, answers):
                 continue
             if f.key in answers:
                 continue
             if f.type == "boolean":
-                answers[f.key] = rng.choice([True, False])
+                answers[f.key] = (
+                    flags["hasVictims"]
+                    if f.key in {"injured", "victims"}
+                    else rng.choice([True, False])
+                )
             elif f.type == "choice":
                 answers[f.key] = rng.choice(f.options)
             elif f.options:
@@ -176,7 +184,9 @@ async def enqueue(session, teacher_id: UUID, request: GenerationCreate):
                     f"У признака «{f.label}» нет вариантов. "
                     "Выберите тип и задайте значение вручную.",
                 )
-        recommended = applicable_routes(entry, routes_by_entry[entry.id], {"ekp": answers})
+        recommended = (
+            [] if silent else applicable_routes(entry, routes_by_entry[entry.id], {"ekp": answers})
+        )
         service_ids = (
             p.service_ids if p.service_ids is not None else [r.service_id for r in recommended]
         )
@@ -201,6 +211,7 @@ async def enqueue(session, teacher_id: UUID, request: GenerationCreate):
             "Возраст": age,
             "Учебный телефон": phone,
             "Признаки": features,
+            "Отметки карточки": generation_flags.facts(flags, victims_count),
             "Службы": [services[s].short_name or services[s].name for s in service_ids],
             "Полные названия служб": [services[s].name for s in service_ids],
             **{
@@ -226,11 +237,35 @@ async def enqueue(session, teacher_id: UUID, request: GenerationCreate):
                 "caller_name": name,
                 "caller_phone": phone,
                 "caller_details": {"gender": label("gender", gender), "age": age},
-                "features": {"ekp": answers},
+                "features": {"ekp": answers, "victimsCount": victims_count},
+                "additional_fields": {"details": flags},
             },
             recipient_service_ids=service_ids,
             use_recommended_recipients=p.service_ids is None,
         )
+        if silent:
+            facts = {
+                "Тип происшествия": "Не установлен — молчаливый вызов",
+                "Адрес": "Неизвестен",
+                "Службы": [],
+                "Отметки карточки": generation_flags.facts(flags, None),
+                "Обстоятельства": (
+                    "Соединение установлено. В ответ на обращения оператора — "
+                    "тишина. Сведения не получены."
+                ),
+            }
+            card = CardCreate(
+                title="Молчаливый вызов",
+                classifier_version_id=version.id,
+                classifier_entry_id=None,
+                recipient_service_ids=[],
+                data={
+                    "description": (
+                        "Соединение установлено, заявитель молчит. Сведения не получены."
+                    ),
+                    "additional_fields": {"details": flags},
+                },
+            )
         await validate_card_definition(session, card)
         job = AIJob(
             purpose=AIPurpose.GENERATION,
@@ -257,6 +292,13 @@ async def enqueue(session, teacher_id: UUID, request: GenerationCreate):
 
 def prompt(facts):
     return (
+        "Отметки карточки заданы заранее, их нельзя менять. «Нет "
+        "контакта» означает молчаливый вызов, "
+        "речи заявителя и сведений нет. «Срыв звонка» — соединение "
+        "прервалось; это наблюдение оператора, "
+        "не фраза заявителя. При отсутствии срыва разговор не прерывай. "
+        "«Пострадавшие», отказ от скорой и заблокированные должны соответствовать фактам. "
+        "Если отметка Нет — не описывай её как случившуюся. "
         "Ты автор учебных ситуаций для оператора 112. Человек только что дозвонился "
         "оператору и рассказывает, что видит сейчас. Напиши на русском языке JSON:\n"
         "title: короткий заголовок о происшествии;\n"

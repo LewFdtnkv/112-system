@@ -31,7 +31,7 @@ async def claim(session):
         select(AIJob)
         .where(
             AIJob.purpose == AIPurpose.GENERATION,
-            AIJob.prompt_version == PROMPT_VERSION,
+            AIJob.prompt_version.in_(["card-generation-v1", PROMPT_VERSION]),
             AIJob.created_by_id.is_not(None),
             or_(
                 and_(AIJob.status == JobStatus.QUEUED, AIJob.available_at <= now),
@@ -77,6 +77,19 @@ async def renew(session, job_id, token):
 
 
 def call_model(job):
+    from app.schemas.card_flags import flags
+
+    if flags(job.input["card"]["data"]).get("noContact"):
+        disconnected = flags(job.input["card"]["data"]).get("callDropped")
+        text = (
+            "Соединение установлено. После приветствия и повторных обращений "
+            "оператора в ответ тишина. Сведения о происшествии не получены."
+        )
+        if disconnected:
+            text += " Затем соединение прервалось."
+        return GeneratedText(title="Молчаливый вызов", caller_message=text, description=text), {
+            "source": "silent-call-template-v1"
+        }
     seed = (job.input["seed"] + max(0, job.retry_count - 1)) % (2**31)
     request = urllib.request.Request(
         settings.llm_base_url.rstrip("/") + "/api/chat",
@@ -162,7 +175,7 @@ async def finish(session, job_id, token, text: GeneratedText, metadata):
 
     payload.caller_message = (
         text.caller_message.strip()
-        + "\n\nСведения со слов заявителя:\n"
+        + "\n\nКонтрольные сведения учебной ситуации (при расхождении используйте их):\n"
         + "\n".join(f"{key}: {readable(value)}" for key, value in facts.items())
     )
     payload = CardCreate.model_validate(payload.model_dump())

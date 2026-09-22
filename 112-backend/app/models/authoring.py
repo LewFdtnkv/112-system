@@ -40,7 +40,7 @@ class CardTemplate(UUIDPrimaryKey, CreatedAt, Base):
     classifier_version_id: Mapped[UUID] = mapped_column(
         ForeignKey("classifier_versions.id", ondelete="RESTRICT"), index=True
     )
-    classifier_entry_id: Mapped[UUID] = mapped_column(index=True)
+    classifier_entry_id: Mapped[UUID | None] = mapped_column(index=True)
     caller_message: Mapped[str | None] = mapped_column(Text)
     instructions: Mapped[str] = mapped_column(Text, default="", server_default="")
     data: Mapped[dict[str, Any]] = mapped_column(JSONB)

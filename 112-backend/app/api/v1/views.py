@@ -209,7 +209,7 @@ async def cards(
             func.coalesce(usage.c.count, 0),
             AIJob.id,
         )
-        .join(ClassifierEntry, ClassifierEntry.id == CardTemplate.classifier_entry_id)
+        .outerjoin(ClassifierEntry, ClassifierEntry.id == CardTemplate.classifier_entry_id)
         .join(ClassifierVersion, ClassifierVersion.id == CardTemplate.classifier_version_id)
         .outerjoin(usage, usage.c.card_template_id == CardTemplate.id)
         .outerjoin(AIJob, AIJob.card_template_id == CardTemplate.id)
@@ -245,7 +245,7 @@ async def cards(
                 classifier_version_id=card.classifier_version_id,
                 classifier_entry_id=card.classifier_entry_id,
                 created_at=card.created_at,
-                incident_name=display_name or name,
+                incident_name=display_name or name or "Молчаливый вызов",
                 classifier_label=label,
                 address_text=card.data.get("address_text") or "",
                 recipients=services[card.id],

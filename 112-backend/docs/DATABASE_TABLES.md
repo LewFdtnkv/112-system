@@ -350,7 +350,7 @@ PK — первичный ключ; `NULL` — допустимое отсутс
 | `created_by_id` | `UUID` | нет | — | `—` |
 | `title` | `VARCHAR(255)` | нет | — | `—` |
 | `classifier_version_id` | `UUID` | нет | — | `—` |
-| `classifier_entry_id` | `UUID` | нет | — | `—` |
+| `classifier_entry_id` | `UUID` | да | — | `—` |
 | `caller_message` | `TEXT` | да | — | `—` |
 | `instructions` | `TEXT` | нет | — | `''` |
 | `revision` | `INTEGER` | нет | — | `1` |
