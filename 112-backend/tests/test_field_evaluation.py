@@ -38,9 +38,9 @@ async def test_normalization_omissions_and_free_text(exercise):
     assert by_key["address_details.house"].status == "different"
     assert by_key["address_details.apartment"].status == "missing"
     assert by_key["description"].status == "needs_review" and not by_key["description"].scored
-    assert by_key["features.victimsCount"].status == "matched"
-    assert check.earned_points == 7 and check.possible_points == 9
-    assert check.score_percent == 77.78
+    assert "features.victimsCount" not in by_key
+    assert check.earned_points == 6 and check.possible_points == 8
+    assert check.score_percent == 75
     alternate = deepcopy(snapshot)
     alternate["data"]["description"] = attempt.card.data.description
     assert check_fields(alternate, attempt).score_percent == check.score_percent

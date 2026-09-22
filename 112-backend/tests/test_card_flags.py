@@ -59,6 +59,8 @@ async def test_flags_are_scored_without_inventing_legacy_answers(exercise):
             }
         }
     }
+    reference["data"]["features"] = {"victimsCount": 2}
+    a.card.data.features = {"victimsCount": None}
     a.card.data.additional_fields = {
         "details": {"hasVictims": True, "refusedAmbulance": True, "blocked": True}
     }

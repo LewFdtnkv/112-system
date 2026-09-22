@@ -186,18 +186,8 @@ def check_fields(
         actual.get("victim_details"),
         scored=False,
     )
-    add(
-        "features.victimsCount",
-        "Количество пострадавших",
-        (expected.get("features") or {}).get("victimsCount"),
-        (
-            (actual.get("features") or {}).get("victimsCount")
-            if (actual.get("features") or {}).get("victimsCount") is not None
-            else None
-            if flags(actual).get("hasVictims")
-            else 0
-        ),
-    )
+    # ARM exposes a presence toggle, not a numeric input. Do not grade or hint a
+    # quantity the learner cannot enter; retain it as descriptive reference data.
     for key, label in FLAG_LABELS.items():
         reference = flags(expected).get(key)
         if reference is not None:
