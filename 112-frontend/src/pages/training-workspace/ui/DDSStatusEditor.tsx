@@ -1,11 +1,6 @@
 import { crewStatusLabels, ddsStatusLabels } from "@/entities/training";
 import { getApiError } from "@/shared/api";
-import {
-  ArmField,
-  ArmIconButton,
-  ArmSelect,
-  ArmTextarea,
-} from "@/shared/ui/arm";
+import { ArmField, ArmIconButton, ArmSelect } from "@/shared/ui/arm";
 import { Dialog, DialogContent, DialogTitle } from "@mui/material";
 import type { DDSControlsProps } from "../types/DDSControls";
 
@@ -25,22 +20,16 @@ export function DDSStatusEditor({ workspace: w }: DDSControlsProps) {
       fullWidth
       maxWidth="lg"
       className="arm-aux-dialog dds-status-dialog"
+      aria-labelledby="dds-status-title"
     >
-      <DialogTitle>
+      <DialogTitle id="dds-status-title" className="dds-status-title">
         {isCrew
           ? crew
             ? `Бригада: ${crew.name}`
             : "Назначение бригады"
           : `Статус службы: ${w.dds.profile.name}`}
-        <ArmIconButton
-          icon="close"
-          label="Закрыть изменение статуса"
-          disabled={w.busy}
-          onClick={() => w.setEditing(false)}
-        />
       </DialogTitle>
       <DialogContent>
-        <p className="dds-source-message">{w.dds.information?.message}</p>
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -82,7 +71,7 @@ export function DDSStatusEditor({ workspace: w }: DDSControlsProps) {
               w.changed();
             }}
           >
-            <option value="">Выберите статус</option>
+            <option value="">Статус</option>
             {options.map((s) => (
               <option key={s} value={s}>
                 {labels[s]}
@@ -91,6 +80,7 @@ export function DDSStatusEditor({ workspace: w }: DDSControlsProps) {
           </ArmSelect>
           <ArmField
             label="Номер наряда"
+            placeholder="Номер наряда"
             value={w.number}
             maxLength={100}
             disabled={w.busy}
@@ -99,11 +89,11 @@ export function DDSStatusEditor({ workspace: w }: DDSControlsProps) {
               w.changed();
             }}
           />
-          <ArmTextarea
+          <ArmField
             label={isCrew ? "Комментарий бригады" : "Комментарий ДДС"}
+            placeholder="Комментарий"
             value={w.comment}
-            required
-            rows={2}
+            required={!isCrew}
             maxLength={10000}
             disabled={w.busy}
             onChange={(e) => {
@@ -111,18 +101,24 @@ export function DDSStatusEditor({ workspace: w }: DDSControlsProps) {
               w.changed();
             }}
           />
-          <button
-            className="arm-small-button"
+          <ArmIconButton
+            icon="check"
+            label={isCrew && !crew ? "Назначить бригаду" : "Сохранить статус"}
+            className="dds-status-confirm"
             type="submit"
             disabled={
               !w.status ||
-              !w.comment.trim() ||
+              (!isCrew && !w.comment.trim()) ||
               w.busy ||
               (isCrew && !w.crewCode)
             }
-          >
-            {isCrew && !crew ? "Назначить бригаду" : "Сохранить статус"}
-          </button>
+          />
+          <ArmIconButton
+            icon="close"
+            label="Закрыть изменение статуса"
+            disabled={w.busy}
+            onClick={() => w.setEditing(false)}
+          />
         </form>
         {w.save.error && (
           <p role="alert">{getApiError(w.save.error).message}</p>

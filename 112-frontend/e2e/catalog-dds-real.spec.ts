@@ -469,6 +469,35 @@ test("real API: EKP file roundtrip, rule editing, profile publication and DDS ex
         .getByRole("textbox", { name: "Комментарий бригады", exact: true })
         .fill("Резерв не требуется после уточнения");
       await page
+        .getByRole("button", { name: "Закрыть изменение статуса", exact: true })
+        .click();
+      await expect(
+        page
+          .getByLabel("Бригады службы")
+          .getByRole("button")
+          .filter({ hasText: "Резерв" }),
+      ).toContainText("Назначена");
+      await page
+        .getByRole("button", {
+          name: "Изменить статус бригады «Резервная бригада»",
+          exact: true,
+        })
+        .click();
+      await page
+        .getByRole("combobox", { name: "Статус бригады", exact: true })
+        .selectOption("cancelled");
+      // A crew status may be saved without a comment, including cancellation.
+      await expect(
+        page.getByRole("textbox", { name: "Комментарий бригады", exact: true }),
+      ).toHaveValue("");
+      await expect(
+        page.getByRole("button", { name: "Сохранить статус", exact: true }),
+      ).toBeEnabled();
+      await page.screenshot({
+        path: info.outputPath("dds-status-empty-comment.png"),
+        animations: "disabled",
+      });
+      await page
         .getByRole("button", { name: "Сохранить статус", exact: true })
         .click();
       await expect(
@@ -503,11 +532,18 @@ test("real API: EKP file roundtrip, rule editing, profile publication and DDS ex
               completed: "Авария устранена, работы завершены",
             }[crewStatus] ?? crewStatus,
           );
-        if (crewStatus === "in_progress")
+        if (crewStatus === "in_progress") {
           await page.screenshot({
             path: info.outputPath("dds-crew-editor.png"),
             animations: "disabled",
           });
+          await page.setViewportSize({ width: 390, height: 844 });
+          await page.screenshot({
+            path: info.outputPath("dds-status-mobile.png"),
+            animations: "disabled",
+          });
+          await page.setViewportSize({ width: 1920, height: 964 });
+        }
         await page
           .getByRole("button", { name: "Сохранить статус", exact: true })
           .click();

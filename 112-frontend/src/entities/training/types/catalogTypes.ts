@@ -77,7 +77,7 @@ export interface CrewCommand {
   crew_code: string;
   status: string;
   crew_number: string | null;
-  comment: string;
+  comment?: string;
 }
 
 export interface DDSHistoryEntry {

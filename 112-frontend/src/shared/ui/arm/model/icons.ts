@@ -5,6 +5,7 @@ import Clipboard from "@mui/icons-material/Assignment";
 import Bolt from "@mui/icons-material/Bolt";
 import Bookmark from "@mui/icons-material/Bookmark";
 import CallEnd from "@mui/icons-material/CallEnd";
+import Check from "@mui/icons-material/Check";
 import Left from "@mui/icons-material/ChevronLeft";
 import Right from "@mui/icons-material/ChevronRight";
 import Close from "@mui/icons-material/Close";
@@ -28,6 +29,7 @@ import Translate from "@mui/icons-material/Translate";
 export const icons = {
   phone: Phone,
   callEnd: CallEnd,
+  check: Check,
   sms: Sms,
   map: Map,
   globe: Language,
