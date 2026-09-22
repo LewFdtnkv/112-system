@@ -54,18 +54,22 @@ class API:
             raise APIError(method, path, status)
         return json.loads(content) if content else None
 
-    def authenticate(self, username: str, initial: str, final: str):
-        try:
-            pair = self.request("POST", "auth/login", {"username": username, "password": final})
-            current_password = final
-        except APIError as exc:
-            if exc.status != 401:
-                raise
-            pair = self.request("POST", "auth/login", {"username": username, "password": initial})
-            current_password = initial
+    def authenticate(self, username: str, initial: str, final: str, previous: str | None = None):
+        for current_password in dict.fromkeys(p for p in (final, previous, initial) if p):
+            try:
+                pair = self.request(
+                    "POST", "auth/login", {"username": username, "password": current_password}
+                )
+                break
+            except APIError as exc:
+                if exc.status != 401:
+                    raise
+        else:
+            raise RuntimeError(f"Не удалось войти как {username}: сохранённые пароли не подходят")
         self.token = pair["access_token"]
         if pair["must_change_password"]:
             self.request("GET", "users/me", expected=(403,))
+        if pair["must_change_password"] or current_password != final:
             pair = self.request(
                 "POST",
                 "auth/change-password",
@@ -197,7 +201,7 @@ def main():
     parser.add_argument(
         "--database",
         action="store_true",
-        help="Локальное административное наполнение через DATABASE_URL; пароли не меняются",
+        help="Наполнение через DATABASE_URL; пароль администратора не меняется",
     )
     parser.add_argument(
         "--with-training",

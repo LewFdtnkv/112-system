@@ -73,7 +73,7 @@ async def populate_training(gateway, state, catalog_id, document):
             {
                 "username": f"{prefix}-{role}",
                 "initial_password": secrets.token_urlsafe(24),
-                "password": secrets.token_urlsafe(24),
+                "password": f"{prefix}-{role}-123",
             },
         )
     state.save()  # Credentials must survive a failed creation request.
@@ -100,6 +100,13 @@ async def populate_training(gateway, state, catalog_id, document):
                 "role": role,
             },
         )
+        # Persist the target before changing it; retain the old password until success.
+        # A retry after an interrupted change can authenticate with either value.
+        account["pending_password"] = f"{account['username']}-123"
+        state.save()
+        await gateway.prepare_account(ids[role], account)
+        account["password"] = account.pop("pending_password")
+        state.save()
     await gateway.use_teacher(ids["teacher"], accounts["teacher"])
     group_id = await create("group", "groups", {"name": f"{prefix}: учебная группа 112"})
     await gateway.enroll(group_id, ids["student"])
@@ -154,6 +161,10 @@ async def populate_training(gateway, state, catalog_id, document):
         "card_count": len(card_ids),
         "lesson_id": lesson_id,
         "credentials_file": str(state.path.resolve()),
+        "accounts": {
+            role: {"username": accounts[role]["username"], "password": accounts[role]["password"]}
+            for role in ("teacher", "student")
+        },
     }
 
 
@@ -165,6 +176,19 @@ class HTTPGateway:
     async def create(self, resource, payload):
         client = self.admin if resource == "users" else self.teacher
         return client.request("POST", resource, payload, (200, 201))
+
+    async def prepare_account(self, user_id, account):
+        user = self.admin.request("GET", f"users/{user_id}")
+        if user["username"] != account["username"]:
+            raise RuntimeError("Файл состояния относится к другой учётной записи")
+        client = self.api_class(self.admin.base_url)
+        client.authenticate(
+            account["username"],
+            account["initial_password"],
+            account["pending_password"],
+            previous=account["password"],
+        )
+        client.request("POST", "auth/logout", expected=(200, 204))
 
     async def use_teacher(self, teacher_id, account):
         self.teacher = self.api_class(self.admin.base_url)
@@ -236,6 +260,31 @@ class DatabaseGateway:
             or not self.teacher.is_active
         ):
             raise RuntimeError("Тестовый преподаватель из файла состояния недоступен")
+
+    async def prepare_account(self, user_id, account):
+        from fastapi import HTTPException
+
+        from app.models import User
+        from app.services import auth
+
+        user = await self.session.get(User, UUID(user_id))
+        if user is None or user.username != account["username"]:
+            raise RuntimeError("Файл состояния относится к другой учётной записи")
+        final = account["pending_password"]
+        for password in dict.fromkeys((final, account["password"], account["initial_password"])):
+            try:
+                pair = await auth.login(self.session, account["username"], password)
+                break
+            except HTTPException as exc:
+                if exc.status_code != 401:
+                    raise
+        else:
+            raise RuntimeError("Сохранённые пароли тестового аккаунта не подходят")
+        identity = await auth.authenticate(self.session, pair.access_token)
+        if pair.must_change_password or password != final:
+            pair = await auth.change_password(self.session, identity, password, final)
+            identity = await auth.authenticate(self.session, pair.access_token)
+        await auth.logout(self.session, identity)
 
     async def enroll(self, group_id, student_id):
         from app.services.groups import add_student

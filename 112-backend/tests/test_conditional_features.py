@@ -151,7 +151,7 @@ async def test_cleanup_refuses_service_used_by_other_catalog(db_session):
 
 
 @pytest.mark.anyio
-async def test_local_training_uses_source_catalog_and_repeats(db_session, tmp_path):
+async def test_local_training_uses_source_catalog_and_repeats(db_session, tmp_path, auth_settings):
     from sqlalchemy import func, select
 
     from app.models import CardTemplate, ClassifierVersion, Lesson, User
@@ -168,6 +168,13 @@ async def test_local_training_uses_source_catalog_and_repeats(db_session, tmp_pa
     )
     for model, count in [(User, 3), (CardTemplate, 6), (Lesson, 1), (ClassifierVersion, 1)]:
         assert await db_session.scalar(select(func.count()).select_from(model)) == count
+    from app.services.auth import login
+
+    for role in ("teacher", "student"):
+        account = state.data["accounts"][role]
+        pair = await login(db_session, account["username"], account["password"])
+        assert not pair.must_change_password
+        assert account["password"] == f"demo-{role}-123"
     # Random generation must choose only fields in the selected branch.
     from uuid import uuid4
 
