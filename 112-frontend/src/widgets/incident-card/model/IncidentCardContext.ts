@@ -9,3 +9,12 @@ export function useIncidentCardContext() {
   if (!value) throw new Error("Card panels require IncidentCardContext");
   return value;
 }
+
+export function useCardSkillDisabled(skill: string) {
+  const { editor, disabled } = useIncidentCardContext();
+  return (
+    disabled ||
+    (!!editor.remote.editableSkills &&
+      !editor.remote.editableSkills.includes(skill))
+  );
+}

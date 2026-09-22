@@ -10,14 +10,7 @@ import type {
   LearningSkill,
   LessonKind,
 } from "@/entities/training";
-import {
-  Alert,
-  Checkbox,
-  Chip,
-  FormControlLabel,
-  MenuItem,
-  TextField,
-} from "@mui/material";
+import { Alert, Chip, MenuItem, TextField } from "@mui/material";
 import type { LearningSettingsProps } from "../types/LearningSettings";
 import "../styles/learning-settings.scss";
 
@@ -26,8 +19,7 @@ export function LearningSettings({
   onChange,
   role,
 }: LearningSettingsProps) {
-  const setAssistance = (patch: Partial<AssistancePolicy>) =>
-    onChange({ ...value, assistance: { ...value.assistance, ...patch } });
+  const focused = value.kind === "skill_practice" || value.kind === "review";
   return (
     <section
       className="learning-settings"
@@ -35,8 +27,8 @@ export function LearningSettings({
     >
       <h3 id="learning-settings-title">Цель и формат занятия</h3>
       <p>
-        Учебная роль определяется сценарием. Здесь выберите, чему посвящено
-        занятие и какая помощь предусмотрена.
+        Учебная роль определяется сценарием. Выберите формат и допустимую
+        глубину помощи.
       </p>
       <div
         className="learning-kind-options"
@@ -53,6 +45,9 @@ export function LearningSettings({
               onChange({
                 ...value,
                 kind,
+                target_skills: ["skill_practice", "review"].includes(kind)
+                  ? value.target_skills
+                  : [],
                 assistance:
                   kind === "assessment" ? noAssistance() : value.assistance,
               })
@@ -71,72 +66,106 @@ export function LearningSettings({
           value={value.objective}
           onChange={(e) => onChange({ ...value, objective: e.target.value })}
           slotProps={{ htmlInput: { maxLength: 2000 } }}
-          helperText="Видна ученику. Например: точно указывать адрес и выбирать нужные службы."
+          helperText="Видна ученику. Опишите результат работы, не раскрывая ответ."
         />
-        <div>
+        {focused && (
+          <>
+            <p>Целевые навыки · выберите хотя бы один</p>
+            <div
+              className="learning-skill-options"
+              role="group"
+              aria-label="Целевые навыки"
+            >
+              {(Object.keys(learningSkillLabels) as LearningSkill[])
+                .filter(
+                  (skill) =>
+                    skill !== "interface" &&
+                    (!role ||
+                      (role === "dds"
+                        ? skill.startsWith("dds_")
+                        : !skill.startsWith("dds_"))),
+                )
+                .map((skill) => (
+                  <Chip
+                    key={skill}
+                    label={learningSkillLabels[skill]}
+                    clickable
+                    color={
+                      value.target_skills.includes(skill)
+                        ? "primary"
+                        : "default"
+                    }
+                    variant={
+                      value.target_skills.includes(skill)
+                        ? "filled"
+                        : "outlined"
+                    }
+                    aria-pressed={value.target_skills.includes(skill)}
+                    onClick={() =>
+                      onChange({
+                        ...value,
+                        target_skills: value.target_skills.includes(skill)
+                          ? value.target_skills.filter((s) => s !== skill)
+                          : [...value.target_skills, skill],
+                      })
+                    }
+                  />
+                ))}
+            </div>
+            <Alert severity="info">
+              Выбранные элементы ученик выполняет сам. Остальные поля
+              подготовлены и защищены от изменений; они не входят в оценку.
+              Сценарий проверяется на совместимость перед назначением.
+            </Alert>
+            {value.target_skills.includes("notification") && (
+              <p>
+                Службы для оповещения ученик выбирает сам: исходный список будет
+                пустым.
+              </p>
+            )}
+            {value.target_skills.includes("address") && (
+              <p>
+                Структурированный адрес проверяется по отдельным полям. Если в
+                карточке задан только текстовый адрес, автоматически проверяется
+                его наличие; смысл требует проверки преподавателя.
+              </p>
+            )}
+            {value.target_skills.includes("description") && (
+              <p>
+                Для свободного описания автоматически проверяется только наличие
+                текста. Смысл проверяет преподаватель; ИИ-оценивание пока не
+                подключено.
+              </p>
+            )}
+            {role === "dds" && (
+              <p>
+                Только статусы — нужные бригады назначены заранее. Только
+                назначение — достаточно выбрать бригады. Оба навыка — полный
+                процесс работы с бригадами.
+              </p>
+            )}
+          </>
+        )}
+        {!focused && (
           <p>
-            Целевые навыки
-            {["skill_practice", "review"].includes(value.kind)
-              ? " · выберите хотя бы один"
-              : " · необязательно"}
+            Выполняется вся ситуация целиком. Предзаполнение отдельных навыков
+            не применяется.
           </p>
-          <div
-            className="learning-skill-options"
-            role="group"
-            aria-label="Целевые навыки"
-          >
-            {(Object.keys(learningSkillLabels) as LearningSkill[])
-              .filter(
-                (skill) =>
-                  skill === "interface" ||
-                  !role ||
-                  (role === "dds"
-                    ? skill.startsWith("dds_")
-                    : !skill.startsWith("dds_")),
-              )
-              .map((skill) => (
-                <Chip
-                  key={skill}
-                  label={learningSkillLabels[skill]}
-                  clickable
-                  color={
-                    value.target_skills.includes(skill) ? "primary" : "default"
-                  }
-                  variant={
-                    value.target_skills.includes(skill) ? "filled" : "outlined"
-                  }
-                  aria-pressed={value.target_skills.includes(skill)}
-                  onClick={() =>
-                    onChange({
-                      ...value,
-                      target_skills: value.target_skills.includes(skill)
-                        ? value.target_skills.filter((s) => s !== skill)
-                        : [...value.target_skills, skill],
-                    })
-                  }
-                />
-              ))}
-          </div>
-          <small>
-            Навыки задают фокус занятия. Сейчас проверяется вся карточка по
-            критериям сценария.
-          </small>
-        </div>
+        )}
         <TextField
           select
-          label="Учебная помощь"
-          value={value.assistance.mode}
+          label="Максимальная помощь"
+          value={value.assistance.max_level}
           disabled={value.kind === "assessment"}
-          onChange={(e) => {
-            const mode = e.target.value as AssistancePolicy["mode"];
+          onChange={(e) =>
             onChange({
               ...value,
-              assistance:
-                mode === "none"
-                  ? noAssistance()
-                  : { ...value.assistance, mode, on_request: true },
-            });
-          }}
+              assistance: {
+                max_level: e.target.value as AssistancePolicy["max_level"],
+                on_request: true,
+              },
+            })
+          }
         >
           {Object.entries(assistanceLabels).map(([key, label]) => (
             <MenuItem key={key} value={key}>
@@ -144,61 +173,20 @@ export function LearningSettings({
             </MenuItem>
           ))}
         </TextField>
-        {value.kind === "assessment" && (
+        {value.kind === "assessment" ? (
           <Alert severity="info">
-            Контрольное занятие проходит без учебных подсказок. Его результат
-            учитывается отдельно от тренировок.
+            Контроль проходит без подсказок и учитывается отдельно от
+            тренировок.
           </Alert>
-        )}
-        {value.assistance.mode !== "none" && (
-          <>
+        ) : (
+          value.assistance.max_level !== "none" && (
             <Alert severity="info">
-              Настройки помощи сохраняются для дальнейшего обучения. Выдача
-              подсказок пока недоступна; сейчас ученик выполняет задание
-              самостоятельно.
+              После паузы система напоминает оставшуюся цель текстом. Более
+              подробную помощь ученик запрашивает сам; подсветка появляется
+              только там, где она помогает выполнить действие. Все выданные
+              подсказки видны преподавателю в журнале.
             </Alert>
-            <div className="learning-help-options">
-              <TextField
-                select
-                label="Максимальная помощь"
-                value={value.assistance.max_level}
-                onChange={(e) =>
-                  setAssistance({
-                    max_level: e.target.value as AssistancePolicy["max_level"],
-                  })
-                }
-              >
-                <MenuItem value="goal">Напомнить цель</MenuItem>
-                <MenuItem value="explanation">Объяснить действие</MenuItem>
-                <MenuItem value="solution">Показать решение</MenuItem>
-              </TextField>
-              <TextField
-                label="Пауза перед предложением помощи, с"
-                type="number"
-                value={value.assistance.idle_seconds ?? ""}
-                onChange={(e) =>
-                  setAssistance({
-                    idle_seconds: e.target.value
-                      ? Number(e.target.value)
-                      : null,
-                  })
-                }
-                slotProps={{ htmlInput: { min: 10, max: 3600 } }}
-                helperText="Пусто — помощь только по запросу. Пауза сама по себе не считается ошибкой."
-              />
-            </div>
-            <FormControlLabel
-              label="Разрешить запрос помощи учеником"
-              control={
-                <Checkbox
-                  checked={value.assistance.on_request}
-                  onChange={(_, checked) =>
-                    setAssistance({ on_request: checked })
-                  }
-                />
-              }
-            />
-          </>
+          )
         )}
       </div>
     </section>

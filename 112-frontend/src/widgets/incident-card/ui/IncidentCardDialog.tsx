@@ -37,6 +37,7 @@ export function IncidentCardDialog({
         if (props.readOnly && reason === "escapeKeyDown") props.onClose();
       }}
       fullScreen
+      data-learning-highlight={props.remote.highlightTarget ?? undefined}
       className={`arm-card-dialog ${props.readOnlyLayout === "form" ? "arm-card-dialog--readonly-form" : ""}`}
       aria-labelledby={titleId}
     >
@@ -76,6 +77,10 @@ function IncidentCardForm(props: IncidentCardFormProps) {
   const viewing = preview || isSubmitted || !!props.readOnly;
   const summaryLayout = viewing && props.readOnlyLayout !== "form";
   const disabled = viewing || !isCallAccepted || editor.pending;
+  const locked = (skill: string) =>
+    disabled ||
+    (!!props.remote.editableSkills &&
+      !props.remote.editableSkills.includes(skill));
   const close = () => {
     if (editor.pending) return;
     if (
@@ -148,7 +153,10 @@ function IncidentCardForm(props: IncidentCardFormProps) {
         <footer
           className={`arm-card-footer ${viewing ? "arm-card-footer--view" : ""}`}
         >
-          <div className="arm-service-tiles">
+          <div
+            className="arm-service-tiles"
+            data-learning-target="notification"
+          >
             <strong>Службы:</strong>
             {editor.remote.notificationRequired === false && (
               <span>Оповещение не требуется</span>
@@ -174,7 +182,7 @@ function IncidentCardForm(props: IncidentCardFormProps) {
               <ArmIconButton
                 icon="plus"
                 label="Добавить службы"
-                disabled={disabled}
+                disabled={locked("notification")}
                 aria-expanded={servicesOpen}
                 onClick={() => setServicesOpen(!servicesOpen)}
               />
@@ -193,6 +201,7 @@ function IncidentCardForm(props: IncidentCardFormProps) {
             {!viewing && (
               <button
                 className="arm-save"
+                data-learning-target="submit"
                 aria-label={
                   editor.remote.notificationRequired === false
                     ? "Сохранить без оповещения"
@@ -295,7 +304,7 @@ function IncidentCardForm(props: IncidentCardFormProps) {
               </ArmSelect>
               <ArmTextarea
                 label="Действие оператора"
-                disabled={disabled}
+                disabled={locked("description")}
                 rows={3}
                 value={fields.operatorAction}
                 onChange={(e) =>
@@ -335,7 +344,7 @@ function IncidentCardForm(props: IncidentCardFormProps) {
         </footer>
       )}
       <CardServicesDialog
-        open={servicesOpen && !viewing}
+        open={servicesOpen && !viewing && !locked("notification")}
         onClose={() => setServicesOpen(false)}
       />
       <Dialog
@@ -369,7 +378,7 @@ function IncidentCardForm(props: IncidentCardFormProps) {
               type="number"
               min={0}
               step={1}
-              disabled={disabled}
+              disabled={locked("classification")}
               value={fields.victimsCount ?? ""}
               onChange={(e) =>
                 editor.setField(
@@ -385,7 +394,7 @@ function IncidentCardForm(props: IncidentCardFormProps) {
             (renderMap?.(formatAddress(fields.address)) ?? (
               <LocationPicker
                 initial={fields.location ?? null}
-                readOnly={disabled}
+                readOnly={locked("address")}
                 onConfirm={(point) => {
                   editor.setField("location", point);
                   setModal(undefined);

@@ -1,3 +1,4 @@
+import { LearningHelp } from "@/features/learning-assistance";
 import { attemptCard } from "@/features/incident-editing";
 import { IncidentCardDialog } from "@/widgets/incident-card";
 import { Alert } from "@mui/material";
@@ -5,8 +6,19 @@ import { useAttemptEditor } from "../model/useAttemptEditor";
 import type { AttemptEditorProps } from "../types/TrainingWorkspacePage";
 export function AttemptEditor(props: AttemptEditorProps) {
   const { onClose } = props;
-  const { attempt, autosaveError, audit, completed, submit, now, remote } =
-    useAttemptEditor(props);
+  const {
+    attempt,
+    autosaveError,
+    audit,
+    completed,
+    submit,
+    now,
+    remote,
+    activity,
+    setHighlight,
+    beforeHint,
+    busy,
+  } = useAttemptEditor(props);
   return (
     <>
       {autosaveError && (
@@ -37,6 +49,15 @@ export function AttemptEditor(props: AttemptEditorProps) {
         )}
         normSeconds={attempt.norm_seconds}
         remote={remote}
+        trainingNotice={
+          <LearningHelp
+            attempt={attempt}
+            activity={activity}
+            busy={busy}
+            beforeRequest={beforeHint}
+            onHighlight={setHighlight}
+          />
+        }
       />
     </>
   );

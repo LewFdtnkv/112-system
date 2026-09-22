@@ -8,9 +8,14 @@ export function DDSStatusEditor() {
   const w = useDDSWorkspaceContext();
   const isCrew = w.target === "crew";
   const crew = w.dds.crews?.find((c) => c.crew_code === w.crewCode);
-  const options = isCrew
+  const rawOptions = isCrew
     ? (crew?.allowed_statuses ?? ["assigned"])
     : w.dds.allowed_statuses;
+  const options =
+    w.attempt.exercise_scope &&
+    !w.attempt.exercise_scope.includes("dds_response")
+      ? rawOptions.filter((s) => s === "assigned" || s === "cancelled")
+      : rawOptions;
   const labels = isCrew ? crewStatusLabels : ddsStatusLabels;
   return (
     <Dialog

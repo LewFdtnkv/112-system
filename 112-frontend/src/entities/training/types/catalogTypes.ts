@@ -58,6 +58,7 @@ export interface ServiceProfile extends ProfileInput {
 }
 
 export interface DDSPolicy {
+  workflow?: "service-v1" | "crews-v1";
   steps: { status: string; message: string; crew_number: string | null }[];
   required_crews?: { crew_code: string; status: string }[];
 }
@@ -104,6 +105,7 @@ export interface CrewAssignment {
 }
 
 export interface DDSContext {
+  workflow?: "crews-v1" | "service-v1";
   crews?: CrewAssignment[];
   crew_goals?: { crew_code: string; name: string; status: string }[];
   profile: ServiceProfile;

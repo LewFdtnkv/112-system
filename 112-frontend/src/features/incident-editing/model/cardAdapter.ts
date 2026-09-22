@@ -69,6 +69,13 @@ export function attemptCard(attempt: Attempt): IncidentCard {
       attempt.classifier_entry?.display_name || attempt.classifier_entry?.name,
     fields: {
       ...answerFields(attempt.card.data),
+      ...(attempt.exercise_scope?.includes("address") &&
+      !attempt.card.data.address_text &&
+      !Object.values(attempt.card.data.address_details ?? {}).some(Boolean)
+        ? {
+            address: { ...emptyIncidentAddress, country: "", region: "" },
+          }
+        : {}),
       manualServices:
         attempt.card.recipient_service_ids != null
           ? services.map((s) => ({

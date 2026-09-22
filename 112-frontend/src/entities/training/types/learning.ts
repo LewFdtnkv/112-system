@@ -15,13 +15,11 @@ export type LearningSkill =
   | "dds_response"
   | "dds_crews";
 export interface AssistancePolicy {
-  mode: "none" | "text" | "visual";
-  max_level: "goal" | "explanation" | "solution";
+  max_level: "none" | "goal" | "explanation" | "solution";
   on_request: boolean;
-  idle_seconds: number | null;
 }
 export interface LearningPolicy {
-  version: "learning-v1";
+  version: "learning-v2";
   kind: LessonKind;
   objective: string;
   target_skills: LearningSkill[];
@@ -43,4 +41,18 @@ export interface LearningResult {
 export interface LearningSummaryProps {
   policy: LearningPolicy;
   result?: LearningResult | null;
+}
+
+export interface LearningHint {
+  id: string;
+  task: string;
+  level: "goal" | "explanation" | "solution";
+  text: string;
+  target: string | null;
+  presentation: "text" | "highlight";
+}
+export interface HintRead {
+  status: "ready" | "waiting" | "disabled" | "complete";
+  revision: number;
+  hint: LearningHint | null;
 }

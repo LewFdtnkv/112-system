@@ -22,28 +22,27 @@ export const lessonKindDescriptions: Record<LessonKind, string> = {
   review: "Повторить выбранные темы на новом задании.",
 };
 export const learningSkillLabels: Record<LearningSkill, string> = {
-  interface: "Работа с интерфейсом",
+  interface: "Работа с интерфейсом (позже)",
   address: "Адрес происшествия",
   caller: "Сведения о заявителе",
   classification: "Тип и признаки происшествия",
   notification: "Выбор и оповещение служб",
-  description: "Полнота описания",
-  dds_response: "Обработка карточки ДДС",
-  dds_crews: "Работа с бригадами",
+  description: "Заполнение описания",
+  dds_response: "Статусы бригад",
+  dds_crews: "Назначение бригад",
 };
 export const assistanceLabels = {
   none: "Без подсказок",
-  text: "Текстовые подсказки",
-  visual: "Подсказки с подсветкой",
+  goal: "Напоминание цели",
+  explanation: "Объяснение действия",
+  solution: "Показ эталонного решения",
 };
 export const noAssistance = (): AssistancePolicy => ({
-  mode: "none",
-  max_level: "goal",
-  on_request: false,
-  idle_seconds: null,
+  max_level: "none",
+  on_request: true,
 });
 export const defaultLearningPolicy = (): LearningPolicy => ({
-  version: "learning-v1",
+  version: "learning-v2",
   kind: "practice",
   objective: "",
   target_skills: [],

@@ -194,8 +194,12 @@ export function LessonList({
                           <TableCell>
                             {lessonKindLabels[row.learning.kind]}
                             <small className="block-detail">
-                              {assistanceLabels[row.learning.assistance.mode]}
-                              {row.learning.assistance.mode !== "none"
+                              {
+                                assistanceLabels[
+                                  row.learning.assistance.max_level
+                                ]
+                              }
+                              {row.learning.assistance.max_level !== "none"
                                 ? " · запланированы"
                                 : ""}
                             </small>

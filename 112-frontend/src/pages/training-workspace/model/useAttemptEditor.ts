@@ -18,6 +18,8 @@ export function useAttemptEditor({ initial, onSaved }: AttemptEditorProps) {
     ? getApiError(writes.draft.error).message
     : "";
   const [selected, setSelected] = useState(initial.classifier_entry);
+  const [activity, setActivity] = useState(0);
+  const [highlight, setHighlight] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const debounced = useDebounced(search.trim());
   const [answers, setAnswers] = useState<Record<string, FeatureValue>>(
@@ -94,8 +96,8 @@ export function useAttemptEditor({ initial, onSaved }: AttemptEditorProps) {
   const save = async (fields: IncidentCardFields) => {
     pendingFields.current = null;
     audit.observe(fields);
-    await audit.flush();
     const updated = await persist(fields);
+    await audit.flush();
     onSaved();
     return updated;
   };
@@ -117,6 +119,8 @@ export function useAttemptEditor({ initial, onSaved }: AttemptEditorProps) {
       ? recipients.error
       : undefined);
   const remote: RemoteEditor = {
+    editableSkills: attempt.exercise_scope,
+    highlightTarget: highlight,
     features:
       (selected?.conditions?.features as
         { key: string; label: string }[] | undefined) ?? [],
@@ -124,6 +128,7 @@ export function useAttemptEditor({ initial, onSaved }: AttemptEditorProps) {
       const serialized = JSON.stringify(fields);
       if (!completed && serialized !== observedFields.current) {
         observedFields.current = serialized;
+        setActivity(Date.now());
         pendingFields.current = fields;
       }
       audit.observe(fields);
@@ -186,5 +191,33 @@ export function useAttemptEditor({ initial, onSaved }: AttemptEditorProps) {
       (search.trim().length >= 2 && debounced !== search.trim()),
     error: error ? getApiError(error).message : undefined,
   };
-  return { attempt, autosaveError, audit, completed, submit, now, remote };
+  const beforeHint = async () => {
+    const fields = pendingFields.current;
+    if (fields) {
+      pendingFields.current = null;
+      try {
+        await persist(fields);
+      } catch (error) {
+        pendingFields.current ??= fields;
+        throw error;
+      }
+    } else if (writes.draft.error) {
+      throw new Error(
+        "Сначала сохраните черновик: предыдущая запись не удалась.",
+      );
+    }
+  };
+  return {
+    attempt,
+    autosaveError,
+    audit,
+    completed,
+    submit,
+    now,
+    remote,
+    activity,
+    setHighlight,
+    beforeHint,
+    busy: writes.draft.isPending || writes.submit.isPending,
+  };
 }

@@ -1,8 +1,4 @@
-import {
-  ddsStatusLabels,
-  trainingApi,
-  crewStatusLabels,
-} from "@/entities/training";
+import { trainingApi, crewStatusLabels } from "@/entities/training";
 import {
   Alert,
   Button,
@@ -16,9 +12,11 @@ import { styles } from "../styles/DDSPolicyFields";
 import type { DDSPolicyFieldsProps } from "../types/DDSPolicyFields";
 export function DDSPolicyFields({
   value,
-  onChange,
+  onChange: save,
   profileId,
 }: DDSPolicyFieldsProps) {
+  const onChange = (next: typeof value) =>
+    save({ ...next, workflow: "crews-v1" });
   const profile = useQuery({
     queryKey: ["profile", profileId],
     enabled: !!profileId,
@@ -27,9 +25,10 @@ export function DDSPolicyFields({
   return (
     <Stack spacing={2}>
       <Alert severity="info">
-        Последний этап определяет цель упражнения. На каждом этапе ученик
-        получает сообщение и фиксирует решение. Номер наряда для проверки должен
-        быть указан в сообщении. Звонки пока не подключены.
+        Укажите нужные бригады и цели их работы. Сообщения доступны ученику как
+        сведения по ситуации: опишите, кто нужен и что произошло. Оцениваются
+        назначение и статусы бригад; службы остаются «Добавлена». Звонки пока не
+        подключены.
       </Alert>
       {profile.error && (
         <Alert severity="error">
@@ -70,7 +69,7 @@ export function DDSPolicyFields({
                     })
                   }
                 >
-                  <MenuItem value="">Не включать в оценку</MenuItem>
+                  <MenuItem value="">Не требуется в ситуации</MenuItem>
                   {Object.entries(crewStatusLabels).map(([key, label]) => (
                     <MenuItem key={key} value={key}>
                       {label}
@@ -84,51 +83,18 @@ export function DDSPolicyFields({
       {value.steps.map((step, i) => (
         <Paper key={i} sx={styles.paper}>
           <Stack spacing={1}>
-            <b>Этап {i + 1}</b>
-            <TextField
-              select
-              label={`Ожидаемый статус этапа ${i + 1}`}
-              value={step.status}
-              onChange={(e) =>
-                onChange({
-                  ...value,
-                  steps: value.steps.map((s, j) =>
-                    j === i ? { ...s, status: e.target.value } : s,
-                  ),
-                })
-              }
-            >
-              {Object.entries(ddsStatusLabels)
-                .filter(([k]) => k !== "received")
-                .map(([k, label]) => (
-                  <MenuItem value={k} key={k}>
-                    {label}
-                  </MenuItem>
-                ))}
-            </TextField>
+            <b>Сообщение {i + 1}</b>
             <TextField
               required
               multiline
               minRows={2}
-              label={`Сообщение ученику на этапе ${i + 1}`}
+              label={`Сведения по ситуации ${i + 1}`}
               value={step.message}
               onChange={(e) =>
                 onChange({
                   ...value,
                   steps: value.steps.map((s, j) =>
                     j === i ? { ...s, message: e.target.value } : s,
-                  ),
-                })
-              }
-            />
-            <TextField
-              label={`Эталонный номер наряда на этапе ${i + 1}`}
-              value={step.crew_number ?? ""}
-              onChange={(e) =>
-                onChange({
-                  ...value,
-                  steps: value.steps.map((s, j) =>
-                    j === i ? { ...s, crew_number: e.target.value || null } : s,
                   ),
                 })
               }
@@ -142,7 +108,7 @@ export function DDSPolicyFields({
                 })
               }
             >
-              Удалить этап
+              Удалить сообщение
             </Button>
           </Stack>
         </Paper>
@@ -159,7 +125,7 @@ export function DDSPolicyFields({
           })
         }
       >
-        Добавить этап ДДС
+        Добавить сообщение
       </Button>
     </Stack>
   );

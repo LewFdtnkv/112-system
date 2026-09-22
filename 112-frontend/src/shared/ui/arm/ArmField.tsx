@@ -41,7 +41,7 @@ export function ArmSelect({
       title={feedback?.text}
     >
       <span>{label}</span>
-      <select id={id} {...props}>
+      <select id={id} aria-label={label} {...props}>
         {children}
       </select>
     </label>

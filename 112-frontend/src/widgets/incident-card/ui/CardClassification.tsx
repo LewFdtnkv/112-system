@@ -1,4 +1,7 @@
-import { useIncidentCardContext } from "../model/IncidentCardContext";
+import {
+  useIncidentCardContext,
+  useCardSkillDisabled,
+} from "../model/IncidentCardContext";
 import {
   activeFeatureDefinitions,
   featureText,
@@ -9,7 +12,8 @@ import { FeatureInput } from "@/shared/ui/FeatureInput";
 import { useState } from "react";
 import type { Props } from "../types/CardClassification";
 export function CardClassification({ viewing, onVictims }: Props) {
-  const { editor, disabled } = useIncidentCardContext();
+  const { editor } = useIncidentCardContext();
+  const disabled = useCardSkillDisabled("classification");
   const { fields, setDetail } = editor;
   const [query, setQuery] = useState("");
   const [choosing, setChoosing] = useState(false);
@@ -27,7 +31,11 @@ export function CardClassification({ viewing, onVictims }: Props) {
   const categoryName = editor.remote.categoryName || "Тип не выбран";
   const answers = fields.details?.clarifications ?? {};
   return (
-    <section className="arm-classification" aria-label="Что случилось">
+    <section
+      data-learning-target="classification"
+      className="arm-classification"
+      aria-label="Что случилось"
+    >
       {viewing ? (
         <div className="arm-victim-summary">
           <div>
@@ -94,7 +102,7 @@ export function CardClassification({ viewing, onVictims }: Props) {
           <h3>{categoryName}</h3>
           <p>
             {editor.remote.features?.length
-              ? editor.remote.features
+              ? activeFeatureDefinitions(editor.remote.features, fields.ekpAnswers)
                   .map(
                     (f) =>
                       `${f.label}: ${featureText(fields.ekpAnswers?.[f.key])}`,

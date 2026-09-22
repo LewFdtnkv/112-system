@@ -1,3 +1,4 @@
+import { LearningHelp } from "@/features/learning-assistance";
 import { DDSWorkspaceContext } from "../model/DDSWorkspaceContext";
 import { crewStatusLabels } from "@/entities/training";
 import { attemptCard } from "@/features/incident-editing";
@@ -26,6 +27,7 @@ export function DDSWorkspace(props: DDSWorkspaceProps) {
         elapsedSeconds={elapsed}
         normSeconds={attempt.norm_seconds}
         remote={{
+          highlightTarget: workspace.highlight,
           categories: [],
           categoryName:
             attempt.classifier_entry?.display_name ||
@@ -45,10 +47,18 @@ export function DDSWorkspace(props: DDSWorkspaceProps) {
         }}
         trainingNotice={
           <section className="dds-training-notice">
+            <LearningHelp
+              attempt={attempt}
+              busy={busy || workspace.editing}
+              activity={workspace.activity}
+              onHighlight={workspace.setHighlight}
+            />
             <details>
               <summary>
                 Учебное задание ДДС · {dds.profile.name} · цель: {dds.goal} ·
-                первичное решение: {elapsed} с от направления
+                {dds.workflow === "crews-v1"
+                  ? `прошло: ${elapsed} с`
+                  : `первичное решение: ${elapsed} с от направления`}
               </summary>
               <p>{attempt.instructions}</p>
               <p>{dds.profile.responsibility}</p>

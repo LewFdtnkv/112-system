@@ -78,11 +78,8 @@ export function useLessonLaunch() {
     setRequestId(randomUUID());
   };
   const learningValid =
-    (!["skill_practice", "review"].includes(learning.kind) ||
-      learning.target_skills.length > 0) &&
-    (learning.assistance.mode === "none" ||
-      learning.assistance.on_request ||
-      learning.assistance.idle_seconds !== null);
+    !["skill_practice", "review"].includes(learning.kind) ||
+    learning.target_skills.length > 0;
   return {
     scenarioRole,
     group,

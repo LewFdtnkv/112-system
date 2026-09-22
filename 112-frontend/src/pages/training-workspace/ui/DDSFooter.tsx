@@ -14,7 +14,10 @@ export function DDSFooter() {
     : undefined;
   const canManage =
     !completed &&
-    ["accepted", "responding", "arrived", "in_progress"].includes(dds.status);
+    (dds.workflow === "crews-v1" ||
+      ["accepted", "responding", "arrived", "in_progress"].includes(
+        dds.status,
+      ));
   const available = (dds.profile.crews ?? []).filter(
     (c) => c.is_active && !dds.crews?.some((a) => a.crew_code === c.code),
   );
@@ -38,7 +41,7 @@ export function DDSFooter() {
     <footer
       className={`arm-card-footer arm-card-footer--view dds-footer ${w.expanded ? "dds-footer--expanded" : ""} ${service ? "dds-footer--selected" : ""}`}
     >
-      <div className="dds-service-list">
+      <div className="dds-service-list" data-learning-target="dds_crews">
         <strong>Службы:</strong>
         <div className="dds-service-grid">
           {dds.responses.slice(0, 8).map(serviceTile)}
@@ -65,8 +68,16 @@ export function DDSFooter() {
         {!completed && dds.can_finish && (
           <button
             className="arm-save"
+            data-learning-target="submit"
             disabled={busy}
-            onClick={() => w.finish.mutate()}
+            onClick={() => {
+              if (
+                window.confirm(
+                  "Завершить упражнение? Невыполненные действия будут учтены в оценке.",
+                )
+              )
+                w.finish.mutate();
+            }}
           >
             Завершить упражнение
           </button>
@@ -80,7 +91,11 @@ export function DDSFooter() {
         />
       </div>
       {own && service && (
-        <div className="dds-crew-strip" aria-label="Бригады службы">
+        <div
+          data-learning-target="dds_response"
+          className="dds-crew-strip"
+          aria-label="Бригады службы"
+        >
           {own &&
             dds.crews?.map((c) => (
               <DDSTile
@@ -99,15 +114,19 @@ export function DDSFooter() {
                 }}
               />
             ))}
-          {own && canManage && (
-            <button
-              className="arm-small-button"
-              disabled={busy || !available.length}
-              onClick={() => w.openEditor("")}
-            >
-              + Назначить бригаду
-            </button>
-          )}
+          {own &&
+            canManage &&
+            (!w.attempt.exercise_scope ||
+              w.attempt.exercise_scope.includes("dds_crews")) && (
+              <button
+                data-learning-target="dds_crews"
+                className="arm-small-button"
+                disabled={busy || !available.length}
+                onClick={() => w.openEditor("")}
+              >
+                + Назначить бригаду
+              </button>
+            )}
           {own && !dds.crews?.length && (
             <span className="dds-empty-crews">
               {(dds.profile.crews ?? []).length

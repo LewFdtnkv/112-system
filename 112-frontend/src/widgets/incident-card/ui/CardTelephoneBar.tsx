@@ -1,4 +1,7 @@
-import { useIncidentCardContext } from "../model/IncidentCardContext";
+import {
+  useIncidentCardContext,
+  useCardSkillDisabled,
+} from "../model/IncidentCardContext";
 import { ArmIcon, ArmIconButton } from "@/shared/ui/arm";
 import type { Props } from "../types/CardTelephoneBar";
 import { formatDuration } from "@/shared/lib/formatDuration";
@@ -13,9 +16,10 @@ export function CardTelephoneBar({
   onViewChange,
   onHistory,
 }: Props) {
-  const { editor, disabled } = useIncidentCardContext();
+  const { editor } = useIncidentCardContext();
+  const disabled = useCardSkillDisabled("caller");
   return (
-    <header className="arm-telephone-bar">
+    <header className="arm-telephone-bar" data-learning-target="caller">
       <div className="arm-call-status">
         <ArmIcon name="callEnd" />
         <div>

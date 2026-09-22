@@ -4,6 +4,8 @@ import {
 } from "@/entities/incident-card";
 import type { useIncidentEditor } from "../model/useIncidentEditor";
 export interface RemoteEditor {
+  editableSkills?: string[] | null;
+  highlightTarget?: string | null;
   serviceQueryKey?: string;
   loadServices?: (
     q: string,

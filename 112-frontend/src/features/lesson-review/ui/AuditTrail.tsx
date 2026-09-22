@@ -23,6 +23,8 @@ import { styles } from "../styles/AuditTrail";
 import type { AuditTrailProps, EventDetailsProps } from "../types/AuditTrail";
 
 const kinds: Record<string, string> = {
+  "learning.prepared": "Поля вне выбранных навыков подготовлены системой",
+  "learning.hint_issued": "Выдана учебная подсказка",
   "dds.card_received": "Получение карточки ДДС",
   "dds.information": "Сообщение по сценарию",
   "dds.status_changed": "Изменение статуса ДДС",
@@ -80,6 +82,19 @@ function EventDetails({ event }: EventDetailsProps) {
         ))}
       </details>
     );
+  if (event.kind === "learning.hint_issued") {
+    const response = event.payload.response as
+      { hint?: { text?: string } } | undefined;
+    return (
+      <>
+        {String(event.payload.level)} ·{" "}
+        {event.payload.trigger === "automatic"
+          ? "Напоминание после паузы"
+          : "По запросу ученика"}
+        : {response?.hint?.text ?? "Подсказка"}
+      </>
+    );
+  }
   if (event.kind === "dds.information")
     return <>{String(event.payload.message)}</>;
   if (event.kind === "dds.crew_changed")

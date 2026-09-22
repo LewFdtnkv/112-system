@@ -85,6 +85,19 @@ function GradeView({ grade }: GradeViewProps) {
               на число всех назначенных карточек.
             </Alert>
           )}
+          {grade.assessment_details.assistance && (
+            <Alert severity="info">
+              Выдано подсказок:{" "}
+              {grade.assessment_details.assistance.issued_count}. Напоминаний:{" "}
+              {grade.assessment_details.assistance.levels.goal ?? 0};
+              объяснений:{" "}
+              {grade.assessment_details.assistance.levels.explanation ?? 0};
+              показов решения:{" "}
+              {grade.assessment_details.assistance.levels.solution ?? 0}.
+              Подсказки зафиксированы без автоматического штрафа; их содержание
+              доступно преподавателю в журнале.
+            </Alert>
+          )}
           {grade.assessment_details.criteria.map((criterion) => (
             <Typography key={criterion.code} variant="body2">
               {criterion.label}: {criterion.score} / {criterion.max_score}

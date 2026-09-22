@@ -71,6 +71,7 @@ function Editor({ initial }: EditorProps) {
     card_ids: [],
     service_profile_id: initial?.service_profile_id ?? null,
     dds_policy: initial?.dds_policy ?? {
+      workflow: "crews-v1",
       steps: [{ status: "accepted", message: "", crew_number: null }],
     },
   }));

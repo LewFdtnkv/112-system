@@ -1,8 +1,13 @@
 import { defaultLearningPolicy } from "../src/entities/training/model/learning";
 import type { Page } from "@playwright/test";
-export async function mockBusiness(page: Page) {
+export async function mockBusiness(
+  page: Page,
+  learning = defaultLearningPolicy(),
+  exercise_scope?: string[],
+) {
   let attempt = {
-    learning: defaultLearningPolicy(),
+    learning,
+    exercise_scope,
     id: "attempt",
     assignment_id: "assignment",
     status: "in_progress",
@@ -57,7 +62,7 @@ export async function mockBusiness(page: Page) {
       return route.fulfill({ json: { accepted: 1 } });
     const completed = attempt.status === "completed";
     const row = {
-      learning: defaultLearningPolicy(),
+      learning,
       lesson_id: "lesson",
       title: "Учебное занятие",
       student_id: "demo-student-1",
@@ -92,7 +97,7 @@ export async function mockBusiness(page: Page) {
     if (path === "student/lessons/lesson")
       return route.fulfill({
         json: {
-          learning: defaultLearningPolicy(),
+          learning,
           id: "lesson",
           title: "Учебное занятие",
           status: row.status,
@@ -161,4 +166,5 @@ export async function mockBusiness(page: Page) {
       });
     return route.fulfill({ status: 404, json: { detail: "Not found" } });
   });
+  return { currentAttempt: () => attempt };
 }

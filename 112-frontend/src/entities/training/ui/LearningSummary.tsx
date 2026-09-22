@@ -12,9 +12,9 @@ export function LearningSummary({ policy, result }: LearningSummaryProps) {
       <h3>{lessonKindLabels[policy.kind]}</h3>
       {policy.objective && <p>{policy.objective}</p>}
       <p>
-        {policy.assistance.mode === "none"
+        {policy.assistance.max_level === "none"
           ? "Самостоятельное выполнение · без учебных подсказок"
-          : `${assistanceLabels[policy.assistance.mode]} запланированы. Выдача подсказок пока недоступна.`}
+          : `Допустимая помощь: ${assistanceLabels[policy.assistance.max_level]}. Подсказка учитывает текущий шаг задания.`}
       </p>
       {policy.target_skills.length > 0 && (
         <ul className="learning-skills" aria-label="Целевые навыки">

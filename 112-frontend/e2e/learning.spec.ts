@@ -7,10 +7,8 @@ const learning = {
   objective: "Указать адрес без пропусков и выбрать службы для оповещения.",
   target_skills: ["address", "notification"],
   assistance: {
-    mode: "text",
     max_level: "explanation",
     on_request: true,
-    idle_seconds: 45,
   },
 };
 const row = {
@@ -85,12 +83,9 @@ test("teacher configures learning intent and assessment removes assistance", asy
     .getByRole("button", { name: "Адрес происшествия", exact: true })
     .click();
   await page.getByLabel("Учебная цель").fill(learning.objective);
-  await page.getByRole("combobox", { name: "Учебная помощь" }).click();
-  await page.getByRole("option", { name: "Подсказки с подсветкой" }).click();
-  await page.getByLabel("Пауза перед предложением помощи, с").fill("45");
-  await expect(
-    page.getByText(/Выдача подсказок пока недоступна/),
-  ).toBeVisible();
+  await page.getByRole("combobox", { name: "Максимальная помощь" }).click();
+  await page.getByRole("option", { name: "Объяснение действия" }).click();
+  await expect(page.getByText(/После паузы система напоминает/)).toBeVisible();
   await page
     .locator(".learning-settings")
     .screenshot({ path: info.outputPath("teacher-settings.png") });
@@ -98,15 +93,15 @@ test("teacher configures learning intent and assessment removes assistance", asy
     .getByRole("button", { name: "Контрольное занятие", exact: false })
     .click();
   await expect(
-    page.getByRole("combobox", { name: "Учебная помощь" }),
+    page.getByRole("combobox", { name: "Максимальная помощь" }),
   ).toHaveAttribute("aria-disabled", "true");
   await expect(
-    page.getByRole("combobox", { name: "Учебная помощь" }),
+    page.getByRole("combobox", { name: "Максимальная помощь" }),
   ).toHaveText("Без подсказок");
   await page.route("**/api/v1/lessons/start", async (route) => {
     const body = route.request().postDataJSON();
     expect(body.learning.kind).toBe("assessment");
-    expect(body.learning.target_skills).toEqual(["address"]);
+    expect(body.learning.target_skills).toEqual([]);
     expect(body.learning.assistance).toEqual(
       defaultLearningPolicy().assistance,
     );

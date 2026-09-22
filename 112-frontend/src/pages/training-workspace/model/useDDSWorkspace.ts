@@ -15,6 +15,8 @@ export function useDDSWorkspace({
 }: DDSWorkspaceProps) {
   const snapshot = useAttemptSnapshot(initial);
   const attempt = snapshot.data;
+  const [highlight, setHighlight] = useState<string | null>(null);
+  const [activity, setActivity] = useState(0);
   const [activeService, setActiveService] = useState("");
   const [activeCrew, setActiveCrew] = useState("");
   const [expanded, setExpanded] = useState(false);
@@ -93,7 +95,10 @@ export function useDDSWorkspace({
     save.reset();
     setEditing(true);
   };
-  const changed = () => setRequestId(randomUUID());
+  const changed = () => {
+    setRequestId(randomUUID());
+    setActivity(Date.now());
+  };
   const elapsed = Math.max(
     0,
     Math.floor(
@@ -103,6 +108,9 @@ export function useDDSWorkspace({
     ),
   );
   return {
+    highlight,
+    setHighlight,
+    activity,
     attempt,
     dds,
     completed,

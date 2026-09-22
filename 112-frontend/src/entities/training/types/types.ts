@@ -261,6 +261,7 @@ export interface StudentLesson {
 }
 
 export interface Attempt {
+  exercise_scope?: string[] | null;
   learning: LearningPolicy;
   role?: "operator_112" | "dds";
   dds?: DDSContext | null;
@@ -293,6 +294,7 @@ export interface Attempt {
 export interface Grade {
   method?: "rules" | "teacher";
   assessment_details?: {
+    assistance?: { issued_count: number; levels: Record<string, number>; scoring: string };
     policy_version: string;
     scope: "formal_fields";
     criteria: {

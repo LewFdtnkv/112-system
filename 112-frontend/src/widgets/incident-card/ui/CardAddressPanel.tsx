@@ -1,4 +1,7 @@
-import { useIncidentCardContext } from "../model/IncidentCardContext";
+import {
+  useIncidentCardContext,
+  useCardSkillDisabled,
+} from "../model/IncidentCardContext";
 import { emptyIncidentAddress, formatAddress } from "@/entities/incident-card";
 import {
   ArmField,
@@ -9,6 +12,9 @@ import {
 import type { Props } from "../types/CardAddressPanel";
 export function CardAddressPanel({ viewing, onMap }: Props) {
   const { editor, disabled } = useIncidentCardContext();
+  const callerDisabled = useCardSkillDisabled("caller");
+  const addressDisabled = useCardSkillDisabled("address");
+  const descriptionDisabled = useCardSkillDisabled("description");
   const { fields, setField, setDetail, setAddressField } = editor;
   const address = fields.address;
   const country = address.country ?? (disabled ? "" : "Россия");
@@ -28,7 +34,7 @@ export function CardAddressPanel({ viewing, onMap }: Props) {
         className="arm-card-left arm-card-left--view"
         aria-label="Сведения о происшествии"
       >
-        <div className="arm-applicant">
+        <div className="arm-applicant" data-learning-target="caller">
           <span>{fields.callerName || "ФИО заявителя"}</span>
         </div>
         <div className="arm-address-view">
@@ -56,19 +62,19 @@ export function CardAddressPanel({ viewing, onMap }: Props) {
       className="arm-card-left"
       aria-label="Заявитель и адрес происшествия"
     >
-      <div className="arm-applicant">
+      <div className="arm-applicant" data-learning-target="caller">
         <ArmField
           label="Заявитель"
           inline
           placeholder="Фамилия и имя заявителя"
-          disabled={disabled}
+          disabled={callerDisabled}
           value={fields.callerName}
           onChange={(e) => setField("callerName", e.target.value)}
         />
         <ArmSelect
           label="Статус заявителя"
           className="arm-applicant__status"
-          disabled={disabled}
+          disabled={callerDisabled}
           value={fields.details?.callerStatus ?? ""}
           onChange={(e) => setDetail("callerStatus", e.target.value)}
         >
@@ -79,7 +85,7 @@ export function CardAddressPanel({ viewing, onMap }: Props) {
         </ArmSelect>
         <ArmSelect
           label="Пол заявителя"
-          disabled={disabled}
+          disabled={callerDisabled}
           value={fields.details?.callerGender ?? ""}
           onChange={(e) => setDetail("callerGender", e.target.value)}
         >
@@ -93,21 +99,21 @@ export function CardAddressPanel({ viewing, onMap }: Props) {
           type="number"
           min={0}
           max={120}
-          disabled={disabled}
+          disabled={callerDisabled}
           value={fields.details?.callerAge ?? ""}
           onChange={(e) => setDetail("callerAge", e.target.value)}
         />
         <ArmIconButton
           icon="translate"
           label="Вызов на иностранном языке"
-          disabled={disabled}
+          disabled={callerDisabled}
           aria-pressed={fields.details?.foreignLanguage ?? false}
           onClick={() =>
             setDetail("foreignLanguage", !fields.details?.foreignLanguage)
           }
         />
       </div>
-      <div className="arm-address-block">
+      <div className="arm-address-block" data-learning-target="address">
         <div className="arm-address-heading">
           <span>Адрес:</span>
           {fields.location && (
@@ -127,7 +133,7 @@ export function CardAddressPanel({ viewing, onMap }: Props) {
           <ArmIconButton
             icon="close"
             label="Очистить адрес"
-            disabled={disabled}
+            disabled={addressDisabled}
             onClick={() =>
               setField("address", {
                 ...emptyIncidentAddress,
@@ -160,7 +166,7 @@ export function CardAddressPanel({ viewing, onMap }: Props) {
               key={key}
               className={`arm-address-grid__${area}`}
               label={label}
-              disabled={disabled}
+              disabled={addressDisabled}
               value={address[key] ?? (disabled ? "" : fallback)}
               onChange={(e) => setAddressField(key, e.target.value)}
             />
@@ -168,14 +174,14 @@ export function CardAddressPanel({ viewing, onMap }: Props) {
         </div>
         <ArmTextarea
           label="Описательный адрес"
-          disabled={disabled}
+          disabled={addressDisabled}
           rows={2}
           value={address.description}
           onChange={(e) => setAddressField("description", e.target.value)}
         />
         <button
           className="arm-small-button arm-address-clear"
-          disabled={disabled}
+          disabled={addressDisabled}
           onClick={() =>
             setField("address", {
               ...emptyIncidentAddress,
@@ -187,12 +193,12 @@ export function CardAddressPanel({ viewing, onMap }: Props) {
           очистить адрес
         </button>
       </div>
-      <div className="arm-description-block">
+      <div className="arm-description-block" data-learning-target="description">
         <ArmTextarea
           label="Описание со слов заявителя"
           aria-label="Сообщение со слов заявителя"
           placeholder="введите"
-          disabled={disabled}
+          disabled={descriptionDisabled}
           value={fields.description}
           maxLength={1999}
           rows={1}
