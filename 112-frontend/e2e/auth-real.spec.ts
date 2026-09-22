@@ -36,8 +36,8 @@ test("real API: initial password, profile, reload, logout and a student account"
   await expect(
     page.getByRole("link", { name: "Кабинет преподавателя" }),
   ).toHaveCount(0);
-  const adminPair = await page.evaluate(() =>
-    JSON.parse(sessionStorage.getItem("dds112-tokens-v1")!),
+  const adminPair = await page.evaluate(
+    () => JSON.parse(sessionStorage.getItem("dds112-tokens-v1")!).state.tokens,
   );
   const created = await request.post("/api/v1/users", {
     headers: { Authorization: `Bearer ${adminPair.access_token}` },

@@ -1,5 +1,5 @@
 export { authApi } from "./api/authApi";
-export { authStorageKey, useAuthStore } from "./model/authStore";
+export { useAuthStore } from "./model/authStore";
 export {
   demoStudentId,
   demoTeacherId,

@@ -294,8 +294,8 @@ test("real API: authoring, operator drafts, revision conflict, notification and 
     card.getByLabel("Сообщение со слов заявителя", { exact: true }),
   ).toHaveValue("Дым из окна");
   // A second tab writes first; stale saving must preserve the current form.
-  const tokens = await page.evaluate(() =>
-    JSON.parse(sessionStorage.getItem("dds112-tokens-v1")!),
+  const tokens = await page.evaluate(
+    () => JSON.parse(sessionStorage.getItem("dds112-tokens-v1")!).state.tokens,
   );
   const headers = { Authorization: `Bearer ${tokens.access_token}` };
   const work = await (

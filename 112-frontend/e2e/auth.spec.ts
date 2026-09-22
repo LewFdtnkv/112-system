@@ -158,7 +158,10 @@ test("refreshes an expired access token on reload and rejects a revoked session"
   let refreshes = 0;
   await page.addInitScript((tokens) => {
     if (!sessionStorage.getItem("dds112-tokens-v1"))
-      sessionStorage.setItem("dds112-tokens-v1", JSON.stringify(tokens));
+      sessionStorage.setItem(
+        "dds112-tokens-v1",
+        JSON.stringify({ state: { tokens }, version: 0 }),
+      );
   }, pair);
   await page.route("**/api/v1/users/me", (route) =>
     route.fulfill(

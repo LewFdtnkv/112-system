@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
-import { authStorageKey, useAuthStore } from "@/entities/user";
+import { useAuthStore } from "@/entities/user";
 
 import { authFetch } from "@/entities/user/model/authFixture";
 
@@ -45,7 +45,7 @@ it("validates credentials and uses the server profile", async () => {
   expect(
     await screen.findByText("Проверьте логин и пароль или войдите заново."),
   ).toBeVisible();
-  expect(localStorage.getItem(authStorageKey)).toBeNull();
+  expect(useAuthStore.getState().tokens).toBeNull();
 
   await user.clear(screen.getByLabelText("Пароль"));
   await user.type(screen.getByLabelText("Пароль"), "valid-password");
@@ -56,8 +56,7 @@ it("validates credentials and uses the server profile", async () => {
     roles: ["student"],
   });
 
-  const persisted = localStorage.getItem(authStorageKey);
-  expect(persisted).toBeNull();
+  expect(localStorage.length).toBe(0);
 });
 
 it("rejects an unsafe return path and sends the user home", async () => {
