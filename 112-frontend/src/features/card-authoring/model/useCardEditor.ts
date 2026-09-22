@@ -7,7 +7,8 @@ import {
 import { matchesFeature, type FeatureValue } from "@/shared/lib/featureValues";
 import { type SelectOption } from "@/shared/ui/ServerSelect";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { usePhoneInput } from "@/entities/phone";
 import type { CardEditorProps } from "../types/CardEditor";
 
 export function useCardEditor({ onClose, initial }: CardEditorProps) {
@@ -74,6 +75,10 @@ export function useCardEditor({ onClose, initial }: CardEditorProps) {
     caller_name: initial?.data.caller_name ?? "",
     caller_phone: initial?.data.caller_phone ?? "",
   });
+  const phoneRef = useRef<HTMLInputElement>(null);
+  const callerPhone = usePhoneInput(form.caller_phone, (caller_phone) =>
+    setForm((current) => ({ ...current, caller_phone })),
+  );
   const routes = useQuery({
     queryKey: ["routes", version?.id, entry?.id],
     queryFn: ({ signal }) => trainingApi.routes(version!.id, entry!.id, signal),
@@ -126,7 +131,7 @@ export function useCardEditor({ onClose, initial }: CardEditorProps) {
             ),
           },
           caller_name: form.caller_name,
-          caller_phone: form.caller_phone,
+          caller_phone: form.caller_phone.trim() === "+" ? "" : form.caller_phone,
           additional_fields: initial?.data.additional_fields ?? {},
         },
       };
@@ -181,5 +186,7 @@ export function useCardEditor({ onClose, initial }: CardEditorProps) {
     recipients,
     save,
     labels,
+    phoneRef,
+    callerPhone,
   };
 }

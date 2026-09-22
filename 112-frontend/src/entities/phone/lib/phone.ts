@@ -1,5 +1,14 @@
 import { AsYouType, validatePhoneNumberLength } from "libphonenumber-js/min";
 import type { PhoneEdit, PhoneIssue, PhoneIssueCode } from "../types/phone";
+
+/**
+ * Телефоны хранятся строкой в международном виде: «+7 900 123-45-67».
+ * Этот же вид ожидает бэкенд при сравнении с эталоном, поэтому российские
+ * номера форматируются здесь вручную (AsYouType разделяет их пробелами),
+ * а библиотека отвечает за остальные страны и за проверку длины.
+ */
+
+/** E.164 допускает не более 15 цифр; у номеров с кодом +7 их ровно 11. */
 const MAX_DIGITS = 15;
 const MAX_DIGITS_RU = 11;
 
@@ -8,6 +17,10 @@ export const digitsOf = (text: string) => text.replace(/\D/g, "");
 const capDigits = (digits: string) =>
   digits.slice(0, digits.startsWith("7") ? MAX_DIGITS_RU : MAX_DIGITS);
 
+/**
+ * Цифры номера вместе с кодом страны. Без «+» ввод считается российским:
+ * «8…» → «7…», «9…» → «79…». С «+» код страны берётся как есть.
+ */
 export function normalizePhoneDigits(text: string): string {
   const digits = digitsOf(text);
   if (!digits) return "";

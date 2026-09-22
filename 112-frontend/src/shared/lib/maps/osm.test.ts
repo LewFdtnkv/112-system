@@ -1,8 +1,20 @@
 import "@testing-library/jest-dom/vitest";
 
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import L from "leaflet";
 
 import { createPointMap } from "./osm";
+
+beforeEach(() => {
+  // jsdom does not download tile images; keep real Leaflet behavior and
+  // simulate only the network completion required by the map's readiness.
+  const tileLayer = L.tileLayer;
+  vi.spyOn(L, "tileLayer").mockImplementation((...args) => {
+    const layer = tileLayer(...args);
+    queueMicrotask(() => layer.fire("tileload"));
+    return layer;
+  });
+});
 
 function mountContainer() {
   const element = document.createElement("div");
@@ -37,6 +49,7 @@ function clickAt(element: HTMLElement, clientX: number, clientY: number) {
 }
 
 afterEach(() => {
+  vi.restoreAllMocks();
   document.body.replaceChildren();
 });
 
