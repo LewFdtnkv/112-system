@@ -110,6 +110,16 @@ async def context(session, attempt, responses):
         ),
     )
     own = next(r for r in responses if str(r.service_id) == profile["service_id"])
+    status_times = dict(
+        (
+            await session.execute(
+                select(ResponseEvent.response_id, func.max(AttemptEvent.occurred_at))
+                .join(AttemptEvent, ResponseEvent.attempt_event_id == AttemptEvent.id)
+                .where(ResponseEvent.attempt_id == attempt.id)
+                .group_by(ResponseEvent.response_id)
+            )
+        ).all()
+    )
     crews = await crew_context(session, attempt)
     requirements = attempt.settings_snapshot["dds_policy"].get("required_crews", [])
     return {
@@ -150,6 +160,11 @@ async def context(session, attempt, responses):
                 "status": r.status.value,
                 "crew_number": r.crew_number,
                 "comment": r.comment,
+                "added_at": r.added_at.isoformat(),
+                "received_at": r.received_at.isoformat() if r.received_at else None,
+                "status_updated_at": (
+                    status_times.get(r.id) or r.received_at or r.sent_at or r.added_at
+                ).isoformat(),
             }
             for r in responses
         ],

@@ -35,6 +35,15 @@ async def crew_context(session, attempt):
             "description": row.snapshot.get("description", ""),
             "contact_code": row.snapshot.get("contact_code"),
             "status": row.status,
+            "assigned_at": row.assigned_at.isoformat(),
+            "status_updated_at": next(
+                (
+                    e.occurred_at
+                    for e in reversed(events)
+                    if e.payload["crew_code"] == row.crew_code
+                ),
+                row.assigned_at,
+            ).isoformat(),
             "crew_number": row.crew_number,
             "comment": row.comment,
             "allowed_statuses": sorted(CREW_TRANSITIONS[row.status]),

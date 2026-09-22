@@ -74,6 +74,10 @@ async def test_crew_rights_validation_retry_and_revision(crews, api):
     await api("POST", c.path + "/dds/crews", c.command(c.a), actor="student", status=409)
     a = await api("POST", c.path + "/dds/actions", c.d.action(c.a, "accepted"), actor="student")
     payload = c.command(a)
+    service_times = {r["service_id"]: r["status_updated_at"] for r in a["dds"]["responses"]}
+    own = next(r for r in a["dds"]["responses"] if r["service_id"] == str(c.d.t.service.id))
+    assert own["status_updated_at"] == a["dds"]["history"][-1]["at"]
+    assert all(r["added_at"] and r["received_at"] for r in a["dds"]["responses"])
     for actor, status in (("student2", 404), ("teacher", 403), ("admin", 403)):
         await api("POST", c.path + "/dds/crews", payload, actor=actor, status=status)
     for patch in (
@@ -86,6 +90,8 @@ async def test_crew_rights_validation_retry_and_revision(crews, api):
     a = await api("POST", c.path + "/dds/crews", payload, actor="student")
     assert len(a["dds"]["crews"]) == 1
     assert a["dds"]["revision"] == payload["revision"] + 1
+    assert a["dds"]["crews"][0]["status_updated_at"] == a["dds"]["crews"][0]["history"][-1]["at"]
+    assert {r["service_id"]: r["status_updated_at"] for r in a["dds"]["responses"]} == service_times
     retry = await api("POST", c.path + "/dds/crews", payload, actor="student")
     assert retry["dds"]["crews"] == a["dds"]["crews"]
     await api(
