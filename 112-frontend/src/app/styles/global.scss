@@ -22,16 +22,6 @@ body * {
   outline: 2px solid #008bc5;
   outline-offset: 2px;
 }
-<<<<<<< HEAD
-
-.app-sidebar a {
-  transition:
-    background-color 100ms,
-    color 100ms;
-}
-
-=======
->>>>>>> 36ffa054c56ef9a8a422051a9fb65a6eae5b4154
 .page-section a:hover {
   color: #008bc5;
   text-decoration: underline;
@@ -737,13 +727,7 @@ td:has(> .table-block-link) {
   }
 }
 
-<<<<<<< HEAD
-body input,
-body textarea,
-body [contenteditable="true"] {
-=======
 :is(input, textarea, [contenteditable="true"], pre, [data-selectable]) {
   -webkit-user-select: text !important;
->>>>>>> 36ffa054c56ef9a8a422051a9fb65a6eae5b4154
   user-select: text !important;
 }

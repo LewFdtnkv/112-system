@@ -6,7 +6,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
 import { type CardTemplate, trainingApi } from "@/entities/training";
-import { CardEditor } from "../ui/CardEditor";
+import { CardEditor } from "@/features/card-authoring";
 
 vi.setConfig({ testTimeout: 20_000 });
 

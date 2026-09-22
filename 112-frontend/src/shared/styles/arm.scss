@@ -201,19 +201,3 @@
 :where(.app-shell, .auth-shell) a:hover {
   color: #0085be;
 }
-<<<<<<< HEAD:src/shared/ui/arm/arm.scss
-
-:where(.arm-workspace, .arm-card-dialog) button {
-  transition:
-    background-color 100ms,
-    border-color 100ms,
-    color 100ms;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  :where(.arm-workspace, .arm-card-dialog) button {
-    transition: none;
-  }
-}
-=======
->>>>>>> 36ffa054c56ef9a8a422051a9fb65a6eae5b4154:src/shared/styles/arm.scss

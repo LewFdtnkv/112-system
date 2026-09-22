@@ -1,16 +1,14 @@
-<<<<<<< HEAD:src/pages/cards/ui/CardEditor.tsx
-import { useRef, useState } from "react";
-=======
-import { trainingApi, type FeatureDefinition } from "@/entities/training";
+import { trainingApi, type CardTemplate, type CardTemplateInput, type FeatureDefinition } from "@/entities/training";
 import { getApiError } from "@/shared/api";
 import {
   activeFeatureDefinitions,
+  matchesFeature,
   updateFeatureAnswer,
+  type FeatureValue,
 } from "@/shared/lib/featureValues";
 import { FeatureInput } from "@/shared/ui/FeatureInput";
 import { QueryState } from "@/shared/ui/QueryState";
-import { ServerSelect } from "@/shared/ui/ServerSelect";
->>>>>>> 36ffa054c56ef9a8a422051a9fb65a6eae5b4154:src/features/card-authoring/ui/CardEditor.tsx
+import { ServerSelect, type SelectOption } from "@/shared/ui/ServerSelect";
 import {
   Alert,
   Button,
@@ -20,13 +18,13 @@ import {
   Stack,
   TextField,
 } from "@mui/material";
-import { useCardEditor } from "../model/useCardEditor";
 import { styles } from "../styles/CardEditor";
-import type { CardEditorProps } from "../types/CardEditor";
 import { TemplateAddress } from "./TemplateAddress";
 import { usePhoneInput } from "@/shared/lib/phone/usePhoneInput";
+import { emptyIncidentAddress, formatAddress } from "@/entities/incident-card";
+import { useQueryClient, useQuery, useMutation } from "@tanstack/react-query";
+import { useState, useRef } from "react";
 
-<<<<<<< HEAD:src/pages/cards/ui/CardEditor.tsx
 export function CardEditor({
   onClose,
   initial,
@@ -183,38 +181,6 @@ export function CardEditor({
     caller_name: "ФИО заявителя",
     caller_phone: "Телефон заявителя",
   };
-=======
-export function CardEditor({ onClose, initial, onReload }: CardEditorProps) {
-  const {
-    address,
-    setAddress,
-    person,
-    setPerson,
-    victims,
-    setVictims,
-    structuredAddress,
-    version,
-    setVersion,
-    entry,
-    setEntry,
-    notificationRequired,
-    setNotificationRequired,
-    features,
-    setFeatures,
-    answers,
-    setAnswers,
-    manualRecipients,
-    setManualRecipients,
-    optional,
-    setOptional,
-    form,
-    setForm,
-    routes,
-    recipients,
-    save,
-    labels,
-  } = useCardEditor({ onClose, initial, onReload });
->>>>>>> 36ffa054c56ef9a8a422051a9fb65a6eae5b4154:src/features/card-authoring/ui/CardEditor.tsx
   const renderFields = (keys: string[]) =>
     Object.entries(labels)
       .filter(([key]) => keys.includes(key))
