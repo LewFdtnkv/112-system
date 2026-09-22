@@ -44,8 +44,11 @@ export const fieldLabels: Record<string, string> = {
   callerGender: "Пол",
   callerAge: "Возраст",
   foreignLanguage: "Иностранный язык",
-  refusedAmbulance: "Отказ от скорой",
-  blocked: "Заблокированные",
+  hasVictims: "Пострадавшие",
+  noContact: "Нет контакта",
+  callDropped: "Срыв звонка",
+  refusedAmbulance: "Нет на месте / Отказ от скорой",
+  blocked: "Нет доступа / Заблокированные",
   clarifications: "Уточняющие признаки",
   has_victims: "Есть пострадавшие",
 };

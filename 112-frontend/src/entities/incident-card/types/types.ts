@@ -46,6 +46,9 @@ export interface IncidentCardDetails {
   callerGender?: string;
   callerAge?: string;
   foreignLanguage?: boolean;
+  hasVictims?: boolean;
+  noContact?: boolean;
+  callDropped?: boolean;
   refusedAmbulance?: boolean;
   blocked?: boolean;
   clarifications?: Record<string, readonly string[]>;

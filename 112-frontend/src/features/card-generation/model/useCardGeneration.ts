@@ -25,7 +25,20 @@ export function useCardGeneration({ onClose }: CardGenerationDialogProps) {
     queryFn: ({ signal }) => generationApi.options(signal),
   });
   function change(values: Partial<GenerationParameters>) {
-    setP((prev) => ({ ...prev, ...values }));
+    if (values.no_contact === true) {
+      setEntry(random);
+      setServices([]);
+      setManualServices(false);
+      setFeatures([]);
+      setP((prev) => ({
+        time_of_day: prev.time_of_day,
+        detail_level: prev.detail_level,
+        call_dropped: prev.call_dropped,
+        no_contact: true,
+      }));
+    } else {
+      setP((prev) => ({ ...prev, ...values }));
+    }
     setRequestId(createUuid());
   }
   const save = useMutation({

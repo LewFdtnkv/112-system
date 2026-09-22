@@ -18,7 +18,9 @@ const groupFor = (path: string) =>
         ? groups[3]
         : path.startsWith("dds.")
           ? groups[4]
-          : /^(classifier|description|features|victim)/.test(path)
+          : /^(classifier|description|features|victim|additional_fields\.details\.(hasVictims|blocked|refusedAmbulance|noContact|callDropped))/.test(
+                path,
+              )
             ? groups[2]
             : groups[5];
 

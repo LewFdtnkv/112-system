@@ -101,12 +101,19 @@ export function useIncidentEditor({
     remote: {
       ...remote,
       services: visibleServices,
-      notificationRequired:
-        fields.manualServices != null
+      notificationRequired: fields.details?.noContact
+        ? false
+        : fields.manualServices != null
           ? visibleServices.length > 0
           : remote.notificationRequired,
     },
     useRecommendedServices: () => setField("manualServices", null),
+    setVictims: (present: boolean, count: number | null = null) =>
+      setFields((current) => ({
+        ...current,
+        victimsCount: present ? count : null,
+        details: { ...current.details, hasVictims: present },
+      })),
     pending: command.isPending,
     dirty,
     saved: command.isSuccess && command.variables.kind === "save" && !dirty,

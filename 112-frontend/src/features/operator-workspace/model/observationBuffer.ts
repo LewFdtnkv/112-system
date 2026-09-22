@@ -2,7 +2,7 @@ import type { ClientObservation } from "@/entities/training";
 import { randomUUID } from "@/shared/lib/uuid";
 
 const fieldPattern =
-  /^(ekpAnswers\.[a-z][a-z0-9_]{0,49}|location\.(latitude|longitude)|categoryId|callerName|description|operatorAction|victimsCount|address\.(country|region|locality|object|district|area|street|house|building|structure|apartment|entrance|floor|doorCode|description)|phones\.(callerId|provided|onSite)|details\.(buildingFloors|classificationDescription|callerStatus|callerGender|callerAge|foreignLanguage|refusedAmbulance|blocked))$/;
+  /^(ekpAnswers\.[a-z][a-z0-9_]{0,49}|location\.(latitude|longitude)|categoryId|callerName|description|operatorAction|victimsCount|address\.(country|region|locality|object|district|area|street|house|building|structure|apartment|entrance|floor|doorCode|description)|phones\.(callerId|provided|onSite)|details\.(buildingFloors|classificationDescription|callerStatus|callerGender|callerAge|foreignLanguage|hasVictims|noContact|callDropped|refusedAmbulance|blocked))$/;
 function flatten(
   value: unknown,
   prefix = "",

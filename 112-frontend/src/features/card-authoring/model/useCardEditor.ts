@@ -1,4 +1,8 @@
-import { emptyIncidentAddress, formatAddress } from "@/entities/incident-card";
+import {
+  cardFlagFields,
+  emptyIncidentAddress,
+  formatAddress,
+} from "@/entities/incident-card";
 import {
   trainingApi,
   type CardTemplateInput,
@@ -27,9 +31,52 @@ export function useCardEditor({ onClose, initial }: CardEditorProps) {
     weight_kg: String(initial?.data.caller_details?.weight_kg ?? ""),
     appearance: String(initial?.data.caller_details?.appearance ?? ""),
   });
-  const [victims, setVictims] = useState(
+  const [victims, updateVictims] = useState(
     String(initial?.data.features?.victimsCount ?? ""),
   );
+  const [flags, setFlags] = useState<Record<string, boolean | undefined>>(
+    () => {
+      const details = initial?.data.additional_fields?.details as
+        Record<string, unknown> | undefined;
+      return Object.fromEntries(
+        cardFlagFields.map(({ key }) => [
+          key,
+          typeof details?.[key] === "boolean"
+            ? details[key]
+            : initial
+              ? undefined
+              : false,
+        ]),
+      );
+    },
+  );
+  const setVictims = (value: string) => {
+    updateVictims(value);
+    if (value !== "")
+      setFlags((current) => ({ ...current, hasVictims: Number(value) > 0 }));
+  };
+  const setFlag = (key: string, value: boolean | undefined) => {
+    setFlags((current) => ({
+      ...current,
+      [key]: value,
+      ...(key === "noContact" && value
+        ? {
+            hasVictims: undefined,
+            refusedAmbulance: undefined,
+            blocked: undefined,
+          }
+        : {}),
+    }));
+    if (key === "noContact" && value) updateVictims("");
+    if (
+      key === "hasVictims" &&
+      value != null &&
+      victims !== "" &&
+      Number(victims) > 0 !== value
+    )
+      updateVictims("");
+  };
+  const silent = flags.noContact === true;
   const structuredAddress = formatAddress(address);
   const client = useQueryClient();
   const [version, setVersion] = useState<SelectOption | null>(
@@ -40,7 +87,7 @@ export function useCardEditor({ onClose, initial }: CardEditorProps) {
   const [entry, setEntry] = useState<SelectOption | null>(
     initial?.classifier_entry
       ? {
-          id: initial.classifier_entry_id,
+          id: initial.classifier_entry.id,
           label: `${initial.classifier_entry.code} — ${initial.classifier_entry.name}`,
         }
       : null,
@@ -102,37 +149,57 @@ export function useCardEditor({ onClose, initial }: CardEditorProps) {
         caller_message: form.caller_message.trim() ? form.caller_message : null,
         instructions: form.instructions,
         classifier_version_id: version!.id,
-        classifier_entry_id: entry!.id,
-        recipient_service_ids: manualRecipients?.map((s) => s.id) ?? recipients,
+        classifier_entry_id: silent ? null : entry!.id,
+        recipient_service_ids: silent
+          ? []
+          : (manualRecipients?.map((s) => s.id) ?? recipients),
         use_recommended_recipients: manualRecipients === null,
         data: {
           ...initial?.data,
-          address_text: structuredAddress || form.address_text,
-          address_details: Object.fromEntries(
-            Object.entries(address).filter(([, value]) => value?.trim()),
-          ),
+          address_text: silent ? "" : structuredAddress || form.address_text,
+          address_details: silent
+            ? null
+            : Object.fromEntries(
+                Object.entries(address).filter(([, value]) => value?.trim()),
+              ),
           features: {
             ...initial?.data.features,
-            victimsCount: victims === "" ? null : Number(victims),
-            ekp: answers,
+            victimsCount: silent || victims === "" ? null : Number(victims),
+            ekp: silent ? {} : answers,
           },
           description: form.description,
-          caller_details: {
-            ...initial?.data.caller_details,
-            ...Object.fromEntries(
-              Object.entries(person).map(([k, v]) => [
-                k,
-                v === ""
-                  ? null
-                  : ["age", "height_cm", "weight_kg"].includes(k)
-                    ? Number(v)
-                    : v,
-              ]),
-            ),
+          caller_details: silent
+            ? null
+            : {
+                ...initial?.data.caller_details,
+                ...Object.fromEntries(
+                  Object.entries(person).map(([k, v]) => [
+                    k,
+                    v === ""
+                      ? null
+                      : ["age", "height_cm", "weight_kg"].includes(k)
+                        ? Number(v)
+                        : v,
+                  ]),
+                ),
+              },
+          caller_name: silent ? null : form.caller_name,
+          caller_phone:
+            form.caller_phone.trim() === "+" ? "" : form.caller_phone,
+          additional_fields: {
+            ...initial?.data.additional_fields,
+            ...(silent ? { location: null } : {}),
+            details: {
+              ...((initial?.data.additional_fields?.details as Record<
+                string,
+                unknown
+              >) ?? {}),
+              ...flags,
+              ...(silent
+                ? { callerGender: null, callerAge: null, callerStatus: null }
+                : {}),
+            },
           },
-          caller_name: form.caller_name,
-          caller_phone: form.caller_phone.trim() === "+" ? "" : form.caller_phone,
-          additional_fields: initial?.data.additional_fields ?? {},
         },
       };
       return initial
@@ -159,6 +226,9 @@ export function useCardEditor({ onClose, initial }: CardEditorProps) {
     caller_phone: "Телефон заявителя",
   };
   return {
+    flags,
+    setFlag,
+    silent,
     address,
     setAddress,
     person,

@@ -4,6 +4,12 @@ export interface GenerationParameters {
   classifier_version_id?: string | null;
   classifier_entry_id?: string | null;
   service_ids?: string[] | null;
+  has_victims?: boolean | null;
+  victims_count?: number | null;
+  refused_ambulance?: boolean | null;
+  blocked?: boolean | null;
+  no_contact?: boolean | null;
+  call_dropped?: boolean | null;
   gender?: "male" | "female" | null;
   age?: number | null;
   caller_name?: string | null;

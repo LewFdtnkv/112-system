@@ -120,7 +120,7 @@ export interface CardTemplate {
   id: string;
   title: string;
   classifier_version_id: string;
-  classifier_entry_id: string;
+  classifier_entry_id: string | null;
   caller_message: string | null;
   instructions: string;
   data: CardData;
@@ -294,7 +294,11 @@ export interface Attempt {
 export interface Grade {
   method?: "rules" | "teacher";
   assessment_details?: {
-    assistance?: { issued_count: number; levels: Record<string, number>; scoring: string };
+    assistance?: {
+      issued_count: number;
+      levels: Record<string, number>;
+      scoring: string;
+    };
     policy_version: string;
     scope: "formal_fields";
     criteria: {

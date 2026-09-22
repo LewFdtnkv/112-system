@@ -74,3 +74,31 @@ it("audits feature lists and confirmed coordinates without duplicating unchanged
   buffer.close();
   await buffer.flush();
 });
+
+it("audits all ARM flags, including turning a flag off", async () => {
+  const send = vi.fn().mockResolvedValue(undefined);
+  const buffer = createObservationBuffer({}, send, vi.fn());
+  const details = {
+    hasVictims: true,
+    refusedAmbulance: true,
+    blocked: true,
+    noContact: true,
+    callDropped: true,
+  };
+  buffer.observe({ details });
+  await buffer.flush();
+  expect(
+    send.mock.calls[0][0].map((e: ClientObservation) => e.field).sort(),
+  ).toEqual(
+    Object.keys(details)
+      .map((k) => `details.${k}`)
+      .sort(),
+  );
+  buffer.observe({ details: { ...details, callDropped: false } });
+  await buffer.flush();
+  expect(send.mock.calls[1][0]).toEqual([
+    expect.objectContaining({ field: "details.callDropped", value: false }),
+  ]);
+  buffer.close();
+  await buffer.flush();
+});

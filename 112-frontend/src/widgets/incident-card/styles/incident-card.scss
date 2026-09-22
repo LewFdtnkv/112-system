@@ -53,7 +53,9 @@
   padding: 3px;
   border: 1px solid #afb5ba;
   background: transparent;
-  font: 10px Arial, sans-serif;
+  font:
+    10px Arial,
+    sans-serif;
   cursor: pointer;
 }
 
@@ -146,7 +148,9 @@
   bottom: 17px;
   border: 1px dotted #afb5ba;
   background: #fff;
-  font: 10px Arial, sans-serif;
+  font:
+    10px Arial,
+    sans-serif;
   color: #365970;
   padding: 4px 10px;
   cursor: pointer;
@@ -370,13 +374,15 @@
 
 .arm-victim-bar {
   display: flex;
-  flex: 0 0 64px;
+  flex-wrap: wrap;
+  flex: 0 0 auto;
   gap: 8px;
   min-width: 0;
 }
 
 .arm-victim-bar__group {
   display: flex;
+  flex-wrap: wrap;
   align-items: stretch;
   gap: 4px;
   padding: 8px;
@@ -388,7 +394,9 @@
   border: 1px solid #aeb3b6;
   background: transparent;
   color: #112331;
-  font: bold 14px Arial, sans-serif;
+  font:
+    bold 14px Arial,
+    sans-serif;
   cursor: pointer;
   white-space: nowrap;
 }
@@ -468,7 +476,9 @@
   background: #fff;
   color: #343a3e;
   text-align: center;
-  font: bold 32px Arial, sans-serif;
+  font:
+    bold 32px Arial,
+    sans-serif;
 }
 
 .arm-services-dialog .MuiDialogTitle-root .arm-icon-button {
@@ -506,7 +516,9 @@
   border: 0;
   padding: 14px;
   text-align: left;
-  font: 14px Arial, sans-serif;
+  font:
+    14px Arial,
+    sans-serif;
   line-height: 1.3;
   background: #fff;
   color: #2d5168;
@@ -540,7 +552,9 @@
   border: 1px solid #f26532;
   color: #f26532;
   background: #fff;
-  font: bold 22px Arial,sans-serif;
+  font:
+    bold 22px Arial,
+    sans-serif;
   cursor: pointer;
   user-select: none;
 }
@@ -566,7 +580,9 @@
 .arm-category-significant {
   flex-basis: 100%;
   margin: 2px 0 4px;
-  font: 12px Arial,sans-serif;
+  font:
+    12px Arial,
+    sans-serif;
   color: #365368;
 }
 
@@ -640,7 +656,9 @@
   border: 1px solid #acb2b6;
   background: transparent;
   color: #112331;
-  font: bold 14px Arial,sans-serif;
+  font:
+    bold 14px Arial,
+    sans-serif;
   cursor: pointer;
 }
 
@@ -807,7 +825,9 @@
   border-left: 1px solid white;
   background: transparent;
   color: #fff;
-  font: 12px Arial,sans-serif;
+  font:
+    12px Arial,
+    sans-serif;
   cursor: pointer;
 }
 
@@ -852,7 +872,9 @@
   border: 1px solid white;
   color: #fff;
   background: transparent;
-  font: bold 20px Arial,sans-serif;
+  font:
+    bold 20px Arial,
+    sans-serif;
   cursor: pointer;
 }
 
@@ -1040,7 +1062,7 @@
   }
 
   .arm-victim-bar__special {
-    display: none;
+    display: flex;
   }
 
   .arm-footer-tools {
@@ -1357,4 +1379,10 @@
   [data-feedback] textarea:disabled {
     background: transparent;
   }
+}
+
+.arm-flag-summary {
+  display: inline-block;
+  padding: 3px 5px;
+  margin-right: 4px;
 }

@@ -1,3 +1,4 @@
+import { cardFlagFields } from "@/entities/incident-card";
 import { trainingApi, type FeatureDefinition } from "@/entities/training";
 import { getApiError } from "@/shared/api";
 import {
@@ -56,6 +57,7 @@ export function CardGenerationDialog({ onClose }: CardGenerationDialogProps) {
   ) => (
     <Autocomplete
       key={key}
+      disabled={p.no_contact === true}
       freeSolo
       options={["Случайно", ...values]}
       value={p[key] ?? "Случайно"}
@@ -135,7 +137,7 @@ export function CardGenerationDialog({ onClose }: CardGenerationDialogProps) {
                 <ServerSelect
                   label="Тип происшествия"
                   value={entry}
-                  disabled={!version?.id}
+                  disabled={!version?.id || p.no_contact === true}
                   queryKey={["generation-entries", version?.id]}
                   load={async (q, signal) => [
                     random,
@@ -156,6 +158,7 @@ export function CardGenerationDialog({ onClose }: CardGenerationDialogProps) {
                 <TextField
                   select
                   label="Службы для оповещения"
+                  disabled={p.no_contact === true}
                   value={manualServices ? "manual" : "random"}
                   onChange={(e) => {
                     setManualServices(e.target.value === "manual");
@@ -255,6 +258,62 @@ export function CardGenerationDialog({ onClose }: CardGenerationDialogProps) {
                   </div>
                 </>
               )}
+              <h3>Отметки карточки</h3>
+              <p>
+                Значения выбираются до обращения к ИИ и входят в эталонное
+                решение.
+              </p>
+              <div className="generation-grid">
+                {cardFlagFields.map(({ parameter, label }) => (
+                  <TextField
+                    key={parameter}
+                    select
+                    label={label}
+                    disabled={
+                      p.no_contact === true &&
+                      parameter !== "no_contact" &&
+                      parameter !== "call_dropped"
+                    }
+                    value={
+                      p[parameter] == null ? "random" : String(p[parameter])
+                    }
+                    onChange={(e) =>
+                      change({
+                        [parameter]:
+                          e.target.value === "random"
+                            ? null
+                            : e.target.value === "true",
+                      })
+                    }
+                  >
+                    <MenuItem value="random">Случайно</MenuItem>
+                    <MenuItem value="true">Да</MenuItem>
+                    <MenuItem value="false">Нет</MenuItem>
+                  </TextField>
+                ))}
+                <TextField
+                  label="Количество пострадавших"
+                  disabled={p.no_contact === true}
+                  type="number"
+                  value={p.victims_count ?? ""}
+                  placeholder="Случайно"
+                  helperText="Пусто — случайно; 0 — пострадавших нет"
+                  slotProps={{ htmlInput: { min: 0, max: 100000, step: 1 } }}
+                  onChange={(e) =>
+                    change({
+                      victims_count:
+                        e.target.value === "" ? null : Number(e.target.value),
+                    })
+                  }
+                />
+              </div>
+              {p.no_contact === true && (
+                <Alert severity="info">
+                  Молчаливый вызов: параметры происшествия и заявителя сброшены.
+                  Эти сведения неизвестны, службы не оповещаются. Ученик получит
+                  описание тишины и, при выбранной отметке, срыва звонка.
+                </Alert>
+              )}
               <h3>Место происшествия</h3>
               <div className="generation-grid">
                 {textChoice(
@@ -280,6 +339,10 @@ export function CardGenerationDialog({ onClose }: CardGenerationDialogProps) {
                     key={key}
                     select
                     label={title}
+                    disabled={
+                      p.no_contact === true &&
+                      (key === "gender" || key === "caller_state")
+                    }
                     value={p[key] ?? "random"}
                     onChange={(e) =>
                       change({
@@ -298,6 +361,7 @@ export function CardGenerationDialog({ onClose }: CardGenerationDialogProps) {
                 ))}
                 <TextField
                   label="Возраст заявителя"
+                  disabled={p.no_contact === true}
                   type="number"
                   value={p.age ?? ""}
                   placeholder="Случайно"

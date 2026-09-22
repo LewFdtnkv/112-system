@@ -356,7 +356,7 @@ export const CardsPage = () => {
                     <p>
                       {detail.data.classifier_entry?.display_name ||
                         detail.data.classifier_entry?.name ||
-                        "Тип не загружен"}
+                        "Тип не установлен"}
                     </p>
                     <b>Службы</b>
                     <ul>

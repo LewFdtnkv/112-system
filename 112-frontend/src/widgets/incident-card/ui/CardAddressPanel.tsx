@@ -17,8 +17,9 @@ export function CardAddressPanel({ viewing, onMap }: Props) {
   const descriptionDisabled = useCardSkillDisabled("description");
   const { fields, setField, setDetail, setAddressField } = editor;
   const address = fields.address;
-  const country = address.country ?? (disabled ? "" : "Россия");
-  const region = address.region ?? (disabled ? "" : "Москва");
+  const omitDefaults = disabled || fields.details?.noContact;
+  const country = address.country ?? (omitDefaults ? "" : "Россия");
+  const region = address.region ?? (omitDefaults ? "" : "Москва");
   const addressLine = [
     region.trim().toLocaleLowerCase() ===
     (address.locality ?? "").trim().toLocaleLowerCase()
@@ -138,7 +139,7 @@ export function CardAddressPanel({ viewing, onMap }: Props) {
               setField("address", {
                 ...emptyIncidentAddress,
                 country: "",
-                region: "Москва",
+                region: fields.details?.noContact ? "" : "Москва",
               })
             }
           />
@@ -167,7 +168,7 @@ export function CardAddressPanel({ viewing, onMap }: Props) {
               className={`arm-address-grid__${area}`}
               label={label}
               disabled={addressDisabled}
-              value={address[key] ?? (disabled ? "" : fallback)}
+              value={address[key] ?? (omitDefaults ? "" : fallback)}
               onChange={(e) => setAddressField(key, e.target.value)}
             />
           ))}
@@ -186,7 +187,7 @@ export function CardAddressPanel({ viewing, onMap }: Props) {
             setField("address", {
               ...emptyIncidentAddress,
               country: "",
-              region: "Москва",
+              region: fields.details?.noContact ? "" : "Москва",
             })
           }
         >

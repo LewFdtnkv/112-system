@@ -381,8 +381,8 @@ function IncidentCardForm(props: IncidentCardFormProps) {
               disabled={locked("classification")}
               value={fields.victimsCount ?? ""}
               onChange={(e) =>
-                editor.setField(
-                  "victimsCount",
+                editor.setVictims(
+                  e.target.value === "" || Number(e.target.value) > 0,
                   e.target.value === ""
                     ? null
                     : Math.max(0, Number(e.target.value)),

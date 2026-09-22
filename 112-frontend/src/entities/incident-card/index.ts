@@ -24,3 +24,5 @@ export type {
 } from "./model/types";
 
 export { incidentCardFieldLabels } from "./model/fieldLabels";
+
+export { cardFlagFields } from "./model/cardFlags";

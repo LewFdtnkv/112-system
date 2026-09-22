@@ -1,3 +1,4 @@
+import { cardFlagFields } from "@/entities/incident-card";
 import { trainingApi, type FeatureDefinition } from "@/entities/training";
 import { getApiError } from "@/shared/api";
 import {
@@ -15,18 +16,18 @@ import {
   FormControlLabel,
   Stack,
   TextField,
+  MenuItem,
 } from "@mui/material";
 import { styles } from "../styles/CardEditor";
 import { TemplateAddress } from "./TemplateAddress";
 import { useCardEditor } from "../model/useCardEditor";
 import type { CardEditorProps } from "../types/CardEditor";
 
-export function CardEditor({
-  onClose,
-  initial,
-  onReload,
-}: CardEditorProps) {
+export function CardEditor({ onClose, initial, onReload }: CardEditorProps) {
   const {
+    flags,
+    setFlag,
+    silent,
     address,
     setAddress,
     person,
@@ -64,8 +65,9 @@ export function CardEditor({
         <TextField
           key={key}
           label={label}
+          disabled={silent && ["caller_name", "address_text"].includes(key)}
           required={
-            !(key === "address_text" && !notificationRequired) &&
+            !(key === "address_text" && (!notificationRequired || silent)) &&
             !(key === "caller_message" && initial) &&
             ["title", "caller_message", "address_text", "description"].includes(
               key,
@@ -119,6 +121,41 @@ export function CardEditor({
           Заполняйте только известные из условия сведения. Пустое необязательное
           поле не считается ошибкой ученика.
         </p>
+        <h4>Отметки над типом происшествия</h4>
+        <p>
+          Укажите эти обстоятельства в условии. «Не оценивать» оставляет отметку
+          вне автопроверки.
+        </p>
+        <div className="template-input-grid">
+          {cardFlagFields.map(({ key, label }) => (
+            <TextField
+              key={key}
+              select
+              label={label}
+              disabled={silent && key !== "noContact" && key !== "callDropped"}
+              value={flags[key] == null ? "unset" : String(flags[key])}
+              onChange={(e) =>
+                setFlag(
+                  key,
+                  e.target.value === "unset"
+                    ? undefined
+                    : e.target.value === "true",
+                )
+              }
+            >
+              <MenuItem value="unset">Не оценивать</MenuItem>
+              <MenuItem value="true">Да</MenuItem>
+              <MenuItem value="false">Нет</MenuItem>
+            </TextField>
+          ))}
+        </div>
+        {silent && (
+          <Alert severity="info">
+            Молчаливый вызов сохраняется без типа, адреса, личности заявителя,
+            числа пострадавших и служб. В условии опишите тишину и наблюдения
+            оператора. Неизвестные признаки не участвуют в оценке.
+          </Alert>
+        )}
         <h4>Заявитель и содержание обращения</h4>
         <div className="template-input-grid">
           {renderFields(["caller_name"])}
@@ -141,7 +178,6 @@ export function CardEditor({
         <Alert severity="info">
           Параметры человека необязательны. Укажите существенные сведения также
           в сообщении заявителя, чтобы ученик не оценивался по скрытым фактам.
-          Генерация ИИ будет подключена отдельно.
         </Alert>
         <Stack direction="row" spacing={1}>
           {(
@@ -156,6 +192,7 @@ export function CardEditor({
               key={key}
               label={label}
               type={key === "gender" ? "text" : "number"}
+              disabled={silent}
               value={person[key]}
               onChange={(e) => setPerson({ ...person, [key]: e.target.value })}
               slotProps={{
@@ -170,15 +207,17 @@ export function CardEditor({
         </Stack>
         <TextField
           label="Внешность и особые приметы"
+          disabled={silent}
           multiline
           value={person.appearance}
           onChange={(e) => setPerson({ ...person, appearance: e.target.value })}
           slotProps={{ htmlInput: { maxLength: 2000 } }}
         />
-        <TemplateAddress value={address} onChange={setAddress} />
+        {!silent && <TemplateAddress value={address} onChange={setAddress} />}
         {renderFields(["address_text"])}
         <h4>Происшествие и службы</h4>
         <TextField
+          disabled={silent}
           label="Количество пострадавших"
           type="number"
           value={victims}
@@ -209,7 +248,7 @@ export function CardEditor({
         <ServerSelect
           label="Тип происшествия (ЕКП)"
           queryKey={["entry-options-with-features", version?.id]}
-          disabled={!version}
+          disabled={!version || silent}
           value={entry}
           onChange={(v) => {
             setEntry(v);
@@ -237,17 +276,20 @@ export function CardEditor({
             }));
           }}
         />
-        {activeFeatureDefinitions(features, answers).map((f) => (
-          <FeatureInput
-            key={f.key}
-            feature={f}
-            value={answers[f.key]}
-            onChange={(value) => {
-              setAnswers(updateFeatureAnswer(features, answers, f.key, value));
-            }}
-          />
-        ))}
-        {entry && (
+        {!silent &&
+          activeFeatureDefinitions(features, answers).map((f) => (
+            <FeatureInput
+              key={f.key}
+              feature={f}
+              value={answers[f.key]}
+              onChange={(value) => {
+                setAnswers(
+                  updateFeatureAnswer(features, answers, f.key, value),
+                );
+              }}
+            />
+          ))}
+        {!silent && entry && (
           <FormControlLabel
             label="Задать службы эталонного решения вручную"
             control={
@@ -269,7 +311,7 @@ export function CardEditor({
             }
           />
         )}
-        {manualRecipients !== null && (
+        {!silent && manualRecipients !== null && (
           <Stack spacing={1}>
             {initial && (
               <Alert severity="info">
@@ -312,7 +354,7 @@ export function CardEditor({
             </Stack>
           </Stack>
         )}
-        {entry && manualRecipients === null && (
+        {!silent && entry && manualRecipients === null && (
           <QueryState
             pending={routes.isPending}
             error={routes.error}
@@ -373,8 +415,9 @@ export function CardEditor({
           disabled={
             save.isPending ||
             !version ||
-            !entry ||
+            (!entry && !silent) ||
             (manualRecipients === null &&
+              !silent &&
               notificationRequired &&
               !recipients.length) ||
             routes.isFetching

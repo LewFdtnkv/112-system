@@ -1,3 +1,5 @@
+import { cardFlagFields } from "@/entities/incident-card";
+import { CardFlagSummary } from "./CardFlagSummary";
 import {
   useIncidentCardContext,
   useCardSkillDisabled,
@@ -28,7 +30,11 @@ export function CardClassification({ viewing, onVictims }: Props) {
     editor.remote.search("");
     setChoosing(false);
   };
-  const categoryName = editor.remote.categoryName || "Тип не выбран";
+  const categoryName =
+    editor.remote.categoryName ||
+    (fields.details?.noContact ? "Тип не установлен" : "Тип не выбран");
+  const hasVictims =
+    fields.details?.hasVictims ?? (fields.victimsCount ?? 0) > 0;
   const answers = fields.details?.clarifications ?? {};
   return (
     <section
@@ -39,9 +45,25 @@ export function CardClassification({ viewing, onVictims }: Props) {
       {viewing ? (
         <div className="arm-victim-summary">
           <div>
-            Пострадавшие: {fields.victimsCount ?? "нет"} Отказ от скорой:{" "}
-            {fields.details?.refusedAmbulance ? "да" : "нет"} Заблокированные:{" "}
-            {fields.details?.blocked ? "да" : "нет"}
+            {cardFlagFields.map(({ key, label }) => (
+              <CardFlagSummary
+                key={key}
+                label={label}
+                value={
+                  fields.details?.noContact &&
+                  fields.details?.[key] == null &&
+                  key !== "callDropped"
+                    ? "неизвестно"
+                    : key === "hasVictims"
+                      ? hasVictims
+                        ? String(fields.victimsCount || "да, число неизвестно")
+                        : "нет"
+                      : fields.details?.[key]
+                        ? "да"
+                        : "нет"
+                }
+              />
+            ))}
           </div>
           <div>
             <button disabled>ЧС ϟ</button>
@@ -54,12 +76,22 @@ export function CardClassification({ viewing, onVictims }: Props) {
           <div className="arm-victim-bar__group">
             <button
               disabled={disabled}
-              onClick={onVictims}
-              className={fields.victimsCount ? "is-selected" : ""}
+              onClick={() => editor.setVictims(!hasVictims)}
+              aria-pressed={hasVictims}
+              className={hasVictims ? "is-selected" : ""}
             >
               Пострадавшие
               {fields.victimsCount ? `: ${fields.victimsCount}` : ""}
             </button>
+            {hasVictims && (
+              <button
+                disabled={disabled}
+                onClick={onVictims}
+                aria-label="Указать количество пострадавших"
+              >
+                Число: {fields.victimsCount ?? "?"}
+              </button>
+            )}
             <button
               disabled={disabled}
               aria-pressed={fields.details?.refusedAmbulance ?? false}
@@ -83,14 +115,18 @@ export function CardClassification({ viewing, onVictims }: Props) {
           </div>
           <div className="arm-victim-bar__group arm-victim-bar__special">
             <button
-              disabled
-              title="Завершение пустого вызова не предусмотрено текущим заданием"
+              disabled={disabled}
+              aria-pressed={fields.details?.noContact ?? false}
+              onClick={() => setDetail("noContact", !fields.details?.noContact)}
             >
               нет контакта
             </button>
             <button
-              disabled
-              title="Срыв звонка не предусмотрен текущим заданием"
+              disabled={disabled}
+              aria-pressed={fields.details?.callDropped ?? false}
+              onClick={() =>
+                setDetail("callDropped", !fields.details?.callDropped)
+              }
             >
               срыв звонка
             </button>
@@ -102,7 +138,10 @@ export function CardClassification({ viewing, onVictims }: Props) {
           <h3>{categoryName}</h3>
           <p>
             {editor.remote.features?.length
-              ? activeFeatureDefinitions(editor.remote.features, fields.ekpAnswers)
+              ? activeFeatureDefinitions(
+                  editor.remote.features,
+                  fields.ekpAnswers,
+                )
                   .map(
                     (f) =>
                       `${f.label}: ${featureText(fields.ekpAnswers?.[f.key])}`,
