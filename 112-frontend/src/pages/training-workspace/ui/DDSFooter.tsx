@@ -101,6 +101,9 @@ export function DDSFooter({ workspace: w }: DDSControlsProps) {
               <DDSTile
                 key={c.id}
                 name={c.name}
+                kind="crew"
+                onEdit={() => w.openEditor(c.crew_code)}
+                editDisabled={busy || !canManage || !c.allowed_statuses.length}
                 status={crewStatusLabels[c.status]}
                 updatedAt={c.status_updated_at ?? c.history.at(-1)?.at}
                 selected={activeCrew === c.crew_code}

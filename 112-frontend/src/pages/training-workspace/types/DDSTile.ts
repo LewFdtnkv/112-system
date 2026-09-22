@@ -5,4 +5,7 @@ export interface DDSTileProps {
   updatedAt?: string;
   selected: boolean;
   onClick: () => void;
+  kind?: "service" | "crew";
+  onEdit?: () => void;
+  editDisabled?: boolean;
 }

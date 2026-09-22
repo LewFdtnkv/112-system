@@ -12,5 +12,7 @@ export function ddsTime(value?: string, full = false) {
       : {}),
     hour: "2-digit",
     minute: "2-digit",
-  }).format(new Date(value));
+  })
+    .format(new Date(value))
+    .replace(",", "");
 }

@@ -436,6 +436,12 @@ test("real API: EKP file roundtrip, rule editing, profile publication and DDS ex
         /\d{2}:\d{2}/,
       );
       await expect(page.locator(".dds-response-panel")).toHaveCount(0);
+      await expect(
+        page.getByRole("button", { name: /Изменить статус бригады «/ }),
+      ).toHaveCount(2);
+      await expect(
+        page.locator(".dds-service-grid .dds-service-active"),
+      ).toHaveCSS("background-color", "rgb(137, 141, 144)");
       await page.screenshot({
         path: info.outputPath("dds-crews-collapsed.png"),
         animations: "disabled",
@@ -451,12 +457,10 @@ test("real API: EKP file roundtrip, rule editing, profile publication and DDS ex
         .click();
       await expect(page.locator(".dds-response-panel")).toHaveCount(0);
       await page
-        .getByLabel("Бригады службы")
-        .getByRole("button")
-        .filter({ hasText: "Резерв" })
-        .click();
-      await page
-        .getByRole("button", { name: "Изменить статус бригады", exact: true })
+        .getByRole("button", {
+          name: "Изменить статус бригады «Резервная бригада»",
+          exact: true,
+        })
         .click();
       await page
         .getByRole("combobox", { name: "Статус бригады", exact: true })
@@ -481,7 +485,10 @@ test("real API: EKP file roundtrip, rule editing, profile publication and DDS ex
         "completed",
       ]) {
         await page
-          .getByRole("button", { name: "Изменить статус бригады", exact: true })
+          .getByRole("button", {
+            name: "Изменить статус бригады «Аварийная бригада»",
+            exact: true,
+          })
           .click();
         await page
           .getByRole("combobox", { name: "Статус бригады", exact: true })
@@ -511,6 +518,15 @@ test("real API: EKP file roundtrip, rule editing, profile publication and DDS ex
           }),
         ).not.toBeVisible();
       }
+      await expect(
+        page.locator(".dds-service-grid .dds-service-active"),
+      ).toContainText("Принята");
+      await expect(page.locator(".dds-history-row").first()).toContainText(
+        /оп\. 0.*\d{2}\.\d{2}\.\d{4}.*Назначена/,
+      );
+      await expect(page.locator(".dds-history-row").first()).not.toContainText(
+        "Наряд 23",
+      );
       await page.screenshot({ path: info.outputPath("dds-crews-desktop.png") });
       await page.setViewportSize({ width: 1366, height: 768 });
       await page.screenshot({ path: info.outputPath("dds-crews-laptop.png") });
