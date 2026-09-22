@@ -12,11 +12,11 @@ export {
   emptyIncidentAddress,
   emptyIncidentPhones,
   formatAddress,
+  frequentIncidentCategoryIds,
   getCategoryName,
   getIncidentTagGroups,
   getMissingCardFields,
   incidentCategories,
-  frequentIncidentCategoryIds,
   incidentStatusLabels,
   incidentStatuses,
   requiredCardFields,
@@ -26,11 +26,13 @@ export {
 export type {
   IncidentAddress,
   IncidentCard,
-  IncidentCardFields,
   IncidentCardDetails,
+  IncidentCardFields,
   IncidentCategory,
   IncidentPhones,
-  IncidentTagGroup,
   IncidentStatus,
+  IncidentTagGroup,
   ResponseService,
 } from "./model/types";
+
+export { incidentCardFieldLabels } from "./model/fieldLabels";

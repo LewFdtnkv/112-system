@@ -1,5 +1,6 @@
 import RoomOutlinedIcon from "@mui/icons-material/RoomOutlined";
 import { useEffect, useMemo, useState } from "react";
+import type { GeocodingResponse } from "../types/LocationMapPlaceholder";
 
 import { appConfig } from "@/shared/config/appConfig";
 
@@ -7,12 +8,6 @@ import type {
   GeocodedLocation,
   LocationMapProps,
 } from "../types/LocationMapPlaceholderTypes";
-
-interface GeocodingResponse {
-  lat: string;
-  lon: string;
-  display_name: string;
-}
 
 const moscow: GeocodedLocation = {
   latitude: 55.751244,

@@ -1,20 +1,20 @@
-export { authStorageKey, useAuthStore } from "./model/authStore";
 export { authApi } from "./api/authApi";
-export type { AuthSession, AuthState } from "./model/types";
+export { authStorageKey, useAuthStore } from "./model/authStore";
 export {
-  demoUsers,
   demoStudentId,
   demoTeacherId,
+  demoUsers,
   userRoleLabels,
 } from "./model/demoUsers";
 export type { DemoUser, DemoUserRole } from "./model/demoUsers";
+export type { AuthSession, AuthState } from "./types/types";
 
-export type { TokenPair, UserProfile } from "./model/types";
 export {
+  changePassword,
+  refreshSession,
+  restoreSession,
+  sessionFromProfile,
   signIn,
   signOut,
-  changePassword,
-  restoreSession,
-  refreshSession,
-  sessionFromProfile,
 } from "./model/authSession";
+export type { TokenPair, UserProfile } from "./types/types";

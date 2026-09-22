@@ -1,15 +1,23 @@
-import type { FeatureValue } from "@/shared/lib/featureValues";
 import { backendApi } from "@/shared/api";
+import type { FeatureValue } from "@/shared/lib/featureValues";
+import type {
+  CatalogRule,
+  CatalogVersion,
+  ProfileInput,
+  ServiceProfile,
+} from "../model/catalogTypes";
 import type {
   Analytics,
   Attempt,
+  AuditPage,
   CardData,
-  CardTemplate,
   CardListItem,
+  CardTemplate,
   CardTemplateInput,
   Classifier,
   ClassifierEntry,
   ClassifierRoute,
+  ClientObservation,
   Grade,
   GradeInput,
   GroupItem,
@@ -23,20 +31,12 @@ import type {
   Service,
   StudentLesson,
   UserCreate,
-  UserItem,
   UserDetail,
+  UserItem,
   UserUpdate,
   WorkReview,
-  AuditPage,
-  ClientObservation,
 } from "../model/types";
-import type {
-  CatalogRule,
-  CatalogVersion,
-  ProfileInput,
-  ServiceProfile,
-} from "../model/catalogTypes";
-export type Params = Record<string, string | number | boolean>;
+import type { Params } from "../types/trainingApi";
 const id = encodeURIComponent;
 const get = <T>(path: string, params: Params = {}, signal?: AbortSignal) =>
   backendApi.get(path, { searchParams: params, signal }).json<T>();
@@ -291,3 +291,5 @@ export const trainingApi = {
   publishClassifier: (versionId: string) =>
     post<Classifier>(`admin/classifiers/${id(versionId)}/publish`, {}),
 };
+
+export type { Params } from "../types/trainingApi";

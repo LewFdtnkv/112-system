@@ -1,11 +1,11 @@
 # Features
 
-Add user actions here once their requirements are known, for example signing in
-or starting a training session. Each feature exposes its public API through
-`index.ts` and may import from `entities` and `shared`.
+User actions live here: authentication, card authoring/generation, catalog editing,
+lesson launch/review, student profiles and incident editing. Each slice exposes
+its public API through `index.ts` and imports only `entities` and `shared`.
+Pages/widgets compose independent features; features never import one another.
 
-`scenario-management` currently contains a validated scenario form for local
-demonstration records. It receives a save callback and does not call an API.
-
-API payloads, authorization policies and authentication storage remain undefined
-until the backend contract is available.
+Use `ui`, `model`, `api`, `lib`, `types` and `styles` segments according to
+[the mandatory FSD rules](../../docs/FRONTEND_ARCHITECTURE.md).
+`demo-training` and `scenario-management` retain the isolated local demonstration
+flow; the current application uses the backend through `entities/training`.

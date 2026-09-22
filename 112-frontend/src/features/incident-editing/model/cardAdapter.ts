@@ -1,4 +1,3 @@
-import type { FeatureValue } from "@/shared/lib/featureValues";
 import {
   emptyCardFields,
   emptyIncidentAddress,
@@ -7,13 +6,9 @@ import {
   type IncidentCard,
   type IncidentCardFields,
 } from "@/entities/incident-card";
-import type {
-  Attempt,
-  CardData,
-  ClassifierEntry,
-  Recipient,
-  JournalCard,
-} from "@/entities/training";
+import type { Attempt, CardData, JournalCard } from "@/entities/training";
+import type { FeatureValue } from "@/shared/lib/featureValues";
+import type { ReferenceCardSource } from "../types/cardAdapter";
 const record = (value: unknown): Record<string, unknown> =>
   value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
@@ -88,13 +83,6 @@ export function attemptCard(attempt: Attempt): IncidentCard {
     },
   };
 }
-export interface ReferenceCardSource {
-  id: string;
-  title: string;
-  data: CardData;
-  classifier_entry?: ClassifierEntry | null;
-  recipients?: Recipient[];
-}
 export function referenceCard(source: ReferenceCardSource): IncidentCard {
   return {
     id: source.id,
@@ -163,3 +151,5 @@ export function journalCard(card: JournalCard): IncidentCard {
     },
   };
 }
+
+export type { ReferenceCardSource } from "../types/cardAdapter";

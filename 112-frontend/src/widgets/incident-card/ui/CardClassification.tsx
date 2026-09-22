@@ -1,20 +1,17 @@
-import { FeatureInput } from "@/shared/ui/FeatureInput";
-import { featureText } from "@/shared/lib/featureValues";
-import { Fragment, useState } from "react";
 import {
+  frequentIncidentCategoryIds,
   getCategoryName,
   incidentCategories,
-  frequentIncidentCategoryIds,
 } from "@/entities/incident-card";
-import type { IncidentEditor } from "@/features/incident-editing";
+import {
+  activeFeatureDefinitions,
+  featureText,
+  updateFeatureAnswer,
+} from "@/shared/lib/featureValues";
 import { ArmField, ArmIconButton } from "@/shared/ui/arm";
-
-interface Props {
-  editor: IncidentEditor;
-  disabled: boolean;
-  viewing: boolean;
-  onVictims: () => void;
-}
+import { FeatureInput } from "@/shared/ui/FeatureInput";
+import { Fragment, useState } from "react";
+import type { Props } from "../types/CardClassification";
 export function CardClassification({
   editor,
   disabled,
@@ -238,17 +235,25 @@ export function CardClassification({
                       />
                     </div>
                   )}
-                  {editor.remote?.features?.map((feature) => (
+                  {activeFeatureDefinitions(
+                    editor.remote?.features ?? [],
+                    fields.ekpAnswers,
+                  ).map((feature) => (
                     <FeatureInput
                       key={feature.key}
                       feature={feature}
                       disabled={disabled}
                       value={fields.ekpAnswers?.[feature.key]}
                       onChange={(value) => {
-                        const next = { ...fields.ekpAnswers };
-                        if (value === undefined) delete next[feature.key];
-                        else next[feature.key] = value;
-                        editor.setField("ekpAnswers", next);
+                        editor.setField(
+                          "ekpAnswers",
+                          updateFeatureAnswer(
+                            editor.remote?.features ?? [],
+                            fields.ekpAnswers,
+                            feature.key,
+                            value,
+                          ),
+                        );
                       }}
                     />
                   ))}

@@ -1,9 +1,9 @@
+import { useAuthStore } from "@/entities/user";
+import { PageHeader } from "@/shared/ui/PageHeader";
+import { LessonList } from "@/widgets/lesson-list";
 import { ProctoringMonitor } from "@/widgets/proctoring-monitor";
 import { Stack } from "@mui/material";
 import { Link } from "react-router-dom";
-import { PageHeader } from "@/shared/ui/PageHeader";
-import { useAuthStore } from "@/entities/user";
-import { LessonList } from "@/widgets/lesson-list";
 export const SessionMonitoringPage = () => {
   const user = useAuthStore((state) => state.session);
   return (

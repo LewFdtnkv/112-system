@@ -1,3 +1,4 @@
+import type { CardDraft } from "../types/cardDraft";
 import {
   emptyCardFields,
   incidentStatuses,
@@ -8,12 +9,6 @@ import {
   type IncidentStatus,
   type ResponseService,
 } from "./types";
-
-export interface CardDraft {
-  cardId: string;
-  fields: IncidentCardFields;
-  savedAt: string;
-}
 
 const draftVersion = 1;
 
@@ -181,3 +176,5 @@ export const clearCardDraft = (
     // Игнорируем: черновик — вспомогательные данные.
   }
 };
+
+export type { CardDraft } from "../types/cardDraft";

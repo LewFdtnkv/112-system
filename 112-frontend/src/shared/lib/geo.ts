@@ -1,4 +1,1 @@
-export interface MapPoint {
-  latitude: number;
-  longitude: number;
-}
+export type { MapPoint } from "../types/geo";

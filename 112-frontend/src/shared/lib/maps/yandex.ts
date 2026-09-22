@@ -1,37 +1,6 @@
+import type { Coordinates, Marker, Yandex } from "../../types/yandex";
 import type { MapPoint } from "../geo";
 export type { MapPoint } from "../geo";
-type Coordinates = [number, number];
-interface Events {
-  add(
-    name: string,
-    callback: (event: { get(key: string): Coordinates }) => void,
-  ): void;
-}
-interface Marker {
-  geometry: {
-    setCoordinates(coords: Coordinates): void;
-    getCoordinates(): Coordinates;
-  };
-  events: Events;
-}
-interface MapInstance {
-  events: Events;
-  geoObjects: { add(marker: Marker): void };
-  setCenter(coords: Coordinates): void;
-  destroy(): void;
-}
-interface Yandex {
-  ready(callback: () => void): void;
-  Map: new (
-    element: HTMLElement,
-    state: { center: Coordinates; zoom: number; controls: string[] },
-  ) => MapInstance;
-  Placemark: new (
-    coords: Coordinates,
-    properties: Record<string, unknown>,
-    options: Record<string, unknown>,
-  ) => Marker;
-}
 declare global {
   interface Window {
     ymaps?: Yandex;

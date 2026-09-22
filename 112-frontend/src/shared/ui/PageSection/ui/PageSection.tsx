@@ -1,10 +1,8 @@
-import { useId, type PropsWithChildren } from "react";
+import type { PageSectionProps } from "../types/PageSection";
 import { Typography } from "@mui/material";
+import { useId } from "react";
 
-export const PageSection = ({
-  title,
-  children,
-}: PropsWithChildren<{ title: string }>) => {
+export const PageSection = ({ title, children }: PageSectionProps) => {
   const titleId = useId();
 
   return (

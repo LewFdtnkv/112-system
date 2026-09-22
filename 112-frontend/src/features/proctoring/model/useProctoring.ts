@@ -1,6 +1,6 @@
+import { activityApi, type FocusKind } from "@/entities/training";
 import { randomUUID } from "@/shared/lib/uuid";
 import { useEffect, useState } from "react";
-import { activityApi, type FocusKind } from "@/entities/training";
 
 export function useProctoring(attemptId: string | undefined, active: boolean) {
   const [failed, setFailed] = useState(false);

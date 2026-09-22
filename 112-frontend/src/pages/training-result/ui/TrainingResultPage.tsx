@@ -1,17 +1,18 @@
-import { ProctoringHistory } from "@/features/proctoring";
-import { MessageComposer } from "@/features/teaching-messages";
-import { Button, Stack, ToggleButton, ToggleButtonGroup } from "@mui/material";
-import { useState } from "react";
-import { TrainingCardPreview } from "@/widgets/incident-card";
+import { useAuthStore } from "@/entities/user";
 import {
   comparisonFeedback,
+  LessonReview,
+  StudentResult,
   type ReviewedCard,
 } from "@/features/lesson-review";
-import { useParams, useSearchParams } from "react-router-dom";
-import { useAuthStore } from "@/entities/user";
-import { LessonReview, StudentResult } from "@/features/lesson-review";
+import { ProctoringHistory } from "@/features/proctoring";
+import { MessageComposer } from "@/features/teaching-messages";
 import { PageHeader } from "@/shared/ui/PageHeader";
+import { TrainingCardPreview } from "@/widgets/incident-card";
 import { LessonList } from "@/widgets/lesson-list";
+import { Button, Stack, ToggleButton, ToggleButtonGroup } from "@mui/material";
+import { useState } from "react";
+import { useParams, useSearchParams } from "react-router-dom";
 export const TrainingResultPage = () => {
   const [preview, setPreview] = useState<{
     rows: ReviewedCard[];

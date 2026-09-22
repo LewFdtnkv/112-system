@@ -1,30 +1,12 @@
-import type { StudentOverview } from "../model/studentOverview";
 import { backendApi } from "@/shared/api";
+import type { StudentOverview } from "../model/studentOverview";
 import type { LessonPage, Page, UserDetail } from "../model/types";
-
-export interface Message {
-  id: string;
-  text: string;
-  created_at: string;
-  read_at: string | null;
-  teacher_name: string;
-  group_name: string | null;
-}
-export interface Activity {
-  id: string;
-  occurred_at: string;
-  kind: string;
-  actor_id: string | null;
-  reason: string;
-}
-export interface ProctoringEvent {
-  id: string;
-  kind: string;
-  created_at: string;
-  client_occurred_at: string;
-}
-export type FocusKind =
-  "tab.visible" | "tab.hidden" | "window.focus" | "window.blur";
+import type {
+  Activity,
+  FocusKind,
+  Message,
+  ProctoringEvent,
+} from "../types/activityApi";
 export const activityApi = {
   overview: (studentId?: string, activeOffset = 0, signal?: AbortSignal) =>
     backendApi
@@ -114,3 +96,10 @@ export const activityApi = {
   deleteScenario: (id: string) =>
     backendApi.delete(`scenarios/${id}`).json<{ result: string }>(),
 };
+
+export type {
+  Activity,
+  FocusKind,
+  Message,
+  ProctoringEvent,
+} from "../types/activityApi";

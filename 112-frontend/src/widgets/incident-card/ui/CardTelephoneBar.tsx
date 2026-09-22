@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import type { IncidentCard } from "@/entities/incident-card";
 import type { IncidentEditor } from "@/features/incident-editing";
 import { ArmIcon, ArmIconButton } from "@/shared/ui/arm";
@@ -16,6 +17,11 @@ interface Props {
   onViewChange: () => void;
   onHistory: (kind: "calls" | "sms") => void;
 }
+=======
+import { formatDuration } from "@/shared/lib/formatDuration";
+import { ArmField, ArmIcon, ArmIconButton } from "@/shared/ui/arm";
+import type { Props } from "../types/CardTelephoneBar";
+>>>>>>> 36ffa054c56ef9a8a422051a9fb65a6eae5b4154
 export function CardTelephoneBar({
   card,
   editor,

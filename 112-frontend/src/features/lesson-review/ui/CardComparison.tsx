@@ -1,20 +1,13 @@
-import { useState, type ReactNode } from "react";
 import { Button, ToggleButton, ToggleButtonGroup } from "@mui/material";
-import {
-  comparisonFields,
-  fieldVerdict,
-  type ComparisonField,
-  type ReviewedCard,
-} from "../model/comparison";
-import "./card-comparison.scss";
+import { useState } from "react";
+import { comparisonFields, fieldVerdict } from "../model/comparison";
+import "../styles/card-comparison.scss";
+import type {
+  CardComparisonProps,
+  VerdictProps,
+} from "../types/CardComparison";
 
-function Verdict({
-  field,
-  submitted,
-}: {
-  field: ComparisonField;
-  submitted: boolean;
-}) {
+function Verdict({ field, submitted }: VerdictProps) {
   const verdict = fieldVerdict(field, submitted);
   return (
     <span className={`comparison-verdict comparison-verdict--${verdict.tone}`}>
@@ -22,13 +15,7 @@ function Verdict({
     </span>
   );
 }
-export function CardComparison({
-  row,
-  actions,
-}: {
-  row: ReviewedCard;
-  actions?: ReactNode;
-}) {
+export function CardComparison({ row, actions }: CardComparisonProps) {
   const [layout, setLayout] = useState<"paired" | "tiles" | "table">("table");
   const [issuesOnly, setIssuesOnly] = useState(false);
   const allFields = comparisonFields(row);

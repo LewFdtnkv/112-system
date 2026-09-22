@@ -1,19 +1,19 @@
-import { Alert, Button, Stack, Typography } from "@mui/material";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import {
-  BarChart,
-  Bar,
-  CartesianGrid,
-  XAxis,
-  YAxis,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
 import { activityApi } from "@/entities/training";
 import { getApiError } from "@/shared/api";
 import { download } from "@/shared/lib/download";
 import { QueryState } from "@/shared/ui/QueryState";
+import { Alert, Button, Stack, Typography } from "@mui/material";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 const roles: Record<string, string> = {
   admin: "Администраторы",
   teacher: "Преподаватели",

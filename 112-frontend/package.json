@@ -6,14 +6,13 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "lint": "eslint .",
+    "lint": "npm run check:architecture && eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "preview": "vite preview",
     "format": "prettier --write .",
-    "lint:scss": "stylelint \"src/**/*.scss\"",
-    "lint:scss:fix": "stylelint \"src/**/*.scss\" --fix"
+    "check:architecture": "node scripts/check-architecture.mjs"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

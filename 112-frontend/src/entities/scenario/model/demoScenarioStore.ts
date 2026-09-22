@@ -1,15 +1,8 @@
 import { randomUUID } from "@/shared/lib/uuid";
 import { create } from "zustand";
+import type { DemoScenarioStore } from "../types/demoScenarioStore";
 
 import { demoScenarios } from "./demoScenarios";
-import type { DemoScenario, ScenarioDraft } from "./types";
-
-interface DemoScenarioStore {
-  scenarios: DemoScenario[];
-  createScenario: (draft: ScenarioDraft) => string;
-  updateScenario: (id: string, draft: ScenarioDraft) => boolean;
-  upsertScenario: (scenario: DemoScenario) => void;
-}
 
 export const useDemoScenarioStore = create<DemoScenarioStore>()((set, get) => ({
   scenarios: demoScenarios.map((scenario) => ({ ...scenario })),

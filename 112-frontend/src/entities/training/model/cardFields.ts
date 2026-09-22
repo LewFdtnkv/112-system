@@ -1,6 +1,6 @@
+import type { FeatureDefinition } from "@/shared/lib/featureValues";
 import { fieldLabels } from "./fieldLabels";
 import type { CardData } from "./types";
-import type { FeatureDefinition } from "@/shared/lib/featureValues";
 
 const orderedFields = [
   "caller_name",

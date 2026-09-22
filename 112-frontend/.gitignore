@@ -28,3 +28,6 @@ test-results
 *.njsproj
 *.sln
 *.sw?
+
+# Local decomposition and verification workspace
+.refactor-work/

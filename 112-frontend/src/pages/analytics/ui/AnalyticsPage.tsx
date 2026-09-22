@@ -1,6 +1,8 @@
-import { download } from "@/shared/lib/download";
+import { activityApi, trainingApi } from "@/entities/training";
 import { getApiError } from "@/shared/api";
-import { useState } from "react";
+import { download } from "@/shared/lib/download";
+import { PageHeader } from "@/shared/ui/PageHeader";
+import { PageControls, QueryState } from "@/shared/ui/QueryState";
 import {
   Alert,
   Button,
@@ -13,9 +15,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { activityApi, trainingApi } from "@/entities/training";
-import { PageHeader } from "@/shared/ui/PageHeader";
-import { QueryState, PageControls } from "@/shared/ui/QueryState";
+import { useState } from "react";
 export const AnalyticsPage = () => {
   const exportReport = useMutation({
     mutationFn: async () =>

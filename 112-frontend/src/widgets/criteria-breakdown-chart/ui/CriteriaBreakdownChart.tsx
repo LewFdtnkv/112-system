@@ -1,8 +1,4 @@
-import {
-  type Evaluation,
-  criterionOrder,
-  criterionLabels,
-} from "@/entities/evaluation/demoEvaluations/types/demoEvaluationsTypes";
+import { criterionLabels, criterionOrder } from "@/features/demo-training";
 import {
   Bar,
   BarChart,
@@ -12,10 +8,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-
-interface CriteriaBreakdownChartProps {
-  evaluations: readonly Evaluation[];
-}
+import { styles } from "../styles/CriteriaBreakdownChart";
+import type { CriteriaBreakdownChartProps } from "../types/CriteriaBreakdownChart";
 
 export const CriteriaBreakdownChart = ({
   evaluations,
@@ -41,7 +35,7 @@ export const CriteriaBreakdownChart = ({
   });
 
   return (
-    <div style={{ width: "100%", height: 280 }}>
+    <div style={styles.div}>
       <ResponsiveContainer>
         <BarChart data={data} layout="vertical" margin={{ left: 24 }}>
           <CartesianGrid strokeDasharray="3 3" horizontal={false} />

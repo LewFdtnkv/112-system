@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { ddsStatusLabels, fieldLabels, trainingApi } from "@/entities/training";
+import { QueryState } from "@/shared/ui/QueryState";
 import {
   Alert,
   Button,
@@ -12,13 +13,9 @@ import {
   Typography,
 } from "@mui/material";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import {
-  trainingApi,
-  fieldLabels,
-  ddsStatusLabels,
-  type AuditEvent,
-} from "@/entities/training";
-import { QueryState } from "@/shared/ui/QueryState";
+import { useState } from "react";
+import { styles } from "../styles/AuditTrail";
+import type { AuditTrailProps, EventDetailsProps } from "../types/AuditTrail";
 
 const kinds: Record<string, string> = {
   "dds.card_received": "Получение карточки ДДС",
@@ -63,7 +60,7 @@ const text = (value: unknown) =>
     : typeof value === "object"
       ? JSON.stringify(value)
       : String(value);
-function EventDetails({ event }: { event: AuditEvent }) {
+function EventDetails({ event }: EventDetailsProps) {
   const changes = event.payload.changes as
     { field: string; before: unknown; after: unknown }[] | undefined;
   if (changes?.length)
@@ -113,11 +110,7 @@ export function AuditTrail({
   lessonId,
   studentId,
   attemptId,
-}: {
-  lessonId: string;
-  studentId: string;
-  attemptId: string;
-}) {
+}: AuditTrailProps) {
   const [open, setOpen] = useState(false);
   const query = useInfiniteQuery({
     queryKey: ["attempt-audit", attemptId],
@@ -131,11 +124,11 @@ export function AuditTrail({
   return (
     <details
       onToggle={(e) => setOpen(e.currentTarget.open)}
-      style={{ marginTop: 16 }}
+      style={styles.details}
     >
       <summary>Аудит действий ученика</summary>
       {open && (
-        <Stack spacing={1} sx={{ mt: 1 }}>
+        <Stack spacing={1} sx={styles.stack}>
           <Alert severity="info">
             Сохранения и оповещение подтверждены сервером. Наблюдения браузера
             отражают ввод между сохранениями, могут быть неполными и не
@@ -172,9 +165,7 @@ export function AuditTrail({
                           ? "Браузер · не подтверждено"
                           : "Сервер"}
                       </TableCell>
-                      <TableCell
-                        sx={{ maxWidth: 500, overflowWrap: "anywhere" }}
-                      >
+                      <TableCell sx={styles.tableCell}>
                         <EventDetails event={event} />
                       </TableCell>
                     </TableRow>

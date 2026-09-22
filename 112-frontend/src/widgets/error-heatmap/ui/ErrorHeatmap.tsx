@@ -1,9 +1,6 @@
-import type { Evaluation } from "@/entities/evaluation/demoEvaluations/types/demoEvaluationsTypes";
-import { incidentCardFieldLabels } from "../types/ErrorHeatmapTypes";
-
-interface ErrorHeatmapProps {
-  evaluations: readonly Evaluation[];
-}
+import { incidentCardFieldLabels } from "@/entities/incident-card";
+import { styles } from "../styles/ErrorHeatmap";
+import type { ErrorHeatmapProps } from "../types/ErrorHeatmap";
 
 const fieldFromFindingKey = {
   field_accuracy: "address" as const,
@@ -50,7 +47,7 @@ export const ErrorHeatmap = ({ evaluations }: ErrorHeatmapProps) => {
             className="error-heatmap__row"
             key={field}
             role="row"
-            style={{ "--intensity": intensity } as never}
+            style={styles.div(intensity)}
           >
             <span role="cell">{label}</span>
             <span

@@ -1,11 +1,6 @@
-import { Button, Typography } from "@mui/material";
 import ReplayIcon from "@mui/icons-material/Replay";
-
-export interface ErrorStateProps {
-  title?: string;
-  description?: string;
-  onRetry?: () => void;
-}
+import { Button, Typography } from "@mui/material";
+import type { ErrorStateProps } from "./types/ErrorState";
 
 export const ErrorState = ({
   title = "Не удалось загрузить данные",
@@ -28,3 +23,5 @@ export const ErrorState = ({
     </div>
   );
 };
+
+export type { ErrorStateProps } from "./types/ErrorState";

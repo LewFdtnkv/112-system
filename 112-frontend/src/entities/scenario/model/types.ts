@@ -1,18 +1,4 @@
-export type ScenarioStatus = "draft" | "ready";
-export type ScenarioDifficulty = "basic" | "advanced";
-
-export interface DemoScenario {
-  id: string;
-  name: string;
-  category: string;
-  difficulty: ScenarioDifficulty;
-  durationMinutes: number;
-  normSeconds: number;
-  description: string;
-  status: ScenarioStatus;
-}
-
-export type ScenarioDraft = Omit<DemoScenario, "id">;
+import type { ScenarioDifficulty, ScenarioStatus } from "../types/types";
 
 export const scenarioStatusLabels: Record<ScenarioStatus, string> = {
   draft: "Черновик",
@@ -23,3 +9,10 @@ export const scenarioDifficultyLabels: Record<ScenarioDifficulty, string> = {
   basic: "Базовый",
   advanced: "Повышенный",
 };
+
+export type {
+  DemoScenario,
+  ScenarioDifficulty,
+  ScenarioDraft,
+  ScenarioStatus,
+} from "../types/types";

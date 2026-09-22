@@ -1,4 +1,7 @@
-import { useState } from "react";
+import { activityApi } from "@/entities/training";
+import { getApiError } from "@/shared/api";
+import { download } from "@/shared/lib/download";
+import { PageControls, QueryState } from "@/shared/ui/QueryState";
 import {
   Alert,
   Button,
@@ -9,18 +12,14 @@ import {
   Typography,
 } from "@mui/material";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { activityApi } from "@/entities/training";
-import { getApiError } from "@/shared/api";
-import { download } from "@/shared/lib/download";
-import { PageControls, QueryState } from "@/shared/ui/QueryState";
+import { useState } from "react";
+import { styles } from "../styles/UserActivityDialog";
+import type { UserActivityDialogProps } from "../types/UserActivityDialog";
 
 export function UserActivityDialog({
   userId,
   onClose,
-}: {
-  userId: string;
-  onClose: () => void;
-}) {
+}: UserActivityDialogProps) {
   const [page, setPage] = useState(0);
   const query = useQuery({
     queryKey: ["user-activity", userId, page],
@@ -44,23 +43,12 @@ export function UserActivityDialog({
             retry={() => void query.refetch()}
           >
             {query.data?.items.map((e) => (
-              <Stack
-                key={e.id}
-                sx={{
-                  borderBottom: "1px solid",
-                  borderColor: "divider",
-                  pb: 1,
-                }}
-              >
+              <Stack key={e.id} sx={styles.stack}>
                 <Typography>
                   <strong>{e.kind}</strong> ·{" "}
                   {new Date(e.occurred_at).toLocaleString("ru-RU")}
                 </Typography>
-                <Typography
-                  sx={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}
-                >
-                  {e.reason}
-                </Typography>
+                <Typography sx={styles.typography}>{e.reason}</Typography>
                 <small>Исполнитель: {e.actor_id ?? "Система"}</small>
               </Stack>
             ))}

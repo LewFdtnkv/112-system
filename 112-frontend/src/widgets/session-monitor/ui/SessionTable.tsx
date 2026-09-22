@@ -1,3 +1,5 @@
+import { useDemoTrainingStore } from "@/features/demo-training";
+import { rowAction } from "@/shared/lib/rowAction";
 import {
   Table,
   TableBody,
@@ -6,20 +8,17 @@ import {
   TableHead,
   TableRow,
 } from "@mui/material";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import type { SessionTableProps } from "../types/SessionTable";
 
 import { useDemoScenarioStore } from "@/entities/scenario";
-import { getScorePercent } from "@/entities/evaluation/demoEvaluations";
-import {
-  trainingStatusLabels,
-  useDemoTrainingStore,
-  type DemoTrainingSession,
-} from "@/entities/training-session";
+import { trainingStatusLabels } from "@/entities/training-session";
 import { demoUsers, useAuthStore } from "@/entities/user";
+import { getScorePercent } from "@/features/demo-training";
 import {
+  getStudentTrainingWorkspacePath,
   getTrainingResultPath,
   getTrainingSessionPath,
-  getStudentTrainingWorkspacePath,
 } from "@/shared/config/routes";
 import { EmptyState } from "@/shared/ui/EmptyState";
 
@@ -29,17 +28,12 @@ const dateFormatter = new Intl.DateTimeFormat("ru-RU", {
   timeZone: "Europe/Moscow",
 });
 
-interface SessionTableProps {
-  sessions: readonly DemoTrainingSession[];
-  label: string;
-  emptyTitle?: string;
-}
-
 export const SessionTable = ({
   sessions,
   label,
   emptyTitle = "Занятия не найдены",
 }: SessionTableProps) => {
+  const navigate = useNavigate();
   const scenarios = useDemoScenarioStore((state) => state.scenarios);
   const session = useAuthStore((state) => state.session);
   const evaluations = useDemoTrainingStore((state) => state.evaluations);
@@ -74,7 +68,18 @@ export const SessionTable = ({
             );
 
             return (
-              <TableRow key={session.id}>
+              <TableRow
+                key={session.id}
+                {...rowAction(() =>
+                  navigate(
+                    isStaff
+                      ? getTrainingSessionPath(session.id)
+                      : session.status === "completed"
+                        ? getTrainingResultPath(session.id)
+                        : getStudentTrainingWorkspacePath(session.id),
+                  ),
+                )}
+              >
                 <TableCell component="th" scope="row">
                   <Link
                     to={

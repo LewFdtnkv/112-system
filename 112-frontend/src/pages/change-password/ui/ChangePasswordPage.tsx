@@ -1,6 +1,3 @@
-import { useState } from "react";
-import { Alert, Button, Stack } from "@mui/material";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { changePassword, signOut, useAuthStore } from "@/entities/user";
 import {
   authErrorMessage,
@@ -8,8 +5,11 @@ import {
   type ChangePasswordValues,
 } from "@/features/auth";
 import { routePaths } from "@/shared/config/routes";
-import { PageHeader } from "@/shared/ui/PageHeader";
 import { safeReturnPath } from "@/shared/lib/safeReturnPath";
+import { PageHeader } from "@/shared/ui/PageHeader";
+import { Alert, Button, Stack } from "@mui/material";
+import { useState } from "react";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 export const ChangePasswordPage = () => {
   const status = useAuthStore((state) => state.status);
   const [error, setError] = useState<string>();

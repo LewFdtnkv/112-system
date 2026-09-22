@@ -1,12 +1,12 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Stack, Typography } from "@mui/material";
-import { StudentMessages } from "@/features/teaching-messages";
 import { activityApi } from "@/entities/training";
+import { StudentMessages } from "@/features/teaching-messages";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { QueryState } from "@/shared/ui/QueryState";
 import { LessonList } from "@/widgets/lesson-list";
 import { StudentOverviewPanel } from "@/widgets/student-overview";
+import { Stack, Typography } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 export const StudentDashboardPage = () => {
   const [activePage, setActivePage] = useState(0);
   const profile = useQuery({

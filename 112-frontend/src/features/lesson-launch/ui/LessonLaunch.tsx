@@ -1,22 +1,23 @@
+import { trainingApi, userName } from "@/entities/training";
+import { getApiError } from "@/shared/api";
+import { getTrainingSessionPath } from "@/shared/config/routes";
 import { randomUUID } from "@/shared/lib/uuid";
-import { useState } from "react";
+import { ServerSelect, type SelectOption } from "@/shared/ui/ServerSelect";
 import {
   Alert,
   Button,
   Chip,
   Dialog,
-  DialogTitle,
   DialogContent,
+  DialogTitle,
   MenuItem,
   Stack,
   TextField,
 } from "@mui/material";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { trainingApi, userName } from "@/entities/training";
-import { getApiError } from "@/shared/api";
-import { getTrainingSessionPath } from "@/shared/config/routes";
-import { ServerSelect, type SelectOption } from "@/shared/ui/ServerSelect";
+import { styles } from "../styles/LessonLaunch";
 export function LessonLaunch() {
   const [params] = useSearchParams();
   const [group, setGroup] = useState<SelectOption | null>(() =>
@@ -134,7 +135,7 @@ export function LessonLaunch() {
       >
         Добавить выбранную группу / ученика в получатели
       </Button>
-      <Stack direction="row" sx={{ flexWrap: "wrap", gap: 1 }}>
+      <Stack direction="row" sx={styles.stack}>
         {targets.map((t) => (
           <Chip
             key={`${t.kind}:${t.id}`}

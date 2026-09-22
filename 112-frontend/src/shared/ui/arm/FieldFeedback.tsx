@@ -1,10 +1,7 @@
 import { createContext, useContext } from "react";
-
-export type FieldFeedback = {
-  tone: "success" | "error" | "warning" | "neutral";
-  text: string;
-};
-export type FieldFeedbackMap = Record<string, FieldFeedback>;
+import type { FieldFeedbackMap } from "./types/FieldFeedback";
 export const FieldFeedbackContext = createContext<FieldFeedbackMap>({});
 export const useFieldFeedback = (key: string) =>
   useContext(FieldFeedbackContext)[key];
+
+export type { FieldFeedback, FieldFeedbackMap } from "./types/FieldFeedback";

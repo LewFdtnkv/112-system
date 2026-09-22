@@ -1,7 +1,16 @@
-import { Link } from "react-router-dom";
-import { MessageComposer } from "@/features/teaching-messages";
+import {
+  activityApi,
+  trainingApi,
+  userName,
+  type GroupItem,
+} from "@/entities/training";
 import { StudentProfileDialog } from "@/features/student-profile";
-import { useState } from "react";
+import { MessageComposer } from "@/features/teaching-messages";
+import { getApiError } from "@/shared/api";
+import { rowAction } from "@/shared/lib/rowAction";
+import { PageHeader } from "@/shared/ui/PageHeader";
+import { PageControls, QueryState } from "@/shared/ui/QueryState";
+import { ServerSelect, type SelectOption } from "@/shared/ui/ServerSelect";
 import {
   Alert,
   Button,
@@ -17,16 +26,9 @@ import {
   TextField,
 } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  activityApi,
-  trainingApi,
-  userName,
-  type GroupItem,
-} from "@/entities/training";
-import { getApiError } from "@/shared/api";
-import { PageHeader } from "@/shared/ui/PageHeader";
-import { PageControls, QueryState } from "@/shared/ui/QueryState";
-import { ServerSelect, type SelectOption } from "@/shared/ui/ServerSelect";
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { styles } from "../styles/GroupsPage";
 export const GroupsPage = () => {
   const [search, setSearch] = useState("");
   const [memberSearch, setMemberSearch] = useState("");
@@ -137,7 +139,14 @@ export const GroupsPage = () => {
               </TableHead>
               <TableBody>
                 {groups.data.items.map((item) => (
-                  <TableRow key={item.id}>
+                  <TableRow
+                    key={item.id}
+                    {...rowAction(() => {
+                      setGroup(item);
+                      setMemberPage(0);
+                      add.reset();
+                    })}
+                  >
                     <TableCell>
                       <Button
                         className="table-block-link"
@@ -176,7 +185,7 @@ export const GroupsPage = () => {
       >
         <DialogTitle>Перевод или исключение из группы</DialogTitle>
         <DialogContent>
-          <Stack spacing={2} sx={{ pt: 1 }}>
+          <Stack spacing={2} sx={styles.stack}>
             <Alert severity="info">
               Назначенные задания и результаты сохранятся.
             </Alert>
@@ -216,7 +225,7 @@ export const GroupsPage = () => {
       <Dialog open={!!group} onClose={() => setGroup(null)} fullWidth>
         <DialogTitle>{group?.name}</DialogTitle>
         <DialogContent>
-          <Stack spacing={2} sx={{ pt: 1 }}>
+          <Stack spacing={2} sx={styles.stack2}>
             <Button component={Link} to={`/training?group=${group?.id}`}>
               Назначить задание
             </Button>
@@ -256,7 +265,7 @@ export const GroupsPage = () => {
             >
               {members.data && (
                 <>
-                  <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                  <ul style={styles.ul}>
                     {members.data.items.map((u) => (
                       <li key={u.id}>
                         <Button onClick={() => setProfile(u.id)}>

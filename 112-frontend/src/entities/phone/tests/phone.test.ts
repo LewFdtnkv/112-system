@@ -6,7 +6,7 @@ import {
   formatPhone,
   getPhoneIssue,
   type PhoneEdit,
-} from "../ui/phone";
+} from "../lib/phone";
 
 const typeInto = (text: string, start = ""): PhoneEdit => {
   let state: PhoneEdit = { value: start, caret: start.length };

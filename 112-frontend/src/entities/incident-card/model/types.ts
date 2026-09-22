@@ -1,8 +1,12 @@
-import type { FeatureValue } from "@/shared/lib/featureValues";
-export type IncidentStatus =
-  "in_progress" | "not_notified" | "notified" | "closed";
-
-export type ResponseService = string;
+import type {
+  IncidentAddress,
+  IncidentCardFields,
+  IncidentCategory,
+  IncidentPhones,
+  IncidentStatus,
+  IncidentTagGroup,
+  ResponseService,
+} from "../types/types";
 
 export const incidentStatusLabels: Record<IncidentStatus, string> = {
   in_progress: "Не завершено",
@@ -23,17 +27,6 @@ export const responseServices: readonly ResponseService[] = [
   "103",
   "104",
 ];
-
-export interface IncidentCategory {
-  id: string;
-  name: string;
-  defaultServices: readonly ResponseService[];
-}
-
-export interface IncidentTagGroup {
-  label: string;
-  options: readonly string[];
-}
 
 export const incidentCategories: readonly IncidentCategory[] = [
   { id: "traffic", name: "ДТП", defaultServices: ["102", "103"] },
@@ -160,24 +153,6 @@ const incidentTagGroups: Record<string, readonly IncidentTagGroup[]> = {
 export const getIncidentTagGroups = (categoryId: string) =>
   incidentTagGroups[categoryId] ?? incidentTagGroups.other;
 
-export interface IncidentAddress {
-  country?: string;
-  region?: string;
-  locality?: string;
-  object?: string;
-  structure?: string;
-  doorCode?: string;
-  district: string;
-  area: string;
-  street: string;
-  house: string;
-  building: string;
-  apartment: string;
-  entrance: string;
-  floor: string;
-  description: string;
-}
-
 export const emptyIncidentAddress: IncidentAddress = {
   district: "",
   area: "",
@@ -203,59 +178,11 @@ export const formatAddress = (address: IncidentAddress) => {
   return parts.length > 0 ? parts.join(", ") : address.description;
 };
 
-export interface IncidentPhones {
-  callerId: string;
-  provided: string;
-  onSite: string;
-}
-
 export const emptyIncidentPhones: IncidentPhones = {
   callerId: "",
   provided: "",
   onSite: "",
 };
-
-export interface IncidentCardDetails {
-  buildingFloors?: string;
-  classificationDescription?: string;
-  callerStatus?: string;
-  callerGender?: string;
-  callerAge?: string;
-  foreignLanguage?: boolean;
-  refusedAmbulance?: boolean;
-  blocked?: boolean;
-  clarifications?: Record<string, readonly string[]>;
-}
-
-export interface IncidentCardFields {
-  location?: import("@/shared/lib/geo").MapPoint | null;
-  manualServices?:
-    { id: string; name: string; short_name?: string | null }[] | null;
-  ekpAnswers?: Record<string, FeatureValue>;
-  details?: IncidentCardDetails;
-  categoryId: string;
-  address: IncidentAddress;
-  callerName: string;
-  phones: IncidentPhones;
-  victimsCount: number | null;
-  description: string;
-  operatorAction: string;
-  services: readonly ResponseService[];
-  status: IncidentStatus;
-}
-
-export interface IncidentCard {
-  categoryName?: string;
-  displayNumber?: string;
-  createdDate?: string;
-  operatorNumber?: string;
-  workstation?: string;
-  id: string;
-  createdAt: string;
-  channel: string;
-  origin: "generated" | "student";
-  fields: IncidentCardFields;
-}
 
 export const emptyCardFields: IncidentCardFields = {
   categoryId: "",
@@ -316,3 +243,15 @@ export const countFilledFields = (fields: IncidentCardFields) =>
   }).length;
 
 export const totalCardFields = Object.keys(emptyCardFields).length;
+
+export type {
+  IncidentAddress,
+  IncidentCard,
+  IncidentCardDetails,
+  IncidentCardFields,
+  IncidentCategory,
+  IncidentPhones,
+  IncidentStatus,
+  IncidentTagGroup,
+  ResponseService,
+} from "../types/types";

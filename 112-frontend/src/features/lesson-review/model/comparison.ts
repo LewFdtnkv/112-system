@@ -1,19 +1,6 @@
-import {
-  flattenCardData,
-  cardFieldOrder,
-  type WorkReview,
-  type AutomaticCheck,
-} from "@/entities/training";
+import { cardFieldOrder, flattenCardData } from "@/entities/training";
 import type { FieldFeedbackMap } from "@/shared/ui/arm/FieldFeedback";
-
-export type ReviewedCard = WorkReview["assignments"][number];
-export type ComparisonField = Omit<
-  AutomaticCheck["fields"][number],
-  "status"
-> & {
-  status: AutomaticCheck["fields"][number]["status"] | "unscored";
-  group: string;
-};
+import type { ComparisonField, ReviewedCard } from "../types/comparison";
 const groups = [
   "Заявитель",
   "Адрес происшествия",
@@ -141,3 +128,5 @@ export function comparisonFeedback(row: ReviewedCard): FieldFeedbackMap {
       }),
   );
 }
+
+export type { ComparisonField, ReviewedCard } from "../types/comparison";

@@ -1,39 +1,35 @@
-import { UserActivityDialog } from "./UserActivityDialog";
-import { useState } from "react";
+import {
+  activityApi,
+  trainingApi,
+  UserPhoto,
+  type UserUpdate,
+} from "@/entities/training";
+import { getApiError } from "@/shared/api";
+import { QueryState } from "@/shared/ui/QueryState";
 import {
   Alert,
   Button,
   Dialog,
   DialogContent,
   DialogTitle,
-  MenuItem,
+  FormControlLabel,
   Stack,
   Switch,
-  FormControlLabel,
   TextField,
   Typography,
 } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  activityApi,
-  UserPhoto,
-  trainingApi,
-  type UserDetail,
-  type UserUpdate,
-  type UserRole,
-} from "@/entities/training";
-import { getApiError } from "@/shared/api";
-import { QueryState } from "@/shared/ui/QueryState";
+import { useState } from "react";
+import { styles } from "../styles/UserDetailsDialog";
+import type {
+  AccountFormProps,
+  UserDetailsDialogProps,
+} from "../types/UserDetailsDialog";
+import { UserActivityDialog } from "./UserActivityDialog";
 
-import { roleLabels, accountDate } from "../model/accountDisplay";
+import { accountDate, roleLabels } from "../model/accountDisplay";
 
-export function UserDetailsDialog({
-  userId,
-  onClose,
-}: {
-  userId: string;
-  onClose: () => void;
-}) {
+export function UserDetailsDialog({ userId, onClose }: UserDetailsDialogProps) {
   const query = useQuery({
     queryKey: ["user", userId],
     queryFn: ({ signal }) => trainingApi.user(userId, signal),
@@ -60,26 +56,18 @@ export function UserDetailsDialog({
   );
 }
 
-function AccountForm({
-  user,
-  onClose,
-}: {
-  user: UserDetail;
-  onClose: () => void;
-}) {
+function AccountForm({ user, onClose }: AccountFormProps) {
   const [form, setForm] = useState<UserUpdate>({
     first_name: user.first_name,
     last_name: user.last_name,
     middle_name: user.middle_name,
     email: user.email,
-    role: user.role,
     is_active: user.is_active,
   });
   const [reason, setReason] = useState("");
   const [confirm, setConfirm] = useState(false);
   const [history, setHistory] = useState(false);
-  const accessChanged =
-    form.role !== user.role || form.is_active !== user.is_active;
+  const accessChanged = form.is_active !== user.is_active;
   const client = useQueryClient();
   const upload = useMutation({
     mutationFn: (file: File) => activityApi.uploadPhoto(user.id, file),
@@ -105,7 +93,7 @@ function AccountForm({
     <Stack
       component="form"
       spacing={2}
-      sx={{ pt: 1 }}
+      sx={styles.stack}
       onSubmit={(e) => {
         e.preventDefault();
         if (accessChanged) setConfirm(true);
@@ -143,10 +131,10 @@ function AccountForm({
       >
         <DialogTitle>Подтвердите изменение доступа</DialogTitle>
         <DialogContent>
-          <Stack spacing={2} sx={{ pt: 1 }}>
+          <Stack spacing={2} sx={styles.stack2}>
             <TextField
               autoFocus
-              label="Причина изменения роли или блокировки"
+              label="Причина изменения доступа"
               required
               multiline
               value={reason}
@@ -191,17 +179,11 @@ function AccountForm({
         />
       ))}
       <TextField
-        select
         label="Роль пользователя"
-        value={form.role}
-        onChange={(e) => setForm({ ...form, role: e.target.value as UserRole })}
-      >
-        {Object.entries(roleLabels).map(([value, label]) => (
-          <MenuItem key={value} value={value}>
-            {label}
-          </MenuItem>
-        ))}
-      </TextField>
+        value={roleLabels[user.role]}
+        slotProps={{ input: { readOnly: true } }}
+        helperText="Роль задаётся при создании. Для другой роли создайте нового пользователя."
+      />
       <FormControlLabel
         label="Аккаунт активен"
         control={
@@ -211,10 +193,9 @@ function AccountForm({
           />
         }
       />
-      {(form.role !== user.role || form.is_active !== user.is_active) && (
+      {accessChanged && (
         <Alert severity="info">
-          При изменении роли или состояния текущие сеансы пользователя будут
-          завершены.
+          При изменении доступа текущие сеансы пользователя будут завершены.
         </Alert>
       )}
       <Stack spacing={0.5}>
@@ -236,7 +217,7 @@ function AccountForm({
         <Typography variant="body2">
           Обязательная смена пароля: {user.must_change_password ? "Да" : "Нет"}
         </Typography>
-        <Typography variant="caption" sx={{ overflowWrap: "anywhere" }}>
+        <Typography variant="caption" sx={styles.typography}>
           ID: {user.id} · Время московское
         </Typography>
       </Stack>

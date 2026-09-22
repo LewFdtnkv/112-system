@@ -1,18 +1,16 @@
-import {
-  useId,
-  type InputHTMLAttributes,
-  type SelectHTMLAttributes,
-  type TextareaHTMLAttributes,
-} from "react";
+import { useId } from "react";
 import { useFieldFeedback } from "./FieldFeedback";
-
-type Base = { label: string; className?: string; inline?: boolean };
+import type {
+  ArmFieldProps,
+  ArmSelectProps,
+  ArmTextareaProps,
+} from "./types/ArmField";
 export function ArmField({
   label,
   className = "",
   inline = false,
   ...props
-}: Base & InputHTMLAttributes<HTMLInputElement>) {
+}: ArmFieldProps) {
   const id = useId();
   const feedback = useFieldFeedback(label);
   return (
@@ -32,7 +30,7 @@ export function ArmSelect({
   className = "",
   children,
   ...props
-}: Base & SelectHTMLAttributes<HTMLSelectElement>) {
+}: ArmSelectProps) {
   const id = useId();
   const feedback = useFieldFeedback(label);
   return (
@@ -53,7 +51,7 @@ export function ArmTextarea({
   label,
   className = "",
   ...props
-}: Base & TextareaHTMLAttributes<HTMLTextAreaElement>) {
+}: ArmTextareaProps) {
   const id = useId();
   const feedback = useFieldFeedback(label);
   return (

@@ -1,13 +1,6 @@
-import ky from "ky";
 import { appConfig } from "@/shared/config/appConfig";
-
-interface Authentication {
-  accessToken: () => string | undefined;
-  generation: () => number;
-  refresh: () => Promise<void>;
-  expired: () => void;
-  passwordRequired: () => void;
-}
+import ky from "ky";
+import type { Authentication } from "../types/backendApi";
 let authentication: Authentication | undefined;
 export const configureAuthentication = (handlers: Authentication) => {
   authentication = handlers;

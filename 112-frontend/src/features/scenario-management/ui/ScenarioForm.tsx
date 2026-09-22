@@ -1,7 +1,8 @@
-import { Button, MenuItem, Stack, TextField } from "@mui/material";
 import SaveIcon from "@mui/icons-material/Save";
+import { Button, MenuItem, Stack, TextField } from "@mui/material";
 import { Controller, useForm } from "react-hook-form";
 import { Link } from "react-router-dom";
+import type { ScenarioFormProps } from "../types/ScenarioForm";
 
 import {
   scenarioDifficultyLabels,
@@ -9,11 +10,6 @@ import {
   type ScenarioDraft,
 } from "@/entities/scenario";
 import { routePaths } from "@/shared/config/routes";
-
-interface ScenarioFormProps {
-  initialValues?: ScenarioDraft;
-  onSave: (draft: ScenarioDraft) => void;
-}
 
 export const ScenarioForm = ({ initialValues, onSave }: ScenarioFormProps) => {
   const {

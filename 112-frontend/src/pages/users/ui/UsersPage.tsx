@@ -1,5 +1,15 @@
+import {
+  trainingApi,
+  userName,
+  type UserCreate,
+  type UserItem,
+} from "@/entities/training";
 import { AccountStatistics } from "@/features/account-statistics";
-import { useState } from "react";
+import { getApiError } from "@/shared/api";
+import { rowAction } from "@/shared/lib/rowAction";
+import { useDebounced } from "@/shared/lib/useDebounced";
+import { PageHeader } from "@/shared/ui/PageHeader";
+import { PageControls, QueryState } from "@/shared/ui/QueryState";
 import {
   Alert,
   Button,
@@ -16,18 +26,10 @@ import {
   TextField,
 } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  trainingApi,
-  userName,
-  type UserCreate,
-  type UserItem,
-} from "@/entities/training";
-import { getApiError } from "@/shared/api";
-import { useDebounced } from "@/shared/lib/useDebounced";
-import { PageHeader } from "@/shared/ui/PageHeader";
-import { PageControls, QueryState } from "@/shared/ui/QueryState";
+import { useState } from "react";
+import { accountDate, roleLabels } from "../model/accountDisplay";
+import { styles } from "../styles/UsersPage";
 import { UserDetailsDialog } from "./UserDetailsDialog";
-import { roleLabels, accountDate } from "../model/accountDisplay";
 const blank: UserCreate = {
   username: "",
   initial_password: "",
@@ -133,7 +135,10 @@ export const UsersPage = () => {
                 </TableHead>
                 <TableBody>
                   {query.data.items.map((user) => (
-                    <TableRow key={user.id}>
+                    <TableRow
+                      key={user.id}
+                      {...rowAction(() => setSelected(user))}
+                    >
                       <TableCell>
                         <Button
                           className="table-block-link"
@@ -201,7 +206,7 @@ export const UsersPage = () => {
         <Stack
           component="form"
           spacing={2}
-          sx={{ p: 2 }}
+          sx={styles.stack}
           onSubmit={(e) => {
             e.preventDefault();
             create.mutate();

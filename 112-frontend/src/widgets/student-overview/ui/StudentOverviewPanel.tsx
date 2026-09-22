@@ -1,17 +1,21 @@
-import { Link, useNavigate } from "react-router-dom";
 import {
   UserPhoto,
-  userName,
-  percentText,
   lessonPercent,
-  type StudentOverview,
+  percentText,
+  userName,
 } from "@/entities/training";
 import {
   getStudentTrainingWorkspacePath,
   getTrainingResultPath,
 } from "@/shared/config/routes";
+import { rowAction } from "@/shared/lib/rowAction";
 import { PageControls } from "@/shared/ui/QueryState";
-import "./student-overview.scss";
+import { Link, useNavigate } from "react-router-dom";
+import "../styles/student-overview.scss";
+import type {
+  PerformanceRingProps,
+  StudentOverviewPanelProps,
+} from "../types/StudentOverviewPanel";
 
 const dateText = (value: string | null | undefined) =>
   value
@@ -21,15 +25,7 @@ const dateText = (value: string | null | undefined) =>
         timeStyle: "short",
       })
     : "Без срока";
-function PerformanceRing({
-  value,
-  title,
-  description,
-}: {
-  value: number | null;
-  title: string;
-  description: string;
-}) {
+function PerformanceRing({ value, title, description }: PerformanceRingProps) {
   return (
     <article className="student-performance-card">
       <div
@@ -65,11 +61,7 @@ export function StudentOverviewPanel({
   data,
   own = false,
   onActivePage,
-}: {
-  data: StudentOverview;
-  own?: boolean;
-  onActivePage: (page: number) => void;
-}) {
+}: StudentOverviewPanelProps) {
   const { user, groups, performance: p, active_lessons: active } = data;
   const navigate = useNavigate();
   const resultPath = (lesson: string) =>
@@ -221,15 +213,7 @@ export function StudentOverviewPanel({
                 {p.recent_lessons.map((row) => (
                   <tr
                     key={row.lesson_id}
-                    className="table-clickable-row"
-                    onClick={(event) => {
-                      if (
-                        !(event.target instanceof Element) ||
-                        event.target.closest("a, button") === null
-                      ) {
-                        navigate(resultPath(row.lesson_id));
-                      }
-                    }}
+                    {...rowAction(() => navigate(resultPath(row.lesson_id)))}
                   >
                     <td>
                       <Link

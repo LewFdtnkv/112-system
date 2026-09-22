@@ -1,8 +1,8 @@
 export { useDemoScenarioStore } from "./model/demoScenarioStore";
-export { scenarioStatusLabels, scenarioDifficultyLabels } from "./model/types";
+export { scenarioDifficultyLabels, scenarioStatusLabels } from "./model/types";
 export type {
   DemoScenario,
+  ScenarioDifficulty,
   ScenarioDraft,
   ScenarioStatus,
-  ScenarioDifficulty,
 } from "./model/types";

@@ -1,0 +1,58 @@
+.structured-feature {
+  display: grid;
+  grid-template-columns: minmax(120px, 29%) minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.structured-feature > span {
+  color: #777;
+  padding-top: 4px;
+}
+
+.structured-feature > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.structured-feature button {
+  border: 1px solid #b7bcc1;
+  background: #fff;
+  color: #222;
+  padding: 5px 10px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.structured-feature button:hover:not(:disabled) {
+  background: #e8eff7;
+}
+
+.structured-feature button[aria-pressed="true"] {
+  background: #4286bb;
+  border-color: #4286bb;
+  color: #fff;
+}
+
+.structured-feature button:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.structured-feature input {
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  border: 0;
+  border-bottom: 1px solid #b7bcc1;
+  background: transparent;
+  padding: 5px 2px;
+  color: inherit;
+  font: inherit;
+  user-select: text;
+}
+.structured-feature input:focus-visible {
+  outline: 1px solid #4286bb;
+  outline-offset: 2px;
+}

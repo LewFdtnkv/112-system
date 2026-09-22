@@ -1,13 +1,9 @@
+import { getApiError } from "@/shared/api";
+import { useDebounced } from "@/shared/lib/useDebounced";
 import { Autocomplete, TextField } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { useDebounced } from "@/shared/lib/useDebounced";
-import { getApiError } from "@/shared/api";
-export interface SelectOption {
-  id: string;
-  label: string;
-  metadata?: unknown;
-}
+import type { ServerSelectProps } from "./types/index";
 export function ServerSelect({
   label,
   queryKey,
@@ -15,14 +11,7 @@ export function ServerSelect({
   value,
   onChange,
   disabled = false,
-}: {
-  label: string;
-  queryKey: readonly unknown[];
-  load: (search: string, signal: AbortSignal) => Promise<SelectOption[]>;
-  value: SelectOption | null;
-  onChange: (value: SelectOption | null) => void;
-  disabled?: boolean;
-}) {
+}: ServerSelectProps) {
   const [search, setSearch] = useState("");
   const debounced = useDebounced(search);
   const query = useQuery({
@@ -63,3 +52,5 @@ export function ServerSelect({
     />
   );
 }
+
+export type { SelectOption } from "./types/index";

@@ -1,45 +1,27 @@
-import { LocationPicker } from "@/features/location-picker";
-import {
-  FieldFeedbackContext,
-  type FieldFeedbackMap,
-} from "@/shared/ui/arm/FieldFeedback";
-import "./incident-card.scss";
-import { Dialog, DialogContent, DialogTitle } from "@mui/material";
-import { useState, type ReactNode } from "react";
 import {
   formatAddress,
   incidentStatuses,
   incidentStatusLabels,
   type IncidentCard,
 } from "@/entities/incident-card";
-import {
-  useIncidentEditor,
-  type IncidentEditorOptions,
-} from "@/features/incident-editing";
+import { useIncidentEditor } from "@/features/incident-editing";
+import { LocationPicker } from "@/features/location-picker";
 import {
   ArmField,
   ArmIconButton,
   ArmSelect,
   ArmTextarea,
 } from "@/shared/ui/arm";
+import { FieldFeedbackContext } from "@/shared/ui/arm/FieldFeedback";
+import { Dialog, DialogContent, DialogTitle } from "@mui/material";
+import { useState } from "react";
+import "../styles/incident-card.scss";
+import type { IncidentCardDialogProps } from "../types/IncidentCardDialog";
 import { CardAddressPanel } from "./CardAddressPanel";
 import { CardClassification } from "./CardClassification";
 import { CardServicesDialog } from "./CardServicesDialog";
 import { CardServiceTile } from "./CardServiceTile";
 import { CardTelephoneBar } from "./CardTelephoneBar";
-
-interface IncidentCardDialogProps extends Omit<IncidentEditorOptions, "card"> {
-  card: IncidentCard | null;
-  elapsedSeconds: number;
-  normSeconds: number;
-  onClose: () => void;
-  renderMap?: (address: string) => ReactNode;
-  readOnly?: boolean;
-  readOnlyLayout?: "summary" | "form";
-  fieldFeedback?: FieldFeedbackMap;
-  responseFooter?: ReactNode;
-  trainingNotice?: ReactNode;
-}
 export function IncidentCardDialog({
   card,
   ...props

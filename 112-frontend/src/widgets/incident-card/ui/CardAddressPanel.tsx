@@ -1,18 +1,11 @@
 import { emptyIncidentAddress, formatAddress } from "@/entities/incident-card";
-import type { IncidentEditor } from "@/features/incident-editing";
 import {
   ArmField,
   ArmIconButton,
   ArmSelect,
   ArmTextarea,
 } from "@/shared/ui/arm";
-
-interface Props {
-  editor: IncidentEditor;
-  disabled: boolean;
-  viewing: boolean;
-  onMap: () => void;
-}
+import type { Props } from "../types/CardAddressPanel";
 export function CardAddressPanel({ editor, disabled, viewing, onMap }: Props) {
   const { fields, setField, setDetail, setAddressField } = editor;
   const address = fields.address;

@@ -33,6 +33,10 @@ Apply backend migration `0006_frontend_scenarios` before using this integration.
 
 ## Structure
 
+**FSD is mandatory.** See [frontend architecture rules](docs/FRONTEND_ARCHITECTURE.md)
+for layers, type/style segments, clickable rows and required interaction states.
+`npm run lint` also checks these architecture boundaries.
+
 ```text
 src/
   app/        Providers, layouts, routes, theme and global styles
@@ -61,6 +65,7 @@ The current frontend uses MUI and `shared/ui/arm`; it does not depend on `112-ui
 - `/results`, `/results/:sessionId`: own student results or teacher review and grading.
 - `/analytics`: aggregates from real submitted work and latest teacher evaluations.
 - `/admin`, `/users`, `/catalogs`: account administration, services and JSON EKP publication.
+  Account roles are selected at creation and are read-only afterwards; another role requires a new account.
 - `/403`, `/404`, `/500`: service pages. Unknown paths show 404.
 
 Teacher and administrator rights are independent. All business requests use the
@@ -75,6 +80,13 @@ an evaluation shows “Ожидает проверки”. Training notification
 
 See [the API integration](docs/API.md), [authentication](docs/AUTH.md), and
 [backend page contracts](../112-backend/docs/FRONTEND_API.md).
+
+The card library also supports **«Сгенерировать нейросетью»**: teachers choose
+1–10 cards and shared fixed/random parameters. Queued/running/failed rows are
+shown in the library; generated cards remain editable until used in a scenario.
+This requires backend migration `0015_card_generation`, the worker and a downloaded
+local model. See [setup and CPU resource settings](../112-backend/docs/CARD_GENERATION.md)
+and the reviewed [generation screenshots](docs/screenshots/card-generation/).
 
 ## Browser integration checks
 

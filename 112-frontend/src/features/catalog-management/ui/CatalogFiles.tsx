@@ -1,0 +1,59 @@
+import { trainingApi } from "@/entities/training";
+import { getApiError } from "@/shared/api";
+import { Alert, Button, Stack } from "@mui/material";
+import { useMutation } from "@tanstack/react-query";
+import { useState } from "react";
+import type { CatalogFilesProps } from "../types/CatalogRules";
+export function CatalogFiles({ onImported }: CatalogFilesProps) {
+  const [error, setError] = useState("");
+  const upload = useMutation({
+    mutationFn: async (file: File) => {
+      if (file.size > 8 * 1024 * 1024) throw new Error("Файл больше 8 МБ");
+      return trainingApi.importCatalog(await file.text());
+    },
+    onSuccess: () => {
+      setError("");
+      onImported();
+    },
+    onError: (e) =>
+      setError(
+        e instanceof Error && e.message === "Файл больше 8 МБ"
+          ? e.message
+          : getApiError(e).message,
+      ),
+  });
+  return (
+    <Stack spacing={1}>
+      <Alert severity="info">
+        Импорт создаёт черновик ЕКП. Проверьте признаки и маршруты перед
+        публикацией. Опубликованные версии сохраняются для уже назначенных
+        уроков.
+      </Alert>
+      <Button component="label" disabled={upload.isPending}>
+        Загрузить JSON-файл
+        <input
+          hidden
+          aria-label="Загрузить ЕКП JSON"
+          type="file"
+          accept=".json,application/json"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) upload.mutate(file);
+            e.target.value = "";
+          }}
+        />
+      </Button>
+      <Button
+        component="a"
+        href={`${import.meta.env.BASE_URL}examples/classifier.json`}
+        download="ekp-example.json"
+      >
+        Скачать пример JSON
+      </Button>
+      {error && <Alert severity="error">{error}</Alert>}
+      {upload.isSuccess && (
+        <Alert severity="success">Черновик ЕКП загружен</Alert>
+      )}
+    </Stack>
+  );
+}

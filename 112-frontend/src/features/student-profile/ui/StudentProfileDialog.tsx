@@ -1,24 +1,23 @@
+import { activityApi, percentText, userName } from "@/entities/training";
+import { getStudentProfilePath } from "@/shared/config/routes";
+import { QueryState } from "@/shared/ui/QueryState";
 import {
   Button,
   Dialog,
-  DialogTitle,
-  DialogContent,
   DialogActions,
+  DialogContent,
+  DialogTitle,
   Stack,
   Typography,
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { activityApi, userName, percentText } from "@/entities/training";
-import { getStudentProfilePath } from "@/shared/config/routes";
-import { QueryState } from "@/shared/ui/QueryState";
+import { styles } from "../styles/StudentProfileDialog";
+import type { StudentProfileDialogProps } from "../types/StudentProfileDialog";
 export function StudentProfileDialog({
   studentId,
   onClose,
-}: {
-  studentId: string;
-  onClose: () => void;
-}) {
+}: StudentProfileDialogProps) {
   const query = useQuery({
     queryKey: ["student-overview", studentId, 0],
     queryFn: ({ signal }) => activityApi.overview(studentId, 0, signal),
@@ -41,7 +40,7 @@ export function StudentProfileDialog({
           retry={() => void query.refetch()}
         >
           {query.data && (
-            <Stack spacing={2} sx={{ pt: 2 }}>
+            <Stack spacing={2} sx={styles.stack}>
               <div>
                 <Typography variant="h6">
                   {userName(query.data.user)}

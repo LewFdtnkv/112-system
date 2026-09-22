@@ -56,10 +56,11 @@ const messages: Record<string, string> = {
   "Each DDS card must be addressed to the profile service":
     "Каждая карточка сценария ДДС должна быть адресована службе выбранного профиля.",
 
-  "You cannot disable or demote your own account":
-    "Нельзя отключить собственный аккаунт или изменить его роль. Это может сделать другой администратор.",
+  "You cannot disable your own account":
+    "Нельзя отключить собственный аккаунт. Это может сделать другой администратор.",
+  "A reason is required to change access": "Укажите причину изменения доступа.",
   "The last active administrator must be retained":
-    "Нельзя отключить или сменить роль последнего активного администратора.",
+    "Нельзя отключить последнего активного администратора.",
   "Card revision is stale; reload the card":
     "Карточка изменена в другой вкладке. Ваш ввод сохранён в форме. Закройте её и откройте актуальную карточку перед повторным сохранением.",
   "Evaluation revision is stale; reload the result":

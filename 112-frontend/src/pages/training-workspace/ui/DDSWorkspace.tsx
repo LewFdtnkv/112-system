@@ -1,32 +1,25 @@
-import { randomUUID } from "@/shared/lib/uuid";
-import "./dds-workspace.scss";
-import { useEffect, useState } from "react";
-import { Dialog, DialogContent, DialogTitle } from "@mui/material";
-import { useMutation } from "@tanstack/react-query";
 import {
-  trainingApi,
   ddsStatusLabels,
+  trainingApi,
   type Attempt,
 } from "@/entities/training";
 import { attemptCard } from "@/features/incident-editing";
-import { IncidentCardDialog } from "@/widgets/incident-card";
+import { getApiError } from "@/shared/api";
+import { randomUUID } from "@/shared/lib/uuid";
 import {
   ArmField,
   ArmIconButton,
   ArmSelect,
   ArmTextarea,
 } from "@/shared/ui/arm";
-import { getApiError } from "@/shared/api";
+import { IncidentCardDialog } from "@/widgets/incident-card";
+import { Dialog, DialogContent, DialogTitle } from "@mui/material";
+import { useMutation } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import "../styles/dds-workspace.scss";
+import type { DDSWorkspaceProps } from "../types/DDSWorkspace";
 
-export function DDSWorkspace({
-  initial,
-  onClose,
-  onSaved,
-}: {
-  initial: Attempt;
-  onClose: () => void;
-  onSaved: () => void;
-}) {
+export function DDSWorkspace({ initial, onClose, onSaved }: DDSWorkspaceProps) {
   const [attempt, setAttempt] = useState(initial);
   const [status, setStatus] = useState("");
   const [crew, setCrew] = useState(initial.dds?.crew_number ?? "");
