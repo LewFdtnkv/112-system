@@ -26,7 +26,11 @@ import Settings from "@mui/icons-material/Settings";
 import Sms from "@mui/icons-material/Sms";
 import Timer from "@mui/icons-material/TimerOutlined";
 import Translate from "@mui/icons-material/Translate";
+import Collapse from "@mui/icons-material/UnfoldLess";
+import Expand from "@mui/icons-material/UnfoldMore";
 export const icons = {
+  collapse: Collapse,
+  expand: Expand,
   phone: Phone,
   callEnd: CallEnd,
   check: Check,

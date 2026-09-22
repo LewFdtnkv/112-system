@@ -30,7 +30,7 @@ export function DDSTile({
       {onEdit && (
         <ArmIconButton
           icon="edit"
-          label={`Изменить статус бригады «${name}»`}
+          label={`Изменить статус ${kind === "crew" ? "бригады" : "службы"} «${name}»`}
           className="dds-tile-edit"
           disabled={editDisabled}
           onClick={onEdit}

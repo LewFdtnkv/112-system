@@ -102,6 +102,11 @@ export function useDDSWorkspace({
     setActiveCrew,
     expanded,
     setExpanded,
+    collapseAll: () => {
+      setExpanded(false);
+      setActiveService("");
+      setActiveCrew("");
+    },
     editing,
     setEditing,
     target,

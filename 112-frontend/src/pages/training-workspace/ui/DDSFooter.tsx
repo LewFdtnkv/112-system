@@ -17,6 +17,7 @@ export function DDSFooter({ workspace: w }: DDSControlsProps) {
   const available = (dds.profile.crews ?? []).filter(
     (c) => c.is_active && !dds.crews?.some((a) => a.crew_code === c.code),
   );
+  const anyOpen = w.expanded || Boolean(activeService) || Boolean(activeCrew);
   const selectService = (id: string) => {
     w.setActiveService(activeService === id ? "" : id);
     w.setActiveCrew("");
@@ -28,6 +29,12 @@ export function DDSFooter({ workspace: w }: DDSControlsProps) {
       title={r.name}
       status={ddsStatusLabels[r.status]}
       updatedAt={r.status_updated_at}
+      onEdit={
+        r.service_id === dds.profile.service_id
+          ? () => w.openEditor()
+          : undefined
+      }
+      editDisabled={busy || completed || !dds.allowed_statuses.length}
       selected={activeService === r.service_id}
       onClick={() => selectService(r.service_id)}
     />
@@ -41,23 +48,18 @@ export function DDSFooter({ workspace: w }: DDSControlsProps) {
         <div className="dds-service-grid">
           {dds.responses.slice(0, 8).map(serviceTile)}
         </div>
-        {dds.responses.length > 8 && (
-          <button
-            className="arm-small-button dds-expand"
-            aria-label={
-              w.expanded
-                ? "Свернуть службы"
-                : `Все службы (${dds.responses.length})`
-            }
-            title={w.expanded ? "Свернуть службы" : "Показать все службы"}
-            aria-expanded={w.expanded}
-            onClick={() => w.setExpanded(!w.expanded)}
-          >
-            <span aria-hidden="true">
-              ⌃<br />⌄
-            </span>
-          </button>
-        )}
+        <ArmIconButton
+          icon={anyOpen ? "collapse" : "expand"}
+          className="dds-expand dds-footer-control"
+          label={
+            anyOpen
+              ? "Свернуть все службы и бригады"
+              : `Все службы (${dds.responses.length})`
+          }
+          disabled={!anyOpen && dds.responses.length <= 8}
+          aria-expanded={anyOpen}
+          onClick={() => (anyOpen ? w.collapseAll() : w.setExpanded(true))}
+        />
       </div>
       {w.expanded && (
         <div className="dds-extra-services" aria-label="Дополнительные службы">
@@ -65,15 +67,6 @@ export function DDSFooter({ workspace: w }: DDSControlsProps) {
         </div>
       )}
       <div className="arm-footer-tools">
-        {!completed && (
-          <button
-            className="arm-small-button"
-            disabled={busy || !dds.allowed_statuses.length}
-            onClick={() => w.openEditor()}
-          >
-            Изменить статус ДДС
-          </button>
-        )}
         {!completed && dds.can_finish && (
           <button
             className="arm-save"
@@ -86,6 +79,7 @@ export function DDSFooter({ workspace: w }: DDSControlsProps) {
         <ArmIconButton
           icon="close"
           label="Закрыть карточку ДДС"
+          className="dds-footer-control"
           onClick={w.close}
           disabled={busy}
         />

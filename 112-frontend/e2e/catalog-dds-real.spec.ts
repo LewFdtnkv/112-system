@@ -337,7 +337,7 @@ test("real API: EKP file roundtrip, rule editing, profile publication and DDS ex
     .click();
   await page.getByRole("button", { name: "Подтвердить начало" }).click();
   await expect(
-    page.getByRole("button", { name: "Изменить статус ДДС" }),
+    page.getByRole("button", { name: "Изменить статус службы «Служба 101»" }),
   ).toBeVisible();
   await expect(
     page.getByText("Пожар в учебном доме", { exact: true }),
@@ -370,7 +370,7 @@ test("real API: EKP file roundtrip, rule editing, profile publication and DDS ex
     animations: "disabled",
   });
   await page
-    .getByRole("button", { name: "Свернуть службы", exact: true })
+    .getByRole("button", { name: "Свернуть все службы и бригады", exact: true })
     .click();
   await page
     .locator(".dds-service-grid")
@@ -383,7 +383,9 @@ test("real API: EKP file roundtrip, rule editing, profile publication and DDS ex
     ["accepted", "Карточка принята"],
     ["completed", "Работы завершены"],
   ]) {
-    await page.getByRole("button", { name: "Изменить статус ДДС" }).click();
+    await page
+      .getByRole("button", { name: "Изменить статус службы «Служба 101»" })
+      .click();
     await page
       .getByRole("combobox", { name: "Статус реагирования", exact: true })
       .selectOption(status);
