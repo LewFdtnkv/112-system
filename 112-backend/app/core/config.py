@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     llm_model: str = "qwen3:4b-instruct-2507-q4_K_M"
     llm_timeout_seconds: int = Field(default=300, ge=10, le=1800)
     generation_poll_seconds: int = Field(default=2, ge=1, le=60)
+    dadata_api_key: SecretStr | None = None
+    yandex_translate_api_key: SecretStr | None = None
+    yandex_cloud_folder_id: str | None = None
 
 
 settings = Settings()

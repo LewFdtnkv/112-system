@@ -19,6 +19,17 @@ uv run python -c 'import secrets; print(secrets.token_urlsafe(48))'
 
 Записать сгенерированное значение в `JWT_SECRET_KEY` в локальном `.env`. Секрет должен содержать не менее 32 символов и быть одинаковым у всех процессов API. Готового общего секрета в проекте нет; API без него не запускается. Не коммитить `.env`. Остальные параметры перечислены в `.env.example`.
 
+### Переводчик Yandex Translate
+
+Переводчик в карточке использует API Yandex AI Studio через backend: текст и ключ не попадают в браузер. Для включения добавьте в `112-backend/.env`:
+
+```env
+YANDEX_TRANSLATE_API_KEY=<API-ключ сервисного аккаунта>
+YANDEX_CLOUD_FOLDER_ID=<идентификатор каталога>
+```
+
+Сервисному аккаунту нужна роль `ai.translate.user` на каталоге, а ключу — область действия `yc.ai.translate.execute`. Это отдельные реквизиты: ключ JavaScript API Яндекс Карт не подходит. После изменения перезапустите `api` и `frontend` через `docker compose up -d --build api frontend`.
+
 ### API локально, БД в Docker
 
 ```bash
