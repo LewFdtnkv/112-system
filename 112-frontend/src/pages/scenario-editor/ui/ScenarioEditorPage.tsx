@@ -16,6 +16,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useScenarioCards } from "../model/useScenarioCards";
 import { styles } from "../styles/ScenarioEditorPage";
 import type { EditorProps } from "../types/ScenarioEditorPage";
 import { AssessmentPolicyFields } from "./AssessmentPolicyFields";
@@ -75,14 +76,8 @@ function Editor({ initial }: EditorProps) {
       steps: [{ status: "accepted", message: "", crew_number: null }],
     },
   }));
-  const [cards, setCards] = useState<SelectOption[]>(
-    () =>
-      initial?.cards.map((c) => ({
-        id: c.card_template_id,
-        label: c.snapshot.title,
-      })) ?? [],
-  );
-  const [choice, setChoice] = useState<SelectOption | null>(null);
+  const schedule = useScenarioCards(initial);
+  const { cards, choice, setChoice, move } = schedule;
   const [profile, setProfile] = useState<SelectOption | null>(() =>
     initial?.service_profile_id
       ? { id: initial.service_profile_id, label: "Назначенный профиль ДДС" }
@@ -94,6 +89,8 @@ function Editor({ initial }: EditorProps) {
         {
           ...form,
           card_ids: cards.map((c) => c.id),
+          arrival_offsets_seconds:
+            form.role === "dds" ? schedule.offsets : cards.map(() => 0),
           dds_policy: form.role === "dds" ? form.dds_policy : null,
           service_profile_id:
             form.role === "dds" ? (profile?.id ?? null) : null,
@@ -106,12 +103,6 @@ function Editor({ initial }: EditorProps) {
       navigate(routePaths.scenarios);
     },
   });
-  const move = (index: number, step: number) =>
-    setCards((current) => {
-      const next = [...current];
-      [next[index], next[index + step]] = [next[index + step], next[index]];
-      return next;
-    });
   return (
     <Stack
       component="form"
@@ -144,7 +135,7 @@ function Editor({ initial }: EditorProps) {
         value={form.category}
         onChange={(e) => setForm({ ...form, category: e.target.value })}
       />
-      <Stack direction="row" spacing={2}>
+      <Stack direction="row" sx={styles.metadata}>
         <TextField
           select
           label="Сложность"
@@ -171,8 +162,16 @@ function Editor({ initial }: EditorProps) {
         />
         <TextField
           type="number"
-          label="Учебный ориентир, с"
-          helperText="Для таймера, не автоматической оценки"
+          label={
+            form.role === "dds"
+              ? "Норматив первой реакции, с"
+              : "Учебный ориентир, с"
+          }
+          helperText={
+            form.role === "dds"
+              ? "От поступления до первого ручного статуса бригады. Без автоматического штрафа."
+              : "Для таймера, не автоматической оценки"
+          }
           slotProps={{ htmlInput: { min: 5, max: 600 } }}
           value={form.norm_seconds}
           onChange={(e) =>
@@ -230,7 +229,9 @@ function Editor({ initial }: EditorProps) {
         onChange={(e) => setForm({ ...form, instructions: e.target.value })}
       />
       <Typography variant="h6" component="h2">
-        Карточки по порядку выполнения
+        {form.role === "dds"
+          ? "Расписание поступления карточек"
+          : "Карточки по порядку выполнения"}
       </Typography>
       <ServerSelect
         label="Карточка из библиотеки"
@@ -247,8 +248,7 @@ function Editor({ initial }: EditorProps) {
       <Button
         disabled={!choice || cards.length >= 100}
         onClick={() => {
-          if (choice) setCards([...cards, choice]);
-          setChoice(null);
+          schedule.add();
         }}
       >
         Добавить карточку
@@ -273,10 +273,23 @@ function Editor({ initial }: EditorProps) {
             >
               ↓
             </Button>
-            <Button onClick={() => setCards(cards.filter((_, n) => n !== i))}>
-              Убрать
-            </Button>
+            <Button onClick={() => schedule.remove(i)}>Убрать</Button>
           </Stack>
+          {form.role === "dds" && (
+            <TextField
+              type="number"
+              label={
+                i === 0
+                  ? "Первая карточка — сразу"
+                  : "Через сколько секунд после предыдущей"
+              }
+              value={schedule.delays[i]}
+              disabled={i === 0}
+              slotProps={{ htmlInput: { min: 0, max: 86400, step: 1 } }}
+              onChange={(e) => schedule.changeDelay(i, Number(e.target.value))}
+              helperText={`Поступление через ${schedule.offsets[i]} с от старта занятия. Завершение предыдущей карточки не требуется.`}
+            />
+          )}
         </Paper>
       ))}
       <TextField
@@ -298,8 +311,9 @@ function Editor({ initial }: EditorProps) {
           Автооценка ДДС проверяет статусы по сообщениям и заданные номера
           нарядов. Если заданы цели бригад, их выполнение учитывается отдельно,
           независимо от порядка работы разных бригад. Итог приводится к 100%.
-          Смысл комментариев доступен для проверки преподавателю; подключение ИИ
-          предусмотрено позже.
+          Смысл комментариев проверяется ИИ с возможностью проверки
+          преподавателем. Норматив первой реакции отражается отдельно, без
+          автоматического штрафа.
         </Alert>
       ) : (
         <AssessmentPolicyFields

@@ -232,6 +232,8 @@ export const trainingApi = {
     post<{ id: string }>("lessons/start", body),
   studentLesson: (lessonId: string, signal?: AbortSignal) =>
     get<StudentLesson>(`student/lessons/${id(lessonId)}`, {}, signal),
+  startExecution: (lessonId: string) =>
+    post<StudentLesson>(`student/lessons/${id(lessonId)}/start`, {}),
   startAttempt: (assignmentId: string) =>
     post<Attempt>(`student/assignments/${id(assignmentId)}/start`, {}),
   attempt: (attemptId: string, signal?: AbortSignal) =>

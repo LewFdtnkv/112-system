@@ -1,3 +1,4 @@
+import { DDSArrivalStatus } from "./DDSArrivalStatus";
 import { Telephone } from "@/features/telephone";
 import { LearningHelp } from "@/features/learning-assistance";
 import { DDSWorkspaceStoreProvider } from "../model/DDSWorkspaceContext";
@@ -48,6 +49,42 @@ export function DDSWorkspace(props: DDSWorkspaceProps) {
         }}
         trainingNotice={
           <section className="dds-training-notice">
+            {props.lesson?.delivery === "dds-stream-v1" && (
+              <>
+                <DDSArrivalStatus lesson={props.lesson} />
+                <nav
+                  className="dds-card-navigation"
+                  aria-label="Поступившие карточки"
+                >
+                  {props.lesson.assignments
+                    .filter((a) => a.attempt_id)
+                    .map((a) => (
+                      <button
+                        key={a.id}
+                        type="button"
+                        className="arm-small-button"
+                        aria-current={
+                          a.attempt_id === attempt.id ? "page" : undefined
+                        }
+                        disabled={busy || a.attempt_id === attempt.id}
+                        onClick={() => {
+                          if (
+                            !workspace.editing ||
+                            window.confirm(
+                              "Перейти к другой карточке? Несохранённая запись статуса будет потеряна.",
+                            )
+                          )
+                            props.onSelectAssignment?.(a);
+                        }}
+                      >
+                        Карточка {a.position} ·{" "}
+                        {a.status === "in_progress" ? "в работе" : "завершена"}
+                      </button>
+                    ))}
+                </nav>
+              </>
+            )}
+
             <Telephone attemptId={attempt.id} completed={completed} />
             <LearningHelp
               attempt={attempt}
@@ -58,8 +95,8 @@ export function DDSWorkspace(props: DDSWorkspaceProps) {
             <details>
               <summary>
                 Учебное задание ДДС · {dds.profile.name} · цель: {dds.goal} ·
-                {dds.workflow === "crews-v1"
-                  ? `прошло: ${elapsed} с`
+                {dds.reaction_norm_seconds != null
+                  ? `первая реакция: ${elapsed} с / норматив ${dds.reaction_norm_seconds} с`
                   : `первичное решение: ${elapsed} с от направления`}
               </summary>
               <p>{attempt.instructions}</p>
@@ -85,7 +122,6 @@ export function DDSWorkspace(props: DDSWorkspaceProps) {
                   {c.name} {c.position}: {c.description}
                 </p>
               ))}
-
             </details>
             {!completed && dds.information && (
               <p>

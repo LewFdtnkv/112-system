@@ -17,6 +17,8 @@ const sortKey = (card: IncidentCard) =>
 const normalize = (value: string) => value.toLocaleLowerCase("ru-RU").trim();
 export function IncidentFeed({
   toolbar,
+  timing,
+  workflowStatus,
   incidents,
   selectedId,
   onOpen,
@@ -194,14 +196,16 @@ export function IncidentFeed({
           <>
             <div className="arm-journal-table-scroll">
               <table
-                className="arm-journal-table"
+                className={`arm-journal-table${timing ? " arm-journal-table--stream" : ""}`}
                 aria-label="Список происшествий"
               >
                 <colgroup>
-                  {[32, 30, 32, 32, 32, 54, 44, 76, 76, 80].map((width, i) => (
-                    <col key={i} style={styles.col(width)} />
-                  ))}
-                  <col />
+                  {[32, 30, 32, 32, timing ? 64 : 32, 54, 44, 76, 76, 80].map(
+                    (width, i) => (
+                      <col key={i} style={styles.col(width)} />
+                    ),
+                  )}
+                  <col style={timing ? styles.col(130) : undefined} />
                   <col style={styles.col2} />
                   <col className="arm-journal-table__address-col" />
                   <col style={styles.col3} />
@@ -271,7 +275,7 @@ export function IncidentFeed({
                           <ArmIcon name="bolt" />
                         </td>
                         <td>
-                          <ArmIcon name="timer" />
+                          {timing ? timing(incident) : <ArmIcon name="timer" />}
                         </td>
                         <td className="arm-journal-table__operator">
                           {incident.operatorNumber ?? "—"}
@@ -302,7 +306,11 @@ export function IncidentFeed({
                             <ArmIcon name="pin" />
                           </span>
                         </td>
-                        <td>{incidentStatusLabels[incident.fields.status]}</td>
+                        <td>
+                          {workflowStatus
+                            ? workflowStatus(incident)
+                            : incidentStatusLabels[incident.fields.status]}
+                        </td>
                         <td>
                           <ArmIconButton
                             icon="clipboard"

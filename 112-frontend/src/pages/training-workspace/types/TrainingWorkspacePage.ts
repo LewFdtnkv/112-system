@@ -10,3 +10,7 @@ export type AttemptEditorProps = {
   onClose: () => void;
   onSaved: () => void;
 };
+
+export type DDSReactionTimeProps = {
+  assignment: import("@/entities/training").Assignment;
+};

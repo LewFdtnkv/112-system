@@ -115,6 +115,8 @@ export interface DDSContext {
   goal: string;
   sent_at: string;
   first_decision_at: string | null;
+  reaction_norm_seconds?: number | null;
+  reaction_end_at?: string | null;
   crew_number: string | null;
   comment: string;
   allowed_statuses: string[];

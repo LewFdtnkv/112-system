@@ -1,4 +1,3 @@
-import { useRef } from "react";
 import {
   audioStatusLabels,
   callStatusLabels,
@@ -9,9 +8,8 @@ import { useTelephone } from "../model/useTelephone";
 import type { TelephoneProps } from "../types/telephone";
 import "../styles/telephone.scss";
 export function Telephone(props: TelephoneProps) {
-  const audioRef = useRef<HTMLAudioElement>(null);
   const { query, phone, binding, start, control, active, busy, error } =
-    useTelephone(props, audioRef);
+    useTelephone(props);
   const data = query.data;
   if (query.error && !data)
     return (
@@ -32,7 +30,6 @@ export function Telephone(props: TelephoneProps) {
     bound && (station.mode !== "browser" || phone.state === "ready");
   return (
     <section className="training-telephone" aria-label="Учебный телефон">
-      <audio ref={audioRef} autoPlay />
       <div className="training-telephone__heading">
         <b>Учебный телефон</b>
         <span>
@@ -48,7 +45,9 @@ export function Telephone(props: TelephoneProps) {
           <button
             className="arm-small-button"
             disabled={
-              busy || (station.mode !== "external" && !station.provisioned)
+              busy ||
+              !!active ||
+              (station.mode !== "external" && !station.provisioned)
             }
             onClick={() => binding.mutate()}
           >
@@ -90,6 +89,9 @@ export function Telephone(props: TelephoneProps) {
           <b>
             {active.contact_name} · {callStatusLabels[active.status]}
           </b>
+          {active.attempt_id !== props.attemptId && (
+            <span>Звонок относится к другой карточке занятия.</span>
+          )}
           {active.status === "dialing" &&
             station?.mode === "phone" &&
             active.transport === "manual" && (

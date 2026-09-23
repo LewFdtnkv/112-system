@@ -169,6 +169,7 @@ export interface ScenarioInput {
   status: "draft" | "published";
   role: "operator_112" | "dds";
   card_ids: string[];
+  arrival_offsets_seconds?: number[];
   service_profile_id: string | null;
 }
 
@@ -189,6 +190,7 @@ export interface ScenarioDetail extends Omit<ScenarioItem, "card_count"> {
     id: string;
     card_template_id: string;
     position: number;
+    arrival_offset_seconds?: number;
     snapshot: { title: string; data: CardData };
   }[];
 }
@@ -238,6 +240,11 @@ export interface JournalCard {
 }
 
 export interface Assignment {
+  scheduled_at?: string | null;
+  received_at?: string | null;
+  first_opened_at?: string | null;
+  first_response_at?: string | null;
+  response_norm_seconds?: number | null;
   deadline_at?: string | null;
   card: JournalCard | null;
   id: string;
@@ -250,6 +257,9 @@ export interface Assignment {
 }
 
 export interface StudentLesson {
+  delivery?: "sequential" | "dds-stream-v1";
+  execution_started_at?: string | null;
+  server_time?: string | null;
   learning: LearningPolicy;
   learning_result?: LearningResult | null;
   id: string;

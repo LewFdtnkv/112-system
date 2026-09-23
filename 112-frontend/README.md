@@ -99,3 +99,7 @@ and backend pytest must use separate test databases.
 The ARM journal/card layout follows the provided system screenshots. Reviewed
 images of the real flow are in `docs/screenshots/api-*.png`. Static card elements
 are not selectable; input text remains selectable. Navigation uses full-block links.
+
+Новые занятия ДДС поддерживают независимое поступление карточек и интервалы
+в редакторе сценария. [Контракт и запуск](../112-backend/docs/DDS_STREAM.md),
+[проверенные экраны](docs/screenshots/dds-stream/).

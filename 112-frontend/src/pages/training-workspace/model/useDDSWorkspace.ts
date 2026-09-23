@@ -102,7 +102,11 @@ export function useDDSWorkspace({
   const elapsed = Math.max(
     0,
     Math.floor(
-      ((dds.first_decision_at ? Date.parse(dds.first_decision_at) : now) -
+      ((dds.reaction_end_at
+        ? Date.parse(dds.reaction_end_at)
+        : dds.first_decision_at
+          ? Date.parse(dds.first_decision_at)
+          : now) -
         Date.parse(dds.sent_at)) /
         1000,
     ),

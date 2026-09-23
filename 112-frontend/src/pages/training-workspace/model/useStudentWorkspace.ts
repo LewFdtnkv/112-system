@@ -24,6 +24,7 @@ export function useStudentWorkspace({ lesson }: WorkspaceProps) {
     enabled: !!selectedAttemptId,
   });
   const attempt = selectedAttemptId ? attemptQuery.data : undefined;
+  const stream = lesson.delivery === "dds-stream-v1";
   const isDDS = lesson.assignments.some((a) => a.role === "dds");
   const next = lesson.assignments.find((a) => a.available);
   const activeAttempt = lesson.assignments.find(
@@ -39,7 +40,7 @@ export function useStudentWorkspace({ lesson }: WorkspaceProps) {
   }, []);
   const deadline = Math.min(
     lesson.available_until ? Date.parse(lesson.available_until) : Infinity,
-    activeAttempt?.deadline_at
+    !stream && activeAttempt?.deadline_at
       ? Date.parse(activeAttempt.deadline_at)
       : Infinity,
   );
@@ -47,7 +48,9 @@ export function useStudentWorkspace({ lesson }: WorkspaceProps) {
     ? Math.max(0, Math.ceil((deadline - now) / 1000))
     : null;
   const unopened =
-    !lesson.assignments.some((a) => a.attempt_id) &&
+    (stream
+      ? !lesson.execution_started_at
+      : !lesson.assignments.some((a) => a.attempt_id)) &&
     lesson.work_status !== "submitted";
 
   const refresh = () => {
@@ -56,6 +59,13 @@ export function useStudentWorkspace({ lesson }: WorkspaceProps) {
     });
     void client.invalidateQueries({ queryKey: trainingKeys.lessons });
   };
+  const begin = useMutation({
+    mutationFn: () => trainingApi.startExecution(lesson.id),
+    onSuccess: (data) => {
+      client.setQueryData(trainingKeys.studentLesson(lesson.id), data);
+      refresh();
+    },
+  });
   const start = useMutation({
     mutationFn: trainingApi.startAttempt,
     onSuccess: (data) => {
@@ -68,7 +78,7 @@ export function useStudentWorkspace({ lesson }: WorkspaceProps) {
     start.reset();
     if (attemptId && attemptId === selectedAttemptId)
       void attemptQuery.refetch();
-    else if (attemptId) setSelectedAttemptId(attemptId);
+    else if (attemptId && !stream) setSelectedAttemptId(attemptId);
     else start.mutate(assignmentId);
   };
   const expiredAttempt =
@@ -85,6 +95,9 @@ export function useStudentWorkspace({ lesson }: WorkspaceProps) {
     a.card ? [journalCard(a.card)] : [],
   );
   return {
+    stream,
+    begin: () => begin.mutate(),
+    canBegin: stream ? lesson.status === "active" : !!next,
     confirmStart,
     setConfirmStart,
     attempt,
@@ -97,8 +110,10 @@ export function useStudentWorkspace({ lesson }: WorkspaceProps) {
     openAttempt,
     incidents,
     opening:
-      start.isPending || (!!selectedAttemptId && attemptQuery.isFetching),
-    openError: start.error || attemptQuery.error,
+      begin.isPending ||
+      start.isPending ||
+      (!!selectedAttemptId && attemptQuery.isFetching),
+    openError: begin.error || start.error || attemptQuery.error,
     closeAttempt: () => setSelectedAttemptId(null),
   };
 }

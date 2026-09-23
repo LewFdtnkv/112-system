@@ -43,6 +43,7 @@ export interface CallCue {
   duration_seconds: number | null;
 }
 export interface TelephoneState {
+  active_call?: TrainingCall | null;
   enabled: boolean;
   station: Station | null;
   cues: CallCue[];

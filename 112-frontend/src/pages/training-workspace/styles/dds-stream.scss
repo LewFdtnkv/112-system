@@ -1,0 +1,23 @@
+.dds-arrival-status {
+  margin: 6px 12px;
+  color: #284c66;
+  font-size: 13px;
+}
+
+.dds-card-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 6px 0;
+}
+
+.dds-reaction-time {
+  display: inline-block;
+  min-width: 42px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+
+  &--late {
+    color: #b4382d;
+  }
+}

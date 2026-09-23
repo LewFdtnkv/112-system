@@ -1,3 +1,6 @@
+import { TelephoneSessionProvider } from "@/features/telephone";
+import { DDSArrivalStatus } from "./DDSArrivalStatus";
+import { DDSReactionTime } from "./DDSReactionTime";
 import { LearningSummary, lessonKindLabels } from "@/entities/training";
 import { useStudentWorkspace } from "../model/useStudentWorkspace";
 import { StudentMessages } from "@/features/teaching-messages";
@@ -18,8 +21,18 @@ import { styles } from "../styles/Workspace";
 import type { WorkspaceProps } from "../types/TrainingWorkspacePage";
 import { AttemptEditor } from "./AttemptEditor";
 import { DDSWorkspace } from "./DDSWorkspace";
-export function Workspace({ lesson }: WorkspaceProps) {
+export function Workspace(props: WorkspaceProps) {
+  return (
+    <TelephoneSessionProvider>
+      <WorkspaceContent {...props} />
+    </TelephoneSessionProvider>
+  );
+}
+function WorkspaceContent({ lesson }: WorkspaceProps) {
   const {
+    stream,
+    begin,
+    canBegin,
     confirmStart,
     setConfirmStart,
     attempt,
@@ -41,8 +54,10 @@ export function Workspace({ lesson }: WorkspaceProps) {
         <h1>{lesson.title}</h1>
         <LearningSummary policy={lesson.learning} />
         <p>
-          Карточек: {lesson.assignments.length}. Выполняйте их последовательно.
-          Срок задания общий; лимит карточки начинается при её открытии.
+          Карточек: {lesson.assignments.length}.{" "}
+          {stream
+            ? "Карточки поступают по расписанию после начала занятия, даже пока вы обрабатываете предыдущую. Норматив реакции каждой карточки начинается с её поступления."
+            : "Выполняйте их последовательно. Срок задания общий; лимит карточки начинается при её открытии."}
         </p>
         <p>
           Начало:{" "}
@@ -67,7 +82,7 @@ export function Workspace({ lesson }: WorkspaceProps) {
         </Alert>
         <Button
           variant="contained"
-          disabled={!next || opening}
+          disabled={!canBegin || opening}
           onClick={() => setConfirmStart(true)}
         >
           Приступить к заданию
@@ -83,13 +98,18 @@ export function Workspace({ lesson }: WorkspaceProps) {
           <DialogTitle>Начать выполнение?</DialogTitle>
           <DialogContent>
             <p>
-              Таймер первой карточки начнётся сразу. Закрытие страницы не
-              останавливает время.
+              {stream
+                ? "Начнётся расписание поступления карточек. "
+                : "Таймер первой карточки начнётся сразу. "}
+              Закрытие страницы не останавливает время.
             </p>
             <Button
               disabled={opening}
               onClick={() => {
-                if (next) {
+                if (stream) {
+                  begin();
+                  setConfirmStart(false);
+                } else if (next) {
                   openAttempt({ assignmentId: next.id, attemptId: null });
                   setConfirmStart(false);
                 }
@@ -134,13 +154,15 @@ export function Workspace({ lesson }: WorkspaceProps) {
           </Button>
         )}
       </div>
+      {stream && <DDSArrivalStatus lesson={lesson} />}
       {proctoringFailed && (
         <Alert severity="warning">События прокторинга ожидают отправки.</Alert>
       )}
       <StudentMessages compact />
       {lesson.assignments.some((a) => a.role === "dds") && (
         <Alert severity="info">
-          Работа своей службы не меняет статусы других служб. Учебный телефон доступен внутри карточки после настройки рабочего места.
+          Работа своей службы не меняет статусы других служб. Учебный телефон
+          доступен внутри карточки после настройки рабочего места.
         </Alert>
       )}
       {lesson.status === "cancelled" && (
@@ -163,6 +185,34 @@ export function Workspace({ lesson }: WorkspaceProps) {
       )}
       <IncidentFeed
         incidents={incidents}
+        workflowStatus={
+          stream
+            ? (card) => {
+                const a = lesson.assignments.find(
+                  (row) => row.card?.id === card.id,
+                );
+                return a?.status === "completed"
+                  ? "Завершена"
+                  : a?.status === "interrupted"
+                    ? "Время истекло"
+                    : a?.first_opened_at
+                      ? "В работе"
+                      : "Ожидает открытия";
+              }
+            : undefined
+        }
+        timing={
+          stream
+            ? (card) => {
+                const assignment = lesson.assignments.find(
+                  (a) => a.card?.id === card.id,
+                );
+                return assignment ? (
+                  <DDSReactionTime assignment={assignment} />
+                ) : null;
+              }
+            : undefined
+        }
         selectedId={attempt?.card.id}
         onOpen={(card) => {
           const row = lesson.assignments.find((a) => a.card?.id === card.id);
@@ -171,17 +221,21 @@ export function Workspace({ lesson }: WorkspaceProps) {
         }}
         toolbar={
           <div className="arm-journal-actions">
-            <ArmIconButton
-              icon="plus"
-              label={
-                isDDS ? "Получить следующую карточку" : "Создать новую карточку"
-              }
-              disabled={!next || !!next.attempt_id || opening}
-              onClick={() => {
-                if (next)
-                  openAttempt({ assignmentId: next.id, attemptId: null });
-              }}
-            />
+            {!stream && (
+              <ArmIconButton
+                icon="plus"
+                label={
+                  isDDS
+                    ? "Получить следующую карточку"
+                    : "Создать новую карточку"
+                }
+                disabled={!next || !!next.attempt_id || opening}
+                onClick={() => {
+                  if (next)
+                    openAttempt({ assignmentId: next.id, attemptId: null });
+                }}
+              />
+            )}
             <Link to={routePaths.studentDashboard}>Мои занятия</Link>
             <Button onClick={refresh}>Обновить журнал</Button>
           </div>
@@ -191,6 +245,10 @@ export function Workspace({ lesson }: WorkspaceProps) {
         <DDSWorkspace
           key={`${attempt.id}:${attempt.status}`}
           initial={attempt}
+          lesson={lesson}
+          onSelectAssignment={(a) =>
+            openAttempt({ assignmentId: a.id, attemptId: a.attempt_id })
+          }
           onClose={closeAttempt}
           onSaved={refresh}
         />
