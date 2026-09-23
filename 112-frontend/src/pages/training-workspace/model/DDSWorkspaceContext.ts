@@ -1,4 +1,10 @@
-import { createContext, createElement, useContext, useRef } from "react";
+import {
+  createContext,
+  createElement,
+  useContext,
+  useLayoutEffect,
+  useState,
+} from "react";
 import { useStore } from "zustand";
 import { createStore, type StoreApi } from "zustand/vanilla";
 import type {
@@ -13,13 +19,13 @@ export function DDSWorkspaceStoreProvider({
   value,
   children,
 }: DDSWorkspaceStoreProviderProps) {
-  const storeRef = useRef<StoreApi<DDSWorkspaceContextValue> | null>(null);
-  if (!storeRef.current) storeRef.current = createStore(() => value);
-  else if (storeRef.current.getState() !== value)
-    storeRef.current.setState(value, true);
+  const [store] = useState(() => createStore(() => value));
+  useLayoutEffect(() => {
+    store.setState(value, true);
+  }, [store, value]);
   return createElement(
     DDSWorkspaceStoreContext.Provider,
-    { value: storeRef.current },
+    { value: store },
     children,
   );
 }

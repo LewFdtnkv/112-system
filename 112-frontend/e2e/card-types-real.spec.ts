@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { mockMap } from "./map-fixture";
 
 test("112 popular types, two-character search and registration without notification", async ({
   page,
@@ -9,6 +10,10 @@ test("112 popular types, two-character search and registration without notificat
     "Disposable database required",
   );
   test.setTimeout(90000);
+  await mockMap(page);
+  await page.route("**/api/v1/addresses/reverse", (route) =>
+    route.fulfill({ json: { items: [] } }),
+  );
   await page.setViewportSize({ width: 1920, height: 1080 });
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
@@ -270,29 +275,22 @@ test("112 popular types, two-character search and registration without notificat
   });
   await editor.getByRole("button", { name: "Показать адрес на карте" }).click();
   const mapDialog = page.getByRole("dialog", { name: "Карта происшествия" });
-  await expect(mapDialog.getByText(/Карта не настроена/)).toBeVisible();
   await expect(
-    mapDialog.getByRole("button", { name: "ОК", exact: true }),
-  ).toBeDisabled();
-  await mapDialog.getByLabel("Широта", { exact: true }).fill("91");
-  await mapDialog.getByLabel("Долгота", { exact: true }).fill("37.617300");
+    mapDialog.getByText("Тестовая карта", { exact: true }),
+  ).toBeVisible();
   await expect(
-    mapDialog.getByRole("button", { name: "ОК", exact: true }),
+    mapDialog.getByRole("button", { name: "Применить адрес" }),
   ).toBeDisabled();
-  await mapDialog.getByLabel("Широта", { exact: true }).fill("55.755800");
+  await mapDialog.getByText("Тестовая карта", { exact: true }).click();
   await mapDialog.getByRole("button", { name: "Отмена", exact: true }).click();
   await expect(editor.getByTitle("Координаты происшествия")).toHaveCount(0);
   await editor.getByRole("button", { name: "Показать адрес на карте" }).click();
-  await mapDialog.getByLabel("Широта", { exact: true }).fill("55.755800");
-  await mapDialog.getByLabel("Долгота", { exact: true }).fill("37.617300");
+  await mapDialog.getByText("Тестовая карта", { exact: true }).click();
   await mapDialog.screenshot({
     animations: "disabled",
-    path: info.outputPath("card-map-unconfigured.png"),
+    path: info.outputPath("card-map-selection.png"),
   });
-  await mapDialog.getByRole("button", { name: "ОК", exact: true }).click();
-  await expect(editor.getByTitle("Координаты происшествия")).toContainText(
-    "55.755800, 37.617300",
-  );
+  await mapDialog.getByRole("button", { name: "Применить адрес" }).click();
   await expect(
     editor.getByText("Оповещение не требуется", { exact: true }),
   ).toBeVisible();

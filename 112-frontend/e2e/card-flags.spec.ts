@@ -151,7 +151,7 @@ test("teacher sets reference flags and generates a silent call without invented 
     animations: "disabled",
   });
   await page.getByRole("button", { name: "Отмена", exact: true }).click();
-  await page.getByRole("button", { name: "Сгенерировать нейросетью" }).click();
+  await page.getByRole("button", { name: "Сгенерировать карточки" }).click();
   const dialog = page.getByRole("dialog");
   await dialog.getByLabel("Количество карточек", { exact: true }).fill("3");
   await dialog

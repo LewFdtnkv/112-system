@@ -20,7 +20,7 @@ export function useLocationPicker(
   const [longitude, setLongitude] = useState(
     initial?.longitude.toString() ?? "",
   );
-  const [query, setQuery] = useState(initialAddress);
+  const [query, setQueryValue] = useState(initialAddress);
   const [results, setResults] = useState<GeocodedAddress[]>([]);
   const [selectedAddress, setSelectedAddress] = useState<GeocodedAddress>();
   const [searching, setSearching] = useState(false);
@@ -37,6 +37,13 @@ export function useLocationPicker(
     Number.isFinite(lon) &&
     Math.abs(lat) <= 90 &&
     Math.abs(lon) <= 180;
+  const setQuery = (value: string) => {
+    lookupVersion.current += 1;
+    setQueryValue(value);
+    setResults([]);
+    setSelectedAddress(undefined);
+    setSearchError("");
+  };
   const updatePoint = useCallback((point: MapPoint) => {
     setLatitude(point.latitude.toFixed(6));
     setLongitude(point.longitude.toFixed(6));
@@ -46,14 +53,14 @@ export function useLocationPicker(
       .then((address) => {
         if (!address || version !== lookupVersion.current) return;
         setSelectedAddress(address);
-        setQuery(address.addressLine);
+        setQueryValue(address.addressLine);
       })
       .catch(() => undefined);
   }, []);
   const selectAddress = (address: GeocodedAddress) => {
     lookupVersion.current += 1;
     setSelectedAddress(address);
-    setQuery(address.addressLine);
+    setQueryValue(address.addressLine);
     setResults([]);
     setLatitude(address.point.latitude.toFixed(6));
     setLongitude(address.point.longitude.toFixed(6));
@@ -65,11 +72,14 @@ export function useLocationPicker(
     setSearching(true);
     setSearchError("");
     setResults([]);
+    const version = ++lookupVersion.current;
     try {
       const found = await findAddresses(value);
+      if (version !== lookupVersion.current) return;
       setResults(found);
       if (!found.length) setSearchError("Адрес не найден. Уточните запрос.");
     } catch {
+      if (version !== lookupVersion.current) return;
       setSearchError(
         "Поиск адресов недоступен. Проверьте подключение к DaData или попробуйте позднее.",
       );
@@ -99,6 +109,7 @@ export function useLocationPicker(
       });
     return () => {
       disposed = true;
+      lookupVersion.current += 1;
       map.current?.destroy();
       map.current = undefined;
     };

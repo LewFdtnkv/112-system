@@ -1,51 +1,24 @@
-import { getApiError } from "@/shared/api/errors";
-import { translateToRussian } from "@/shared/lib/translation/yandex";
 import { Alert, Button, Stack, TextField, Typography } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useCardTranslation } from "../model/useCardTranslation";
 import type { Props } from "../types/CardTranslationPanel";
 
-export function CardTranslationPanel({
-  initialText,
-  onApply,
-  onClose,
-}: Props) {
-  const [source, setSource] = useState(initialText);
-  const [translation, setTranslation] = useState("");
-  const [detectedLanguage, setDetectedLanguage] = useState<string>();
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string>();
-
-  useEffect(() => {
-    setSource(initialText);
-    setTranslation("");
-    setDetectedLanguage(undefined);
-    setError(undefined);
-  }, [initialText]);
-
-  const translate = async () => {
-    const text = source.trim();
-    if (!text) {
-      setError("Введите текст, который нужно перевести.");
-      return;
-    }
-    setPending(true);
-    setError(undefined);
-    try {
-      const result = await translateToRussian(text);
-      setTranslation(result.text);
-      setDetectedLanguage(result.detected_language_code ?? undefined);
-    } catch (reason) {
-      setError(getApiError(reason).message);
-    } finally {
-      setPending(false);
-    }
-  };
+export function CardTranslationPanel({ initialText, onApply, onClose }: Props) {
+  const {
+    source,
+    setSource,
+    translation,
+    setTranslation,
+    detectedLanguage,
+    pending,
+    error,
+    translate,
+  } = useCardTranslation(initialText);
 
   return (
     <Stack spacing={2} className="arm-translation-panel">
       <Typography variant="body2" color="text.secondary">
-        Текст переводится на русский язык. Ключ Яндекса остаётся только на
-        сервере.
+        Текст переводится на русский язык. Проверьте результат перед
+        подстановкой в карточку.
       </Typography>
       <TextField
         label="Текст заявителя"
@@ -58,7 +31,11 @@ export function CardTranslationPanel({
         helperText={`${source.length} / 5000`}
         autoFocus
       />
-      <Button variant="contained" onClick={() => void translate()} disabled={pending}>
+      <Button
+        variant="contained"
+        onClick={translate}
+        disabled={pending || !source.trim()}
+      >
         {pending ? "Переводим…" : "Перевести"}
       </Button>
       {error && <Alert severity="error">{error}</Alert>}
@@ -76,7 +53,11 @@ export function CardTranslationPanel({
           }
         />
       )}
-      <Stack direction="row" spacing={1} className="arm-translation-panel__actions">
+      <Stack
+        direction="row"
+        spacing={1}
+        className="arm-translation-panel__actions"
+      >
         <Button onClick={onClose} disabled={pending}>
           Отмена
         </Button>
