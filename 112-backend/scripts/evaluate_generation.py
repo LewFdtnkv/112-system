@@ -13,11 +13,12 @@ from app.services.catalog_rules import feature_definitions
 from app.services.generation.evidence import extra_evidence
 from app.services.generation.library import for_entry
 from app.services.generation.llm import compose
+from app.services.generation.narration import prompt, protect
 from app.services.generation.planner import build
 from app.services.generation_flags import facts as flag_facts
 
 
-def sample(template_id, *, seed=20260923):
+def sample(template_id, *, seed=20260923, parameters=None, facts_override=None):
     catalog = json.loads((Path(__file__).parent / "data/system112_catalog.json").read_text())
     for row in catalog["entries"]:
         entry = SimpleNamespace(
@@ -31,12 +32,15 @@ def sample(template_id, *, seed=20260923):
         for template in for_entry(entry):
             if template.id != template_id:
                 continue
-            p = GenerationParameters(
-                no_contact=False,
-                has_victims=template.has_victims or False,
-                blocked=False,
-                call_dropped=False,
-                refused_ambulance=False,
+            p = GenerationParameters.model_validate(
+                {
+                    "no_contact": False,
+                    "has_victims": template.has_victims or False,
+                    "blocked": False,
+                    "call_dropped": False,
+                    "refused_ambulance": False,
+                }
+                | (parameters or {})
             )
             rng = random.Random(seed)
             plan = build(entry, template, p, rng)
@@ -58,6 +62,7 @@ def sample(template_id, *, seed=20260923):
             }
             if plan["service_call"]:
                 facts.update({"ФИО заявителя": None, "Пол": None, "Возраст": None})
+            facts.update(facts_override or {})
             return {
                 "facts": facts,
                 "narrative": plan,
@@ -85,20 +90,38 @@ def main():
         ],
     )
     parser.add_argument("--without-model", action="store_true")
+    parser.add_argument("--model", help="Model override for this evaluation only")
+    parser.add_argument("--seed", type=int, default=20260923)
+    parser.add_argument("--cases-file", type=Path, help="JSON array of prepared evaluation cases")
     args = parser.parse_args()
-    for template_id in args.templates:
-        data = sample(template_id)
+    cases = (
+        json.loads(args.cases_file.read_text())
+        if args.cases_file
+        else [{"template": t, "seed": args.seed} for t in args.templates]
+    )
+    for case in cases:
+        template_id = case["template"]
+        data = sample(
+            template_id,
+            seed=case.get("seed", args.seed),
+            parameters=case.get("parameters"),
+            facts_override=case.get("facts"),
+        )
         if args.without_model:
             data["narrative"]["mode"] = "template"
-        job = SimpleNamespace(input=data, model_version=settings.llm_model)
+        job = SimpleNamespace(input=data, model_version=args.model or settings.llm_model)
         start = time.monotonic()
         text, metadata = compose(job)
+        text, metadata = protect(data, text, metadata)
         print(
             json.dumps(
                 {
                     "template": template_id,
+                    "case": case.get("id", template_id),
                     "seconds": round(time.monotonic() - start, 2),
                     "facts": data["facts"],
+                    "input": data,
+                    "prompt": prompt(data["narrative"], data["facts"]),
                     "text": text.model_dump(),
                     "metadata": metadata,
                 },
