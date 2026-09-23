@@ -3,15 +3,26 @@ from uuid import UUID, uuid4
 
 import pytest
 from sqlalchemy import func, select
-from test_teacher_api import teaching as teaching
+from test_teacher_api import teaching as base_teaching
 
 from app.models import AIJob, CardTemplate, CardTemplateRecipient, Service
 from app.models.enums import JobStatus
 from app.schemas.generation import GeneratedText
-from app.services.card_generation import prompt
+from app.services.card_generation import PROMPT_VERSION
+from app.services.generation.narration import prompt
 from app.services.generation_worker import claim, fail, finish, renew
 
 pytestmark = pytest.mark.anyio
+
+
+@pytest.fixture
+async def teaching(db_session, db_client):
+    t = await base_teaching.__wrapped__(db_session, db_client)
+    t.entry.display_name = "ДТП"
+    await db_session.commit()
+    return t
+
+
 TEXT = GeneratedText(
     title="Дерево во дворе",
     caller_message="Здравствуйте, во дворе упало дерево, нужна помощь службы.",
@@ -60,8 +71,8 @@ async def test_generation_resolves_facts_once_and_enforces_owner(teaching, db_cl
     await t.post(f"card-generations/{jobs[0]['id']}/retry", {}, actor="other", expected=404)
     assert await db_session.scalar(select(func.count()).select_from(CardTemplate)) == 0
     stored = await db_session.get(AIJob, UUID(jobs[0]["id"]))
-    assert "Случайно" not in prompt(stored.input["facts"])
-    assert "улица Ленина" in prompt(stored.input["facts"])
+    assert "Случайно" not in prompt(stored.input["narrative"], stored.input["facts"])
+    assert "улица Ленина" not in prompt(stored.input["narrative"], stored.input["facts"])
 
 
 async def test_generation_random_package_uses_one_version_and_distinct_seeds(teaching, db_session):
@@ -218,7 +229,7 @@ async def test_generation_claims_are_exclusive_across_connections():
                         purpose=AIPurpose.GENERATION,
                         created_by_id=owner_id,
                         idempotency_key=uuid4(),
-                        prompt_version="card-generation-v1",
+                        prompt_version=PROMPT_VERSION,
                         input={},
                     )
                     for job_id in ids
@@ -240,3 +251,15 @@ async def test_generation_claims_are_exclusive_across_connections():
             await session.execute(delete(User).where(User.id == owner_id))
             await session.commit()
         await engine.dispose()
+
+
+async def test_old_pending_jobs_are_closed_without_running_old_generator(teaching, db_session):
+    t = teaching
+    jobs = await t.post("card-generations", payload(t) | {"count": 1}, expected=202)
+    job = await db_session.get(AIJob, UUID(jobs[0]["id"]))
+    job.prompt_version = "card-generation-v2"
+    await db_session.commit()
+    assert await claim(db_session) is None
+    await db_session.refresh(job)
+    assert job.status == JobStatus.FAILED and "новый пакет" in job.error
+    await t.post(f"card-generations/{job.id}/retry", {}, expected=409)

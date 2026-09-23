@@ -83,10 +83,13 @@ async def card_read(session: AsyncSession, card: CardTemplate) -> CardRead:
         .join(ScenarioVersion, ScenarioVersion.id == ScenarioCard.scenario_version_id)
         .where(ScenarioCard.card_template_id == card.id)
     )
+    job = await session.scalar(select(AIJob).where(AIJob.card_template_id == card.id))
+    inference = (job.output or {}).get("inference", {}) if job else {}
     return CardRead(
-        generated_by_ai=bool(
-            await session.scalar(select(AIJob.id).where(AIJob.card_template_id == card.id))
-        ),
+        generated_by_ai=job is not None,
+        generation_method=inference.get("source"),
+        generation_note=inference.get("quality_note"),
+        generation_template=job.input.get("narrative", {}).get("title") if job else None,
         can_edit=scenario_count == 0,
         scenario_count=scenario_count,
         id=card.id,

@@ -15,6 +15,7 @@ class GenerationParameters(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
+    mode: Literal["assisted", "template"] = "assisted"
     classifier_version_id: UUID | None = None
     classifier_entry_id: UUID | None = None
     service_ids: list[UUID] | None = Field(default=None, max_length=24)
@@ -83,3 +84,6 @@ class GenerationRead(BaseModel):
     error: str | None
     attempts: int
     facts: dict
+    template_name: str | None = None
+    generation_method: str | None = None
+    quality_note: str | None = None
