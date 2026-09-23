@@ -2,7 +2,7 @@ name: system112-backend
 
 x-backend: &backend
   build: .
-  environment:
+  environment: &backend-environment
     APP_NAME: ${APP_NAME:-System-112 API}
     DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-trainer}:${POSTGRES_PASSWORD:-trainer}@db:5432/${POSTGRES_DB:-trainer}
     SQL_ECHO: ${SQL_ECHO:-false}
@@ -95,7 +95,8 @@ services:
   frontend:
     build: ../112-frontend
     env_file:
-      - ../112-frontend/.env
+      - path: ../112-frontend/.env
+        required: false
     ports:
       - "${FRONTEND_BIND_ADDRESS:-127.0.0.1}:${FRONTEND_PORT:-8080}:80"
     depends_on:
@@ -128,6 +129,11 @@ services:
 
   api:
     <<: *backend
+    environment:
+      <<: *backend-environment
+      DADATA_API_KEY: ${DADATA_API_KEY:-}
+      YANDEX_TRANSLATE_API_KEY: ${YANDEX_TRANSLATE_API_KEY:-}
+      EXTERNAL_SERVICES_TIMEOUT_SECONDS: ${EXTERNAL_SERVICES_TIMEOUT_SECONDS:-8}
     volumes:
       - request_logs:/home/appuser/logs
       - telephony_media:/home/appuser/telephony

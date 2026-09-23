@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     dadata_api_key: SecretStr | None = None
     yandex_translate_api_key: SecretStr | None = None
     yandex_cloud_folder_id: str | None = None
+    external_services_timeout_seconds: int = Field(default=8, ge=1, le=30)
 
 
 settings = Settings()

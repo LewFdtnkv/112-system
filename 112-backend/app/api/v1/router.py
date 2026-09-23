@@ -12,6 +12,7 @@ from app.api.v1.catalog_editor import router as catalog_editor_router
 from app.api.v1.generation import router as generation_router
 from app.api.v1.groups import router as groups_router
 from app.api.v1.lesson_evaluation import router as lesson_evaluation_router
+from app.api.v1.location_services import router as location_services_router
 from app.api.v1.service_profiles import router as service_profiles_router
 from app.api.v1.student import router as student_router
 from app.api.v1.translations import router as translations_router
@@ -44,4 +45,5 @@ protected_router.include_router(lesson_evaluation_router)
 protected_router.include_router(views_router)
 protected_router.include_router(telephony_router)
 protected_router.include_router(media_router)
+protected_router.include_router(location_services_router)
 router.include_router(protected_router)
