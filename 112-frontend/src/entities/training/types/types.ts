@@ -109,6 +109,9 @@ export interface CardData {
 
 export interface CardTemplate {
   generated_by_ai?: boolean;
+  generation_method?: string | null;
+  generation_note?: string | null;
+  generation_template?: string | null;
   revision: number;
   updated_at: string;
   created_at: string;

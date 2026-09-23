@@ -1,6 +1,7 @@
 import type { FeatureValue } from "@/shared/lib/featureValues";
 
 export interface GenerationParameters {
+  mode?: "assisted" | "template";
   classifier_version_id?: string | null;
   classifier_entry_id?: string | null;
   service_ids?: string[] | null;
@@ -37,6 +38,9 @@ export interface GenerationJob {
   facts: Record<string, unknown>;
 }
 export interface GenerationOptions {
+  template_count: number;
+  template_version: string;
+  supported_types: string[];
   locality: string[];
   street: string[];
   house: string[];
