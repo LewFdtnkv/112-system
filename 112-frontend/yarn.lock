@@ -3065,3 +3065,8 @@ zustand@^5.0.15:
   version "5.0.15"
   resolved "https://registry.npmjs.org/zustand/-/zustand-5.0.15.tgz"
   integrity sha512-MpSEjRiBkA9crSYeOUH32rJC7SVqAbm0Fqcqge/bUi2PPoLcBWKOsG+C8mevmpr8TwXHBVkChbbJiyvkE+i/3A==
+
+sip.js@^0.21.2:
+  version "0.21.2"
+  resolved "https://registry.npmjs.org/sip.js/-/sip.js-0.21.2.tgz"
+  integrity sha512-tSqTcIgrOd2IhP/rd70JablvAp+fSfLSxO4hGNY6LkWRY1SKygTO7OtJEV/BQb8oIxtMRx0LE7nUF2MaqGbFzA==

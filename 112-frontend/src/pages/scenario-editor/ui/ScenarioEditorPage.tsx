@@ -195,7 +195,7 @@ function Editor({ initial }: EditorProps) {
         <>
           <Alert severity="warning">
             Выберите опубликованный профиль и задайте сообщения и ожидаемые
-            действия ДДС. Звонки пока не подключены.
+            действия ДДС. Аудио звонков подготовьте в разделе «Записи звонков».
           </Alert>
           <DDSPolicyFields
             profileId={profile?.id}

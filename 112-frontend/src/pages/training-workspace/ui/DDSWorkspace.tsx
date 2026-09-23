@@ -1,3 +1,4 @@
+import { Telephone } from "@/features/telephone";
 import { LearningHelp } from "@/features/learning-assistance";
 import { DDSWorkspaceStoreProvider } from "../model/DDSWorkspaceContext";
 import { crewStatusLabels } from "@/entities/training";
@@ -47,6 +48,7 @@ export function DDSWorkspace(props: DDSWorkspaceProps) {
         }}
         trainingNotice={
           <section className="dds-training-notice">
+            <Telephone attemptId={attempt.id} completed={completed} />
             <LearningHelp
               attempt={attempt}
               busy={busy || workspace.editing}
@@ -83,7 +85,7 @@ export function DDSWorkspace(props: DDSWorkspaceProps) {
                   {c.name} {c.position}: {c.description}
                 </p>
               ))}
-              <p>Звонки пока не подключены.</p>
+
             </details>
             {!completed && dds.information && (
               <p>

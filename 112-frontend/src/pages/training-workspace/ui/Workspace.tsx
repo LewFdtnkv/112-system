@@ -140,8 +140,7 @@ export function Workspace({ lesson }: WorkspaceProps) {
       <StudentMessages compact />
       {lesson.assignments.some((a) => a.role === "dds") && (
         <Alert severity="info">
-          Работа своей службы не меняет статусы других служб. Звонки пока не
-          подключены.
+          Работа своей службы не меняет статусы других служб. Учебный телефон доступен внутри карточки после настройки рабочего места.
         </Alert>
       )}
       {lesson.status === "cancelled" && (

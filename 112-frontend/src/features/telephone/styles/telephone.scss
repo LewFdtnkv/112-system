@@ -1,0 +1,67 @@
+.training-telephone {
+  padding: 8px 12px;
+  margin: 6px 0;
+  border: 1px solid #b6c6cf;
+  background: #f6f9fb;
+  font-size: 13px;
+  &__heading,
+  &__active,
+  &__incoming {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  &__heading > span,
+  small {
+    color: #536977;
+  }
+  &__incoming {
+    padding: 8px;
+    border: 1px solid #418ac3;
+    background: #e6f1fa;
+  }
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  &__contacts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  &__contacts li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 8px;
+    border: 1px solid #cbd6dc;
+    background: white;
+  }
+  small {
+    display: block;
+  }
+  button,
+  summary {
+    cursor: pointer;
+    transition:
+      background-color 120ms ease,
+      box-shadow 120ms ease;
+    user-select: none;
+  }
+  button:hover:not(:disabled),
+  summary:hover {
+    background: #dfeef7;
+  }
+  button:active:not(:disabled) {
+    background: #c5dfef;
+  }
+  button:disabled {
+    cursor: default;
+  }
+  [role="alert"] {
+    color: #9d382e;
+  }
+}

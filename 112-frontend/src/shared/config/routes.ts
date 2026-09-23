@@ -20,6 +20,8 @@ export const routePaths = {
   users: "/users",
   groups: "/groups",
   cards: "/cards",
+  telephonyStations: "/admin/telephony",
+  telephonyMedia: "/teacher/telephony",
   catalogs: "/catalogs",
   analytics: "/analytics",
   forbidden: "/403",
