@@ -75,6 +75,9 @@ class CardUpdate(CardCreate):
 
 class CardRead(CardDefinition):
     generated_by_ai: bool = False
+    generation_method: str | None = None
+    generation_note: str | None = None
+    generation_template: str | None = None
     can_edit: bool
     scenario_count: int
     revision: int

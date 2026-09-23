@@ -1,0 +1,857 @@
+{
+  "version": "situations-v1",
+  "templates": [
+    {
+      "id": "fire-rubbish",
+      "types": [
+        "101",
+        "Пожар"
+      ],
+      "title": "Пожар на улице",
+      "objects": [
+        "двор"
+      ],
+      "answers": {
+        "where": "Улица",
+        "street_sign": "Открытое пламя / Дым",
+        "street_object": "Мусор"
+      },
+      "phrases": [
+        "На улице горит мусор, видно пламя и дым.",
+        "Вижу дым и открытое пламя: горит мусор."
+      ],
+      "has_victims": null,
+      "blocked": null,
+      "service_call": false,
+      "victims_limit": 3
+    },
+    {
+      "id": "fire-grass",
+      "types": [
+        "101",
+        "Пожар"
+      ],
+      "title": "Пожар на улице",
+      "objects": [
+        "парк"
+      ],
+      "answers": {
+        "where": "Улица",
+        "street_sign": "Открытое пламя / Дым",
+        "street_object": "Трава, пух"
+      },
+      "phrases": [
+        "На улице горит сухая трава, видно пламя и дым.",
+        "Вижу дым и открытое пламя: горит сухая трава."
+      ],
+      "has_victims": null,
+      "blocked": null,
+      "service_call": false,
+      "victims_limit": 3
+    },
+    {
+      "id": "fire-tree",
+      "types": [
+        "101",
+        "Пожар"
+      ],
+      "title": "Пожар на улице",
+      "objects": [
+        "парк"
+      ],
+      "answers": {
+        "where": "Улица",
+        "street_sign": "Открытое пламя / Дым",
+        "street_object": "Дерево, деревья"
+      },
+      "phrases": [
+        "На улице горит дерево, видно пламя и дым.",
+        "Вижу дым и открытое пламя: горит дерево."
+      ],
+      "has_victims": null,
+      "blocked": null,
+      "service_call": false,
+      "victims_limit": 3
+    },
+    {
+      "id": "fire-wires",
+      "types": [
+        "101",
+        "Пожар"
+      ],
+      "title": "Пожар на улице",
+      "objects": [
+        "двор"
+      ],
+      "answers": {
+        "where": "Улица",
+        "street_sign": "Открытое пламя / Дым",
+        "street_object": "Провода"
+      },
+      "phrases": [
+        "На улице горит провода, видно пламя и дым.",
+        "Вижу дым и открытое пламя: горит провода."
+      ],
+      "has_victims": null,
+      "blocked": null,
+      "service_call": false,
+      "victims_limit": 3
+    },
+    {
+      "id": "fire-flat",
+      "types": [
+        "101",
+        "Пожар"
+      ],
+      "title": "Пожар в жилом доме",
+      "objects": [
+        "жилой дом"
+      ],
+      "answers": {
+        "where": "Дом",
+        "building_sign": "Открытое пламя / Дым",
+        "home_area": "Квартира"
+      },
+      "phrases": [
+        "Из квартиры идёт дым, видно пламя.",
+        "Сообщаю о пожаре. Из квартиры идёт дым, видно пламя."
+      ],
+      "has_victims": null,
+      "blocked": null,
+      "service_call": false,
+      "victims_limit": 3
+    },
+    {
+      "id": "fire-basement",
+      "types": [
+        "101",
+        "Пожар"
+      ],
+      "title": "Пожар в жилом доме",
+      "objects": [
+        "жилой дом"
+      ],
+      "answers": {
+        "where": "Дом",
+        "building_sign": "Открытое пламя / Дым",
+        "home_area": "Подвал"
+      },
+      "phrases": [
+        "Из подвала жилого дома идёт дым, видно пламя.",
+        "Сообщаю о пожаре. Из подвала жилого дома идёт дым, видно пламя."
+      ],
+      "has_victims": null,
+      "blocked": null,
+      "service_call": false,
+      "victims_limit": 3
+    },
+    {
+      "id": "fire-attic",
+      "types": [
+        "101",
+        "Пожар"
+      ],
+      "title": "Пожар в жилом доме",
+      "objects": [
+        "жилой дом"
+      ],
+      "answers": {
+        "where": "Дом",
+        "building_sign": "Открытое пламя / Дым",
+        "home_area": "Чердак"
+      },
+      "phrases": [
+        "На чердаке жилого дома видны дым и огонь.",
+        "Сообщаю о пожаре. На чердаке жилого дома видны дым и огонь."
+      ],
+      "has_victims": null,
+      "blocked": null,
+      "service_call": false,
+      "victims_limit": 3
+    },
+    {
+      "id": "fire-entrance",
+      "types": [
+        "101",
+        "Пожар"
+      ],
+      "title": "Пожар в жилом доме",
+      "objects": [
+        "жилой дом"
+      ],
+      "answers": {
+        "where": "Дом",
+        "building_sign": "Открытое пламя / Дым",
+        "home_area": "Подъезд"
+      },
+      "phrases": [
+        "В подъезде жилого дома видны дым и огонь.",
+        "Сообщаю о пожаре. В подъезде жилого дома видны дым и огонь."
+      ],
+      "has_victims": null,
+      "blocked": null,
+      "service_call": false,
+      "victims_limit": 3
+    },
+    {
+      "id": "fire-car",
+      "types": [
+        "101",
+        "Пожар"
+      ],
+      "title": "Горит автомобиль",
+      "objects": [
+        "дорога",
+        "двор"
+      ],
+      "answers": {
+        "where": "Транспорт",
+        "transport_sign": "Открытое пламя / Дым",
+        "transport_object": "Автомашина"
+      },
+      "phrases": [
+        "Горит автомобиль, видны пламя и дым.",
+        "Вижу дым и пламя от горящего автомобиля."
+      ],
+      "has_victims": null,
+      "blocked": null,
+      "service_call": false,
+      "victims_limit": 3
+    },
+    {
+      "id": "fire-bus",
+      "types": [
+        "101",
+        "Пожар"
+      ],
+      "title": "Горит автобус",
+      "objects": [
+        "дорога"
+      ],
+      "answers": {
+        "where": "Транспорт",
+        "transport_sign": "Открытое пламя / Дым",
+        "transport_object": "Общественный транспорт"
+      },
+      "phrases": [
+        "Горит автобус, видны пламя и дым.",
+        "Сообщаю о пожаре: горит автобус."
+      ],
+      "has_victims": null,
+      "blocked": null,
+      "service_call": false,
+      "victims_limit": 3
+    },
+    {
+      "id": "fire-smell",
+      "types": [
+        "101",
+        "Пожар"
+      ],
+      "title": "Запах гари в доме",
+      "objects": [
+        "жилой дом"
+      ],
+      "answers": {
+        "where": "Дом",
+        "building_sign": "Запах гари",
+        "home_area": "Подъезд"
+      },
+      "phrases": [
+        "В подъезде жилого дома пахнет гарью.",
+        "Чувствую запах гари в подъезде жилого дома."
+      ],
+      "has_victims": null,
+      "blocked": null,
+      "service_call": false,
+      "victims_limit": 3
+    },
+    {
+      "id": "fire-alarm",
+      "types": [
+        "101",
+        "Пожар"
+      ],
+      "title": "Пожарная сигнализация",
+      "objects": [
+        "магазин"
+      ],
+      "answers": {
+        "where": "Здание / объект",
+        "building_kind": "Магазин",
+        "building_sign": "Сработала пожарная сигнализация"
+      },
+      "phrases": [
+        "В магазине сработала пожарная сигнализация.",
+        "Звоню из магазина: здесь звучит пожарная сигнализация."
+      ],
+      "has_victims": null,
+      "blocked": null,
+      "service_call": false,
+      "victims_limit": 3
+    },
+    {
+      "id": "road-collision",
+      "types": [
+        "ДТП"
+      ],
+      "title": "Столкновение",
+      "objects": [
+        "дорога"
+      ],
+      "answers": {
+        "kind": "Столкновение",
+        "vehicles": "Два",
+        "fire": false
+      },
+      "phrases": [
+        "На дороге столкнулись два автомобиля.",
+        "Сообщаю о ДТП. На дороге столкнулись два автомобиля."
+      ],
+      "has_victims": null,
+      "blocked": null,
+      "service_call": false,
+      "victims_limit": 3
+    },
+    {
+      "id": "road-barrier",
+      "types": [
+        "ДТП"
+      ],
+      "title": "Наезд на препятствие",
+      "objects": [
+        "дорога"
+      ],
+      "answers": {
+        "kind": "Наезд на препятствие",
+        "vehicles": "Одно",
+        "fire": false
+      },
+      "phrases": [
+        "Автомобиль врезался в препятствие на дороге.",
+        "Сообщаю о ДТП. Автомобиль врезался в препятствие на дороге."
+      ],
+      "has_victims": null,
+      "blocked": null,
+      "service_call": false,
+      "victims_limit": 3
+    },
+    {
+      "id": "road-rollover",
+      "types": [
+        "ДТП"
+      ],
+      "title": "Опрокидывание",
+      "objects": [
+        "дорога"
+      ],
+      "answers": {
+        "kind": "Опрокидывание",
+        "vehicles": "Одно",
+        "fire": false
+      },
+      "phrases": [
+        "На дороге перевернулся автомобиль.",
+        "Сообщаю о ДТП. На дороге перевернулся автомобиль."
+      ],
+      "has_victims": null,
+      "blocked": null,
+      "service_call": false,
+      "victims_limit": 3
+    },
+    {
+      "id": "road-pedestrian",
+      "types": [
+        "ДТП"
+      ],
+      "title": "Наезд на пешехода",
+      "objects": [
+        "дорога"
+      ],
+      "answers": {
+        "kind": "Наезд на пешехода",
+        "vehicles": "Одно",
+        "fire": false
+      },
+      "phrases": [
+        "Автомобиль сбил пешехода на дороге.",
+        "Сообщаю о ДТП. Автомобиль сбил пешехода на дороге."
+      ],
+      "has_victims": true,
+      "blocked": null,
+      "service_call": false,
+      "victims_limit": 1
+    },
+    {
+      "id": "gas-stove",
+      "types": [
+        "104",
+        "Запах газа"
+      ],
+      "title": "Запах газа",
+      "objects": [
+        "жилой дом"
+      ],
+      "answers": {
+        "location": "В помещении",
+        "flame": false,
+        "equipment": "Плита"
+      },
+      "phrases": [
+        "В помещении пахнет газом рядом с плитой.",
+        "Звоню из-за запаха газа. В помещении пахнет газом рядом с плитой."
+      ],
+      "has_victims": null,
+      "blocked": null,
+      "service_call": false,
+      "victims_limit": 3
+    },
+    {
+      "id": "gas-boiler",
+      "types": [
+        "104",
+        "Запах газа"
+      ],
+      "title": "Запах газа",
+      "objects": [
+        "жилой дом"
+      ],
+      "answers": {
+        "location": "В помещении",
+        "flame": false,
+        "equipment": "Котёл"
+      },
+      "phrases": [
+        "В помещении пахнет газом рядом с котлом.",
+        "Звоню из-за запаха газа. В помещении пахнет газом рядом с котлом."
+      ],
+      "has_victims": null,
+      "blocked": null,
+      "service_call": false,
+      "victims_limit": 3
+    },
+    {
+      "id": "gas-street",
+      "types": [
+        "104",
+        "Запах газа"
+      ],
+      "title": "Запах газа",
+      "objects": [
+        "двор"
+      ],
+      "answers": {
+        "location": "На улице",
+        "flame": false
+      },
+      "phrases": [
+        "На улице чувствуется запах газа.",
+        "Звоню из-за запаха газа. На улице чувствуется запах газа."
+      ],
+      "has_victims": null,
+      "blocked": null,
+      "service_call": false,
+      "victims_limit": 3
+    },
+    {
+      "id": "gas-entrance",
+      "types": [
+        "104",
+        "Запах газа"
+      ],
+      "title": "Запах газа",
+      "objects": [
+        "жилой дом"
+      ],
+      "answers": {
+        "location": "В подъезде",
+        "flame": false
+      },
+      "phrases": [
+        "В подъезде жилого дома чувствуется запах газа.",
+        "Звоню из-за запаха газа. В подъезде жилого дома чувствуется запах газа."
+      ],
+      "has_victims": null,
+      "blocked": null,
+      "service_call": false,
+      "victims_limit": 3
+    },
+    {
+      "id": "medical-faint",
+      "types": [
+        "103"
+      ],
+      "title": "Потеря сознания",
+      "objects": [
+        "жилой дом",
+        "магазин"
+      ],
+      "answers": {
+        "reason": "Потеря сознания",
+        "conscious": false,
+        "breathing": true,
+        "child": false
+      },
+      "phrases": [
+        "Человек потерял сознание, но дышит.",
+        "Нужна медицинская помощь. Человек потерял сознание, но дышит."
+      ],
+      "has_victims": true,
+      "blocked": null,
+      "service_call": false,
+      "victims_limit": 1
+    },
+    {
+      "id": "medical-chest",
+      "types": [
+        "103"
+      ],
+      "title": "Боль в груди",
+      "objects": [
+        "жилой дом",
+        "магазин"
+      ],
+      "answers": {
+        "reason": "Боль в груди",
+        "conscious": true,
+        "breathing": true,
+        "child": false
+      },
+      "phrases": [
+        "Человек жалуется на боль в груди, он в сознании и дышит.",
+        "Нужна медицинская помощь. Человек жалуется на боль в груди, он в сознании и дышит."
+      ],
+      "has_victims": true,
+      "blocked": null,
+      "service_call": false,
+      "victims_limit": 1
+    },
+    {
+      "id": "medical-breath",
+      "types": [
+        "103"
+      ],
+      "title": "Затруднение дыхания",
+      "objects": [
+        "жилой дом",
+        "магазин"
+      ],
+      "answers": {
+        "reason": "Затруднение дыхания",
+        "conscious": true,
+        "breathing": true,
+        "child": false
+      },
+      "phrases": [
+        "Человеку трудно дышать, он в сознании.",
+        "Нужна медицинская помощь. Человеку трудно дышать, он в сознании."
+      ],
+      "has_victims": true,
+      "blocked": null,
+      "service_call": false,
+      "victims_limit": 1
+    },
+    {
+      "id": "medical-injury",
+      "types": [
+        "103"
+      ],
+      "title": "Травма",
+      "objects": [
+        "жилой дом",
+        "магазин"
+      ],
+      "answers": {
+        "reason": "Травма",
+        "conscious": true,
+        "breathing": true,
+        "child": false
+      },
+      "phrases": [
+        "Человек получил травму, он в сознании и дышит.",
+        "Нужна медицинская помощь. Человек получил травму, он в сознании и дышит."
+      ],
+      "has_victims": true,
+      "blocked": null,
+      "service_call": false,
+      "victims_limit": 1
+    },
+    {
+      "id": "police-theft",
+      "types": [
+        "102"
+      ],
+      "title": "Кража",
+      "objects": [
+        "двор",
+        "магазин"
+      ],
+      "answers": {
+        "event": "Кража",
+        "ongoing": false,
+        "weapon": false
+      },
+      "phrases": [
+        "У меня украли сумку. Сейчас кража уже не происходит.",
+        "Хочу сообщить о происшествии. У меня украли сумку. Сейчас кража уже не происходит."
+      ],
+      "has_victims": null,
+      "blocked": null,
+      "service_call": false,
+      "victims_limit": 3
+    },
+    {
+      "id": "police-conflict",
+      "types": [
+        "102"
+      ],
+      "title": "Конфликт",
+      "objects": [
+        "двор",
+        "магазин"
+      ],
+      "answers": {
+        "event": "Конфликт",
+        "ongoing": true,
+        "weapon": false
+      },
+      "phrases": [
+        "Между людьми происходит конфликт.",
+        "Хочу сообщить о происшествии. Между людьми происходит конфликт."
+      ],
+      "has_victims": null,
+      "blocked": null,
+      "service_call": false,
+      "victims_limit": 3
+    },
+    {
+      "id": "police-disorder",
+      "types": [
+        "102"
+      ],
+      "title": "Нарушение порядка",
+      "objects": [
+        "двор",
+        "магазин"
+      ],
+      "answers": {
+        "event": "Нарушение порядка",
+        "ongoing": true,
+        "weapon": false
+      },
+      "phrases": [
+        "Люди шумят и нарушают порядок, это продолжается сейчас.",
+        "Хочу сообщить о происшествии. Люди шумят и нарушают порядок, это продолжается сейчас."
+      ],
+      "has_victims": null,
+      "blocked": null,
+      "service_call": false,
+      "victims_limit": 3
+    },
+    {
+      "id": "obstacle-tree",
+      "types": [
+        "Дорожные помехи"
+      ],
+      "title": "Упавшее дерево",
+      "objects": [
+        "дорога"
+      ],
+      "answers": {
+        "obstacle": "Упавшее дерево"
+      },
+      "phrases": [
+        "На проезжую часть упало дерево.",
+        "Сообщаю о дорожной помехе. На проезжую часть упало дерево."
+      ],
+      "has_victims": null,
+      "blocked": null,
+      "service_call": false,
+      "victims_limit": 3
+    },
+    {
+      "id": "obstacle-object",
+      "types": [
+        "Дорожные помехи"
+      ],
+      "title": "Посторонний предмет",
+      "objects": [
+        "дорога"
+      ],
+      "answers": {
+        "obstacle": "Посторонний предмет"
+      },
+      "phrases": [
+        "На проезжей части лежит посторонний предмет.",
+        "Сообщаю о дорожной помехе. На проезжей части лежит посторонний предмет."
+      ],
+      "has_victims": null,
+      "blocked": null,
+      "service_call": false,
+      "victims_limit": 3
+    },
+    {
+      "id": "obstacle-traffic-light",
+      "types": [
+        "Дорожные помехи"
+      ],
+      "title": "Неисправный светофор",
+      "objects": [
+        "дорога"
+      ],
+      "answers": {
+        "obstacle": "Неисправный светофор"
+      },
+      "phrases": [
+        "На дороге не работает светофор.",
+        "Сообщаю о дорожной помехе. На дороге не работает светофор."
+      ],
+      "has_victims": null,
+      "blocked": null,
+      "service_call": false,
+      "victims_limit": 3
+    },
+    {
+      "id": "water-yard",
+      "types": [
+        "Скопление воды"
+      ],
+      "title": "Скопление воды",
+      "objects": [
+        "двор"
+      ],
+      "answers": {
+        "place": "Двор",
+        "rising": false
+      },
+      "phrases": [
+        "Во дворе скопилась вода.",
+        "Сообщаю о скоплении воды. Во дворе скопилась вода."
+      ],
+      "has_victims": null,
+      "blocked": null,
+      "service_call": false,
+      "victims_limit": 3
+    },
+    {
+      "id": "water-basement",
+      "types": [
+        "Скопление воды"
+      ],
+      "title": "Скопление воды",
+      "objects": [
+        "жилой дом"
+      ],
+      "answers": {
+        "place": "Подвал",
+        "rising": false
+      },
+      "phrases": [
+        "В подвале жилого дома скопилась вода.",
+        "Сообщаю о скоплении воды. В подвале жилого дома скопилась вода."
+      ],
+      "has_victims": null,
+      "blocked": null,
+      "service_call": false,
+      "victims_limit": 3
+    },
+    {
+      "id": "animal-cat",
+      "types": [
+        "Животные"
+      ],
+      "title": "Кошка застряла",
+      "objects": [
+        "двор"
+      ],
+      "answers": {
+        "animal": "Кошка",
+        "situation": "Животное застряло"
+      },
+      "phrases": [
+        "Во дворе кошка застряла и не может выбраться.",
+        "Нужна помощь животному: во дворе застряла кошка."
+      ],
+      "has_victims": null,
+      "blocked": null,
+      "service_call": false,
+      "victims_limit": 3
+    },
+    {
+      "id": "wrong-number",
+      "types": [
+        "Ошибочно набран номер"
+      ],
+      "title": "Ошибка набора",
+      "objects": [],
+      "answers": {
+        "confirmed": true
+      },
+      "phrases": [
+        "Извините, ошибся номером. Помощь не нужна.",
+        "Извините, набран неверный номер. Помощь не требуется."
+      ],
+      "has_victims": false,
+      "blocked": false,
+      "service_call": true,
+      "victims_limit": 3
+    },
+    {
+      "id": "consultation-numbers",
+      "types": [
+        "Консультация"
+      ],
+      "title": "Справочный вопрос",
+      "objects": [],
+      "answers": {
+        "topic": "Номера служб"
+      },
+      "phrases": [
+        "Подскажите, пожалуйста, номера экстренных служб.",
+        "Хочу уточнить, по каким номерам можно связаться с экстренными службами."
+      ],
+      "has_victims": false,
+      "blocked": false,
+      "service_call": true,
+      "victims_limit": 3
+    },
+    {
+      "id": "consultation-procedure",
+      "types": [
+        "Консультация"
+      ],
+      "title": "Порядок обращения",
+      "objects": [],
+      "answers": {
+        "topic": "Порядок обращения"
+      },
+      "phrases": [
+        "Подскажите, пожалуйста, как обратиться за помощью через систему 112.",
+        "Хочу узнать порядок обращения за помощью по номеру 112."
+      ],
+      "has_victims": false,
+      "blocked": false,
+      "service_call": true,
+      "victims_limit": 3
+    },
+    {
+      "id": "test-call",
+      "types": [
+        "Тестовый вызов"
+      ],
+      "title": "Проверка связи",
+      "objects": [],
+      "answers": {
+        "test": "Связь"
+      },
+      "phrases": [
+        "Это тестовый звонок для проверки связи. Экстренная помощь не нужна.",
+        "Проверяем связь учебным звонком. Экстренная помощь не требуется."
+      ],
+      "has_victims": false,
+      "blocked": false,
+      "service_call": true,
+      "victims_limit": 3
+    }
+  ]
+}

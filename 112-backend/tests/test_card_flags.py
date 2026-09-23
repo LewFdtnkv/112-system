@@ -4,8 +4,8 @@ import pytest
 from pydantic import ValidationError
 from sqlalchemy import select
 from test_card_generation import TEXT, payload
+from test_card_generation import teaching as teaching
 from test_student_workflow import exercise as exercise
-from test_teacher_api import teaching as teaching
 
 from app.models import AIJob, CardTemplate, Evaluation
 from app.schemas.authoring import CardData
@@ -92,8 +92,8 @@ async def test_fixed_flags_are_facts_and_survive_worker(teaching, db_session):
     assert await finish(db_session, job.id, job.worker_id, TEXT, {})
     card = await db_session.get(CardTemplate, job.card_template_id)
     assert card.data["additional_fields"]["details"]["blocked"] is True
-    assert "Пострадавшие: Да" in card.caller_message
-    assert "Срыв звонка: Да" in card.caller_message
+    assert "Пострадали два человека." in card.caller_message
+    assert "соединение прервалось" in card.caller_message
     await t.post("card-generations", payload(t, has_victims=False, victims_count=2), expected=422)
 
 
@@ -136,7 +136,7 @@ async def test_silent_generation_can_be_authored_opened_and_graded(teaching, db_
     assert str(job.id) == jobs[0]["id"]
     assert job.input["card"]["classifier_entry_id"] is None
     text, meta = call_model(job)  # Template path must not need a live LLM.
-    assert meta["source"] == "silent-call-template-v1"
+    assert meta["source"] == "template"
     assert "тишина" in text.caller_message and "прервалось" in text.caller_message
     await finish(db_session, job.id, job.worker_id, text, meta)
     card = await db_session.get(CardTemplate, job.card_template_id)

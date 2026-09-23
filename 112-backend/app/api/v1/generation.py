@@ -16,7 +16,17 @@ router = APIRouter(prefix="/card-generations", tags=["card generation"])
 
 @router.get("/options")
 async def options(teacher: TeacherDep):
-    return {**CHOICES, "caller_name": NAMES, "max_count": 10}
+    from app.services.generation.library import library
+
+    version, templates = library()
+    return {
+        **CHOICES,
+        "caller_name": NAMES,
+        "max_count": 10,
+        "template_count": len(templates),
+        "template_version": version,
+        "supported_types": sorted({name for row in templates for name in row.types}),
+    }
 
 
 @router.post("", response_model=list[GenerationRead], status_code=202)
@@ -35,7 +45,6 @@ async def list_jobs(
     query = select(AIJob).where(
         AIJob.created_by_id == teacher.id,
         AIJob.purpose == AIPurpose.GENERATION,
-        AIJob.prompt_version == PROMPT_VERSION,
     )
     if pending_only:
         query = query.where(AIJob.status != JobStatus.SUCCEEDED)
@@ -56,12 +65,13 @@ async def retry(job_id: UUID, session: SessionDep, teacher: TeacherDep):
             AIJob.id == job_id,
             AIJob.created_by_id == teacher.id,
             AIJob.purpose == AIPurpose.GENERATION,
-            AIJob.prompt_version == PROMPT_VERSION,
         )
         .with_for_update()
     )
     if job is None:
         raise HTTPException(404, "Генерация не найдена")
+    if job.prompt_version != PROMPT_VERSION:
+        raise HTTPException(409, "Формат генерации обновлён. Создайте новый пакет карточек.")
     if job.status != JobStatus.FAILED:
         raise HTTPException(409, "Повтор доступен только для неудачной генерации")
     pending = await session.scalar(

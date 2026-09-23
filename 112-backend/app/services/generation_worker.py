@@ -1,10 +1,8 @@
 """PostgreSQL queue with expiring leases and fenced, atomic result publication."""
 
 import asyncio
-import json
 import logging
 import urllib.error
-import urllib.request
 from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
@@ -18,7 +16,8 @@ from app.models.enums import AIPurpose, JobStatus
 from app.schemas.authoring import CardCreate
 from app.schemas.generation import GeneratedText
 from app.services.authoring import validate_card_definition
-from app.services.card_generation import PROMPT_VERSION, prompt
+from app.services.card_generation import PROMPT_VERSION
+from app.services.generation.narration import protect
 
 LEASE_SECONDS = 90
 MAX_ATTEMPTS = 3
@@ -31,7 +30,6 @@ async def claim(session):
         select(AIJob)
         .where(
             AIJob.purpose == AIPurpose.GENERATION,
-            AIJob.prompt_version.in_(["card-generation-v1", PROMPT_VERSION]),
             AIJob.created_by_id.is_not(None),
             or_(
                 and_(AIJob.status == JobStatus.QUEUED, AIJob.available_at <= now),
@@ -44,6 +42,12 @@ async def claim(session):
     )
     if job is None:
         await session.rollback()
+        return None
+    if job.prompt_version != PROMPT_VERSION:
+        job.status, job.completed_at = JobStatus.FAILED, now
+        job.error = "Формат генерации обновлён. Создайте новый пакет карточек."
+        job.worker_id = job.lease_expires_at = None
+        await session.commit()
         return None
     if job.retry_count >= MAX_ATTEMPTS:
         job.status, job.completed_at = JobStatus.FAILED, now
@@ -77,64 +81,9 @@ async def renew(session, job_id, token):
 
 
 def call_model(job):
-    from app.schemas.card_flags import flags
+    from app.services.generation.llm import compose
 
-    if flags(job.input["card"]["data"]).get("noContact"):
-        disconnected = flags(job.input["card"]["data"]).get("callDropped")
-        text = (
-            "Соединение установлено. После приветствия и повторных обращений "
-            "оператора в ответ тишина. Сведения о происшествии не получены."
-        )
-        if disconnected:
-            text += " Затем соединение прервалось."
-        return GeneratedText(title="Молчаливый вызов", caller_message=text, description=text), {
-            "source": "silent-call-template-v1"
-        }
-    seed = (job.input["seed"] + max(0, job.retry_count - 1)) % (2**31)
-    request = urllib.request.Request(
-        settings.llm_base_url.rstrip("/") + "/api/chat",
-        data=json.dumps(
-            {
-                "model": job.model_version,
-                "stream": False,
-                "think": False,
-                "keep_alive": "60s",
-                "format": GeneratedText.model_json_schema(),
-                "messages": [{"role": "user", "content": prompt(job.input["facts"])}],
-                "options": {
-                    "num_ctx": 4096,
-                    "num_predict": 1000,
-                    "temperature": 0.4,
-                    "seed": seed,
-                },
-            }
-        ).encode(),
-        headers={"Content-Type": "application/json"},
-        method="POST",
-    )
-    # Internal service calls never inherit an HTTP proxy from a user's shell.
-    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
-    with opener.open(request, timeout=settings.llm_timeout_seconds) as response:
-        raw = response.read(128 * 1024 + 1)
-    if len(raw) > 128 * 1024:
-        raise ValueError("Model response exceeds limit")
-    result = json.loads(raw)
-    if not result.get("done") or result.get("done_reason") == "length":
-        raise ValueError("Model response is incomplete")
-    text = GeneratedText.model_validate_json(result["message"]["content"])
-    return text, {
-        "seed": seed,
-        **{
-            key: result.get(key)
-            for key in (
-                "model",
-                "total_duration",
-                "load_duration",
-                "prompt_eval_count",
-                "eval_count",
-            )
-        },
-    }
+    return compose(job)
 
 
 async def finish(session, job_id, token, text: GeneratedText, metadata):
@@ -151,33 +100,10 @@ async def finish(session, job_id, token, text: GeneratedText, metadata):
     if not owner or not owner.is_active or not owner.is_teacher:
         raise ValueError("Generation owner is no longer an active teacher")
     payload = CardCreate.model_validate(job.input["card"])
-    payload.title = text.title.strip()
-    payload.data.description = text.description.strip()
-    # All assessed facts remain visible to the learner even if the small model omits one.
-    facts = {
-        k: v
-        for k, v in job.input["facts"].items()
-        if k
-        not in ("Службы", "Полные названия служб", "Подробность сообщения", "Состояние заявителя")
-    }
-
-    def readable(value):
-        if isinstance(value, bool):
-            return "Да" if value else "Нет"
-        if isinstance(value, dict):
-            return (
-                "; ".join(f"{k}: {readable(v)}" for k, v in value.items())
-                or "нет дополнительных признаков"
-            )
-        if isinstance(value, list):
-            return ", ".join(value) or "нет"
-        return str(value)
-
-    payload.caller_message = (
-        text.caller_message.strip()
-        + "\n\nКонтрольные сведения учебной ситуации (при расхождении используйте их):\n"
-        + "\n".join(f"{key}: {readable(value)}" for key, value in facts.items())
-    )
+    text, metadata = protect(job.input, text, metadata)
+    payload.title = text.title
+    payload.data.description = text.description
+    payload.caller_message = text.caller_message
     payload = CardCreate.model_validate(payload.model_dump())
     recipients = await validate_card_definition(session, payload)
     card = CardTemplate(
