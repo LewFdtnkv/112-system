@@ -60,6 +60,16 @@ async def lesson(lesson_id: UUID, session: SessionDep, student: StudentDep):
     )
 
 
+@router.post("/lessons/{lesson_id}/start", response_model=StudentLessonRead)
+async def start_execution(lesson_id: UUID, session: SessionDep, student: StudentDep):
+    from app.services.dds_delivery import begin
+
+    row = await student_lesson(session, lesson_id, student.id, lock=True)
+    await begin(session, row, student.id)
+    await session.commit()
+    return await lesson_work(session, row, student.id)
+
+
 @router.post(
     "/assignments/{assignment_id}/start", response_model=StudentAttemptRead, status_code=201
 )

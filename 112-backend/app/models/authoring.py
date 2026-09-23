@@ -65,6 +65,7 @@ class ScenarioCard(UUIDPrimaryKey, Base):
         UniqueConstraint("scenario_version_id", "position"),
         UniqueConstraint("id", "scenario_version_id"),
         CheckConstraint("position > 0", name="positive_position"),
+        CheckConstraint("arrival_offset_seconds >= 0", name="arrival_offset"),
     )
 
     scenario_version_id: Mapped[UUID] = mapped_column(
@@ -74,6 +75,7 @@ class ScenarioCard(UUIDPrimaryKey, Base):
         ForeignKey("card_templates.id", ondelete="RESTRICT"), index=True
     )
     position: Mapped[int] = mapped_column(Integer)
+    arrival_offset_seconds: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     # Frozen at scenario creation, including recipient names, fields, source text and instructions.
     # For operator_112 the data is a hidden expected answer, not a prefilled student card.
     snapshot: Mapped[dict[str, Any]] = mapped_column(JSONB)

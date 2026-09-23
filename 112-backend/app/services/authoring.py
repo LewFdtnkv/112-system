@@ -389,6 +389,7 @@ async def create_scenario(
                 scenario_version_id=version.id,
                 card_template_id=card.id,
                 position=position,
+                arrival_offset_seconds=payload.arrival_offsets_seconds[position - 1],
                 snapshot={
                     "title": card.title,
                     "instructions": card.instructions,

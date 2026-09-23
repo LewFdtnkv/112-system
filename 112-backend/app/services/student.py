@@ -94,8 +94,13 @@ async def lesson_work(session: AsyncSession, lesson: Lesson, student_id: UUID) -
             .order_by(Assignment.position)
         )
     ).all()
+    from app.services.dds_delivery import execution_for
     from app.services.deadlines import attempt_deadline
 
+    execution = await execution_for(session, lesson.id, student_id)
+    stream = execution is not None and any(
+        row[0].settings.get("delivery") == "dds-stream-v1" for row in rows
+    )
     assignments = []
     previous_complete = True
     for assignment, scenario, source, attempt, card, category_name in rows:
@@ -107,9 +112,15 @@ async def lesson_work(session: AsyncSession, lesson: Lesson, student_id: UUID) -
             StudentAssignmentRead(
                 id=assignment.id,
                 position=assignment.position,
-                title=source.snapshot["title"] if source else scenario.title,
+                title=(
+                    "Ожидается поступление"
+                    if stream and attempt is None
+                    else source.snapshot["title"]
+                    if source
+                    else scenario.title
+                ),
                 role=scenario.role,
-                available=previous_complete
+                available=(bool(attempt) if stream else previous_complete)
                 and not complete
                 and (attempt is None or attempt.status == AttemptStatus.IN_PROGRESS)
                 and lesson.status == LessonStatus.ACTIVE
@@ -117,6 +128,13 @@ async def lesson_work(session: AsyncSession, lesson: Lesson, student_id: UUID) -
                     scenario.role == TrainingRole.OPERATOR_112
                     or bool(scenario.completion_rules.get("dds"))
                 ),
+                scheduled_at=assignment.scheduled_at,
+                received_at=assignment.released_at,
+                first_opened_at=attempt.first_opened_at if attempt else None,
+                first_response_at=attempt.first_response_at if attempt else None,
+                response_norm_seconds=attempt.settings_snapshot.get("response_norm_seconds")
+                if stream and attempt
+                else None,
                 deadline_at=attempt_deadline(attempt, lesson) if attempt else None,
                 attempt_id=attempt.id if attempt else None,
                 card=JournalCardRead(
@@ -148,6 +166,9 @@ async def lesson_work(session: AsyncSession, lesson: Lesson, student_id: UUID) -
         .limit(1)
     )
     return StudentLessonRead(
+        delivery="dds-stream-v1" if stream else "sequential",
+        execution_started_at=execution.started_at if execution else None,
+        server_time=datetime.now(UTC),
         learning=lesson.learning,
         learning_result=learning_result([row[3] for row in rows if row[3]], grade),
         id=lesson.id,
@@ -300,6 +321,10 @@ async def start_attempt(session: AsyncSession, assignment_id: UUID, student_id: 
     if assignment is None:
         raise HTTPException(status_code=404, detail="Assignment not found")
     lesson = await student_lesson(session, assignment.lesson_id, student_id, lock=True)
+    if assignment.settings.get("delivery") == "dds-stream-v1":
+        from app.services.dds_delivery import open_assignment
+
+        return await open_assignment(session, lesson, assignment, student_id)
     existing = await session.scalar(select(Attempt).where(Attempt.assignment_id == assignment.id))
     if existing is not None:
         return await attempt_read(session, existing), False
@@ -325,7 +350,12 @@ async def start_attempt(session: AsyncSession, assignment_id: UUID, student_id: 
     )
     if previous:
         raise HTTPException(status_code=409, detail="Complete the previous card first")
-    now = datetime.now(UTC)
+    attempt = await create_attempt(session, assignment, scenario, student_id, datetime.now(UTC))
+    await session.commit()
+    return await attempt_read(session, attempt), True
+
+
+async def create_attempt(session, assignment, scenario, student_id, now):
     attempt = Attempt(
         assignment_id=assignment.id,
         student_id=student_id,
@@ -334,6 +364,8 @@ async def start_attempt(session: AsyncSession, assignment_id: UUID, student_id: 
         mode=assignment.mode,
         started_at=now,
         settings_snapshot={
+            "delivery": assignment.settings.get("delivery"),
+            "response_norm_seconds": scenario.norm_seconds,
             "semantic_assessment": settings.semantic_assessment_enabled,
             "learning": assignment.settings.get("learning", {}),
             "learning_engine": assignment.settings.get("learning_engine"),
@@ -374,7 +406,12 @@ async def start_attempt(session: AsyncSession, assignment_id: UUID, student_id: 
                 opened_at=now,
             )
         )
-    await event(session, attempt, student_id, "attempt.started", {})
+    if assignment.settings.get("delivery") == "dds-stream-v1":
+        from app.services.audit import append_event
+
+        await append_event(session, attempt.id, "attempt.started", {"source": "arrival_schedule"})
+    else:
+        await event(session, attempt, student_id, "attempt.started", {})
     if scenario.role != TrainingRole.DDS and attempt.settings_snapshot.get("exercise_scope"):
         from app.services.audit import append_event
 
@@ -387,8 +424,8 @@ async def start_attempt(session: AsyncSession, assignment_id: UUID, student_id: 
                 "source": "scenario_card_snapshot",
             },
         )
-    await session.commit()
-    return await attempt_read(session, attempt), True
+    await session.flush()
+    return attempt
 
 
 async def owned_attempt(

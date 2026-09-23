@@ -240,3 +240,6 @@ Pre-commit запускает Ruff, проверку lock-файла, YAML/TOML,
 Учебная телефония: три режима рабочего места, Asterisk, подготовка записей и контракт внешней АТС — [docs/TELEPHONY.md](docs/TELEPHONY.md).
 
 Адресный поиск и перевод сообщений: [настройка и API](docs/LOCATION_SERVICES.md).
+
+Поток карточек ДДС по QA3, расписание, норматив первой реакции и применение миграции:
+[docs/DDS_STREAM.md](docs/DDS_STREAM.md).

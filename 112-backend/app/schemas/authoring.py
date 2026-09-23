@@ -121,6 +121,7 @@ class ScenarioCreate(ScenarioMetadata):
     role: TrainingRole
     status: Literal["draft", "published"] = "published"
     card_ids: list[UUID] = Field(min_length=1, max_length=100)
+    arrival_offsets_seconds: list[Annotated[int, Field(ge=0, le=86400, strict=True)]] | None = None
     service_profile_id: UUID | None = None
     instructions: str = Field(default="", max_length=10000)
     assessment_policy: AssessmentPolicy = Field(default_factory=AssessmentPolicy)
@@ -128,6 +129,18 @@ class ScenarioCreate(ScenarioMetadata):
 
     @model_validator(mode="after")
     def role_profile(self):
+        offsets = self.arrival_offsets_seconds
+        if offsets is None:
+            offsets = [
+                i * 60 if self.role == TrainingRole.DDS else 0 for i in range(len(self.card_ids))
+            ]
+            self.arrival_offsets_seconds = offsets
+        if len(offsets) != len(self.card_ids) or offsets[0] != 0 or offsets != sorted(offsets):
+            raise ValueError("Arrival schedule must match cards, start at zero and be ordered")
+        if self.role != TrainingRole.DDS and any(offsets):
+            raise ValueError("Only DDS cards have an arrival schedule")
+        if self.role == TrainingRole.DDS and offsets[-1] >= self.duration_minutes * 60:
+            raise ValueError("All cards must arrive within the scenario duration")
         if self.role == TrainingRole.DDS and self.service_profile_id is None:
             raise ValueError("DDS scenarios require a service profile")
         if self.role == TrainingRole.DDS and self.dds_policy is None:
@@ -141,6 +154,7 @@ class ScenarioCardRead(BaseModel):
     id: UUID
     card_template_id: UUID
     position: int
+    arrival_offset_seconds: int = 0
     snapshot: dict[str, JsonValue]
 
 

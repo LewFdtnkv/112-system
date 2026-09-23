@@ -74,6 +74,7 @@ async def populate_dds(gateway, state, create, group_id, card_ids, service_id):
             "title": f"{prefix}: ДДС — пожар и работа расчёта",
             "role": "dds",
             "card_ids": card_ids[:2],
+            "arrival_offsets_seconds": [0] * len(card_ids[:2]),
             "service_profile_id": profile_id,
             "instructions": (
                 "Учебная имитация: обработайте обе карточки. Выберите свою "

@@ -12,6 +12,7 @@ from app.models import (
     Assignment,
     GroupMembership,
     Lesson,
+    LessonExecution,
     Scenario,
     ScenarioCard,
     Service,
@@ -226,6 +227,10 @@ async def start_lesson(
     try:
         session.add(lesson)
         await session.flush()
+        if scenario.role == "dds":
+            session.add_all(
+                [LessonExecution(lesson_id=lesson.id, student_id=s.id) for s in students]
+            )
         session.add_all(
             [
                 Assignment(
@@ -240,6 +245,14 @@ async def start_lesson(
                     settings={
                         "learning": payload.learning.model_dump(mode="json"),
                         "learning_engine": "workflow-v1",
+                        **(
+                            {
+                                "delivery": "dds-stream-v1",
+                                "arrival_offset_seconds": card.arrival_offset_seconds,
+                            }
+                            if scenario.role == "dds"
+                            else {}
+                        ),
                     },
                     time_limit_seconds=payload.time_limit_seconds,
                     hint_delay_seconds=None,

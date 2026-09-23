@@ -110,12 +110,20 @@ class StudentAssignmentRead(BaseModel):
     role: TrainingRole
     available: bool
     attempt_id: UUID | None
+    scheduled_at: datetime | None = None
+    received_at: datetime | None = None
+    first_opened_at: datetime | None = None
+    first_response_at: datetime | None = None
+    response_norm_seconds: int | None = None
     deadline_at: datetime | None = None
     card: JournalCardRead | None = None
     status: Literal["pending", "in_progress", "completed", "interrupted"]
 
 
 class StudentLessonRead(BaseModel):
+    delivery: Literal["sequential", "dds-stream-v1"] = "sequential"
+    execution_started_at: datetime | None = None
+    server_time: datetime | None = None
     learning: LearningPolicy = Field(default_factory=LearningPolicy)
     learning_result: LearningResult | None = None
     id: UUID

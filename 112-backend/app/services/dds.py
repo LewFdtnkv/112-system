@@ -202,7 +202,17 @@ async def context(session, attempt, responses):
         "revision": own.revision,
         "status": own.status.value,
         "sent_at": own.sent_at.isoformat(),
-        "first_decision_at": own.first_decision_at.isoformat() if own.first_decision_at else None,
+        "first_decision_at": (
+            attempt.first_response_at.isoformat() if attempt.first_response_at else None
+        )
+        if attempt.settings_snapshot.get("delivery") == "dds-stream-v1"
+        else (own.first_decision_at.isoformat() if own.first_decision_at else None),
+        "reaction_norm_seconds": attempt.settings_snapshot.get("response_norm_seconds")
+        if attempt.settings_snapshot.get("delivery") == "dds-stream-v1"
+        else None,
+        "reaction_end_at": (attempt.first_response_at or attempt.ended_at).isoformat()
+        if (attempt.first_response_at or attempt.ended_at)
+        else None,
         "crew_number": own.crew_number,
         "comment": own.comment,
         "allowed_statuses": []

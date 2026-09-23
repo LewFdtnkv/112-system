@@ -106,6 +106,9 @@ async def state(attempt_id: UUID, session: SessionDep, student: StudentDep):
         )
     )
     return {
+        "active_call": CallRead.model_validate(active, from_attributes=True)
+        if station and (active := await calls.active_call(session, station.id))
+        else None,
         "enabled": settings.telephony_enabled,
         "station": station_read(station) if station else None,
         "cues": [

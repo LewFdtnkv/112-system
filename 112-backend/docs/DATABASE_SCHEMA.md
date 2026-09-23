@@ -387,3 +387,13 @@ API, жизненный цикл, очередь и границы адапте�
 Итоговая арифметика и сводка хранятся в `lesson_evaluations.assessment_details`.
 Клиентские наблюдения и подсказки продолжают храниться в `attempt_events`, отдельно
 от прокторинга. Подробности — [ASSESSMENT_ARCHITECTURE.md](ASSESSMENT_ARCHITECTURE.md).
+
+## Миграция 0023: поток ДДС
+
+- `scenario_cards.arrival_offset_seconds`: смещение поступления от личного старта.
+- `lesson_executions`: составной PK (`lesson_id`, `student_id`), `started_at`,
+  `active_attempt_id`; персональное исполнение новых занятий ДДС.
+- `assignments.scheduled_at`, `released_at`: план и фактическая серверная доставка.
+- `attempts.first_opened_at`, `first_response_at`: открытие и первый ручной статус.
+
+[Поведение и ограничения](DDS_STREAM.md).

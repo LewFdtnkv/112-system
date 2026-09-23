@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from fastapi import HTTPException
 from sqlalchemy import select
 
-from app.models import Assignment, AttemptEvent, ScenarioCard
+from app.models import Assignment, Attempt, AttemptEvent, ScenarioCard
 from app.schemas.learning import HintRead, LearningHint
 from app.services.audit import append_event
 from app.services.learning_scope import field_skill, skills_for
@@ -227,6 +227,29 @@ async def issue_hint(session, attempt_id, student_id, command):
             else HintRead(status="waiting", revision=revision)
         )
     if command.trigger == "automatic":
+        if attempt.settings_snapshot.get("delivery") == "dds-stream-v1":
+            from app.services.dds_delivery import execution_for
+
+            assignment = await session.get(Assignment, attempt.assignment_id)
+            execution = await execution_for(session, assignment.lesson_id, student_id)
+            if not execution or execution.active_attempt_id != attempt.id:
+                return HintRead(status="waiting", revision=revision)
+            recent = await session.scalar(
+                select(AttemptEvent.occurred_at)
+                .join(Attempt, Attempt.id == AttemptEvent.attempt_id)
+                .join(Assignment, Assignment.id == Attempt.assignment_id)
+                .where(
+                    Assignment.lesson_id == assignment.lesson_id,
+                    Assignment.student_id == student_id,
+                    AttemptEvent.kind.in_(
+                        ["dds.card_opened", "dds.crew_changed", "call.requested"]
+                    ),
+                )
+                .order_by(AttemptEvent.occurred_at.desc())
+                .limit(1)
+            )
+            if recent and (datetime.now(UTC) - recent).total_seconds() < AUTO_HINT_DELAY_SECONDS:
+                return HintRead(status="waiting", revision=revision)
         last = await session.scalar(
             select(AttemptEvent)
             .where(

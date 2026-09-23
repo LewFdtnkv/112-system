@@ -4,7 +4,7 @@ from collections import Counter
 
 from sqlalchemy import select
 
-from app.models import AttemptEvent
+from app.models import Assignment, Attempt, AttemptEvent
 
 
 async def summarize_process(session, attempt_id, through):
@@ -65,7 +65,54 @@ async def summarize_process(session, attempt_id, through):
             }
         )
     gaps = [(b.occurred_at - a.occurred_at).total_seconds() for a, b in zip(server, server[1:])]
+    attempt = await session.get(Attempt, attempt_id)
+    parallel = []
+    if attempt and attempt.settings_snapshot.get("delivery") == "dds-stream-v1" and events:
+        assignment = await session.get(Assignment, attempt.assignment_id)
+        surrounding = list(
+            await session.scalars(
+                select(AttemptEvent)
+                .join(Attempt, Attempt.id == AttemptEvent.attempt_id)
+                .join(Assignment, Assignment.id == Attempt.assignment_id)
+                .where(
+                    Assignment.lesson_id == assignment.lesson_id,
+                    Assignment.student_id == attempt.student_id,
+                    AttemptEvent.occurred_at >= min(attempt.started_at, events[0].occurred_at),
+                    AttemptEvent.occurred_at <= events[-1].occurred_at,
+                    AttemptEvent.kind.in_(
+                        [
+                            "dds.card_received",
+                            "dds.card_opened",
+                            "dds.crew_changed",
+                            "dds.submitted",
+                            "call.requested",
+                        ]
+                    ),
+                )
+                .order_by(AttemptEvent.occurred_at.desc(), AttemptEvent.id)
+                .limit(100)
+            )
+        )
+        parallel = [
+            {
+                "attempt_id": str(e.attempt_id),
+                "at": e.occurred_at.isoformat(),
+                "kind": e.kind,
+                "other_card": e.attempt_id != attempt_id,
+            }
+            for e in reversed(surrounding)
+        ]
     return {
+        "parallel_card_activity": parallel,
+        "parallel_summary": {
+            "other_cards": len({e["attempt_id"] for e in parallel if e["other_card"]}),
+            "other_card_actions": dict(Counter(e["kind"] for e in parallel if e["other_card"])),
+            "interpretation": "Переключения между карточками допустимы. "
+            "Не считать их бездействием или ошибкой.",
+        }
+        if parallel
+        else None,
+        "parallel_context_limit": 100,
         "through_sequence": through or 0,
         "server_event_count": len(server),
         "confirmed_actions": dict(Counter(e.kind for e in server)),
@@ -78,5 +125,6 @@ async def summarize_process(session, attempt_id, through):
         "browser_coverage": "incomplete_or_unknown",
         "delivery_gaps_reported": sum(e.kind == "ui.delivery_gap" for e in browser),
         "interpretation": "Пауза между событиями не доказывает бездействие. "
-        "Подсказки и исправления без штрафа.",
+        "Подсказки и исправления без штрафа. Работа в другой карточке не является бездействием; "
+        "действия других карточек не засчитываются как выполнение этой карточки.",
     }

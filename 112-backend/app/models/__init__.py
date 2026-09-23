@@ -21,6 +21,7 @@ from app.models.directory import (
 from app.models.evaluation import AIJob, CriterionEvidence, CriterionResult, Evaluation
 from app.models.incident import IncidentCard, ResponseEvent, ServiceResponse
 from app.models.lesson_evaluation import LessonEvaluation
+from app.models.lesson_execution import LessonExecution
 from app.models.scenario import AnswerKey, Scenario, ScenarioVersion
 from app.models.telephony import (
     CallCue,
@@ -68,6 +69,7 @@ __all__ = [
     "IncidentCard",
     "Lesson",
     "LessonEvaluation",
+    "LessonExecution",
     "ResponseEvent",
     "Scenario",
     "ScenarioCard",

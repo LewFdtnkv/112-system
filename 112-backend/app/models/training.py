@@ -108,6 +108,8 @@ class Assignment(UUIDPrimaryKey, CreatedAt, Base):
     position: Mapped[int] = mapped_column(Integer)
     # Nullable only for pre-authoring assignments created with the original single-card model.
     scenario_card_id: Mapped[UUID | None] = mapped_column(index=True)
+    scheduled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    released_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     time_limit_seconds: Mapped[int | None] = mapped_column(Integer)
     hint_delay_seconds: Mapped[int | None] = mapped_column(Integer)
     settings: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default="{}")
@@ -145,6 +147,8 @@ class Attempt(UUIDPrimaryKey, Base):
         enum_column(AttemptStatus, "attempt_status"), default=AttemptStatus.IN_PROGRESS
     )
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    first_opened_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    first_response_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     end_reason: Mapped[str | None] = mapped_column(Text)
 

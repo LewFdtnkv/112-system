@@ -78,6 +78,7 @@ def evaluate(job, invoke=call):
     facts = job.input["submitted_facts"] | {
         "learning_process": {
             "confirmed_actions": process.get("confirmed_actions", {}),
+            "parallel_activity": process.get("parallel_summary"),
             "saved_field_changes": process.get("saved_field_changes", {}),
             "hints": [{"task": h["task"], "level": h["level"]} for h in process.get("hints", [])],
             "penalty": "none",

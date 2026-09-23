@@ -5,7 +5,14 @@ from app.schemas.learning import LearningMeasure, LearningResult
 
 def learning_result(attempts, grade=None):
     completed = [a for a in attempts if a.ended_at is not None]
-    seconds = sum(max(0, (a.ended_at - a.started_at).total_seconds()) for a in completed)
+    intervals = sorted((a.started_at, a.ended_at) for a in completed)
+    merged = []
+    for start, end in intervals:
+        if merged and start <= merged[-1][1]:
+            merged[-1] = (merged[-1][0], max(end, merged[-1][1]))
+        else:
+            merged.append((start, end))
+    seconds = sum(max(0, (end - start).total_seconds()) for start, end in merged)
     return LearningResult(
         assistance_available=any(
             a.settings_snapshot.get("learning_engine")
@@ -38,6 +45,9 @@ def learning_result(attempts, grade=None):
             status="available" if completed else "pending",
             value=round(seconds) if completed else None,
             unit="seconds",
-            explanation="Сумма времени завершённых попыток, включая паузы. Не влияет на балл.",
+            explanation=(
+                "Время завершённых попыток без двойного учёта пересечений, "
+                "включая ожидание. Не влияет на балл."
+            ),
         ),
     )

@@ -38,6 +38,10 @@ async def enforce_deadlines(session, lesson, now=None):
         lesson.status = LessonStatus.ACTIVE
         lesson.started_at = lesson.available_from
         changed = True
+    from app.services.dds_delivery import release_due
+
+    if lesson.status == LessonStatus.ACTIVE:
+        changed = await release_due(session, lesson, now) or changed
     expired = lesson.available_until is not None and now >= lesson.available_until
     attempts = list(
         await session.scalars(

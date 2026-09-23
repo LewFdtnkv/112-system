@@ -98,7 +98,12 @@ async def available_cues(session, attempt):
             await session.execute(
                 select(CallCue, SpeechAsset)
                 .join(SpeechAsset, SpeechAsset.id == CallCue.audio_id)
-                .where(CallCue.scenario_card_id == assignment.scenario_card_id)
+                .where(
+                    CallCue.scenario_card_id == assignment.scenario_card_id,
+                    CallCue.contact_key != "caller"
+                    if "dds_policy" in attempt.settings_snapshot
+                    else True,
+                )
                 .order_by(CallCue.contact_name)
             )
         ).all()
@@ -112,6 +117,8 @@ def request_key(cue_id, direction, transport):
 async def new_call(
     session, station, attempt, cue, *, command_id, direction, transport, require_audio=True
 ):
+    if "dds_policy" in attempt.settings_snapshot and cue.contact_key == "caller":
+        raise HTTPException(422, "Звонки заявителю не входят в занятия ДДС")
     asset = await session.get(SpeechAsset, cue.audio_id)
     if require_audio and (
         asset.status != "ready" or not asset.file_key or not audio_path(asset.file_key).is_file()

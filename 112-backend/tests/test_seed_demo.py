@@ -116,7 +116,8 @@ async def assert_dds_seed(session, result):
             )
         )
     )
-    assert len(active_attempts) == 1 and active_attempts[0].status.value == "in_progress"
+    assert len(active_attempts) == 2
+    assert all(a.status.value == "in_progress" for a in active_attempts)
 
 
 @pytest.mark.anyio

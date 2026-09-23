@@ -1,5 +1,7 @@
 """Crew commands share the attempt lock and the response revision with DDS commands."""
 
+from datetime import UTC, datetime
+
 from fastapi import HTTPException
 from sqlalchemy import select
 
@@ -125,6 +127,9 @@ async def act(session, attempt_id, student_id, data):
         )
         session.add(row)
     row.status, row.crew_number, row.comment = data.status, data.crew_number, data.comment
+    # Only a valid student command counts; prepared assignments never start reaction timing.
+    if attempt.settings_snapshot.get("delivery") == "dds-stream-v1":
+        attempt.first_response_at = attempt.first_response_at or datetime.now(UTC)
     # All crew and service edits participate in one optimistic concurrency boundary.
     response.revision += 1
     await session.flush()
