@@ -19,6 +19,38 @@
   border: 1px solid #999;
 }
 
+.arm-location-search {
+  display: flex;
+  flex: 1 1 380px;
+  gap: 8px;
+}
+
+.arm-location-search input {
+  width: 100%;
+  min-width: 180px;
+}
+
+.arm-location-results {
+  max-height: 190px;
+  margin: 0 0 8px;
+  padding: 0;
+  overflow: auto;
+  border: 1px solid #b7c2cc;
+  border-radius: 3px;
+  list-style: none;
+}
+
+.arm-location-results li + li {
+  border-top: 1px solid #d8e0e7;
+}
+
+.arm-location-results button {
+  width: 100%;
+  border: 0;
+  border-radius: 0;
+  text-align: left;
+}
+
 .arm-location-toolbar button,
 .arm-location-picker button {
   padding: 5px 12px;

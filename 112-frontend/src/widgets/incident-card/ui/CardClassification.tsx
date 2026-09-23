@@ -1,7 +1,7 @@
 import { cardFlagFields } from "@/entities/incident-card";
 import { CardFlagSummary } from "./CardFlagSummary";
 import {
-  useIncidentCardContext,
+  useIncidentCardStore,
   useCardSkillDisabled,
 } from "../model/IncidentCardContext";
 import {
@@ -14,7 +14,7 @@ import { FeatureInput } from "@/shared/ui/FeatureInput";
 import { useState } from "react";
 import type { Props } from "../types/CardClassification";
 export function CardClassification({ viewing }: Props) {
-  const { editor } = useIncidentCardContext();
+  const editor = useIncidentCardStore((state) => state.editor);
   const disabled = useCardSkillDisabled("classification");
   const { fields, setDetail } = editor;
   const [query, setQuery] = useState("");

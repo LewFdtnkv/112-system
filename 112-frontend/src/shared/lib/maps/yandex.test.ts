@@ -43,6 +43,7 @@ it("places and drags a point, restores a saved location and destroys the map", a
         coordinates = p;
       }
     },
+    geocode: async () => ({ geoObjects: { get: () => undefined } }),
   };
   const element = document.createElement("div");
   document.body.append(element);

@@ -22,6 +22,20 @@ export interface MapInstance {
   destroy(): void;
 }
 
+export interface GeocodedObject {
+  geometry: { getCoordinates(): Coordinates };
+  getAddressLine(): string;
+  getCountry(): string;
+  getAdministrativeAreas(): string[];
+  getLocalities(): string[];
+  getThoroughfare(): string;
+  getPremiseNumber(): string;
+}
+
+export interface GeocodeResult {
+  geoObjects: { get(index: number): GeocodedObject | undefined };
+}
+
 export interface Yandex {
   ready(callback: () => void): void;
   Map: new (
@@ -33,4 +47,8 @@ export interface Yandex {
     properties: Record<string, unknown>,
     options: Record<string, unknown>,
   ) => Marker;
+  geocode(
+    request: string | Coordinates,
+    options?: { results?: number },
+  ): PromiseLike<GeocodeResult>;
 }

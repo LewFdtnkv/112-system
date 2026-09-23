@@ -1,6 +1,13 @@
-import type { Coordinates, Marker, Yandex } from "../../types/yandex";
+import type {
+  Coordinates,
+  GeocodedObject,
+  Marker,
+  Yandex,
+} from "../../types/yandex";
 import type { MapPoint } from "../geo";
+import type { GeocodedAddress } from "./types/GeocodedAddress";
 export type { MapPoint } from "../geo";
+export type { GeocodedAddress } from "./types/GeocodedAddress";
 declare global {
   interface Window {
     ymaps?: Yandex;
@@ -54,6 +61,44 @@ export function loadYandex(): Promise<Yandex> {
     throw e;
   });
   return loading;
+}
+
+const toAddress = (result: GeocodedObject): GeocodedAddress => {
+  const [latitude, longitude] = result.geometry.getCoordinates();
+  return {
+    point: { latitude, longitude },
+    addressLine: result.getAddressLine(),
+    country: result.getCountry(),
+    administrativeAreas: result.getAdministrativeAreas(),
+    localities: result.getLocalities(),
+    district: "",
+    area: "",
+    street: result.getThoroughfare(),
+    house: result.getPremiseNumber(),
+    building: "",
+    structure: "",
+    apartment: "",
+  };
+};
+
+/** Выполняет запрос только по явному действию пользователя. */
+export async function findAddresses(query: string): Promise<GeocodedAddress[]> {
+  const api = await loadYandex();
+  const response = await api.geocode(query, { results: 5 });
+  return Array.from({ length: 5 }, (_, index) => response.geoObjects.get(index))
+    .filter((result): result is GeocodedObject => !!result)
+    .map(toAddress);
+}
+
+export async function findAddressAt(
+  point: MapPoint,
+): Promise<GeocodedAddress | undefined> {
+  const api = await loadYandex();
+  const response = await api.geocode([point.latitude, point.longitude], {
+    results: 1,
+  });
+  const result = response.geoObjects.get(0);
+  return result ? toAddress(result) : undefined;
 }
 export async function createPointMap(
   element: HTMLElement,

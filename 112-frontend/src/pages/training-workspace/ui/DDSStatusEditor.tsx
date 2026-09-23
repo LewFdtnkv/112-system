@@ -2,10 +2,10 @@ import { crewStatusLabels, ddsStatusLabels } from "@/entities/training";
 import { getApiError } from "@/shared/api";
 import { ArmField, ArmIconButton, ArmSelect } from "@/shared/ui/arm";
 import { Dialog, DialogContent, DialogTitle } from "@mui/material";
-import { useDDSWorkspaceContext } from "../model/DDSWorkspaceContext";
+import { useDDSWorkspaceStore } from "../model/DDSWorkspaceContext";
 
 export function DDSStatusEditor() {
-  const w = useDDSWorkspaceContext();
+  const w = useDDSWorkspaceStore((state) => state);
   const isCrew = w.target === "crew";
   const crew = w.dds.crews?.find((c) => c.crew_code === w.crewCode);
   const rawOptions = isCrew

@@ -1,11 +1,11 @@
 import { crewStatusLabels } from "@/entities/training";
 import { ArmIconButton } from "@/shared/ui/arm";
-import { useDDSWorkspaceContext } from "../model/DDSWorkspaceContext";
+import { useDDSWorkspaceStore } from "../model/DDSWorkspaceContext";
 import { DDSResponseHistory } from "./DDSResponseHistory";
 import { DDSTile } from "./DDSTile";
 
 export function DDSFooter() {
-  const w = useDDSWorkspaceContext();
+  const w = useDDSWorkspaceStore((state) => state);
   const { dds, completed, busy, activeService, activeCrew } = w;
   const own = activeService === dds.profile.service_id;
   const service = dds.responses.find((r) => r.service_id === activeService);

@@ -1,5 +1,5 @@
 import {
-  useIncidentCardContext,
+  useIncidentCardStore,
   useCardSkillDisabled,
 } from "../model/IncidentCardContext";
 import { emptyIncidentAddress, formatAddress } from "@/entities/incident-card";
@@ -10,8 +10,9 @@ import {
   ArmTextarea,
 } from "@/shared/ui/arm";
 import type { Props } from "../types/CardAddressPanel";
-export function CardAddressPanel({ viewing, onMap }: Props) {
-  const { editor, disabled } = useIncidentCardContext();
+export function CardAddressPanel({ viewing, onMap, onTranslate }: Props) {
+  const editor = useIncidentCardStore((state) => state.editor);
+  const disabled = useIncidentCardStore((state) => state.disabled);
   const callerDisabled = useCardSkillDisabled("caller");
   const addressDisabled = useCardSkillDisabled("address");
   const descriptionDisabled = useCardSkillDisabled("description");
@@ -46,12 +47,6 @@ export function CardAddressPanel({ viewing, onMap }: Props) {
           />
           <strong>{[country, addressLine].filter(Boolean).join(", ")}</strong>
           <p>{[address.district, address.area].filter(Boolean).join(", ")}</p>
-          {fields.location && (
-            <p title="Координаты происшествия">
-              {fields.location.latitude.toFixed(6)},{" "}
-              {fields.location.longitude.toFixed(6)}
-            </p>
-          )}
         </div>
         <div className="arm-description-view">
           <p>{fields.description}</p>
@@ -106,23 +101,14 @@ export function CardAddressPanel({ viewing, onMap }: Props) {
         />
         <ArmIconButton
           icon="translate"
-          label="Вызов на иностранном языке"
-          disabled={callerDisabled}
-          aria-pressed={fields.details?.foreignLanguage ?? false}
-          onClick={() =>
-            setDetail("foreignLanguage", !fields.details?.foreignLanguage)
-          }
+          label="Перевести сообщение заявителя"
+          disabled={callerDisabled || descriptionDisabled}
+          onClick={onTranslate}
         />
       </div>
       <div className="arm-address-block" data-learning-target="address">
         <div className="arm-address-heading">
           <span>Адрес:</span>
-          {fields.location && (
-            <span title="Координаты происшествия">
-              {fields.location.latitude.toFixed(6)},{" "}
-              {fields.location.longitude.toFixed(6)}
-            </span>
-          )}
           <ArmIconButton
             icon="map"
             label="Показать адрес на карте"

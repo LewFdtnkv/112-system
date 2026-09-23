@@ -1,4 +1,4 @@
-import { cardFlagFields } from "@/entities/incident-card";
+import { cardFlagFields, emptyIncidentAddress } from "@/entities/incident-card";
 import { trainingApi, type FeatureDefinition } from "@/entities/training";
 import { getApiError } from "@/shared/api";
 import {
@@ -8,6 +8,8 @@ import {
 import { FeatureInput } from "@/shared/ui/FeatureInput";
 import { QueryState } from "@/shared/ui/QueryState";
 import { ServerSelect } from "@/shared/ui/ServerSelect";
+import { LocationPicker } from "@/shared/ui/location-picker";
+import MapOutlinedIcon from "@mui/icons-material/MapOutlined";
 import {
   Alert,
   Button,
@@ -17,7 +19,13 @@ import {
   Stack,
   TextField,
   MenuItem,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
+import { useState } from "react";
 import { styles } from "../styles/CardEditor";
 import { TemplateAddress } from "./TemplateAddress";
 import { useCardEditor } from "../model/useCardEditor";
@@ -35,6 +43,8 @@ export function CardEditor({ onClose, initial, onReload }: CardEditorProps) {
     victims,
     setVictims,
     structuredAddress,
+    location,
+    setLocation,
     version,
     setVersion,
     entry,
@@ -58,6 +68,7 @@ export function CardEditor({ onClose, initial, onReload }: CardEditorProps) {
     phoneRef,
     callerPhone,
   } = useCardEditor({ onClose, initial });
+  const [mapOpen, setMapOpen] = useState(false);
   const renderFields = (keys: string[]) =>
     Object.entries(labels)
       .filter(([key]) => keys.includes(key))
@@ -215,6 +226,27 @@ export function CardEditor({ onClose, initial, onReload }: CardEditorProps) {
         />
         {!silent && <TemplateAddress value={address} onChange={setAddress} />}
         {renderFields(["address_text"])}
+        {!silent && (
+          <Stack direction="row" spacing={1}>
+            <Tooltip
+              title={
+                location ? "Изменить точку на карте" : "Указать точку на карте"
+              }
+            >
+              <IconButton
+                type="button"
+                aria-label={
+                  location
+                    ? "Изменить точку на карте"
+                    : "Указать точку на карте"
+                }
+                onClick={() => setMapOpen(true)}
+              >
+                <MapOutlinedIcon />
+              </IconButton>
+            </Tooltip>
+          </Stack>
+        )}
         <h4>Происшествие и службы</h4>
         <TextField
           disabled={silent}
@@ -429,6 +461,45 @@ export function CardEditor({ onClose, initial, onReload }: CardEditorProps) {
           Отмена
         </Button>
       </Stack>
+      <Dialog
+        open={mapOpen}
+        onClose={() => setMapOpen(false)}
+        fullWidth
+        maxWidth="md"
+        aria-labelledby="template-card-map-title"
+      >
+        <DialogTitle id="template-card-map-title">
+          Карта происшествия
+        </DialogTitle>
+        <DialogContent>
+          <LocationPicker
+            initial={location}
+            initialAddress={structuredAddress || form.address_text}
+            onConfirm={({ point, address: found }) => {
+              setLocation(point);
+              if (found) {
+                setAddress({
+                  ...emptyIncidentAddress,
+                  country: found.country || "Россия",
+                  region: found.administrativeAreas[0] ?? "",
+                  locality: found.localities.at(-1) ?? "",
+                  district: found.district,
+                  area: found.area,
+                  street: found.street,
+                  house: found.house,
+                  building: found.building,
+                  structure: found.structure,
+                  apartment: found.apartment,
+                  description: found.addressLine,
+                });
+                setForm({ ...form, address_text: found.addressLine });
+              }
+              setMapOpen(false);
+            }}
+            onCancel={() => setMapOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </Stack>
   );
 }

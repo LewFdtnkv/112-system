@@ -1,5 +1,5 @@
 import { LearningHelp } from "@/features/learning-assistance";
-import { DDSWorkspaceContext } from "../model/DDSWorkspaceContext";
+import { DDSWorkspaceStoreProvider } from "../model/DDSWorkspaceContext";
 import { crewStatusLabels } from "@/entities/training";
 import { attemptCard } from "@/features/incident-editing";
 import { getApiError } from "@/shared/api";
@@ -15,7 +15,7 @@ export function DDSWorkspace(props: DDSWorkspaceProps) {
   const { attempt, dds, completed, elapsed, error, busy, reload, close } =
     workspace;
   return (
-    <DDSWorkspaceContext value={workspace}>
+    <DDSWorkspaceStoreProvider value={workspace}>
       <IncidentCardDialog
         card={attemptCard(attempt)}
         log={[]}
@@ -112,6 +112,6 @@ export function DDSWorkspace(props: DDSWorkspaceProps) {
         responseFooter={<DDSFooter />}
       />
       <DDSStatusEditor />
-    </DDSWorkspaceContext>
+    </DDSWorkspaceStoreProvider>
   );
 }

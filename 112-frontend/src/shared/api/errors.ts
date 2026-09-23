@@ -121,6 +121,8 @@ const messages: Record<string, string> = {
     "Версия ЕКП с таким названием уже существует.",
   "Group members must be active student accounts":
     "В группу можно добавить только активного ученика.",
+  "Translation is temporarily unavailable":
+    "Переводчик сейчас недоступен. Проверьте настройки Yandex Translate и повторите попытку.",
 };
 const translate = (message: string) => {
   for (const [prefix, text] of [

@@ -10,12 +10,27 @@ import {
 } from "@/entities/training";
 import { matchesFeature, type FeatureValue } from "@/shared/lib/featureValues";
 import { type SelectOption } from "@/shared/ui/ServerSelect";
+import type { MapPoint } from "@/shared/lib/geo";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { usePhoneInput } from "@/entities/phone";
 import type { CardEditorProps } from "../types/CardEditor";
 
+const mapPoint = (value: unknown): MapPoint | null => {
+  if (
+    !value ||
+    typeof value !== "object" ||
+    !Number.isFinite((value as MapPoint).latitude) ||
+    !Number.isFinite((value as MapPoint).longitude)
+  )
+    return null;
+  return value as MapPoint;
+};
+
 export function useCardEditor({ onClose, initial }: CardEditorProps) {
+  const [location, setLocation] = useState<MapPoint | null>(() =>
+    mapPoint(initial?.data.additional_fields?.location),
+  );
   const [address, setAddress] = useState({
     ...emptyIncidentAddress,
     ...Object.fromEntries(
@@ -188,7 +203,7 @@ export function useCardEditor({ onClose, initial }: CardEditorProps) {
             form.caller_phone.trim() === "+" ? "" : form.caller_phone,
           additional_fields: {
             ...initial?.data.additional_fields,
-            ...(silent ? { location: null } : {}),
+            location: silent ? null : location,
             details: {
               ...((initial?.data.additional_fields?.details as Record<
                 string,
@@ -236,6 +251,8 @@ export function useCardEditor({ onClose, initial }: CardEditorProps) {
     victims,
     setVictims,
     structuredAddress,
+    location,
+    setLocation,
     version,
     setVersion,
     entry,

@@ -1,0 +1,240 @@
+.arm-location-picker {
+  display: grid;
+  gap: 12px;
+  color: #243746;
+  font:
+    14px/1.4 Arial,
+    sans-serif;
+}
+
+.arm-location-search {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.arm-location-search__field {
+  position: relative;
+  display: block;
+  flex: 1;
+  min-width: 180px;
+}
+
+.arm-location-search input {
+  width: 100%;
+  height: 42px;
+  min-width: 0;
+  padding: 9px 42px 9px 12px;
+  color: #1e313e;
+  font: inherit;
+  background: #fff;
+  border: 1px solid #aabcc8;
+  border-radius: 5px;
+}
+
+.arm-location-search input:focus {
+  outline: 2px solid #4e8fb7;
+  outline-offset: 1px;
+  border-color: #4e8fb7;
+}
+
+.arm-location-results {
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #d7e2e9;
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgb(48 75 92 / 9%);
+}
+
+.arm-location-results > p {
+  margin: 0;
+  padding: 9px 12px;
+  color: #526675;
+  font-size: 12px;
+  font-weight: 700;
+  background: #f7fafc;
+}
+
+.arm-location-results ul {
+  max-height: 190px;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.arm-location-results li + li {
+  border-top: 1px solid #d8e0e7;
+}
+
+.arm-location-results button {
+  width: 100%;
+  padding: 10px 12px;
+  text-align: left;
+  color: #243746;
+  background: #fff;
+  border: 0;
+  border-radius: 0;
+}
+
+.arm-location-hint {
+  margin: -4px 2px 0;
+  color: #607785;
+  font-size: 12px;
+}
+
+.arm-location-alert {
+  margin: 0;
+  padding: 9px 12px;
+  color: #8c281c;
+  background: #fff3f0;
+  border: 1px solid #edb8ae;
+  border-radius: 6px;
+}
+
+.arm-location-selected {
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  color: #1f5b3a;
+  background: #f0f8f3;
+  border: 1px solid #afd4ba;
+  border-radius: 6px;
+}
+
+.arm-location-selected span {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.arm-location-map-stage {
+  position: relative;
+  overflow: hidden;
+  background: #edf1f3;
+  border: 1px solid #cbd8df;
+  border-radius: 8px;
+}
+
+.arm-location-map-status,
+.arm-location-map-error {
+  position: absolute;
+  z-index: 500;
+  top: 12px;
+  left: 12px;
+  margin: 0;
+  padding: 8px 10px;
+  background: rgb(255 255 255 / 94%);
+  border: 1px solid #c5d2da;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgb(24 52 68 / 16%);
+}
+
+.arm-location-map-error {
+  display: grid;
+  max-width: min(400px, calc(100% - 24px));
+  gap: 7px;
+  color: #792518;
+}
+
+.arm-location-button,
+.arm-location-search__clear {
+  min-height: 36px;
+  padding: 7px 12px;
+  cursor: pointer;
+  color: #294555;
+  font: inherit;
+  font-weight: 700;
+  background: #fff;
+  border: 1px solid #aabcc8;
+  border-radius: 5px;
+}
+
+.arm-location-search__clear {
+  position: absolute;
+  top: 50%;
+  right: 5px;
+  width: 30px;
+  min-height: 30px;
+  padding: 0;
+  color: #607785;
+  font-size: 20px;
+  line-height: 1;
+  background: transparent;
+  border-color: transparent;
+  transform: translateY(-50%);
+}
+
+.arm-location-button--primary {
+  color: #fff;
+  background: #2b6f94;
+  border-color: #2b6f94;
+}
+
+.arm-location-picker button:hover:not(:disabled) {
+  background: #e7eef6;
+}
+
+.arm-location-picker .arm-location-button--primary:hover:not(:disabled) {
+  background: #1f5d7e;
+}
+
+.arm-location-picker button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.arm-location-canvas {
+  height: min(62vh, 640px);
+  min-height: 320px;
+  width: 100%;
+}
+
+.arm-location-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0 2px;
+  border-top: 1px solid #d7e2e9;
+}
+
+.arm-location-actions p {
+  margin: 0;
+  color: #607785;
+  font-size: 12px;
+}
+
+.arm-location-actions > div {
+  display: flex;
+  gap: 8px;
+}
+
+@media (width <= 600px) {
+  .arm-location-search {
+    flex-wrap: wrap;
+  }
+
+  .arm-location-search__field {
+    flex-basis: 100%;
+  }
+
+  .arm-location-search .arm-location-button--primary {
+    width: 100%;
+  }
+
+  .arm-location-canvas {
+    min-height: 260px;
+  }
+
+  .arm-location-actions,
+  .arm-location-actions > div {
+    width: 100%;
+  }
+
+  .arm-location-actions > div > button {
+    flex: 1;
+  }
+}

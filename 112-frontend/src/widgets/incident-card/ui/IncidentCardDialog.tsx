@@ -1,5 +1,6 @@
-import { IncidentCardContext } from "../model/IncidentCardContext";
+import { IncidentCardStoreProvider } from "../model/IncidentCardContext";
 import {
+  emptyIncidentAddress,
   formatAddress,
   incidentStatuses,
   incidentStatusLabels,
@@ -20,6 +21,7 @@ import { CardClassification } from "./CardClassification";
 import { CardServicesDialog } from "./CardServicesDialog";
 import { CardServiceTile } from "./CardServiceTile";
 import { CardTelephoneBar } from "./CardTelephoneBar";
+import { CardTranslationPanel } from "./CardTranslationPanel";
 export function IncidentCardDialog({
   card,
   ...props
@@ -66,7 +68,9 @@ function IncidentCardForm(props: IncidentCardFormProps) {
   const [servicesOpen, setServicesOpen] = useState(false);
   const [commentOpen, setCommentOpen] = useState(false);
   const [activeService, setActiveService] = useState<string>();
-  const [modal, setModal] = useState<"map" | "calls" | "sms" | "timing">();
+  const [modal, setModal] = useState<
+    "map" | "calls" | "sms" | "timing" | "translate"
+  >();
   const viewing = preview || isSubmitted || !!props.readOnly;
   const summaryLayout = viewing && props.readOnlyLayout !== "form";
   const disabled = viewing || !isCallAccepted || editor.pending;
@@ -88,7 +92,7 @@ function IncidentCardForm(props: IncidentCardFormProps) {
   };
   const { fields } = editor;
   return (
-    <IncidentCardContext value={{ editor, disabled }}>
+    <IncidentCardStoreProvider value={{ editor, disabled }}>
       <DialogTitle id={titleId} className="visually-hidden">
         Карточка происшествия № {card.id}
       </DialogTitle>
@@ -111,6 +115,7 @@ function IncidentCardForm(props: IncidentCardFormProps) {
         <CardAddressPanel
           viewing={summaryLayout}
           onMap={() => setModal("map")}
+          onTranslate={() => setModal("translate")}
         />
         <CardClassification viewing={summaryLayout} />
       </div>
@@ -352,7 +357,9 @@ function IncidentCardForm(props: IncidentCardFormProps) {
               ? "Записи звонков"
               : modal === "timing"
                 ? "Время заполнения карточки"
-                : "Список SMS"}
+                : modal === "translate"
+                  ? "Перевод сообщения"
+                  : "Список SMS"}
           <ArmIconButton
             icon="close"
             label="Закрыть окно"
@@ -364,9 +371,25 @@ function IncidentCardForm(props: IncidentCardFormProps) {
             (renderMap?.(formatAddress(fields.address)) ?? (
               <LocationPicker
                 initial={fields.location ?? null}
+                initialAddress={formatAddress(fields.address)}
                 readOnly={locked("address")}
-                onConfirm={(point) => {
+                onConfirm={({ point, address }) => {
                   editor.setField("location", point);
+                  if (address)
+                    editor.setField("address", {
+                      ...emptyIncidentAddress,
+                      country: address.country || "Россия",
+                      region: address.administrativeAreas[0] ?? "",
+                      locality: address.localities.at(-1) ?? "",
+                      district: address.district,
+                      area: address.area,
+                      street: address.street,
+                      house: address.house,
+                      building: address.building,
+                      structure: address.structure,
+                      apartment: address.apartment,
+                      description: address.addressLine,
+                    });
                   setModal(undefined);
                 }}
                 onCancel={() => setModal(undefined)}
@@ -383,9 +406,20 @@ function IncidentCardForm(props: IncidentCardFormProps) {
               Прошло: {elapsedSeconds} с. Учебный ориентир: {normSeconds} с.
             </p>
           )}
+          {modal === "translate" && (
+            <CardTranslationPanel
+              initialText={fields.description || props.remote.message || ""}
+              onClose={() => setModal(undefined)}
+              onApply={(translation) => {
+                editor.setField("description", translation);
+                editor.setDetail("foreignLanguage", true);
+                setModal(undefined);
+              }}
+            />
+          )}
           {modal === "sms" && <p>В этом учебном задании SMS отсутствуют.</p>}
         </DialogContent>
       </Dialog>
-    </IncidentCardContext>
+    </IncidentCardStoreProvider>
   );
 }
