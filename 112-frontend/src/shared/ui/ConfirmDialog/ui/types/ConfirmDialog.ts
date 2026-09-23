@@ -3,6 +3,8 @@ export interface ConfirmDialogProps {
   title: string;
   description?: string;
   confirmLabel?: string;
+  confirmColor?: "primary" | "error";
+  error?: string;
   isPending?: boolean;
   onConfirm: () => void;
   onCancel: () => void;

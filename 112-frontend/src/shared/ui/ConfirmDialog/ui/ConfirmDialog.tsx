@@ -1,4 +1,5 @@
 import {
+  Alert,
   Button,
   Dialog,
   DialogActions,
@@ -14,6 +15,8 @@ export const ConfirmDialog = ({
   title,
   description,
   confirmLabel = "Подтвердить",
+  confirmColor,
+  error,
   isPending = false,
   onConfirm,
   onCancel,
@@ -29,18 +32,26 @@ export const ConfirmDialog = ({
       aria-describedby={description ? descriptionId : undefined}
     >
       <DialogTitle id={titleId}>{title}</DialogTitle>
-      {description && (
+      {(description || error) && (
         <DialogContent>
-          <DialogContentText id={descriptionId}>
-            {description}
-          </DialogContentText>
+          {description && (
+            <DialogContentText id={descriptionId}>
+              {description}
+            </DialogContentText>
+          )}
+          {error && <Alert severity="error">{error}</Alert>}
         </DialogContent>
       )}
       <DialogActions>
         <Button type="button" onClick={onCancel} disabled={isPending} autoFocus>
           Отмена
         </Button>
-        <Button type="button" onClick={onConfirm} disabled={isPending}>
+        <Button
+          color={confirmColor}
+          type="button"
+          onClick={onConfirm}
+          disabled={isPending}
+        >
           {confirmLabel}
         </Button>
       </DialogActions>

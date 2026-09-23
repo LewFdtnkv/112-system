@@ -3,6 +3,8 @@ import { isHTTPError, isNetworkError, isTimeoutError } from "ky";
 import type { ApiErrorInfo } from "./types";
 
 const messages: Record<string, string> = {
+  "Group is disbanded":
+    "Группа расформирована. Создайте или выберите другую группу.",
   "Accept the service response before managing crews":
     "Сначала примите карточку своей службой. Завершённое реагирование менять нельзя.",
   "Complete or cancel active crew assignments first":

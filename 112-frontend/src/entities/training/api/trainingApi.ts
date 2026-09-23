@@ -162,6 +162,8 @@ export const trainingApi = {
   groups: (params: Params, signal?: AbortSignal) =>
     get<Page<GroupItem>>("views/groups", params, signal),
   createGroup: (name: string) => post<GroupItem>("groups", { name }),
+  disbandGroup: (groupId: string) =>
+    backendApi.post(`groups/${id(groupId)}/disband`),
   addStudent: (groupId: string, studentId: string) =>
     backendApi.put(`groups/${id(groupId)}/students/${id(studentId)}`),
   cards: (params: Params, signal?: AbortSignal) =>

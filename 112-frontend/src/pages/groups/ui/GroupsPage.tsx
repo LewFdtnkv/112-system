@@ -4,6 +4,7 @@ import {
   userName,
   type GroupItem,
 } from "@/entities/training";
+import { GroupDisband } from "@/features/group-disband";
 import { StudentProfileDialog } from "@/features/student-profile";
 import { MessageComposer } from "@/features/teaching-messages";
 import { getApiError } from "@/shared/api";
@@ -135,6 +136,7 @@ export const GroupsPage = () => {
                 <TableRow>
                   <TableCell>Группа</TableCell>
                   <TableCell>Учеников</TableCell>
+                  <TableCell align="right">Действия</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -160,6 +162,12 @@ export const GroupsPage = () => {
                       </Button>
                     </TableCell>
                     <TableCell>{item.student_count}</TableCell>
+                    <TableCell align="right">
+                      <GroupDisband
+                        group={item}
+                        onDisbanded={() => setPage(0)}
+                      />
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -290,6 +298,16 @@ export const GroupsPage = () => {
                 </>
               )}
             </QueryState>
+            {group && (
+              <GroupDisband
+                group={group}
+                onDisbanded={() => {
+                  setGroup(null);
+                  setStudent(null);
+                  setPage(0);
+                }}
+              />
+            )}
             <Button onClick={() => setGroup(null)}>Закрыть</Button>
           </Stack>
         </DialogContent>

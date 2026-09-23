@@ -1,6 +1,7 @@
 import { trainingApi, userName } from "@/entities/training";
 import { getApiError } from "@/shared/api";
 import { randomUUID } from "@/shared/lib/uuid";
+import { DateTimeField } from "@/shared/ui/DateTimeField";
 import { ServerSelect } from "@/shared/ui/ServerSelect";
 import {
   Alert,
@@ -146,24 +147,24 @@ export function LessonLaunch() {
         value={title}
         onChange={(e) => setTitle(e.target.value)}
       />
-      <TextField
+      <DateTimeField
         label="Дата и время начала"
-        type="datetime-local"
         value={from}
-        onChange={(e) => setFrom(e.target.value)}
-        slotProps={{ inputLabel: { shrink: true } }}
+        onChange={(value) => {
+          setFrom(value);
+          setRequestId(randomUUID());
+        }}
         helperText="Пусто — доступно сразу. Время вашего браузера."
       />
-      <TextField
+      <DateTimeField
         label="Дата и время окончания"
-        type="datetime-local"
         value={until}
-        onChange={(e) => setUntil(e.target.value)}
-        slotProps={{
-          inputLabel: { shrink: true },
-          htmlInput: { min: from || undefined },
+        min={from || undefined}
+        onChange={(value) => {
+          setUntil(value);
+          setRequestId(randomUUID());
         }}
-        helperText="По окончании срока изменения запрещаются, непройденные карточки учитываются как 0."
+        helperText="Пусто — без общей даты окончания. По окончании срока непройденные карточки учитываются как 0."
       />
       <LearningSettings
         value={learning}
