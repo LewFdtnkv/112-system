@@ -26,7 +26,7 @@ export const MainLayout = () => {
       <AppSidebar />
       <div className="app-workspace">
         <p className="app-demo-note" role="note">
-          Учебный тренажёр · Автооценка и пересмотр · SIP-звонки пока недоступны
+          Учебный тренажёр · Автооценка и пересмотр
         </p>
         <main className="app-main">
           <Outlet />

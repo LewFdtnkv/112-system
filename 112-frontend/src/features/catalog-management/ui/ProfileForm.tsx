@@ -295,8 +295,7 @@ export function ProfileForm({ initial, existing, onSaved }: ProfileFormProps) {
         Добавить учебный контакт
       </Button>
       <small>
-        Контакты предназначены для локального учебного контура. Звонки пока не
-        подключены.
+        Контакты предназначены для локального учебного контура. Телефония настраивается администратором.
       </small>
       <ProfileCrews
         value={form.crews ?? []}

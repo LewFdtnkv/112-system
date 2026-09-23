@@ -1,4 +1,5 @@
 import { defaultLearningPolicy } from "@/entities/training";
+import { telephonyApi } from "@/entities/telephony";
 import "@testing-library/jest-dom/vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
@@ -42,6 +43,12 @@ const lesson: StudentLesson = {
   ],
 };
 beforeEach(() => {
+  vi.spyOn(telephonyApi, "state").mockResolvedValue({
+    enabled: false,
+    station: null,
+    cues: [],
+    calls: [],
+  });
   vi.spyOn(activityApi, "messages").mockResolvedValue({
     items: [],
     total: 0,
