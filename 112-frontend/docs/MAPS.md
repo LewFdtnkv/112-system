@@ -30,7 +30,7 @@ window.SYSTEM112_MAP_CONFIG = { apiKey: "ключ JavaScript API" };
 ```
 
 При запуске через текущий `112-backend/compose.yaml` достаточно указать
-`VITE_YANDEX_MAPS_API_KEY` в `112-backend/.env`: Compose передаёт его только
+`VITE_YANDEX_MAPS_API_KEY` в `112-backend/.env` (или окружении Compose): Compose передаёт его только
 запущенному Nginx-контейнеру, а entrypoint создаёт `map-config.js` при старте.
 Ключ не попадает в слой Docker-образа. Пересоздайте frontend:
 
@@ -70,3 +70,9 @@ SDK-адаптер покрыт unit-тестами. Браузерные про
 Для неё в backend задаётся отдельный `YANDEX_TRANSLATE_API_KEY` сервисного аккаунта
 Yandex Cloud; ключ JavaScript API Карт для перевода не подходит. API-ключи DaData
 и Translate не передаются браузеру. Подробнее: [серверная настройка и контракт](../../112-backend/docs/LOCATION_SERVICES.md).
+
+Compose также читает необязательный `112-frontend/.env` с публичным
+`VITE_YANDEX_MAPS_API_KEY`. Непустое значение из backend/окружения Compose
+имеет приоритет: оно передаётся как `SYSTEM112_MAPS_API_KEY`, а entrypoint
+при его отсутствии использует `VITE_YANDEX_MAPS_API_KEY`. Секретные ключи
+DaData/Translate в frontend `.env` не добавлять.
