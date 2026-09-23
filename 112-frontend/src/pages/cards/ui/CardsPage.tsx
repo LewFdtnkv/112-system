@@ -74,7 +74,7 @@ export const CardsPage = () => {
       <Stack direction="row" spacing={2}>
         <Button onClick={() => setOpen(true)}>Создать карточку</Button>
         <Button variant="contained" onClick={() => setGenerate(true)}>
-          Сгенерировать нейросетью
+          Сгенерировать карточки
         </Button>
       </Stack>
       {generate && <CardGenerationDialog onClose={() => setGenerate(false)} />}
@@ -161,7 +161,7 @@ export const CardsPage = () => {
                         >
                           {c.title}
                         </Button>
-                        {c.generated_by_ai && <small>Создана нейросетью</small>}
+                        {c.generated_by_ai && <small>Сгенерирована</small>}
                         <small>
                           {c.scenario_count
                             ? "Используется · только просмотр"
@@ -307,8 +307,15 @@ export const CardsPage = () => {
           >
             {detail.data?.generated_by_ai && (
               <Alert severity="info">
-                Материал сгенерирован ИИ. Проверьте условие и эталонное решение
-                перед включением в сценарий.
+                {detail.data.generation_method === "assisted"
+                  ? "Формулировки подобраны ИИ по подготовленной ситуации."
+                  : detail.data.generation_method === "template-fallback"
+                    ? "Использован текст заготовки: ИИ недоступен или ответ не прошёл проверку."
+                    : "Карточка подготовлена автоматически."}
+                {detail.data.generation_template &&
+                  ` Сюжет: ${detail.data.generation_template}.`}{" "}
+                Проверьте условие и эталонное решение перед включением в
+                сценарий.
               </Alert>
             )}
             {detail.data && editing && detail.data.can_edit && (

@@ -31,6 +31,7 @@ export function useCardGeneration({ onClose }: CardGenerationDialogProps) {
       setManualServices(false);
       setFeatures([]);
       setP((prev) => ({
+        mode: prev.mode,
         time_of_day: prev.time_of_day,
         detail_level: prev.detail_level,
         call_dropped: prev.call_dropped,

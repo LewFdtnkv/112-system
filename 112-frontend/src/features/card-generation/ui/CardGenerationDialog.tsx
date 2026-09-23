@@ -84,9 +84,7 @@ export function CardGenerationDialog({ onClose }: CardGenerationDialogProps) {
       fullWidth
       aria-labelledby="generation-title"
     >
-      <DialogTitle id="generation-title">
-        Сгенерировать карточки нейросетью
-      </DialogTitle>
+      <DialogTitle id="generation-title">Сгенерировать карточки</DialogTitle>
       <DialogContent>
         <QueryState
           pending={options.isPending}
@@ -96,10 +94,28 @@ export function CardGenerationDialog({ onClose }: CardGenerationDialogProps) {
           {options.data && (
             <fieldset className="generation-form" disabled={save.isPending}>
               <Alert severity="info">
-                Общие настройки применяются ко всему пакету. «Случайно»
-                выбирается заново для каждой карточки. Версия ЕКП одна для всего
-                пакета. Готовые материалы проверьте перед добавлением в
-                сценарий.
+                Выбираем совместимый сюжет из {options.data.template_count}{" "}
+                заготовок. «Случайно» меняет параметры для каждой карточки. ИИ
+                выбирает формулировки, сохраняя факты. Готовые материалы
+                проверьте перед добавлением в сценарий.
+              </Alert>
+              <TextField
+                select
+                label="Способ подготовки"
+                value={p.mode ?? "assisted"}
+                onChange={(e) =>
+                  change({ mode: e.target.value as "assisted" | "template" })
+                }
+                helperText="Если ИИ недоступен, используем текст заготовки и отметим это в карточке."
+              >
+                <MenuItem value="assisted">
+                  Заготовка + подбор формулировок ИИ
+                </MenuItem>
+                <MenuItem value="template">Заготовка без ИИ — быстро</MenuItem>
+              </TextField>
+              <Alert severity="info">
+                Поддерживаемые типы: {options.data.supported_types?.join(", ")}.
+                Для остальных типов пока используйте ручное создание.
               </Alert>
               <TextField
                 label="Количество карточек"

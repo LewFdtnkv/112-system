@@ -4,9 +4,11 @@ test("teacher queues a parameterized package and reviews real worker output", as
   page,
   request,
 }, info) => {
+  const templateOnly = process.env.GENERATION_TEMPLATE_ONLY === "true";
+  const fallbackTest = process.env.GENERATION_FALLBACK_TEST === "true";
   test.skip(
     process.env.AUTH_ISOLATED_API !== "true" ||
-      process.env.LLM_REAL_TEST !== "true",
+      (!templateOnly && !fallbackTest && process.env.LLM_REAL_TEST !== "true"),
     "Disposable database and real LLM worker required",
   );
   test.setTimeout(600000);
@@ -83,10 +85,16 @@ test("teacher queues a parameterized package and reviews real worker output", as
   await page.getByRole("button", { name: "Войти", exact: true }).click();
   await expect(page).toHaveURL(/teacher$/);
   await page.goto("/cards");
-  await page.getByRole("button", { name: "Сгенерировать нейросетью" }).click();
+  await page.getByRole("button", { name: "Сгенерировать карточки" }).click();
   const dialog = page.getByRole("dialog", {
-    name: "Сгенерировать карточки нейросетью",
+    name: "Сгенерировать карточки",
   });
+  if (templateOnly) {
+    await dialog.getByLabel("Способ подготовки").click();
+    await page
+      .getByRole("option", { name: "Заготовка без ИИ — быстро" })
+      .click();
+  }
   await dialog.getByLabel("Количество карточек", { exact: true }).fill("2");
   await dialog
     .getByRole("combobox", { name: "Версия ЕКП", exact: true })
@@ -113,6 +121,7 @@ test("teacher queues a parameterized package and reviews real worker output", as
     .getByRole("combobox", { name: "Объект", exact: true })
     .fill("жилой дом");
   await page.getByRole("option", { name: "жилой дом", exact: true }).click();
+  await dialog.getByLabel("Способ подготовки").scrollIntoViewIfNeeded();
   await dialog.screenshot({
     path: info.outputPath("generation-form.png"),
     animations: "disabled",
@@ -132,14 +141,16 @@ test("teacher queues a parameterized package and reviews real worker output", as
   }
   await expect(dialog).not.toBeVisible();
   const table = page.getByRole("table", { name: "Библиотека карточек" });
-  await expect(table).toContainText(/В очереди|Генерируется/);
+  if (!templateOnly && !fallbackTest)
+    await expect(table).toContainText(/В очереди|Генерируется/);
   await page.screenshot({
     path: info.outputPath("generation-queue.png"),
     fullPage: true,
     animations: "disabled",
   });
   await page.reload();
-  await expect(table).toContainText(/В очереди|Генерируется/);
+  if (!templateOnly && !fallbackTest)
+    await expect(table).toContainText(/В очереди|Генерируется/);
   await expect
     .poll(
       async () => {
@@ -174,16 +185,18 @@ test("teacher queues a parameterized package and reviews real worker output", as
     expect(card.data.caller_details.age).toBe(35);
     expect(card.recipients[0].service_id).toBe(service.id);
     expect(card.can_edit).toBe(true);
+    expect(card.caller_message).not.toContain("Контрольные сведения");
+    expect(card.generation_template).toBeTruthy();
+    if (templateOnly) expect(card.generation_method).toBe("template");
+    if (fallbackTest) expect(card.generation_method).toBe("template-fallback");
   }
   await table.locator(".card-library-title").first().click();
   await expect(page.getByRole("dialog")).toContainText(
-    "Материал сгенерирован ИИ",
+    "Проверьте условие и эталонное решение",
   );
-  await page
-    .getByRole("dialog")
-    .screenshot({
-      path: info.outputPath("generation-review.png"),
-      animations: "disabled",
-    });
+  await page.getByRole("dialog").screenshot({
+    path: info.outputPath("generation-review.png"),
+    animations: "disabled",
+  });
   expect(errors).toEqual([]);
 });
