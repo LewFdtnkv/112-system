@@ -9,6 +9,7 @@ from app.schemas.assessment import AssessmentDetails
 from app.schemas.authoring import NonblankText
 from app.schemas.catalog import ClassifierEntryRead
 from app.schemas.learning import LearningPolicy, LearningResult
+from app.schemas.semantic_assessment import SemanticReview
 from app.schemas.student import StudentAttemptRead
 
 
@@ -41,7 +42,7 @@ class LessonGradeRead(BaseModel):
     max_score: Decimal
     comment: str
     created_at: datetime
-    method: Literal["rules", "teacher"]
+    method: Literal["rules", "teacher", "hybrid"]
     assessment_details: AssessmentDetails | None = None
 
 
@@ -70,6 +71,7 @@ class AutomaticCheck(AutomaticCheckSummary):
 
 
 class AssignmentReview(BaseModel):
+    semantic_review: SemanticReview | None = None
     assignment_id: UUID
     position: int
     source_snapshot: dict[str, JsonValue] | None

@@ -116,10 +116,13 @@ async def test_scenario_policy_is_versioned_and_validated(teaching, db_client):
 
 
 async def clear_assessments(session):
+    from app.models import AIJob
+
     # Simulate completed cards written by the pre-0008 application.
     await session.execute(delete(CriterionEvidence))
     await session.execute(delete(CriterionResult))
     await session.execute(delete(Evaluation))
+    await session.execute(delete(AIJob))
     await session.execute(delete(LessonEvaluation))
     await session.flush()
 

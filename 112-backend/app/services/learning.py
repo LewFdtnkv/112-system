@@ -21,7 +21,10 @@ def learning_result(attempts, grade=None):
             explanation=(
                 "Итоговая оценка преподавателя."
                 if grade and grade.method == "teacher"
-                else "Проверенные формальные критерии; смысловая проверка пока не выполняется."
+                else "Правила и смысловая проверка ИИ; полнота проверки указана в результате."
+                if grade and grade.method == "hybrid"
+                else "Проверенные формальные критерии; "
+                "статус смысловой проверки указан в результате."
             ),
         ),
         independence=LearningMeasure(

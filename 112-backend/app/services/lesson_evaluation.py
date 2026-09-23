@@ -73,12 +73,18 @@ async def review_work(session: AsyncSession, lesson_id: UUID, student_id: UUID, 
         )
     }
     attempts = await review_attempts(session, [attempt for _, attempt in rows if attempt])
+    from app.services.semantic_assessment.results import jobs_for, review
+
+    semantic_jobs = {job.attempt_id: job for job in await jobs_for(session, list(attempts))}
     for assignment, attempt in rows:
         source = sources.get(assignment.scenario_card_id) if assignment.scenario_card_id else None
         attempt_read = attempts.get(attempt.id) if attempt else None
         entry = entries.get(source.snapshot.get("classifier_entry_id")) if source else None
         assignments.append(
             AssignmentReview(
+                semantic_review=review(semantic_jobs[attempt.id])
+                if attempt and attempt.id in semantic_jobs
+                else None,
                 assignment_id=assignment.id,
                 position=assignment.position,
                 source_snapshot=source.snapshot if source else None,

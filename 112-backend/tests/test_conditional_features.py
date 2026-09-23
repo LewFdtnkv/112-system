@@ -263,7 +263,7 @@ async def test_local_training_uses_source_catalog_and_repeats(db_session, tmp_pa
                 }
             ),
         )
-    jobs = list(await db_session.scalars(select(AIJob)))
+    jobs = list(await db_session.scalars(select(AIJob).where(AIJob.purpose == "generation")))
     assert len(jobs) == 20
     for job in jobs:
         answers = job.input["card"]["data"]["features"]["ekp"]

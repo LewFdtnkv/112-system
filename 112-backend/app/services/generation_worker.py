@@ -29,8 +29,10 @@ async def claim(session):
     job = await session.scalar(
         select(AIJob)
         .where(
-            AIJob.purpose == AIPurpose.GENERATION,
-            AIJob.created_by_id.is_not(None),
+            or_(
+                and_(AIJob.purpose == AIPurpose.GENERATION, AIJob.created_by_id.is_not(None)),
+                AIJob.purpose == AIPurpose.EVALUATION,
+            ),
             or_(
                 and_(AIJob.status == JobStatus.QUEUED, AIJob.available_at <= now),
                 and_(AIJob.status == JobStatus.RUNNING, AIJob.lease_expires_at <= now),
@@ -43,17 +45,33 @@ async def claim(session):
     if job is None:
         await session.rollback()
         return None
-    if job.prompt_version != PROMPT_VERSION:
+    from app.services.semantic_assessment.context import PROMPT_VERSION as ASSESSMENT_PROMPT
+
+    expected_prompt = ASSESSMENT_PROMPT if job.purpose == AIPurpose.EVALUATION else PROMPT_VERSION
+    if job.prompt_version != expected_prompt:
         job.status, job.completed_at = JobStatus.FAILED, now
-        job.error = "Формат генерации обновлён. Создайте новый пакет карточек."
+        job.error = (
+            "Версия смысловой проверки не поддерживается этим воркером. "
+            "Сохранена оценка по правилам."
+            if job.purpose == AIPurpose.EVALUATION
+            else "Формат генерации обновлён. Создайте новый пакет карточек."
+        )
         job.worker_id = job.lease_expires_at = None
         await session.commit()
+        if job.purpose == AIPurpose.EVALUATION:
+            from app.services.semantic_assessment.jobs import publish_failed
+
+            await publish_failed(session, job.id)
         return None
     if job.retry_count >= MAX_ATTEMPTS:
         job.status, job.completed_at = JobStatus.FAILED, now
-        job.error = "Воркер не завершил генерацию после трёх попыток. Можно повторить вручную."
+        job.error = "Воркер не завершил задачу после трёх попыток. Можно повторить вручную."
         job.worker_id = job.lease_expires_at = None
         await session.commit()
+        if job.purpose == AIPurpose.EVALUATION:
+            from app.services.semantic_assessment.jobs import publish_failed
+
+            await publish_failed(session, job.id)
         return None
     job.status = JobStatus.RUNNING
     job.retry_count += 1
@@ -81,12 +99,21 @@ async def renew(session, job_id, token):
 
 
 def call_model(job):
+    if job.purpose == AIPurpose.EVALUATION:
+        from app.services.semantic_assessment.inference import evaluate
+
+        return evaluate(job), {}
     from app.services.generation.llm import compose
 
     return compose(job)
 
 
 async def finish(session, job_id, token, text: GeneratedText, metadata):
+    target = await session.get(AIJob, job_id)
+    if target and target.purpose == AIPurpose.EVALUATION:
+        from app.services.semantic_assessment.jobs import finish as finish_assessment
+
+        return await finish_assessment(session, job_id, token, text)
     job = await session.scalar(select(AIJob).where(AIJob.id == job_id).with_for_update())
     if (
         job is None
@@ -147,12 +174,21 @@ async def fail(session, job_id, token, error):
     ):
         await session.rollback()
         return
-    job.error = public_error(error)
+    job.error = (
+        "Смысловая проверка недоступна или ответ модели не прошёл проверку. "
+        "Сохранена оценка по правилам."
+        if job.purpose == AIPurpose.EVALUATION
+        else public_error(error)
+    )
     job.status = JobStatus.FAILED if job.retry_count >= MAX_ATTEMPTS else JobStatus.QUEUED
     job.completed_at = datetime.now(UTC) if job.status == JobStatus.FAILED else None
     job.available_at = datetime.now(UTC) + timedelta(seconds=10 * job.retry_count)
     job.worker_id = job.lease_expires_at = None
     await session.commit()
+    if job.purpose == AIPurpose.EVALUATION and job.status == JobStatus.FAILED:
+        from app.services.semantic_assessment.jobs import publish_failed
+
+        await publish_failed(session, job.id)
 
 
 async def heartbeat(job_id, token):
@@ -170,7 +206,7 @@ async def process(job):
         async with session_factory() as session:
             await finish(session, job.id, job.worker_id, text, metadata)
     except Exception as error:
-        logger.warning("Generation %s failed (%s)", job.id, type(error).__name__)
+        logger.warning("AI job %s failed (%s)", job.id, type(error).__name__)
         async with session_factory() as session:
             await fail(session, job.id, job.worker_id, error)
     finally:
@@ -180,9 +216,15 @@ async def process(job):
 
 async def run():
     logging.basicConfig(level=logging.INFO)
-    logger.info("Generation worker started; model=%s, concurrency=1", settings.llm_model)
+    logger.info(
+        "Generation and assessment worker started; model=%s, concurrency=1", settings.llm_model
+    )
     while True:
         try:
+            from app.services.semantic_assessment.results import reconcile
+
+            async with session_factory() as session:
+                await reconcile(session)
             async with session_factory() as session:
                 job = await claim(session)
             if job:

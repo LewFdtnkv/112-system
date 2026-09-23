@@ -39,10 +39,10 @@ class LessonEvaluation(UUIDPrimaryKey, CreatedAt, Base):
         CheckConstraint("score >= 0 AND max_score > 0 AND score <= max_score", name="score_range"),
         CheckConstraint("length(btrim(comment)) > 0", name="comment_required"),
         CheckConstraint("supersedes_id IS NULL OR supersedes_id != id", name="not_own_predecessor"),
-        CheckConstraint("method IN ('rules', 'teacher')", name="method"),
+        CheckConstraint("method IN ('rules', 'teacher', 'hybrid')", name="method"),
         CheckConstraint(
             "(method = 'teacher' AND reviewer_id IS NOT NULL) OR "
-            "(method = 'rules' AND reviewer_id IS NULL)",
+            "(method IN ('rules', 'hybrid') AND reviewer_id IS NULL)",
             name="reviewer_method",
         ),
     )

@@ -10,6 +10,7 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from app.models import (
+    AIJob,
     Assignment,
     Attempt,
     AttemptEvent,
@@ -155,6 +156,7 @@ async def concurrent_teaching():
                 CriterionEvidence,
                 CriterionResult,
                 Evaluation,
+                AIJob,
                 AttemptEvent,
                 ServiceResponse,
                 IncidentCard,

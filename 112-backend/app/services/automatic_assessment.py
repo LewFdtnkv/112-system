@@ -123,6 +123,8 @@ async def assess_submission(session, attempt, lesson, card_read, *, publish=True
             else policy.model_dump(mode="json")
         )
         snapshot = {
+            "instructions": card_read.instructions,
+            "role": card_read.role,
             "learning": attempt.settings_snapshot.get("learning", {}),
             "policy": policy_snapshot,
             "source": source.snapshot,
@@ -230,6 +232,9 @@ async def assess_submission(session, attempt, lesson, card_read, *, publish=True
                 "audit_sequence": audit_sequence,
             },
         )
+        from app.services.semantic_assessment.jobs import enqueue
+
+        await enqueue(session, evaluation, check)
     if publish:
         await publish_lesson_result(session, lesson, attempt.student_id)
 
@@ -340,6 +345,9 @@ async def publish_lesson_result(session, lesson, student_id):
         },
         "source_evaluation_ids": [str(e.id) for e in evaluations],
     }
+    from app.services.semantic_assessment.results import jobs_for, summary
+
+    details["semantic"] = summary(await jobs_for(session, ids))
     session.add(
         LessonEvaluation(
             lesson_id=lesson.id,
@@ -364,3 +372,7 @@ async def publish_lesson_result(session, lesson, student_id):
             assessment_details=details,
         )
     )
+    await session.flush()
+    from app.services.semantic_assessment.results import publish_result
+
+    await publish_result(session, lesson, student_id)

@@ -9,7 +9,9 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, JsonValue, mod
 class ClientObservation(BaseModel):
     model_config = ConfigDict(extra="forbid")
     command_id: UUID
-    kind: Literal["ui.card_opened", "ui.card_closed", "ui.field_changed"]
+    kind: Literal[
+        "ui.card_opened", "ui.card_closed", "ui.field_changed", "ui.delivery_gap", "ui.hint_seen"
+    ]
     client_occurred_at: AwareDatetime
     field: str | None = Field(
         default=None,
@@ -22,8 +24,18 @@ class ClientObservation(BaseModel):
     def bounded_observation(self):
         if self.kind == "ui.field_changed" and self.field is None:
             raise ValueError("Field change requires a field path")
-        if self.kind != "ui.field_changed" and (self.field is not None or self.value is not None):
+        if self.kind in {"ui.card_opened", "ui.card_closed"} and (
+            self.field is not None or self.value is not None
+        ):
             raise ValueError("Navigation observations have no field value")
+        if self.kind == "ui.delivery_gap" and (
+            self.field is not None or type(self.value) is not int or not 1 <= self.value <= 100000
+        ):
+            raise ValueError("Delivery gap requires a bounded number of lost observations")
+        if self.kind == "ui.hint_seen":
+            if self.field is not None or not isinstance(self.value, str):
+                raise ValueError("Hint observation requires a hint request UUID")
+            UUID(self.value)
         if (
             isinstance(self.value, dict)
             or isinstance(self.value, list)

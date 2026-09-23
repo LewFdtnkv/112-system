@@ -2,13 +2,10 @@ from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 import pytest
-from sqlalchemy import select
 from test_student_workflow import exercise as exercise
 from test_teacher_api import teaching as teaching
 
-from app.models import AttemptEvent, Evaluation
-from app.schemas.assessment import AIAssessmentOutput
-from app.services.ai_assessment_contract import validate_ai_decision
+from app.services.generation_worker import claim, finish
 
 pytestmark = pytest.mark.anyio
 
@@ -71,7 +68,9 @@ async def test_server_audit_browser_observations_and_pagination(exercise):
         await e.request("GET", f"{teacher_path}/assessment-context", actor=actor, status=status)
 
 
-async def test_frozen_ai_contract_rejects_forged_or_unrelated_evidence(exercise, db_session):
+async def test_frozen_context_excludes_late_observations_and_rejects_tampering(
+    exercise, db_session
+):
     e = exercise
     first = await e.complete()
     path = (
@@ -79,51 +78,32 @@ async def test_frozen_ai_contract_rejects_forged_or_unrelated_evidence(exercise,
         f"/attempts/{first['id']}/assessment-context"
     )
     context = await e.request("GET", path, actor="teacher")
-    assert context["ai_connected"] is False
+    assert context["ai_connected"] is True
+    assert context["semantic_review"]["status"] == "queued"
     assert context["reference"]["data"]["description"] == "HIDDEN_TEACHER_ANSWER"
     assert context["audit_through_sequence"] == 3
     assert len(context["audit"]["items"]) == 3
-    evaluation = await db_session.get(Evaluation, UUID(context["evaluation_id"]))
-    body = {
-        "contract_version": "assessment-ai-v1",
-        "attempt_id": first["id"],
-        "context_hash": context["context_hash"],
-        "model_version": "test-model",
-        "prompt_version": "test-prompt",
-        "completed_at": datetime.now(UTC).isoformat(),
-        "criteria": [
-            {
-                "code": code,
-                "decision": "satisfied",
-                "credit": 1,
-                "confidence": 0.9,
-                "explanation": "Test",
-                "evidence_field_paths": [f"submitted_card.data.{code}"],
-            }
-            for code in context["unverified_fields"]
-        ],
-    }
-    output = AIAssessmentOutput.model_validate(body)
-    assert await validate_ai_decision(db_session, output, evaluation) == output
-    for patch in (
-        {"attempt_id": str(uuid4())},
-        {"context_hash": "0" * 64},
-        {"criteria": [body["criteria"][0] | {"code": "classifier_entry_id"}]},
-    ):
-        with pytest.raises(ValueError):
-            await validate_ai_decision(
-                db_session, AIAssessmentOutput.model_validate(body | patch), evaluation
-            )
-    unknown = AIAssessmentOutput.model_validate(body)
-    unknown.criteria[0].evidence_event_ids = [uuid4()]
-    with pytest.raises(ValueError, match="authoritative events"):
-        await validate_ai_decision(db_session, unknown, evaluation)
-    late = await db_session.scalar(
-        select(AttemptEvent).where(
-            AttemptEvent.attempt_id == UUID(first["id"]),
-            AttemptEvent.kind == "assessment.rules_completed",
-        )
+    await e.request(
+        "POST",
+        f"student/attempts/{first['id']}/observations",
+        {
+            "events": [
+                {
+                    "command_id": str(uuid4()),
+                    "kind": "ui.field_changed",
+                    "client_occurred_at": datetime.now(UTC).isoformat(),
+                    "field": "description",
+                    "value": "late",
+                }
+            ]
+        },
     )
-    unknown.criteria[0].evidence_event_ids = [late.id]
-    with pytest.raises(ValueError, match="authoritative events"):
-        await validate_ai_decision(db_session, unknown, evaluation)
+    again = await e.request("GET", path, actor="teacher")
+    assert again["semantic_input"] == context["semantic_input"]
+    assert again["audit"] == context["audit"]
+    job = await claim(db_session)
+    assert job.attempt_id == UUID(first["id"])
+    job.input = job.input | {"context_hash": "0" * 64}
+    await db_session.commit()
+    with pytest.raises(ValueError, match="context changed"):
+        await finish(db_session, job.id, job.worker_id, {"findings": []}, {})

@@ -5,8 +5,8 @@ from sqlalchemy import func, select
 
 from app.models import Assignment, Attempt, AttemptEvent, Evaluation, Lesson
 from app.models.enums import EvaluationMethod, EventActor
-from app.schemas.assessment import AIAssessmentOutput
 from app.schemas.audit import AuditPage
+from app.schemas.semantic_assessment import SemanticDecision
 from app.services.audit import append_event
 from app.services.student import owned_attempt
 
@@ -122,9 +122,11 @@ async def assessment_context(session, attempt):
             status_code=409, detail="Submit the card before requesting assessment context"
         )
     snapshot = evaluation.context_snapshot
-    # No model calls or jobs are scheduled here. The contract is reviewable by the teacher.
+    from app.services.semantic_assessment.results import jobs_for, review
+
+    jobs = await jobs_for(session, [attempt.id])
     return {
-        "contract_version": "assessment-ai-v1",
+        "contract_version": "semantic-v1",
         "attempt_id": str(attempt.id),
         "evaluation_id": str(evaluation.id),
         "context_hash": snapshot["context_hash"],
@@ -142,8 +144,10 @@ async def assessment_context(session, attempt):
         "audit": (
             await audit_page(session, attempt.id, through=snapshot["audit_sequence"])
         ).model_dump(mode="json"),
-        "output_schema": AIAssessmentOutput.model_json_schema(),
-        "ai_connected": False,
+        "output_schema": SemanticDecision.model_json_schema(),
+        "ai_connected": bool(jobs),
+        "semantic_review": review(jobs[-1]).model_dump(mode="json") if jobs else None,
+        "semantic_input": jobs[-1].input if jobs else None,
     }
 
 

@@ -5,6 +5,7 @@ from fastapi import HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.models import (
     Assignment,
     Attempt,
@@ -333,6 +334,7 @@ async def start_attempt(session: AsyncSession, assignment_id: UUID, student_id: 
         mode=assignment.mode,
         started_at=now,
         settings_snapshot={
+            "semantic_assessment": settings.semantic_assessment_enabled,
             "learning": assignment.settings.get("learning", {}),
             "learning_engine": assignment.settings.get("learning_engine"),
             "deadline_policy": "bpmn-v1",

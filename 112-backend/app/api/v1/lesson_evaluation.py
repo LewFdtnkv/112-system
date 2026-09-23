@@ -14,6 +14,16 @@ from app.services.student import student_lesson
 router = APIRouter(tags=["lesson assessment"])
 
 
+@router.post("/lessons/{lesson_id}/students/{student_id}/attempts/{attempt_id}/semantic-retry")
+async def retry_semantic(
+    lesson_id: UUID, student_id: UUID, attempt_id: UUID, session: SessionDep, teacher: TeacherDep
+):
+    from app.services.semantic_assessment.jobs import retry
+
+    attempt = await teacher_attempt(session, lesson_id, student_id, attempt_id, teacher.id)
+    return await retry(session, attempt)
+
+
 @router.post(
     "/lessons/{lesson_id}/students/{student_id}/automatic-evaluation",
     response_model=LessonGradeRead | None,

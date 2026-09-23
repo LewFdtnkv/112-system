@@ -376,3 +376,14 @@ Attempt.settings_snapshot. Полный контракт: [CATALOG_AND_DDS.md](C
 - `telephony_events`: call_id (индекс), provider/event_id (UNIQUE), kind, occurred_at, created_at и JSONB payload. Первичные события АТС отделены от семантических call.* в attempt_events и от прокторинга.
 
 API, жизненный цикл, очередь и границы адаптера: [TELEPHONY.md](TELEPHONY.md).
+
+## Смысловое оценивание (`0022_semantic_assessment`)
+
+`lesson_evaluations.method` допускает `teacher`, `rules`, `hybrid`; для двух
+автоматических методов `reviewer_id` равен NULL. Предыдущие редакции неизменны.
+Новые таблицы не нужны: `ai_jobs` с purpose=evaluation хранит снимок критериев,
+процесса и компетенций служб, hash входа, версии промпта/модели, lease и оба ответа;
+`evaluations` с method=ai связывает результат с задачей и формальной оценкой.
+Итоговая арифметика и сводка хранятся в `lesson_evaluations.assessment_details`.
+Клиентские наблюдения и подсказки продолжают храниться в `attempt_events`, отдельно
+от прокторинга. Подробности — [ASSESSMENT_ARCHITECTURE.md](ASSESSMENT_ARCHITECTURE.md).
