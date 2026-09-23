@@ -20,13 +20,18 @@ def main():
     parser.add_argument("--cases", nargs="+")
     parser.add_argument("--timeout", type=int, default=900)
     parser.add_argument("--warmup", action="store_true")
+    parser.add_argument("--top-p", type=float, help="Override the model's sampling default")
     args = parser.parse_args()
+    if args.top_p is not None and not 0 < args.top_p <= 1:
+        parser.error("--top-p must be greater than 0 and at most 1")
     fixture = json.loads(
         (
             Path(__file__).resolve().parents[1]
             / "docs/generation-evaluation/model-comparison-inputs.json"
         ).read_text()
     )
+    if args.top_p is not None:
+        fixture["options"]["top_p"] = args.top_p
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
 
     def request(path, payload=None):
