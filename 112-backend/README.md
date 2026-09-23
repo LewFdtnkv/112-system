@@ -21,11 +21,11 @@ uv run python -c 'import secrets; print(secrets.token_urlsafe(48))'
 
 ### Переводчик Yandex Translate
 
-Переводчик в карточке использует API Yandex AI Studio через backend: текст и ключ не попадают в браузер. Для включения добавьте в `112-backend/.env`:
+Переводчик в карточке использует API Yandex AI Studio через backend: секретный ключ не попадает в браузер. Для включения добавьте в `112-backend/.env`:
 
 ```env
 YANDEX_TRANSLATE_API_KEY=<API-ключ сервисного аккаунта>
-YANDEX_CLOUD_FOLDER_ID=<идентификатор каталога>
+YANDEX_CLOUD_FOLDER_ID=<идентификатор каталога, если нужен явный выбор>
 ```
 
 Сервисному аккаунту нужна роль `ai.translate.user` на каталоге, а ключу — область действия `yc.ai.translate.execute`. Это отдельные реквизиты: ключ JavaScript API Яндекс Карт не подходит. После изменения перезапустите `api` и `frontend` через `docker compose up -d --build api frontend`.

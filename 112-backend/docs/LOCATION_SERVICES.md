@@ -48,6 +48,7 @@
 ```dotenv
 DADATA_API_KEY=
 YANDEX_TRANSLATE_API_KEY=
+YANDEX_CLOUD_FOLDER_ID=
 EXTERNAL_SERVICES_TIMEOUT_SECONDS=8
 VITE_YANDEX_MAPS_API_KEY=
 ```
@@ -57,14 +58,18 @@ VITE_YANDEX_MAPS_API_KEY=
 - `YANDEX_TRANSLATE_API_KEY` — API-ключ сервисного аккаунта Yandex Cloud с правом
   перевода (область `yc.ai.translate.execute` и соответствующая роль сервисного аккаунта).
   Реализована авторизация `Api-Key`; IAM-токен и старый API Переводчика сюда не подходят.
+- `YANDEX_CLOUD_FOLDER_ID` — необязательный явный каталог для запроса перевода.
 - `VITE_YANDEX_MAPS_API_KEY` — отдельный публичный ключ JavaScript API Карт 2.1,
   ограниченный доменами frontend. Compose передаёт его Nginx, entrypoint пишет
   runtime `map-config.js`. Ключи DaData/Translate передаются только сервису API.
 
 Применить настройки из каталога backend: `docker compose up -d --build api frontend`.
 API и frontend должны обновляться вместе. Рабочие ключи не коммитить.
-Переменная из `112-frontend/.env` сама по себе в Compose не передаётся; для Vite dev
-её нужно передать в процесс Vite внутри Docker.
+Compose также читает необязательный `112-frontend/.env`. Публичный ключ карт
+можно указать там; непустой ключ из окружения/backend `.env` имеет приоритет
+и передаётся в frontend как `SYSTEM112_MAPS_API_KEY`. Секретные ключи
+DaData/Translate хранить только в backend. Для Vite dev переменную
+`VITE_YANDEX_MAPS_API_KEY` нужно передать в процесс Vite внутри Docker.
 
 Вызовы идут по фиксированным HTTPS-адресам, без перенаправлений и автоматических
 повторов. Предельное ожидание — 8 секунд по умолчанию (настраивается от 1 до 30).

@@ -18,9 +18,6 @@ x-backend: &backend
     TELEPHONY_SIP_DOMAIN: ${SIP_PUBLIC_ADDRESS:-localhost}
     TELEPHONY_WS_URL: ${TELEPHONY_WS_URL:-/sip-ws}
     LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-300}
-    DADATA_API_KEY: ${DADATA_API_KEY:-}
-    YANDEX_TRANSLATE_API_KEY: ${YANDEX_TRANSLATE_API_KEY:-}
-    YANDEX_CLOUD_FOLDER_ID: ${YANDEX_CLOUD_FOLDER_ID:-}
     SEMANTIC_ASSESSMENT_ENABLED: ${SEMANTIC_ASSESSMENT_ENABLED:-true}
     ASSESSMENT_MODEL: ${ASSESSMENT_MODEL:-qwen3:4b-instruct-2507-q4_K_M}
 
@@ -99,6 +96,8 @@ services:
     env_file:
       - path: ../112-frontend/.env
         required: false
+    environment:
+      SYSTEM112_MAPS_API_KEY: ${VITE_YANDEX_MAPS_API_KEY:-}
     ports:
       - "${FRONTEND_BIND_ADDRESS:-127.0.0.1}:${FRONTEND_PORT:-8080}:80"
     depends_on:
@@ -135,6 +134,7 @@ services:
       <<: *backend-environment
       DADATA_API_KEY: ${DADATA_API_KEY:-}
       YANDEX_TRANSLATE_API_KEY: ${YANDEX_TRANSLATE_API_KEY:-}
+      YANDEX_CLOUD_FOLDER_ID: ${YANDEX_CLOUD_FOLDER_ID:-}
       EXTERNAL_SERVICES_TIMEOUT_SECONDS: ${EXTERNAL_SERVICES_TIMEOUT_SECONDS:-8}
     volumes:
       - request_logs:/home/appuser/logs

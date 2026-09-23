@@ -3,6 +3,7 @@ from uuid import uuid4
 
 import httpx
 import pytest
+from fastapi.routing import iter_route_contexts
 from pydantic import SecretStr
 
 from app.api.v1.location_services import external_client
@@ -57,6 +58,7 @@ async def upstream(monkeypatch):
         app.dependency_overrides[external_client] = override
         monkeypatch.setattr(settings, "dadata_api_key", SecretStr("test-dadata-secret"))
         monkeypatch.setattr(settings, "yandex_translate_api_key", SecretStr("test-yandex-secret"))
+        monkeypatch.setattr(settings, "yandex_cloud_folder_id", None)
         try:
             yield requests, response
         finally:
@@ -136,8 +138,12 @@ async def test_address_contract_and_reverse_coordinates(db_client, account, upst
     assert json.loads(requests[1].content) == {"lat": 55.75, "lon": 37.61, "count": 1}
 
 
+@pytest.mark.parametrize("folder_id", [None, "test-folder"])
 @pytest.mark.anyio
-async def test_translation_contract_and_plain_text(db_client, account, upstream):
+async def test_translation_contract_and_plain_text(
+    db_client, account, upstream, monkeypatch, folder_id
+):
+    monkeypatch.setattr(settings, "yandex_cloud_folder_id", folder_id)
     _, headers = account
     requests, response = upstream
     response["json"] = {"translations": [{"text": "Нужна помощь", "detectedLanguageCode": "en"}]}
@@ -153,6 +159,7 @@ async def test_translation_contract_and_plain_text(db_client, account, upstream)
         "texts": ["Help"],
         "targetLanguageCode": "ru",
         "format": "PLAIN_TEXT",
+        **({"folderId": folder_id} if folder_id else {}),
     }
 
 
@@ -214,3 +221,14 @@ def test_address_mapping_does_not_invent_coordinates_or_building_types():
     assert address_item({"value": "Москва", "data": {"geo_lat": "nan", "geo_lon": "0"}}) is None
     item = address_item({**SUGGESTION, "data": {**SUGGESTION["data"], "block_type": "стр"}})
     assert item.structure == "2" and item.building == ""
+
+
+def test_location_routes_have_one_handler_per_method():
+    for path, _ in PATHS:
+        matches = [
+            route
+            for route in iter_route_contexts(app.routes)
+            if getattr(route, "path", None) == f"/api/v1/{path}"
+            and "POST" in getattr(route, "methods", set())
+        ]
+        assert len(matches) == 1, path

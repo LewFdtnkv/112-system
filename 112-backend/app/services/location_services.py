@@ -89,11 +89,14 @@ async def addresses(client: httpx.AsyncClient, operation: str, payload: dict):
 
 async def translate(client: httpx.AsyncClient, text: str) -> TranslationResponse:
     key = api_key(settings.yandex_translate_api_key, TRANSLATION_ERROR)
+    payload = {"texts": [text], "targetLanguageCode": "ru", "format": "PLAIN_TEXT"}
+    if settings.yandex_cloud_folder_id:
+        payload["folderId"] = settings.yandex_cloud_folder_id
     result = await post_json(
         client,
         TRANSLATE_URL,
         f"Api-Key {key}",
-        {"texts": [text], "targetLanguageCode": "ru", "format": "PLAIN_TEXT"},
+        payload,
         TRANSLATION_ERROR,
     )
     try:
