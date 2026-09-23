@@ -22,7 +22,13 @@ from app.models.evaluation import AIJob, CriterionEvidence, CriterionResult, Eva
 from app.models.incident import IncidentCard, ResponseEvent, ServiceResponse
 from app.models.lesson_evaluation import LessonEvaluation
 from app.models.scenario import AnswerKey, Scenario, ScenarioVersion
-from app.models.telephony import TrainingCall
+from app.models.telephony import (
+    CallCue,
+    SpeechAsset,
+    TelephonyEvent,
+    TelephonyStation,
+    TrainingCall,
+)
 from app.models.training import (
     Assignment,
     Attempt,
@@ -34,6 +40,10 @@ from app.models.training import (
 from app.models.user import User
 
 __all__ = [
+    "CallCue",
+    "SpeechAsset",
+    "TelephonyEvent",
+    "TelephonyStation",
     "MessageRecipient",
     "ProctoringEvent",
     "TeachingMessage",

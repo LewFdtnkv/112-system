@@ -220,3 +220,5 @@ Pre-commit запускает Ruff, проверку lock-файла, YAML/TOML,
 - [Аудит кода и незавершённых функций](docs/CODE_ARCHITECTURE_AUDIT.md)
 
 Четыре учебных режима, контекстная помощь и оценивание выбранных навыков: [learning-v2](docs/LEARNING_FOUNDATION.md).
+
+Учебная телефония: три режима рабочего места, Asterisk, подготовка записей и контракт внешней АТС — [docs/TELEPHONY.md](docs/TELEPHONY.md).

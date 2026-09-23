@@ -788,3 +788,13 @@ UNIQUE (response_id, crew_code); составной FK (response_id, attempt_id)
 service_responses(id, attempt_id), RESTRICT. CHECK допустимых статусов и revision > 0.
 История — неизменяемые attempt_events вида dds.crew_changed. Определения бригад —
 проверяемый список crews в service_profiles.rules; отдельной миграции JSONB не требуется.
+
+## Учебная телефония (`0021_telephony`)
+
+- `telephony_stations`: режим external/browser/phone, provider + endpoint (UNIQUE), SIP-секрет, уникальные привязки student_id и attempt_id, enabled/provisioned/error. Секрет исключён из списков и аудита.
+- `speech_assets`: уникальный fingerprint текста/голоса/версии, состояние подготовки, file_key и длительность, lease_token/leased_until/attempts для фонового генератора. Файлы вне PostgreSQL, в общем Docker-томе.
+- `call_cues`: реплика карточки сценария; UNIQUE (scenario_card_id, contact_key), contact_name, ссылка audio_id. Удаляется с неиспользованной карточкой сценария.
+- `training_calls`: добавлены station_id, audio_id, direction, transport, provider, dispatched_at, cancel_requested, request_fingerprint. Ссылки response_id/contact_id/target_service_id допускают NULL для звонка заявителя оператору 112. Уже начатый звонок сохраняет снимок аудио.
+- `telephony_events`: call_id (индекс), provider/event_id (UNIQUE), kind, occurred_at, created_at и JSONB payload. Первичные события АТС отделены от семантических call.* в attempt_events и от прокторинга.
+
+API, жизненный цикл, очередь и границы адаптера: [TELEPHONY.md](TELEPHONY.md).

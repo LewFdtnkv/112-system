@@ -5,6 +5,19 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
+    telephony_enabled: bool = False
+    ari_url: str = "http://asterisk:8088/ari"
+    ari_username: str = "trainer"
+    ari_password: SecretStr | None = None
+    telephony_adapter_token: SecretStr | None = None
+    speech_generator_token: SecretStr | None = None
+    telephony_sip_domain: str = "localhost"
+    telephony_ws_url: str = "/sip-ws"
+    telephony_media_directory: str = "/home/appuser/telephony"
+    telephony_max_call_seconds: int = Field(default=600, ge=30, le=3600)
+    speech_voice: str = "ru-default"
+    speech_generator_version: str = "v1"
+
     app_name: str = "System-112 API"
     database_url: PostgresDsn = PostgresDsn(
         "postgresql+asyncpg://trainer:trainer@localhost:15432/trainer"

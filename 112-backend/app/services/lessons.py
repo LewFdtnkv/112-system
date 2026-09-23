@@ -248,6 +248,9 @@ async def start_lesson(
                 for card in cards
             ]
         )
+        from app.services.telephony.media import prepare_scenario
+
+        await prepare_scenario(session, scenario)
         await session.commit()
     except IntegrityError:
         # Same request ID racing across different group locks is guarded by the DB unique key.
