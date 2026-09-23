@@ -40,7 +40,7 @@ async def change_membership(session, teacher_id, group_id, student_id, target_id
     if target_id == group_id:
         raise HTTPException(422, "Choose another group")
     for identifier in sorted({group_id, *([target_id] if target_id else [])}):
-        await owned_group(session, identifier, teacher_id, lock=True)
+        await owned_group(session, identifier, teacher_id, lock=True, active=True)
     membership = await session.get(GroupMembership, (group_id, student_id))
     if membership is None:
         raise HTTPException(404, "Student is not a member of this group")
@@ -71,7 +71,7 @@ async def change_membership(session, teacher_id, group_id, student_id, target_id
 
 async def send_message(session, teacher_id, payload):
     if payload.group_id:
-        await owned_group(session, payload.group_id, teacher_id, lock=True)
+        await owned_group(session, payload.group_id, teacher_id, lock=True, active=True)
         recipients = list(
             await session.scalars(
                 select(GroupMembership.user_id).where(GroupMembership.group_id == payload.group_id)

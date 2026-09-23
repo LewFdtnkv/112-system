@@ -19,6 +19,7 @@ class GroupRead(BaseModel):
     id: UUID
     name: str
     teacher_id: UUID
+    disbanded_at: datetime | None = None
     created_at: datetime
 
 

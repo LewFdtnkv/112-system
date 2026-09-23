@@ -2,6 +2,8 @@
 
 Снимок SQLAlchemy-моделей к `0007_exclusive_user_role` от 19.09.2026: 32 таблицы.
 
+23.09.2026: раздел `training_groups` дополнен колонкой `disbanded_at` из миграции `0020_disband_groups`.
+
 Объяснение учебного смысла и решений: [DATABASE_SCHEMA.md](DATABASE_SCHEMA.md).
 
 UUID генерируются приложением. Все времена — `TIMESTAMP WITH TIME ZONE`.
@@ -145,11 +147,15 @@ PK — первичный ключ; `NULL` — допустимое отсутс
 | --- | --- | --- | --- | --- |
 | `name` | `VARCHAR(255)` | нет | — | `—` |
 | `teacher_id` | `UUID` | нет | — | `—` |
+| `disbanded_at` | `TIMESTAMP WITH TIME ZONE` | да | — | `—` |
 | `id` | `UUID` | нет | да | `—` |
 | `created_at` | `TIMESTAMP WITH TIME ZONE` | нет | — | `now()` |
 
 - FK `(teacher_id)` → `users.id`; DELETE `RESTRICT`.
 - INDEX `(teacher_id)`.
+
+`disbanded_at IS NULL` — действующая группа. Расформирование удаляет её `group_memberships`,
+но сохраняет группу, занятия и историю; в `user_activities` записывается `group.disbanded`.
 
 ## `user_services`
 

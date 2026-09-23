@@ -25,6 +25,8 @@ from app.models.enums import AttemptStatus, EventActor, LessonStatus, TrainingMo
 class TrainingGroup(UUIDPrimaryKey, CreatedAt, Base):
     __tablename__ = "training_groups"
 
+    disbanded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
     name: Mapped[str] = mapped_column(String(255))
     teacher_id: Mapped[UUID] = mapped_column(
         ForeignKey("users.id", ondelete="RESTRICT"), index=True

@@ -8,7 +8,7 @@ from app.api.dependencies import SessionDep, TeacherDep
 from app.models import GroupMembership, TrainingGroup, User
 from app.schemas.group import GroupCreate, GroupMemberRead, GroupRead
 from app.schemas.user import UserRead
-from app.services.groups import add_student, owned_group
+from app.services.groups import add_student, disband_group, owned_group
 
 router = APIRouter(prefix="/groups", tags=["groups"])
 
@@ -32,7 +32,7 @@ async def list_groups(
     return list(
         await session.scalars(
             select(TrainingGroup)
-            .where(TrainingGroup.teacher_id == teacher.id)
+            .where(TrainingGroup.teacher_id == teacher.id, TrainingGroup.disbanded_at.is_(None))
             .order_by(TrainingGroup.created_at, TrainingGroup.id)
             .limit(limit)
             .offset(offset)
@@ -69,3 +69,8 @@ async def list_students(
             .offset(offset)
         )
     )
+
+
+@router.post("/{group_id}/disband", response_model=GroupRead)
+async def disband(group_id: UUID, session: SessionDep, teacher: TeacherDep):
+    return await disband_group(session, group_id, teacher.id)

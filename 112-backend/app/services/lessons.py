@@ -121,7 +121,7 @@ async def start_lesson(
     )
     groups = sorted(set(payload.group_ids or ([payload.group_id] if payload.group_id else [])))
     for group_id in groups:
-        await owned_group(session, group_id, teacher_id, lock=True)
+        await owned_group(session, group_id, teacher_id, lock=True, active=True)
     # A concurrent launch may have finished while this request waited for the group lock.
     existing = await replay(session, teacher_id, payload.request_id, fingerprint)
     if existing is not None:

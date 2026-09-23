@@ -113,7 +113,7 @@ async def groups(
             func.count(GroupMembership.user_id).label("student_count"),
         )
         .outerjoin(GroupMembership)
-        .where(TrainingGroup.teacher_id == teacher.id)
+        .where(TrainingGroup.teacher_id == teacher.id, TrainingGroup.disbanded_at.is_(None))
     )
     if q:
         query = query.where(TrainingGroup.name.ilike(f"%{q}%"))
