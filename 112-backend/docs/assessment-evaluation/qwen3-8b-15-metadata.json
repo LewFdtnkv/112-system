@@ -1,0 +1,50 @@
+{
+  "model": "qwen3:8b-q4_K_M",
+  "model_id": "500a1f067a9f",
+  "ollama": "0.34.2",
+  "prompt_version": "semantic-v1",
+  "production_revision": "ba55038",
+  "cases_sha256": "cfec400aa5ae33fc85e0e07240fd0152a9941a571fa837caec87bc5ca2f4ec5f",
+  "prompt_source_sha256": "52332b5b000222cc00f8ca39d7ddfbe0c974a2f416c57b6cc15d211a5a60cae0",
+  "settings": {
+    "num_ctx": 4096,
+    "num_predict": 650,
+    "temperature": 0.1,
+    "seeds": [
+      112,
+      113
+    ],
+    "think": false,
+    "timeout_seconds": 300
+  },
+  "resources": {
+    "cpu_limit": 6,
+    "memory_limit_bytes": 6979321856,
+    "gpu": false
+  },
+  "rubric": "Expected labels authored before execution; paraphrase excluded from strict error rate because its label is ambiguous. No production DB used.",
+  "model_defaults": {
+    "qwen3:8b-q4_K_M": {
+      "top_p": 0.95,
+      "top_k": 20,
+      "repeat_penalty": 1
+    },
+    "qwen3:4b-instruct-2507-q4_K_M": {
+      "top_p": 0.8,
+      "top_k": 20,
+      "repeat_penalty": 1
+    }
+  },
+  "pilot_excluded": "Three completed pilot cases used verdict-revealing labels; final run uses neutral labels and corrected DDS metadata. Pilot excluded from outcome/timing statistics.",
+  "peak_memory_bytes_including_pilot": 6196764672,
+  "memory_events": {
+    "low": 0,
+    "high": 0,
+    "max": 0,
+    "oom": 0,
+    "oom_kill": 0,
+    "oom_group_kill": 0,
+    "sock_throttled": 136
+  },
+  "first_call_load_seconds": 12.66
+}

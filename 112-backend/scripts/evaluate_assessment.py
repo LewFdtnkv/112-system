@@ -3,10 +3,11 @@
 import argparse
 import json
 import time
+from pathlib import Path
 from types import SimpleNamespace
 
 from app.core.config import settings
-from app.services.semantic_assessment.inference import evaluate
+from app.services.semantic_assessment.inference import call, evaluate
 
 CASES = [
     (
@@ -89,37 +90,85 @@ CASES = [
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--case", action="append", choices=[row[0] for row in CASES])
+    parser.add_argument("--case", action="append")
+    parser.add_argument(
+        "--cases-file", type=Path, help="Frozen JSON cases with criterion and facts"
+    )
     parser.add_argument("--model", default=settings.assessment_model or settings.llm_model)
     args = parser.parse_args()
-    for name, expected, kind, situation, answer, scope in CASES:
+    cases = (
+        json.loads(args.cases_file.read_text())
+        if args.cases_file
+        else [
+            {
+                "case": name,
+                "expected": expected,
+                "criterion": {
+                    "code": {"services": "additional_services", "dds": "dds.comments"}.get(
+                        kind, "description"
+                    ),
+                    "label": {
+                        "text": "Сообщение в карточке",
+                        "services": "Обоснованность дополнительных служб",
+                        "dds": "Согласованность комментариев бригад",
+                    }[kind],
+                    "kind": kind,
+                    "situation": situation,
+                    "reference": situation
+                    if kind != "services"
+                    else "Основная служба уже оповещена",
+                    "answer": answer,
+                    "service_scope": scope,
+                },
+            }
+            for name, expected, kind, situation, answer, scope in CASES
+        ]
+    )
+    unknown = set(args.case or []) - {row["case"] for row in cases}
+    if unknown:
+        parser.error("Unknown cases: " + ", ".join(sorted(unknown)))
+    for row in cases:
+        name, expected, criterion = row["case"], row["expected"], row["criterion"]
         if args.case and name not in args.case:
             continue
-        criterion = {
-            "code": "additional_services" if kind == "services" else "description",
-            "label": name,
-            "kind": kind,
-            "situation": situation,
-            "reference": situation if kind == "text" else "Основная служба уже оповещена",
-            "answer": answer,
-            "service_scope": scope,
-        }
         start = time.monotonic()
+        completed_calls = []
+
+        def recorded_call(criterion, facts, model, verification=False):
+            decision, metrics = call(criterion, facts, model, verification)
+            completed_calls.append(
+                {
+                    "code": criterion["code"],
+                    "pass": 2 if verification else 1,
+                    "decision": decision.model_dump(),
+                    "metrics": metrics,
+                }
+            )
+            return decision, metrics
+
         try:
             result = evaluate(
                 SimpleNamespace(
                     model_version=args.model,
-                    input={"criteria": [criterion], "submitted_facts": {}},
-                )
+                    input={
+                        "criteria": [criterion],
+                        "submitted_facts": row.get("submitted_facts", {}),
+                        "process": row.get("process", {}),
+                    },
+                ),
+                invoke=recorded_call,
             )
         except Exception as error:
-            result = {"error": type(error).__name__}
+            result = {"error": type(error).__name__, "trace": completed_calls}
         print(
             json.dumps(
                 {
                     "case": name,
                     "expected": expected,
                     "input": criterion,
+                    "submitted_facts": row.get("submitted_facts", {}),
+                    "process": row.get("process", {}),
+                    "model": args.model,
                     "elapsed_seconds": round(time.monotonic() - start, 2),
                     "result": result,
                 },

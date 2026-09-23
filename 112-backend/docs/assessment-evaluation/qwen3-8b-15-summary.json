@@ -1,0 +1,57 @@
+{
+  "examples": 15,
+  "model_calls": 30,
+  "applied": 13,
+  "abstained": 2,
+  "strict_examples": 14,
+  "strict_applied": 12,
+  "strict_correct_applied": 11,
+  "strict_wrong_applied": [
+    "conflicting_sources"
+  ],
+  "first_pass_wrong_strict": [
+    "holdout_water_paraphrase",
+    "conflicting_sources"
+  ],
+  "technical_errors": 0,
+  "reason_fact_error_displayed": [
+    "holdout_water_paraphrase"
+  ],
+  "reason_fact_error_any_pass": [
+    "holdout_water_paraphrase",
+    "conflicting_sources"
+  ],
+  "citation_quality_issues": [
+    "extra_service",
+    "unsupported_service"
+  ],
+  "time_seconds": {
+    "total": 1860.16,
+    "mean": 124.01,
+    "median": 118.69,
+    "min": 81.62,
+    "max": 207.31
+  },
+  "first_call_load_seconds": 12.66,
+  "by_cohort": {
+    "previous_4b_cases": {
+      "total": 9,
+      "applied": 7,
+      "final_verdicts": {
+        "correct": 3,
+        "incorrect": 3,
+        "partial": 1,
+        "uncertain": 2
+      }
+    },
+    "new_8b_holdout": {
+      "total": 6,
+      "applied": 6,
+      "final_verdicts": {
+        "partial": 3,
+        "incorrect": 2,
+        "correct": 1
+      }
+    }
+  }
+}
