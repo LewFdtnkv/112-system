@@ -14,7 +14,7 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --no-cache \
     && useradd --create-home --uid 10001 appuser \
-    && install -d -o appuser -g appuser /home/appuser/logs
+    && install -d -o appuser -g appuser /home/appuser/logs /home/appuser/telephony
 
 COPY app ./app
 COPY scripts ./scripts
