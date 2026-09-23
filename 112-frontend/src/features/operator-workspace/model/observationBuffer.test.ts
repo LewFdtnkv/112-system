@@ -3,6 +3,64 @@ import { createObservationBuffer } from "./observationBuffer";
 import type { ClientObservation } from "@/entities/training";
 
 afterEach(() => vi.useRealTimers());
+it("restores undelivered events with the same IDs after reload and clears acknowledged storage", async () => {
+  let saved: ClientObservation[] = [];
+  const persistence = {
+    load: () => saved,
+    save: (events: ClientObservation[]) => {
+      saved = [...events];
+    },
+  };
+  const first = createObservationBuffer(
+    {},
+    async () => {
+      throw new Error("offline");
+    },
+    vi.fn(),
+    persistence,
+  );
+  first.observe({ description: "Учебное сообщение" });
+  await first.flush();
+  first.close();
+  await first.flush();
+  const originalIds = saved.map((e) => e.command_id);
+  const send = vi.fn().mockResolvedValue(undefined);
+  const reopened = createObservationBuffer({}, send, vi.fn(), persistence);
+  await reopened.flush();
+  expect(
+    send.mock.calls.flatMap(([events]) =>
+      events.map((e: ClientObservation) => e.command_id),
+    ),
+  ).toEqual(originalIds);
+  expect(saved).toEqual([]);
+});
+
+it("reports bounded delivery gaps after prolonged failure instead of growing forever", async () => {
+  vi.useFakeTimers();
+  let saved: ClientObservation[] = [];
+  const persistence = {
+    load: () => saved,
+    save: (events: ClientObservation[]) => {
+      saved = [...events];
+    },
+  };
+  const first = createObservationBuffer(
+    {},
+    async () => {
+      throw new Error("offline");
+    },
+    vi.fn(),
+    persistence,
+  );
+  for (let i = 0; i < 240; i++) {
+    first.observe({ description: String(i) });
+    await first.flush();
+  }
+  expect(saved.length).toBeLessThanOrEqual(200);
+  expect(saved.some((event) => event.kind === "ui.delivery_gap")).toBe(true);
+  first.close();
+  await first.flush();
+});
 it("coalesces typing and sends only allowed semantic fields before a command", async () => {
   vi.useFakeTimers();
   const batches: ClientObservation[][] = [];

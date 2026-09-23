@@ -24,6 +24,7 @@ import type {
 } from "../types/LessonReview";
 import { AuditTrail } from "./AuditTrail";
 import { CardComparison } from "./CardComparison";
+import { SemanticReview, SemanticStatus } from "./SemanticReview";
 export function StudentResult({ lessonId }: StudentResultProps) {
   const grade = useQuery({
     queryKey: ["evaluation", lessonId],
@@ -57,7 +58,7 @@ export function StudentResult({ lessonId }: StudentResultProps) {
           {lesson.data?.work_status === "submitted"
             ? "Автоматическая оценка недоступна для этой работы. Обратитесь к преподавателю"
             : "Работа ещё не сдана"}
-          . Оценка ИИ пока не подключена.
+          .
         </Alert>
       )}
       <Button component={Link} to={getStudentTrainingWorkspacePath(lessonId)}>
@@ -70,9 +71,11 @@ function GradeView({ grade }: GradeViewProps) {
   return (
     <Paper sx={styles.paper}>
       <Typography variant="h6" component="h2">
-        {grade.method === "rules"
-          ? "Автоматическая оценка"
-          : "Оценка преподавателя"}
+        {grade.method === "hybrid"
+          ? "Оценка по правилам и ИИ"
+          : grade.method === "rules"
+            ? "Автоматическая оценка"
+            : "Оценка преподавателя"}
         : {grade.score} / {grade.max_score}
       </Typography>
       <p style={styles.p}>{grade.comment}</p>
@@ -103,12 +106,24 @@ function GradeView({ grade }: GradeViewProps) {
               {criterion.label}: {criterion.score} / {criterion.max_score}
             </Typography>
           ))}
-          <Alert severity="info">
-            Оценены формальные критерии{" "}
-            {grade.assessment_details.evaluated_cards} карточек. Смысловых полей
-            вне оценки: {grade.assessment_details.unverified_fields}. ИИ пока не
-            подключён; итог можно пересмотреть у преподавателя.
-          </Alert>
+          {!!grade.assessment_details.recommendations?.length && (
+            <Alert severity="info">
+              <strong>Что повторить</strong>
+              {grade.assessment_details.recommendations.map((text) => (
+                <p key={text}>{text}</p>
+              ))}
+            </Alert>
+          )}
+          {grade.assessment_details.semantic ? (
+            <SemanticStatus summary={grade.assessment_details.semantic} />
+          ) : (
+            <Alert severity="info">
+              Оценены формальные критерии{" "}
+              {grade.assessment_details.evaluated_cards} карточек. Смысловых
+              полей вне оценки: {grade.assessment_details.unverified_fields}.
+              Итог можно пересмотреть у преподавателя.
+            </Alert>
+          )}
         </Stack>
       )}
       <small>
@@ -200,6 +215,14 @@ function Review({
             row={row}
             actions={renderCardActions?.(row, data.assignments)}
           />
+          {row.semantic_review && row.attempt && (
+            <SemanticReview
+              review={row.semantic_review}
+              lessonId={data.lesson_id}
+              studentId={data.student_id}
+              attemptId={row.attempt.id}
+            />
+          )}
           {row.attempt && (
             <AuditTrail
               lessonId={data.lesson_id}

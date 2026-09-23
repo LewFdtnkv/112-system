@@ -90,8 +90,8 @@ export function CardComparison({ row, actions }: CardComparisonProps) {
       )}
       <p className="comparison-note">
         Зелёный — совпадение; красный — расхождение проверяемого поля; жёлтый —
-        нужна проверка. Смысл текста автоматически не оценён. ИИ пока не
-        подключён.
+        нужна проверка. Здесь показано формальное сравнение. Смысловой разбор
+        ИИ, если он назначен, приведён отдельно ниже.
       </p>
       {!fields.length && (
         <p className="comparison-notice">

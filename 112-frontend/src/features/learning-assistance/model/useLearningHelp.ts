@@ -64,6 +64,22 @@ export function useLearningHelp({
       ? response?.hint
       : null;
   const highlight = hint?.presentation === "highlight" ? hint.target : null;
+  const seen = useRef(new Set<string>());
+  const hintId = hint?.id;
+  useEffect(() => {
+    if (!hintId || seen.current.has(hintId)) return;
+    seen.current.add(hintId);
+    const event = {
+      command_id: randomUUID(),
+      kind: "ui.hint_seen" as const,
+      client_occurred_at: new Date().toISOString(),
+      value: hintId,
+    };
+    void trainingApi.observations(attempt.id, [event]).catch(() => {
+      // A display observation is optional; the authoritative issued hint is already persisted.
+      seen.current.delete(hintId);
+    });
+  }, [attempt.id, hintId]);
   useEffect(() => {
     onHighlight(highlight ?? null);
     return () => onHighlight(null);

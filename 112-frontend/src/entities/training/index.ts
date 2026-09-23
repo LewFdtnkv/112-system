@@ -24,5 +24,6 @@ export * from "./types/generation";
 export { UserPhoto } from "./ui/UserPhoto";
 
 export * from "./types/learning";
+export * from "./types/semanticAssessment";
 export * from "./model/learning";
 export { LearningSummary } from "./ui/LearningSummary";

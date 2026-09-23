@@ -254,9 +254,11 @@ export function LessonList({
                             </Link>
                             {row.score !== null && (
                               <small>
-                                {row.evaluation_method === "rules"
-                                  ? "Автоматически"
-                                  : "Преподаватель"}
+                                {row.evaluation_method === "hybrid"
+                                  ? "Правила + ИИ"
+                                  : row.evaluation_method === "rules"
+                                    ? "Автоматически"
+                                    : "Преподаватель"}
                               </small>
                             )}
                           </TableCell>

@@ -196,7 +196,7 @@ export interface ScenarioDetail extends Omit<ScenarioItem, "card_count"> {
 export interface LessonRow {
   learning: LearningPolicy;
   completed_at?: string | null;
-  evaluation_method?: "rules" | "teacher" | null;
+  evaluation_method?: "rules" | "teacher" | "hybrid" | null;
   lesson_id: string;
   title: string;
   student_id: string;
@@ -295,15 +295,17 @@ export interface Attempt {
 }
 
 export interface Grade {
-  method?: "rules" | "teacher";
+  method?: "rules" | "teacher" | "hybrid";
   assessment_details?: {
+    recommendations?: string[];
+    semantic?: import("./semanticAssessment").SemanticSummary | null;
     assistance?: {
       issued_count: number;
       levels: Record<string, number>;
       scoring: string;
     };
     policy_version: string;
-    scope: "formal_fields";
+    scope: "formal_fields" | "hybrid" | "partial";
     criteria: {
       code: string;
       label: string;
@@ -337,7 +339,12 @@ export interface AssessmentPolicy {
 
 export interface ClientObservation {
   command_id: string;
-  kind: "ui.card_opened" | "ui.card_closed" | "ui.field_changed";
+  kind:
+    | "ui.card_opened"
+    | "ui.card_closed"
+    | "ui.field_changed"
+    | "ui.delivery_gap"
+    | "ui.hint_seen";
   client_occurred_at: string;
   field?: string;
   value?: string | number | boolean | string[] | null;
@@ -368,6 +375,7 @@ export interface WorkReview {
   student_id: string;
   submitted: boolean;
   assignments: {
+    semantic_review?: import("./semanticAssessment").SemanticReview | null;
     automatic_check: AutomaticCheck | null;
     assignment_id: string;
     position: number;

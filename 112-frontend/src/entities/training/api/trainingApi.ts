@@ -44,8 +44,18 @@ const get = <T>(path: string, params: Params = {}, signal?: AbortSignal) =>
 const post = <T>(path: string, json: unknown) =>
   backendApi.post(path, { json }).json<T>();
 export const trainingApi = {
-  hint: (attemptId: string, request: {request_id: string; trigger: "request" | "automatic"; level: "goal" | "explanation" | "solution"}) =>
-    post<import("../types/learning").HintRead>(`student/attempts/${id(attemptId)}/hints`, request),
+  hint: (
+    attemptId: string,
+    request: {
+      request_id: string;
+      trigger: "request" | "automatic";
+      level: "goal" | "explanation" | "solution";
+    },
+  ) =>
+    post<import("../types/learning").HintRead>(
+      `student/attempts/${id(attemptId)}/hints`,
+      request,
+    ),
   me: () => get<UserDetail>("users/me"),
   previewRecipients: (
     attemptId: string,
@@ -140,6 +150,11 @@ export const trainingApi = {
         retry: 0,
       })
       .json<{ accepted: number }>(),
+  retrySemantic: (lessonId: string, studentId: string, attemptId: string) =>
+    post<import("../types/semanticAssessment").SemanticReview>(
+      `lessons/${id(lessonId)}/students/${id(studentId)}/attempts/${id(attemptId)}/semantic-retry`,
+      {},
+    ),
   audit: (
     lessonId: string,
     studentId: string,
