@@ -8,7 +8,7 @@ from app.services.generation.narration import Wording, fallback, prompt, render
 
 def compose(job):
     plan = job.input["narrative"]
-    if plan.get("silent") or plan["mode"] == "template":
+    if plan["mode"] == "template":
         return fallback(job.input), {"source": "template", "selection": plan["default_wording"]}
     metadata = {"model": job.model_version, "seed": job.input["seed"]}
     try:

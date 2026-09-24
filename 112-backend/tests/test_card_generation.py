@@ -94,7 +94,12 @@ async def test_explicit_services_override_ekp_and_are_preserved_in_worker(teachi
     extra = await t.add(Service, code=f"other-{uuid4()}", name="Учебная служба 102")
     await db_session.commit()
     jobs = await t.post(
-        "card-generations", payload(t, service_ids=[str(extra.id)]) | {"count": 1}, expected=202
+        "card-generations",
+        payload(
+            t, service_ids=[str(extra.id)], caller_information="full", address_format="structured"
+        )
+        | {"count": 1},
+        expected=202,
     )
     assert jobs[0]["services"] == [extra.name]
     job = await claim(db_session)

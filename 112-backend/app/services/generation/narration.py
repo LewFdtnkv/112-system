@@ -17,7 +17,7 @@ class Wording(BaseModel):
 
 def prompt(plan, facts):
     return (
-        "Ты редактор учебного звонка 112. Выбери естественную подачу из готовых вариантов. "
+        "Ты редактор учебного сообщения в 112. Выбери естественную подачу из готовых вариантов. "
         "Ответь только JSON с тремя целыми числами 0 или 1. "
         "wording — номер фразы; opening: 0 — «Здравствуйте», 1 — «Помогите, пожалуйста» "
         "(для справочного вызова — «Добрый день»); order: 0 — сначала происшествие, "
@@ -25,6 +25,7 @@ def prompt(plan, facts):
         + json.dumps(
             {
                 "ситуация": plan["title"],
+                "канал": plan.get("message_format", "call"),
                 "фразы": plan["phrases"],
                 "состояние_заявителя": facts.get("Состояние заявителя", "Спокоен"),
                 "служебный_вызов": plan["service_call"],
@@ -37,15 +38,6 @@ def prompt(plan, facts):
 
 def render(job_input, selection):
     plan, facts = job_input["narrative"], job_input["facts"]
-    if plan.get("silent"):
-        speech = "После приветствия и повторных обращений оператора в ответ тишина."
-        if plan["flags"]["callDropped"]:
-            speech += " Затем соединение прервалось."
-        return GeneratedText(
-            title="Молчаливый вызов",
-            caller_message=speech,
-            description="Соединение установлено, заявитель молчит. Сведения не получены.",
-        )
     chosen = Wording.model_validate(selection)
     event = plan["phrases"][chosen.wording]
     if facts.get("Пол") == "Женский":
@@ -59,23 +51,29 @@ def render(job_input, selection):
     else:
         opening = ["Здравствуйте, нужна помощь.", "Помогите, пожалуйста."][chosen.opening]
     detail = facts.get("Подробность сообщения", "Обычное сообщение")
-    parts = [] if detail == "Краткое сообщение" else [opening]
+    sms = plan.get("message_format") == "sms"
+    parts = [] if sms or detail == "Краткое сообщение" else [opening]
     parts += [address, event] if chosen.order else [event, address]
     flags = plan["flags"]
     if not plan["service_call"]:
         count = plan["victims_count"]
-        parts.append(
-            {
-                0: "Пострадавших нет.",
-                1: "Помощь нужна одному пострадавшему.",
-                2: "Пострадали два человека.",
-                3: "Пострадали три человека.",
-            }[count]
-        )
-        if flags["blocked"]:
+        if count is not None:
+            parts.append(
+                {
+                    0: "Пострадавших нет.",
+                    1: "Помощь нужна одному пострадавшему.",
+                    2: "Пострадали два человека.",
+                    3: "Пострадали три человека.",
+                }[count]
+            )
+        if flags.get("blocked"):
             parts.append("Доступ к месту происшествия перекрыт.")
-        if flags["refusedAmbulance"]:
+        if flags.get("refusedAmbulance"):
             parts.append("От медицинской помощи пострадавшие отказываются.")
+        if flags.get("blocked") is False:
+            parts.append("Доступ к месту происшествия свободен.")
+        if flags.get("refusedAmbulance") is False and count:
+            parts.append("Отказа от медицинской помощи не было.")
     # Additional explicitly authored answers retain their meaning without invented paraphrases.
     data = job_input["card"]["data"]
     extras = plan.get("extra_evidence", [])
@@ -83,30 +81,34 @@ def render(job_input, selection):
     caller = facts.get("ФИО заявителя")
     if caller:
         parts.append(f"Меня зовут {caller}.")
+    if sms and facts.get("Возраст"):
+        parts.append(f"Мне {facts['Возраст']} лет.")
+    if sms and facts.get("Пол"):
+        parts.append(f"Я {'женщина' if facts['Пол'] == 'Женский' else 'мужчина'}.")
     separator = "\n" if detail == "Подробное сообщение" else " "
     speech = separator.join(part for part in parts if part)
     observations = []
     if data.get("caller_phone"):
         observations.append(f"Номер на экране АОН: {data['caller_phone']}.")
-    if facts.get("Возраст"):
+    if not sms and facts.get("Возраст"):
         observations.append(f"При уточнении возраста заявитель сообщает: {facts['Возраст']}.")
-    if facts.get("Пол"):
+    if not sms and facts.get("Пол"):
         observations.append(f"Заявитель: {'женщина' if facts['Пол'] == 'Женский' else 'мужчина'}.")
-    if not plan["service_call"]:
+    if not plan["service_call"] and not sms:
         observations.append(f"Место: {plan['object']}. Время суток: {facts['Время суток']}.")
-    if flags["callDropped"]:
-        observations.append("После получения этих сведений соединение прервалось.")
-    else:
-        observations.append("Соединение сохраняется до окончания разговора.")
     if observations:
         speech += "\n\nСведения, доступные оператору:\n" + "\n".join(observations)
+    if sms:
+        speech = "СМС: " + speech
     description = " ".join(
         filter(
             None,
             [
                 plan["title"] + ".",
                 address,
-                f"Пострадавших: {plan['victims_count']}." if not plan["service_call"] else "",
+                f"Пострадавших: {plan['victims_count']}."
+                if not plan["service_call"] and plan["victims_count"] is not None
+                else "",
             ],
         )
     )
@@ -119,8 +121,6 @@ def fallback(job_input):
 
 def protect(job_input, text, metadata):
     """Revalidate at publication too: callers cannot bypass guards by calling finish directly."""
-    if job_input["narrative"].get("silent"):
-        return fallback(job_input), metadata
     try:
         expected = render(job_input, metadata["selection"])
         if text != expected:

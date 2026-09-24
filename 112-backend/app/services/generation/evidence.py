@@ -29,7 +29,7 @@ def extra_evidence(definitions, answers, plan):
     covered = set(plan["covered_features"]) | {"injured", "victims"}
     # Main medical and police phrases already state consciousness, breathing and timing.
     covered -= set(BOOLEAN_PHRASES)
-    if plan["flags"]["blocked"]:
+    if plan["flags"].get("blocked"):
         covered.add("access")
     sentences = []
     for f in definitions:
@@ -38,7 +38,11 @@ def extra_evidence(definitions, answers, plan):
                 sentences.append(BOOLEAN_PHRASES[f.key][int(answers[f.key])])
             else:
                 sentences.append(
-                    f"На уточняющий вопрос «{f.label}» заявитель отвечает: "
-                    f"{readable(answers[f.key])}."
+                    (
+                        f"В сообщении указано «{f.label}»: "
+                        if plan.get("message_format") == "sms"
+                        else f"На уточняющий вопрос «{f.label}» заявитель отвечает: "
+                    )
+                    + f"{readable(answers[f.key])}."
                 )
     return sentences

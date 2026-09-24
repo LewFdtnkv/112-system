@@ -11,7 +11,7 @@ from app.models import AIJob, CardTemplate, Evaluation
 from app.schemas.authoring import CardData
 from app.schemas.student import StudentAttemptRead
 from app.services.field_evaluation import check_fields
-from app.services.generation_worker import call_model, claim, finish
+from app.services.generation_worker import claim, finish
 
 pytestmark = pytest.mark.anyio
 
@@ -80,8 +80,7 @@ async def test_fixed_flags_are_facts_and_survive_worker(teaching, db_session):
         victims_count=2,
         blocked=True,
         refused_ambulance=True,
-        no_contact=False,
-        call_dropped=True,
+        message_format="call",
     )
     jobs = await t.post("card-generations", data, expected=202)
     for item in jobs:
@@ -93,7 +92,7 @@ async def test_fixed_flags_are_facts_and_survive_worker(teaching, db_session):
     card = await db_session.get(CardTemplate, job.card_template_id)
     assert card.data["additional_fields"]["details"]["blocked"] is True
     assert "Пострадали два человека." in card.caller_message
-    assert "соединение прервалось" in card.caller_message
+    assert "соединение прервалось" not in card.caller_message
     await t.post("card-generations", payload(t, has_victims=False, victims_count=2), expected=422)
 
 
@@ -118,29 +117,27 @@ async def test_generation_rejects_fixed_contradictions(teaching, db_session):
     await t.post("card-generations", payload(t, no_contact=True), expected=422)
 
 
-async def test_silent_generation_can_be_authored_opened_and_graded(teaching, db_client, db_session):
+async def test_manually_authored_silent_card_can_be_opened_and_graded(
+    teaching, db_client, db_session
+):
     t = teaching
-    jobs = await t.post(
-        "card-generations",
+    created = await t.post(
+        "cards",
         {
-            "request_id": str(uuid4()),
-            "parameters": {
-                "classifier_version_id": str(t.classifier.id),
-                "no_contact": True,
-                "call_dropped": True,
+            "title": "Молчаливый вызов",
+            "classifier_version_id": str(t.classifier.id),
+            "classifier_entry_id": None,
+            "caller_message": (
+                "После обращения оператора в ответ тишина. Затем соединение прервалось."
+            ),
+            "recipient_service_ids": [],
+            "data": {
+                "description": "Соединение установлено, сведений не получено.",
+                "additional_fields": {"details": {"noContact": True, "callDropped": True}},
             },
         },
-        expected=202,
     )
-    job = await claim(db_session)
-    assert str(job.id) == jobs[0]["id"]
-    assert job.input["card"]["classifier_entry_id"] is None
-    text, meta = call_model(job)  # Template path must not need a live LLM.
-    assert meta["source"] == "template"
-    assert "тишина" in text.caller_message and "прервалось" in text.caller_message
-    await finish(db_session, job.id, job.worker_id, text, meta)
-    card = await db_session.get(CardTemplate, job.card_template_id)
-    assert card.data.get("address_details") is None and card.data.get("caller_name") is None
+    card = await db_session.get(CardTemplate, UUID(created["id"]))
     read = await db_client.get(f"/api/v1/cards/{card.id}", headers=t.headers["teacher"])
     assert read.status_code == 200 and read.json()["classifier_entry_id"] is None
     library = await db_client.get("/api/v1/views/cards", headers=t.headers["teacher"])

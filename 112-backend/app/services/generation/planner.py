@@ -17,7 +17,9 @@ def build(entry, template, p, rng):
         raise ValueError("Значение признака отсутствует в выбранной версии ЕКП")
     if p.object is not None and p.object.casefold() not in {o.casefold() for o in template.objects}:
         raise ValueError("Объект несовместим с сюжетом")
-    if template.service_call and any((p.locality, p.street, p.house)):
+    if template.service_call and any(
+        (p.locality, p.street, p.house, p.address_description, p.address_format)
+    ):
         raise ValueError("Для этого служебного вызова адрес происшествия не предусмотрен")
     required_victims = [v for v in [p.has_victims, template.has_victims] if v is not None]
     required_victims += [v for k, v in explicit.items() if k in LINKED_VICTIMS]
@@ -79,10 +81,8 @@ def build(entry, template, p, rng):
         raise ValueError("Заготовка несовместима с текущей схемой признаков ЕКП") from exc
     flags = {
         "hasVictims": victims,
-        "noContact": False,
         "blocked": blocked,
         "refusedAmbulance": refused,
-        "callDropped": p.call_dropped if p.call_dropped is not None else rng.random() < 0.05,
     }
     return {
         "version": library()[0],

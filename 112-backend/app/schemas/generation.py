@@ -23,8 +23,10 @@ class GenerationParameters(BaseModel):
     victims_count: int | None = Field(default=None, ge=0, le=100000, strict=True)
     refused_ambulance: StrictBool | None = None
     blocked: StrictBool | None = None
-    no_contact: StrictBool | None = None
-    call_dropped: StrictBool | None = None
+    message_format: Literal["call", "sms"] | None = None
+    caller_information: Literal["full", "name_only", "anonymous"] | None = None
+    address_format: Literal["structured", "descriptive"] | None = None
+    address_description: ShortText | None = None
     gender: Literal["male", "female"] | None = None
     age: int | None = Field(default=None, ge=8, le=95)
     caller_name: ShortText | None = None
@@ -45,6 +47,18 @@ class GenerationParameters(BaseModel):
             raise ValueError("Для признаков выберите конкретный тип происшествия")
         if self.service_ids is not None and len(set(self.service_ids)) != len(self.service_ids):
             raise ValueError("Службы не должны повторяться")
+        if self.caller_information == "anonymous" and any(
+            v is not None for v in (self.caller_name, self.gender, self.age)
+        ):
+            raise ValueError("Без сведений о заявителе нельзя задавать ФИО, пол или возраст")
+        if self.caller_information == "name_only" and any(
+            v is not None for v in (self.gender, self.age)
+        ):
+            raise ValueError("Для сообщения только с именем пол и возраст не задаются")
+        if self.address_format == "descriptive" and self.house:
+            raise ValueError("Для описательного адреса номер дома не задаётся")
+        if self.address_description and (self.address_format == "structured" or self.house):
+            raise ValueError("Ориентир требует описательного адреса без номера дома")
         return self
 
 

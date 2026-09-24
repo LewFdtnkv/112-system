@@ -9,12 +9,14 @@ from types import SimpleNamespace
 
 from app.core.config import settings
 from app.schemas.generation import GenerationParameters
+from app.services.card_generation import CHOICES, NAMES
 from app.services.catalog_rules import feature_definitions
 from app.services.generation.evidence import extra_evidence
 from app.services.generation.library import for_entry
 from app.services.generation.llm import compose
 from app.services.generation.narration import prompt, protect
 from app.services.generation.planner import build
+from app.services.generation.presentation import prepare_message, resolve_address, resolve_caller
 from app.services.generation_flags import facts as flag_facts
 
 
@@ -32,27 +34,42 @@ def sample(template_id, *, seed=20260923, parameters=None, facts_override=None):
         for template in for_entry(entry):
             if template.id != template_id:
                 continue
-            p = GenerationParameters.model_validate(
-                {
-                    "no_contact": False,
-                    "has_victims": template.has_victims or False,
-                    "blocked": False,
-                    "call_dropped": False,
-                    "refused_ambulance": False,
-                }
-                | (parameters or {})
-            )
+            defaults = {
+                "message_format": "call",
+                "has_victims": template.has_victims or False,
+                "blocked": False,
+                "refused_ambulance": False,
+            }
+            params = parameters or {}
+            if not template.service_call:
+                defaults.update(locality="Москва", street="Лесная улица")
+                if params.get("address_format") != "descriptive" and not params.get(
+                    "address_description"
+                ):
+                    defaults["house"] = "12"
+            if (
+                not template.service_call
+                and params.get("message_format") != "sms"
+                and params.get("caller_information") not in ("anonymous", "name_only")
+            ):
+                defaults.update(
+                    caller_information="full", caller_name="Анна Иванова", gender="female", age=34
+                )
+            p = GenerationParameters.model_validate(defaults | params)
             rng = random.Random(seed)
             plan = build(entry, template, p, rng)
+            prepare_message(plan, p, feature_definitions(entry), rng)
+            address, address_text = resolve_address(p, plan, rng, CHOICES)
+            name, gender, age, phone = resolve_caller(p, plan, rng, NAMES)
             plan.update(mode="assisted", default_wording={"wording": 0, "opening": 0, "order": 0})
             plan["extra_evidence"] = extra_evidence(
                 feature_definitions(entry), plan["answers"], plan
             )
             facts = {
-                "Адрес": "Москва, Лесная улица, д. 12" if not plan["service_call"] else "",
-                "ФИО заявителя": "Анна Иванова",
-                "Пол": "Женский",
-                "Возраст": 34,
+                "Адрес": address_text,
+                "ФИО заявителя": name,
+                "Пол": gender,
+                "Возраст": age,
                 "Состояние заявителя": "Взволнован",
                 "Время суток": "Вечер",
                 "Тип происшествия": row["name"],
@@ -60,8 +77,6 @@ def sample(template_id, *, seed=20260923, parameters=None, facts_override=None):
                 "Признаки": plan["answers"],
                 "Отметки карточки": flag_facts(plan["flags"], plan["victims_count"]),
             }
-            if plan["service_call"]:
-                facts.update({"ФИО заявителя": None, "Пол": None, "Возраст": None})
             facts.update(facts_override or {})
             return {
                 "facts": facts,
@@ -69,7 +84,8 @@ def sample(template_id, *, seed=20260923, parameters=None, facts_override=None):
                 "seed": seed,
                 "card": {
                     "data": {
-                        "caller_phone": "+7 (000) 000-12-34",
+                        "caller_phone": phone,
+                        "address_details": address,
                     }
                 },
             }

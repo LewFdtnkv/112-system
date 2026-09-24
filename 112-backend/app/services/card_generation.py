@@ -18,8 +18,21 @@ from app.services.catalog_rules import (
     feature_definitions,
 )
 
-PROMPT_VERSION = "card-generation-v3"
+PROMPT_VERSION = "card-generation-v4"
 CHOICES = {
+    "message_format": [
+        {"value": "call", "label": "Телефонное сообщение"},
+        {"value": "sms", "label": "СМС"},
+    ],
+    "caller_information": [
+        {"value": "full", "label": "ФИО, пол и возраст"},
+        {"value": "name_only", "label": "Только имя"},
+        {"value": "anonymous", "label": "Без сведений о заявителе"},
+    ],
+    "address_format": [
+        {"value": "structured", "label": "Улица и номер дома"},
+        {"value": "descriptive", "label": "Описательный адрес, ориентиры"},
+    ],
     "locality": ["Москва", "Зеленоград", "Троицк"],
     "street": [
         "Учебная улица",
@@ -167,52 +180,35 @@ async def enqueue(session, teacher_id: UUID, request: GenerationCreate):
             usage[template_id] = usage.get(template_id, 0) + 1
     jobs = []
     for i, key in enumerate(keys):
-        silent = generation_flags.is_silent(p, rng)
-        if silent:
-            entry = rng.choice(entries)
-            flags, victims_count = generation_flags.resolve_silent(p, rng)
-            plan = {
-                "silent": True,
-                "template_id": "silent-call",
-                "version": "situations-v1",
-                "flags": flags,
-            }
-            definitions, answers = [], {}
-        else:
-            entry, plan = planner.choose(entries, p, rng, usage)
-            definitions = feature_definitions(entry)
-            answers = plan["answers"]
-            flags, victims_count = plan["flags"], plan["victims_count"]
+        from app.services.generation.presentation import prepare_message
+
+        entry, plan = planner.choose(entries, p, rng, usage)
+        definitions = feature_definitions(entry)
+        prepare_message(plan, p, definitions, rng)
+        answers = plan["answers"]
+        flags, victims_count = plan["flags"], plan["victims_count"]
         plan["default_wording"] = {key: rng.randrange(2) for key in ("wording", "opening", "order")}
         plan["mode"] = p.mode
         if "phrases" in plan:
             rng.shuffle(plan["phrases"])
-        recommended = (
-            [] if silent else applicable_routes(entry, routes_by_entry[entry.id], {"ekp": answers})
-        )
+        recommended = applicable_routes(entry, routes_by_entry[entry.id], {"ekp": answers})
         service_ids = (
             p.service_ids if p.service_ids is not None else [r.service_id for r in recommended]
         )
         if not set(service_ids) <= services.keys():
             raise HTTPException(409, "Маршрут ЕКП содержит отключённую службу")
-        gender = pick(rng, "gender", p.gender)
-        age = p.age if p.age is not None else rng.randint(18, 80)
-        name = p.caller_name or rng.choice(NAMES[gender])
-        address = {
-            field: pick(rng, field, getattr(p, field)) for field in ("locality", "street", "house")
-        }
-        address["object"] = plan.get("object")
-        address_text = f"{address['locality']}, {address['street']}, д. {address['house']}"
-        if plan.get("service_call"):
-            address, address_text = {}, ""
-        phone = f"+7 (000) 000-{rng.randrange(100):02}-{rng.randrange(100):02}"
+        from app.services.generation.presentation import resolve_address, resolve_caller
+
+        name, gender_label, age, phone = resolve_caller(p, plan, rng, NAMES)
+        address, address_text = resolve_address(p, plan, rng, CHOICES)
         features = {f.label: answers[f.key] for f in definitions if f.key in answers}
         facts = {
             "Тип происшествия": entry.display_name or entry.name,
+            "Формат сообщения": label("message_format", plan["message_format"]),
             "Адрес": address_text,
             "Объект": address.get("object"),
             "ФИО заявителя": name,
-            "Пол": label("gender", gender),
+            "Пол": gender_label,
             "Возраст": age,
             "Учебный телефон": phone,
             "Признаки": features,
@@ -228,13 +224,8 @@ async def enqueue(session, teacher_id: UUID, request: GenerationCreate):
                 )
             },
         }
-        if plan.get("service_call"):
-            facts["ФИО заявителя"] = p.caller_name
-            facts["Пол"] = label("gender", gender) if p.gender else None
-            facts["Возраст"] = p.age
-            name = p.caller_name
         card = CardCreate(
-            title=plan.get("title", "Молчаливый вызов"),
+            title=plan["title"],
             classifier_version_id=version.id,
             classifier_entry_id=entry.id,
             instructions="",
@@ -246,38 +237,14 @@ async def enqueue(session, teacher_id: UUID, request: GenerationCreate):
                 "caller_phone": phone,
                 "caller_details": {"gender": facts["Пол"], "age": facts["Возраст"]},
                 "features": {"ekp": answers, "victimsCount": victims_count},
-                "additional_fields": {"details": flags},
+                "additional_fields": {"details": flags, "messageChannel": plan["message_format"]},
             },
             recipient_service_ids=service_ids,
             use_recommended_recipients=p.service_ids is None,
         )
-        if silent:
-            facts = {
-                "Тип происшествия": "Не установлен — молчаливый вызов",
-                "Адрес": "Неизвестен",
-                "Службы": [],
-                "Отметки карточки": generation_flags.facts(flags, None),
-                "Обстоятельства": (
-                    "Соединение установлено. В ответ на обращения оператора — "
-                    "тишина. Сведения не получены."
-                ),
-            }
-            card = CardCreate(
-                title="Молчаливый вызов",
-                classifier_version_id=version.id,
-                classifier_entry_id=None,
-                recipient_service_ids=[],
-                data={
-                    "description": (
-                        "Соединение установлено, заявитель молчит. Сведения не получены."
-                    ),
-                    "additional_fields": {"details": flags},
-                },
-            )
-        if not silent:
-            from app.services.generation.evidence import extra_evidence
+        from app.services.generation.evidence import extra_evidence
 
-            plan["extra_evidence"] = extra_evidence(definitions, answers, plan)
+        plan["extra_evidence"] = extra_evidence(definitions, answers, plan)
         await validate_card_definition(session, card)
         job = AIJob(
             purpose=AIPurpose.GENERATION,
