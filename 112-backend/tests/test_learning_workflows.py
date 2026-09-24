@@ -433,24 +433,46 @@ async def test_interface_guide_follows_saved_work_and_records_help(exercise, db_
 
 async def test_guide_exact_address_waits_for_full_match(exercise):
     from app.schemas.student import StudentAttemptRead
-    from app.services.learning_hints import operator_task
+    from app.services.interface_guide import choose_step
 
     e = exercise
     a = await e.fill(await launch(e, "introduction"))
     source = {
         "classifier_entry_id": str(e.t.entry.id),
-        "data": {"address_details": {"street": "Лесная улица", "house": "12"}},
+        "data": {
+            "address_text": "Лесная улица, 12, квартира 5",
+            "address_details": {"street": "Лесная улица", "house": "12", "apartment": "5"},
+        },
         "recipients": [],
     }
-    a["card"]["data"]["address_details"] = {"street": "Лесная", "house": "1"}
-    assert (
-        operator_task(source, StudentAttemptRead.model_validate(a), {})[0]
-        == "address_details.street"
-    )
-    a["card"]["data"]["address_details"]["street"] = "Лесная улица"
-    assert (
-        operator_task(source, StudentAttemptRead.model_validate(a), {})[0]
-        == "address_details.house"
-    )
-    a["card"]["data"]["address_details"]["house"] = "12"
-    assert operator_task(source, StudentAttemptRead.model_validate(a), {})[0] == "recipients"
+    address = {"street": "Лесная", "house": "1", "description": source["data"]["address_text"]}
+    a["card"]["data"]["address_details"] = address
+
+    def step():
+        return choose_step(
+            source, StudentAttemptRead.model_validate(a), [], {"guide.source": "seen"}
+        )
+
+    current, advance, allowed, _ = step()
+    assert current[:2] == ("guide.address", "address")
+    assert "Улица — Лесная улица" in current[3]
+    assert "Дом — 12" in current[3]
+    assert "Квартира — 5" in current[3]
+    assert "Описательный адрес здесь не нужен" in current[3]
+    assert advance == "action" and not allowed
+    address["street"] = "Лесная улица"
+    assert step()[0][0] == "guide.address"
+    address["house"] = "12"
+    assert step()[0][0] == "guide.address"
+    address["apartment"] = "5"
+    assert step()[0][0] == "guide.services"
+    address["house"] = "1"
+    assert step()[0][0] == "guide.address"
+
+    # A landmark address still has exact known fields, then an explicit free-text step.
+    source["data"]["address_details"]["description"] = "У беседки в парке"
+    assert step()[0][0] == "address_details.house"
+    address["house"] = "12"
+    current, advance, allowed, _ = step()
+    assert current[0] == "address_details.description"
+    assert advance == "confirm" and allowed

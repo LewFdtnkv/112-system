@@ -36,7 +36,7 @@ def is_free_text(source, field):
 
 
 def guide_text(task, target, goal, explanation, solution):
-    if task in {"guide.source", "guide.services"} or task.endswith(".finished"):
+    if task in {"guide.source", "guide.services", "guide.address"} or task.endswith(".finished"):
         return explanation
     instruction = INSTRUCTIONS.get(target, explanation)
     if task.startswith("features."):
@@ -70,6 +70,26 @@ def choose_step(source, read, goals, confirmed):
         )
     step = dds_task(read, goals) if read.dds else operator_task(source, read, confirmed)
     task, target, *_ = step
+    if (
+        not read.dds
+        and target == "address"
+        and task.startswith("address_details.")
+        and not (
+            (source.get("data", {}).get("address_details") or {}).get("description") or ""
+        ).strip()
+    ):
+        fields = [
+            f
+            for f in check_fields(source, read).fields
+            if f.field.startswith("address_details.") and f.scored
+        ]
+        answers = "; ".join(f"{f.label} — {f.expected}" for f in fields)
+        text = (
+            "Заполните адрес по условию задачи в отдельных полях. "
+            "Неизвестные сведения оставьте пустыми. Описательный адрес здесь не нужен.\n\n"
+            f"{answers}."
+        )
+        return (("guide.address", "address", "", text, ""), "action", False, None)
     if not read.dds and target in {"notification", "submit"} and "guide.services" not in confirmed:
         expected = {str(r["service_id"]) for r in source.get("recipients", [])}
         actual = {str(r.service_id) for r in read.recipient_services}
