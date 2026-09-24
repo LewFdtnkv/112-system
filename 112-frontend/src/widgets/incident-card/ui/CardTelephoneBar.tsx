@@ -37,7 +37,11 @@ export function CardTelephoneBar({
           ["onSite", "Телефон на месте"],
         ] as const
       ).map(([key, label]) => (
-        <div className="arm-phone" key={key}>
+        <div
+          className="arm-phone"
+          key={key}
+          data-guide-target={key === "provided" ? "caller_phone" : undefined}
+        >
           <div className="arm-phone__tools">
             <ArmIconButton
               icon="phone"

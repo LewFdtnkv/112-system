@@ -60,6 +60,7 @@ export function CardAddressPanel({ viewing, onMap, onTranslate }: Props) {
     >
       <div className="arm-applicant" data-learning-target="caller">
         <ArmField
+          data-guide-target="caller_name"
           label="Заявитель"
           inline
           placeholder="Фамилия и имя заявителя"
@@ -68,6 +69,7 @@ export function CardAddressPanel({ viewing, onMap, onTranslate }: Props) {
           onChange={(e) => setField("callerName", e.target.value)}
         />
         <ArmSelect
+          data-guide-target="additional_fields.details.callerStatus"
           label="Статус заявителя"
           className="arm-applicant__status"
           disabled={callerDisabled}
@@ -80,6 +82,7 @@ export function CardAddressPanel({ viewing, onMap, onTranslate }: Props) {
           <option>Пострадавший</option>
         </ArmSelect>
         <ArmSelect
+          data-guide-target="additional_fields.details.callerGender"
           label="Пол заявителя"
           disabled={callerDisabled}
           value={fields.details?.callerGender ?? ""}
@@ -90,6 +93,7 @@ export function CardAddressPanel({ viewing, onMap, onTranslate }: Props) {
           <option>Женский</option>
         </ArmSelect>
         <ArmField
+          data-guide-target="additional_fields.details.callerAge"
           label="Возраст заявителя"
           inline
           type="number"
@@ -151,6 +155,7 @@ export function CardAddressPanel({ viewing, onMap, onTranslate }: Props) {
           ).map(([key, label, fallback, area]) => (
             <ArmField
               key={key}
+              data-guide-target={`address_details.${key}`}
               className={`arm-address-grid__${area}`}
               label={label}
               disabled={addressDisabled}
@@ -160,6 +165,7 @@ export function CardAddressPanel({ viewing, onMap, onTranslate }: Props) {
           ))}
         </div>
         <ArmTextarea
+          data-guide-target="address_details.description"
           label="Описательный адрес"
           disabled={addressDisabled}
           rows={2}

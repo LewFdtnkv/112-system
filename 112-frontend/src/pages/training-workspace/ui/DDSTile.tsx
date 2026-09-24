@@ -2,6 +2,7 @@ import { ddsTime } from "../lib/ddsTime";
 import type { DDSTileProps } from "../types/DDSTile";
 
 export function DDSTile({
+  guideTarget,
   name,
   title,
   status,
@@ -13,7 +14,10 @@ export function DDSTile({
   editDisabled,
 }: DDSTileProps) {
   return (
-    <div className={`dds-tile-shell dds-tile-shell--${kind}`}>
+    <div
+      data-guide-target={guideTarget}
+      className={`dds-tile-shell dds-tile-shell--${kind}`}
+    >
       <button
         type="button"
         className={`arm-service-tile ${selected ? `dds-${kind}-active` : ""}`}

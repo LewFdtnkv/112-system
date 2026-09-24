@@ -39,7 +39,7 @@ export function LearningSettings({
           <button
             key={kind}
             type="button"
-            disabled={kind === "introduction" || kind === "worked_example"}
+            disabled={kind === "worked_example"}
             aria-pressed={value.kind === kind}
             onClick={() =>
               onChange({
@@ -49,7 +49,11 @@ export function LearningSettings({
                   ? value.target_skills
                   : [],
                 assistance:
-                  kind === "assessment" ? noAssistance() : value.assistance,
+                  kind === "assessment"
+                    ? noAssistance()
+                    : kind === "introduction"
+                      ? { max_level: "solution", on_request: true }
+                      : value.assistance,
               })
             }
           >
@@ -146,6 +150,15 @@ export function LearningSettings({
             )}
           </>
         )}
+        {value.kind === "introduction" && (
+          <Alert severity="info">
+            Ученик работает в настоящей карточке: подсветка показывает нужный
+            элемент, объясняет его назначение и даёт пример заполнения.
+            Следующий шаг выбирается по сохранённым действиям. Сопровождение
+            можно свернуть и включить снова. Результат с такой помощью не
+            подтверждает самостоятельное владение навыком.
+          </Alert>
+        )}
         {!focused && (
           <p>
             Выполняется вся ситуация целиком. Предзаполнение отдельных навыков
@@ -156,7 +169,9 @@ export function LearningSettings({
           select
           label="Максимальная помощь"
           value={value.assistance.max_level}
-          disabled={value.kind === "assessment"}
+          disabled={
+            value.kind === "assessment" || value.kind === "introduction"
+          }
           onChange={(e) =>
             onChange({
               ...value,
@@ -179,6 +194,7 @@ export function LearningSettings({
             тренировок.
           </Alert>
         ) : (
+          value.kind !== "introduction" &&
           value.assistance.max_level !== "none" && (
             <Alert severity="info">
               После паузы система напоминает оставшуюся цель текстом. Более

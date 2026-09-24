@@ -22,6 +22,7 @@ export function FeatureInput({
   return (
     <div
       className="structured-feature arm-question"
+      data-guide-target={`features.ekp.${feature.key}`}
       data-feedback={feedback?.tone}
       title={feedback?.text}
     >

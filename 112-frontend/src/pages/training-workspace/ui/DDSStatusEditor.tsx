@@ -37,6 +37,7 @@ export function DDSStatusEditor() {
       </DialogTitle>
       <DialogContent>
         <form
+          data-guide-target="dds.editor"
           onSubmit={(e) => {
             e.preventDefault();
             w.save.mutate();

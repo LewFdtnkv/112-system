@@ -76,6 +76,7 @@ export function CardClassification({ viewing }: Props) {
           <div className="arm-victim-bar__group">
             <button
               disabled={disabled}
+              data-guide-target="additional_fields.details.hasVictims"
               onClick={() => editor.setVictims(!hasVictims)}
               aria-pressed={hasVictims}
               className={hasVictims ? "is-selected" : ""}
@@ -84,6 +85,7 @@ export function CardClassification({ viewing }: Props) {
             </button>
             <button
               disabled={disabled}
+              data-guide-target="additional_fields.details.refusedAmbulance"
               aria-pressed={fields.details?.refusedAmbulance ?? false}
               onClick={() =>
                 setDetail("refusedAmbulance", !fields.details?.refusedAmbulance)
@@ -95,6 +97,7 @@ export function CardClassification({ viewing }: Props) {
             </button>
             <button
               disabled={disabled}
+              data-guide-target="additional_fields.details.blocked"
               aria-pressed={fields.details?.blocked ?? false}
               onClick={() => setDetail("blocked", !fields.details?.blocked)}
             >
@@ -106,6 +109,7 @@ export function CardClassification({ viewing }: Props) {
           <div className="arm-victim-bar__group arm-victim-bar__special">
             <button
               disabled={disabled}
+              data-guide-target="additional_fields.details.noContact"
               aria-pressed={fields.details?.noContact ?? false}
               onClick={() => setDetail("noContact", !fields.details?.noContact)}
             >
@@ -113,6 +117,7 @@ export function CardClassification({ viewing }: Props) {
             </button>
             <button
               disabled={disabled}
+              data-guide-target="additional_fields.details.callDropped"
               aria-pressed={fields.details?.callDropped ?? false}
               onClick={() =>
                 setDetail("callDropped", !fields.details?.callDropped)
@@ -153,6 +158,7 @@ export function CardClassification({ viewing }: Props) {
         <>
           <div
             className="arm-category-search"
+            data-guide-target="classifier_entry_id"
             onBlur={(event) => {
               if (!event.currentTarget.contains(event.relatedTarget))
                 setChoosing(false);
@@ -229,6 +235,7 @@ export function CardClassification({ viewing }: Props) {
                   <div className="arm-question">
                     <span>Уточнение</span>
                     <ArmField
+                      data-guide-target="additional_fields.details.classificationDescription"
                       label="Уточнение типа происшествия"
                       inline
                       disabled={disabled}

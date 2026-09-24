@@ -14,7 +14,7 @@ export const lessonKindLabels: Record<LessonKind, string> = {
   review: "Повторение",
 };
 export const lessonKindDescriptions: Record<LessonKind, string> = {
-  introduction: "Первые шаги за рабочим местом. Появится позже.",
+  introduction: "Пошаговое выполнение с подсветкой и объяснением каждого действия.",
   worked_example: "Пошаговый разбор решения. Появится позже.",
   skill_practice: "Сосредоточиться на выбранных навыках.",
   practice: "Пройти все карточки сценария целиком.",
@@ -22,7 +22,7 @@ export const lessonKindDescriptions: Record<LessonKind, string> = {
   review: "Повторить выбранные темы на новом задании.",
 };
 export const learningSkillLabels: Record<LearningSkill, string> = {
-  interface: "Работа с интерфейсом (позже)",
+  interface: "Работа с интерфейсом",
   address: "Адрес происшествия",
   caller: "Сведения о заявителе",
   classification: "Тип и признаки происшествия",
@@ -49,6 +49,7 @@ export const defaultLearningPolicy = (): LearningPolicy => ({
   assistance: noAssistance(),
 });
 export const availableLessonKinds: LessonKind[] = [
+  "introduction",
   "practice",
   "skill_practice",
   "review",

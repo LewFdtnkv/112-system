@@ -1,3 +1,4 @@
+import { InterfaceGuide } from "./InterfaceGuide";
 import { learningSkillLabels } from "@/entities/training";
 import type { LearningSkill } from "@/entities/training";
 import { getApiError } from "@/shared/api";
@@ -5,6 +6,13 @@ import { useLearningHelp } from "../model/useLearningHelp";
 import type { LearningHelpProps } from "../types";
 import "../styles/learning-help.scss";
 export function LearningHelp(props: LearningHelpProps) {
+  return props.attempt.learning.kind === "introduction" ? (
+    <InterfaceGuide {...props} />
+  ) : (
+    <ContextualHelp {...props} />
+  );
+}
+function ContextualHelp(props: LearningHelpProps) {
   const { enabled, hint, request, next, dismiss } = useLearningHelp(props);
   const scope = props.attempt.exercise_scope;
   if (!enabled && !scope) return null;

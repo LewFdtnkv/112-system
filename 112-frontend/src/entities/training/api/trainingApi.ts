@@ -48,7 +48,7 @@ export const trainingApi = {
     attemptId: string,
     request: {
       request_id: string;
-      trigger: "request" | "automatic";
+      trigger: "request" | "automatic" | "guided";
       level: "goal" | "explanation" | "solution";
     },
   ) =>

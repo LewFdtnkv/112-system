@@ -29,6 +29,7 @@ export function DDSFooter() {
   const serviceTile = (r: (typeof dds.responses)[number]) => (
     <DDSTile
       key={r.service_id}
+      guideTarget={r.service_id === dds.profile.service_id ? "dds.own_service" : undefined}
       name={r.short_name || r.name}
       title={r.name}
       status="Добавлена"
@@ -49,6 +50,7 @@ export function DDSFooter() {
         <ArmIconButton
           icon={anyOpen ? "collapse" : "expand"}
           className="dds-expand dds-footer-control"
+          data-guide-target="dds.expand"
           label={
             anyOpen
               ? "Свернуть все службы и бригады"
@@ -100,6 +102,7 @@ export function DDSFooter() {
             dds.crews?.map((c) => (
               <DDSTile
                 key={c.id}
+                guideTarget={`crew.${c.crew_code}`}
                 name={c.name}
                 kind="crew"
                 onEdit={() => w.openEditor(c.crew_code)}
@@ -120,6 +123,7 @@ export function DDSFooter() {
               w.attempt.exercise_scope.includes("dds_crews")) && (
               <button
                 data-learning-target="dds_crews"
+                data-guide-target="dds.assign"
                 className="arm-small-button"
                 disabled={busy || !available.length}
                 onClick={() => w.openEditor("")}

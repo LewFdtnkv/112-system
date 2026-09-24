@@ -1,0 +1,113 @@
+.interface-guide-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 8px 12px;
+  background: #edf4fb;
+  border-bottom: 1px solid #ccdcea;
+  font-size: 13px;
+}
+.interface-guide-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 1600;
+  pointer-events: none;
+}
+.interface-guide-veil {
+  position: fixed;
+  inset: 0;
+  path {
+    fill: rgba(12, 24, 39, 0.64);
+  }
+  rect {
+    fill: none;
+    stroke: #72c2ff;
+    stroke-width: 3;
+  }
+}
+.interface-guide-panel {
+  position: fixed;
+  pointer-events: auto;
+  box-sizing: border-box;
+  overflow: auto;
+  background: #fff;
+  color: #233548;
+  border: 1px solid #d4e1ee;
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 12px 44px #071b3d55;
+  font:
+    14px/1.5 Arial,
+    sans-serif;
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #437098;
+    font-size: 10px;
+    letter-spacing: 1px;
+    font-weight: 700;
+  }
+  h2 {
+    font-size: 19px;
+    margin: 8px 0 12px;
+  }
+  p {
+    margin: 10px 0;
+  }
+  .interface-guide-action {
+    border-left: 3px solid #287cbc;
+    padding-left: 10px;
+    font-weight: 600;
+  }
+  footer {
+    border-top: 1px solid #e4ebf1;
+    margin-top: 16px;
+    padding-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  small {
+    color: #52697d;
+  }
+  button {
+    cursor: pointer;
+    border: 1px solid #b7cede;
+    background: #edf5fc;
+    color: #175789;
+    border-radius: 6px;
+    padding: 8px 12px;
+    transition:
+      background 0.15s,
+      transform 0.1s;
+    user-select: none;
+  }
+  button:hover {
+    background: #d8ebfa;
+  }
+  button:active {
+    transform: translateY(1px);
+    background: #bdddf6;
+  }
+  button:focus-visible {
+    outline: 2px solid #287cbc;
+    outline-offset: 2px;
+  }
+  button:disabled {
+    cursor: wait;
+    opacity: 0.65;
+  }
+  header button {
+    padding: 0 7px;
+    font-size: 22px;
+    line-height: 26px;
+    background: transparent;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .interface-guide-panel button {
+    transition: none;
+  }
+}

@@ -1,4 +1,5 @@
 export interface DDSTileProps {
+  guideTarget?: string;
   name: string;
   title?: string;
   status: string;
