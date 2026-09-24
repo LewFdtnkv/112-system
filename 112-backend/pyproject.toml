@@ -17,6 +17,7 @@ dependencies = [
     "sqlalchemy[asyncio]>=2.0.36,<2.1",
     "uvicorn[standard]>=0.34,<1",
     "pgvector>=0.4,<0.5",
+    "faker==40.39.0",
 ]
 
 [dependency-groups]

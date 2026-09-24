@@ -7,9 +7,9 @@ from fastapi import HTTPException
 
 from app.services.catalog_rules import feature_is_visible
 from app.services.generation.catalogs import (
+    CALLER_NAME_SOURCE,
     address_catalog,
     matching_addresses,
-    name_catalog,
     random_caller,
 )
 from app.services.generation.evidence import BOOLEAN_PHRASES
@@ -70,7 +70,7 @@ def resolve_caller(p, plan, rng):
     else:
         name, gender = random_caller(rng, p.gender, name_only=info == "name_only")
     plan["caller_name_source"] = (
-        None if info == "anonymous" else "teacher" if p.caller_name else name_catalog()["version"]
+        None if info == "anonymous" else "teacher" if p.caller_name else CALLER_NAME_SOURCE
     )
     # A custom name without an explicit gender must not receive a made-up one.
     return (

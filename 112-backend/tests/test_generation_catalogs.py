@@ -2,13 +2,15 @@ import random
 from uuid import UUID
 
 import pytest
+from faker.generator import random as faker_random
+from faker.providers.person.ru_RU import Provider as RussianPerson
 from fastapi import HTTPException
 from test_card_generation import payload
 from test_card_generation import teaching as teaching
 
 from app.models import AIJob, CardTemplate
 from app.schemas.generation import GenerationParameters
-from app.services.generation.catalogs import address_catalog, name_catalog, random_caller
+from app.services.generation.catalogs import CALLER_NAME_SOURCE, address_catalog, random_caller
 from app.services.generation.llm import compose
 from app.services.generation.presentation import resolve_address, resolve_caller
 from app.services.generation_worker import claim, finish
@@ -27,10 +29,15 @@ def plan(**kwargs):
 
 
 def test_random_names_use_independent_gendered_dictionaries_with_optional_patronymic():
-    catalog = name_catalog()["genders"]
     for gender in ("male", "female"):
-        words = catalog[gender]
-        assert all(len(values) == len(set(values)) >= 79 for values in words.values())
+        words = {
+            key: getattr(RussianPerson, f"{prefix}_names_{gender}")
+            for key, prefix in (
+                ("first_name", "first"),
+                ("last_name", "last"),
+                ("patronymic", "middle"),
+            )
+        }
         chosen = []
         for seed in range(1000):
             name, actual_gender = random_caller(random.Random(seed), gender)
@@ -45,6 +52,16 @@ def test_random_names_use_independent_gendered_dictionaries_with_optional_patron
         first = chosen[0].split()[1]
         assert len({n.split()[0] for n in chosen if n.split()[1] == first}) > 1
     assert {random_caller(random.Random(seed))[1] for seed in range(20)} == {"male", "female"}
+
+
+def test_faker_uses_per_card_randomness_without_changing_shared_state():
+    global_before = faker_random.getstate()
+    left, right = random.Random(112), random.Random(112)
+    for _ in range(10):
+        expected = random_caller(left)
+        random_caller(random.Random(999))
+        assert random_caller(right) == expected
+    assert faker_random.getstate() == global_before
 
 
 def test_manual_names_are_preserved_and_short_or_anonymous_messages_stay_short():
@@ -63,7 +80,7 @@ def test_manual_names_are_preserved_and_short_or_anonymous_messages_stay_short()
         full = resolve_caller(p, plan(), random.Random(1))
         assert full[1] == label
         short = resolve_caller(p, plan(caller_information="name_only"), random.Random(1))
-        assert short[0] in name_catalog()["genders"][gender]["first_name"]
+        assert short[0] in getattr(RussianPerson, f"first_names_{gender}")
         assert short[1:3] == (None, None)
     assert resolve_caller(
         GenerationParameters(),
@@ -133,7 +150,7 @@ async def test_random_name_and_fixed_address_survive_enqueue_and_worker(teaching
     name = jobs[0]["facts"]["ФИО заявителя"]
     assert await t.post("card-generations", request, expected=202) == jobs
     job = await db_session.get(AIJob, UUID(jobs[0]["id"]))
-    assert job.input["narrative"]["caller_name_source"] == name_catalog()["version"]
+    assert job.input["narrative"]["caller_name_source"] == CALLER_NAME_SOURCE
     assert job.input["narrative"]["address_record_id"] == a["id"]
     job = await claim(db_session)
     text, metadata = compose(job)
