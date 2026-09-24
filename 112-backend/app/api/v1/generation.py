@@ -9,7 +9,8 @@ from app.models import AIJob, User
 from app.models.enums import AIPurpose, JobStatus
 from app.schemas.generation import GenerationCreate, GenerationRead
 from app.schemas.views import Page
-from app.services.card_generation import CHOICES, NAMES, PROMPT_VERSION, enqueue, read_job
+from app.services.card_generation import CHOICES, PROMPT_VERSION, enqueue, read_job
+from app.services.generation.catalogs import PATRONYMIC_PROBABILITY, address_catalog
 
 router = APIRouter(prefix="/card-generations", tags=["card generation"])
 
@@ -21,7 +22,9 @@ async def options(teacher: TeacherDep):
     version, templates = library()
     return {
         **CHOICES,
-        "caller_name": NAMES,
+        "patronymic_probability": PATRONYMIC_PROBABILITY,
+        "addresses": address_catalog()["addresses"],
+        "address_source": {k: address_catalog()[k] for k in ("source", "source_url", "license")},
         "max_count": 10,
         "template_count": len(templates),
         "template_version": version,

@@ -107,7 +107,7 @@ async def test_explicit_services_override_ekp_and_are_preserved_in_worker(teachi
     assert await finish(db_session, job_id, token, TEXT, {"model": "test"})
     await db_session.refresh(job)
     card = await db_session.get(CardTemplate, job.card_template_id)
-    assert "улица" in card.caller_message
+    assert card.data["address_details"]["street"] in card.caller_message
     assert card.data["caller_name"] in card.caller_message
     assert extra.name not in card.caller_message
     assert (

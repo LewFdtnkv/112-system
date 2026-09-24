@@ -11,7 +11,6 @@ from test_student_workflow import exercise as exercise
 from app.models import AIJob, CardTemplate
 from app.schemas.generation import GenerationParameters
 from app.schemas.student import StudentAttemptRead
-from app.services.card_generation import CHOICES, NAMES
 from app.services.catalog_rules import feature_definitions, validate_answers
 from app.services.field_evaluation import check_fields
 from app.services.generation.evidence import extra_evidence
@@ -32,8 +31,8 @@ def prepared(entry, template, p, seed=2):
     validate_answers(definitions, plan["answers"])
     plan.update(mode="template", default_wording={"wording": 0, "opening": 0, "order": 0})
     plan["extra_evidence"] = extra_evidence(definitions, plan["answers"], plan)
-    address, text = resolve_address(p, plan, rng, CHOICES)
-    name, gender, age, phone = resolve_caller(p, plan, rng, NAMES)
+    address, text = resolve_address(p, plan, rng)
+    name, gender, age, phone = resolve_caller(p, plan, rng)
     return {
         "narrative": plan,
         "facts": {

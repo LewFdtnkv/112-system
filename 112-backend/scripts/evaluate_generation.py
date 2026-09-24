@@ -9,7 +9,6 @@ from types import SimpleNamespace
 
 from app.core.config import settings
 from app.schemas.generation import GenerationParameters
-from app.services.card_generation import CHOICES, NAMES
 from app.services.catalog_rules import feature_definitions
 from app.services.generation.evidence import extra_evidence
 from app.services.generation.library import for_entry
@@ -59,8 +58,8 @@ def sample(template_id, *, seed=20260923, parameters=None, facts_override=None):
             rng = random.Random(seed)
             plan = build(entry, template, p, rng)
             prepare_message(plan, p, feature_definitions(entry), rng)
-            address, address_text = resolve_address(p, plan, rng, CHOICES)
-            name, gender, age, phone = resolve_caller(p, plan, rng, NAMES)
+            address, address_text = resolve_address(p, plan, rng)
+            name, gender, age, phone = resolve_caller(p, plan, rng)
             plan.update(mode="assisted", default_wording={"wording": 0, "opening": 0, "order": 0})
             plan["extra_evidence"] = extra_evidence(
                 feature_definitions(entry), plan["answers"], plan

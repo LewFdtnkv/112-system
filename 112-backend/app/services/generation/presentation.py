@@ -3,7 +3,15 @@
 import json
 from pathlib import Path
 
+from fastapi import HTTPException
+
 from app.services.catalog_rules import feature_is_visible
+from app.services.generation.catalogs import (
+    address_catalog,
+    matching_addresses,
+    name_catalog,
+    random_caller,
+)
 from app.services.generation.evidence import BOOLEAN_PHRASES
 
 
@@ -53,17 +61,21 @@ def prepare_message(plan, p, definitions, rng):
         plan["victims_count"] = None
 
 
-def resolve_caller(p, plan, rng, names):
+def resolve_caller(p, plan, rng):
     info = plan["caller_information"]
-    gender = p.gender or rng.choice(["male", "female"])
-    name = p.caller_name or rng.choice(names[gender])
     if info == "anonymous":
-        name = None
-    elif info == "name_only" and not p.caller_name:
-        name = name.split()[0]
+        name, gender = None, None
+    elif p.caller_name:
+        name, gender = p.caller_name, p.gender
+    else:
+        name, gender = random_caller(rng, p.gender, name_only=info == "name_only")
+    plan["caller_name_source"] = (
+        None if info == "anonymous" else "teacher" if p.caller_name else name_catalog()["version"]
+    )
+    # A custom name without an explicit gender must not receive a made-up one.
     return (
         name,
-        ("Мужской" if gender == "male" else "Женский") if info == "full" else None,
+        {"male": "Мужской", "female": "Женский"}.get(gender) if info == "full" else None,
         (p.age if p.age is not None else rng.randint(18, 80)) if info == "full" else None,
         f"+7 (000) 000-{rng.randrange(100):02}-{rng.randrange(100):02}"
         if plan["message_format"] == "call"
@@ -71,10 +83,27 @@ def resolve_caller(p, plan, rng, names):
     )
 
 
-def resolve_address(p, plan, rng, choices):
+def resolve_address(p, plan, rng):
     if plan["service_call"]:
         return {}, ""
-    address = {k: getattr(p, k) or rng.choice(choices[k]) for k in ("locality", "street")}
+    matches = matching_addresses(p)
+    selected = rng.choice(matches) if matches else None
+    if not selected and (
+        not p.street
+        or not p.house
+        and not (p.address_format == "descriptive" or p.address_description)
+    ):
+        raise HTTPException(
+            422,
+            "В справочнике нет подходящего адреса. Укажите улицу и дом вручную "
+            "или выберите описательный адрес.",
+        )
+    address = {
+        "locality": p.locality or (selected["locality"] if selected else "Москва"),
+        "street": p.street or selected["street"],
+    }
+    plan["address_record_id"] = selected["id"] if selected else None
+    plan["address_source"] = address_catalog()["version"] if selected else "teacher"
     if plan["message_format"] == "call":
         address["object"] = plan["object"]
     descriptive = p.address_format == "descriptive" or bool(p.address_description)
@@ -95,5 +124,5 @@ def resolve_address(p, plan, rng, choices):
             plan["address_template"] = template["id"]
         address["description"] = description
         return address, f"{address['locality']}, {address['street']}, {description}"
-    address["house"] = p.house or rng.choice(choices["house"])
+    address["house"] = p.house or selected["house"]
     return address, f"{address['locality']}, {address['street']}, д. {address['house']}"

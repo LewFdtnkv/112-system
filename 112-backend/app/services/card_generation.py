@@ -25,7 +25,7 @@ CHOICES = {
         {"value": "sms", "label": "СМС"},
     ],
     "caller_information": [
-        {"value": "full", "label": "ФИО, пол и возраст"},
+        {"value": "full", "label": "ФИО или ФИ, пол и возраст"},
         {"value": "name_only", "label": "Только имя"},
         {"value": "anonymous", "label": "Без сведений о заявителе"},
     ],
@@ -33,15 +33,6 @@ CHOICES = {
         {"value": "structured", "label": "Улица и номер дома"},
         {"value": "descriptive", "label": "Описательный адрес, ориентиры"},
     ],
-    "locality": ["Москва", "Зеленоград", "Троицк"],
-    "street": [
-        "Учебная улица",
-        "улица Ленина",
-        "Лесная улица",
-        "Садовая улица",
-        "Центральная улица",
-    ],
-    "house": ["1", "7", "12", "24", "35", "48"],
     "object": ["жилой дом", "двор", "магазин", "дорога", "парк", "школа"],
     "gender": [{"value": "male", "label": "Мужской"}, {"value": "female", "label": "Женский"}],
     "time_of_day": [
@@ -60,10 +51,6 @@ CHOICES = {
         {"value": "normal", "label": "Обычное сообщение"},
         {"value": "detailed", "label": "Подробное сообщение"},
     ],
-}
-NAMES = {
-    "male": ["Александр Иванов", "Михаил Петров", "Дмитрий Соколов", "Андрей Орлов"],
-    "female": ["Анна Иванова", "Мария Петрова", "Елена Соколова", "Ольга Орлова"],
 }
 
 
@@ -199,8 +186,8 @@ async def enqueue(session, teacher_id: UUID, request: GenerationCreate):
             raise HTTPException(409, "Маршрут ЕКП содержит отключённую службу")
         from app.services.generation.presentation import resolve_address, resolve_caller
 
-        name, gender_label, age, phone = resolve_caller(p, plan, rng, NAMES)
-        address, address_text = resolve_address(p, plan, rng, CHOICES)
+        name, gender_label, age, phone = resolve_caller(p, plan, rng)
+        address, address_text = resolve_address(p, plan, rng)
         features = {f.label: answers[f.key] for f in definitions if f.key in answers}
         facts = {
             "Тип происшествия": entry.display_name or entry.name,
