@@ -1,4 +1,4 @@
-import { trainingApi } from "@/entities/training";
+import { catalogApi } from "@/entities/training";
 import { getApiError } from "@/shared/api";
 import { rowAction } from "@/shared/lib/rowAction";
 import { useDebounced } from "@/shared/lib/useDebounced";
@@ -36,20 +36,15 @@ export function CatalogRules({
   const query = useQuery({
     queryKey: ["catalog-rules", versionId, search, page],
     queryFn: ({ signal }) =>
-      trainingApi.catalogRules(
-        versionId,
-        { q: search, offset: page * 20 },
-        signal,
-      ),
+      catalogApi.rules(versionId, { q: search, offset: page * 20 }, signal),
   });
   const detail = useQuery({
     queryKey: ["catalog-rule", versionId, entryId],
     enabled: !!entryId,
-    queryFn: ({ signal }) =>
-      trainingApi.catalogRule(versionId, entryId!, signal),
+    queryFn: ({ signal }) => catalogApi.rule(versionId, entryId!, signal),
   });
   const clone = useMutation({
-    mutationFn: () => trainingApi.cloneCatalog(versionId, label),
+    mutationFn: () => catalogApi.clone(versionId, label),
     onSuccess: () => {
       onChanged();
       onClose();
@@ -57,7 +52,7 @@ export function CatalogRules({
   });
   const download = useMutation({
     mutationFn: async () => {
-      const blob = await trainingApi.exportCatalog(versionId);
+      const blob = await catalogApi.export(versionId);
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -182,7 +177,7 @@ export function CatalogRules({
                   initial={detail.data.entry}
                   editable={query.data?.version.status === "draft"}
                   save={(entry) =>
-                    trainingApi.updateCatalogRule(
+                    catalogApi.updateRule(
                       versionId,
                       entryId,
                       detail.data!.revision,

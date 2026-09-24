@@ -52,14 +52,14 @@ export function AttemptEditor(props: AttemptEditorProps) {
         remote={remote}
         trainingNotice={
           <>
-          <Telephone attemptId={attempt.id} completed={completed} />
-          <LearningHelp
-            attempt={attempt}
-            activity={activity}
-            busy={busy}
-            beforeRequest={beforeHint}
-            onHighlight={setHighlight}
-          />
+            <Telephone attemptId={attempt.id} completed={completed} />
+            <LearningHelp
+              attempt={attempt}
+              activity={activity}
+              busy={busy}
+              beforeRequest={beforeHint}
+              onHighlight={setHighlight}
+            />
           </>
         }
       />

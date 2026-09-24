@@ -14,7 +14,8 @@ export const lessonKindLabels: Record<LessonKind, string> = {
   review: "Повторение",
 };
 export const lessonKindDescriptions: Record<LessonKind, string> = {
-  introduction: "Пошаговое выполнение с подсветкой и объяснением каждого действия.",
+  introduction:
+    "Пошаговое выполнение с подсветкой и объяснением каждого действия.",
   worked_example: "Пошаговый разбор решения. Появится позже.",
   skill_practice: "Сосредоточиться на выбранных навыках.",
   practice: "Пройти все карточки сценария целиком.",

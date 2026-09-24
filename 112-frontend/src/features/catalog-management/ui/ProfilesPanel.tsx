@@ -1,5 +1,5 @@
 import {
-  trainingApi,
+  serviceProfileApi,
   type ProfileInput,
   type ServiceProfile,
 } from "@/entities/training";
@@ -51,12 +51,12 @@ export function ProfilesPanel() {
   const query = useQuery({
     queryKey: ["admin-profiles", page],
     queryFn: ({ signal }) =>
-      trainingApi.adminProfiles({ offset: page * 20 }, signal),
+      serviceProfileApi.adminList({ offset: page * 20 }, signal),
   });
   const detail = useQuery({
     queryKey: ["admin-profile", selected],
     enabled: !!selected,
-    queryFn: ({ signal }) => trainingApi.adminProfile(selected!, signal),
+    queryFn: ({ signal }) => serviceProfileApi.adminGet(selected!, signal),
   });
   const refresh = () => {
     void client.invalidateQueries({ queryKey: ["admin-profiles"] });
@@ -64,7 +64,7 @@ export function ProfilesPanel() {
     void client.invalidateQueries({ queryKey: ["profiles"] });
   };
   const publish = useMutation({
-    mutationFn: (id: string) => trainingApi.publishProfile(id),
+    mutationFn: (id: string) => serviceProfileApi.publish(id),
     onSuccess: refresh,
   });
   return (

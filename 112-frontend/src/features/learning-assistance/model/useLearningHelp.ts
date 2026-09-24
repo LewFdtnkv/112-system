@@ -1,5 +1,5 @@
 import type { HintRead } from "@/entities/training";
-import { trainingApi } from "@/entities/training";
+import { attemptApi, learningHelpApi } from "@/entities/training";
 import { randomUUID } from "@/shared/lib/uuid";
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
@@ -46,7 +46,7 @@ export function useLearningHelp({
     }) => {
       const before = current.current.activity;
       await beforeRequest?.();
-      const response = await trainingApi.hint(attempt.id, {
+      const response = await learningHelpApi.hint(attempt.id, {
         request_id: randomUUID(),
         trigger,
         level,
@@ -75,7 +75,7 @@ export function useLearningHelp({
       client_occurred_at: new Date().toISOString(),
       value: hintId,
     };
-    void trainingApi.observations(attempt.id, [event]).catch(() => {
+    void attemptApi.observations(attempt.id, [event]).catch(() => {
       // A display observation is optional; the authoritative issued hint is already persisted.
       seen.current.delete(hintId);
     });

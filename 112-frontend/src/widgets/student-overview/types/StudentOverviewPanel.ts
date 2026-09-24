@@ -10,3 +10,14 @@ export type StudentOverviewPanelProps = {
   own?: boolean;
   onActivePage: (page: number) => void;
 };
+
+export type StudentIdentityProps = {
+  user: StudentOverview["user"];
+  groups: string[];
+};
+export type StudentActiveLessonsProps = {
+  data: StudentOverview;
+  own: boolean;
+  onPage: (page: number) => void;
+};
+export type StudentPerformanceProps = { data: StudentOverview; own: boolean };

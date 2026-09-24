@@ -1,6 +1,6 @@
 import type { IncidentCardFields } from "@/entities/incident-card";
 import {
-  trainingApi,
+  attemptApi,
   useAttemptSnapshot,
   type Attempt,
 } from "@/entities/training";
@@ -20,7 +20,7 @@ export function useAttemptWrites(initial: Attempt) {
       const current = snapshot.latest();
       if (current.status !== "in_progress")
         throw new Error("Карточка уже завершена.");
-      return trainingApi.saveDraft(
+      return attemptApi.saveDraft(
         current.id,
         current.card.revision,
         fields.categoryId || null,
@@ -37,7 +37,7 @@ export function useAttemptWrites(initial: Attempt) {
     onMutate: snapshot.cancelRead,
     mutationFn: () => {
       const current = snapshot.latest();
-      return trainingApi.submit(current.id, current.card.revision);
+      return attemptApi.submit(current.id, current.card.revision);
     },
     onSuccess: snapshot.update,
   });

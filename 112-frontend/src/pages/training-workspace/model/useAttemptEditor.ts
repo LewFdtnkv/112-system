@@ -1,5 +1,5 @@
 import type { IncidentCardFields } from "@/entities/incident-card";
-import { trainingApi } from "@/entities/training";
+import { attemptApi } from "@/entities/training";
 import { attemptCard, type RemoteEditor } from "@/features/incident-editing";
 import { useAttemptAudit } from "@/features/operator-workspace";
 import { getApiError } from "@/shared/api";
@@ -49,17 +49,13 @@ export function useAttemptEditor({ initial, onSaved }: AttemptEditorProps) {
   const entries = useQuery({
     queryKey: ["attempt-entries", attempt.id, debounced],
     queryFn: ({ signal }) =>
-      trainingApi.attemptEntries(attempt.id, { q: debounced }, signal),
+      attemptApi.entries(attempt.id, { q: debounced }, signal),
     enabled: !completed && debounced.length >= 2 && search.trim().length >= 2,
   });
   const popular = useQuery({
     queryKey: ["attempt-popular-entries", attempt.id],
     queryFn: ({ signal }) =>
-      trainingApi.attemptEntries(
-        attempt.id,
-        { popular: true, limit: 11 },
-        signal,
-      ),
+      attemptApi.entries(attempt.id, { popular: true, limit: 11 }, signal),
     enabled: !completed,
     staleTime: Infinity,
   });
@@ -69,13 +65,13 @@ export function useAttemptEditor({ initial, onSaved }: AttemptEditorProps) {
       ["boolean-features-v1", "typed-features-v1"].includes(
         String(selected?.conditions?.format),
       )
-        ? trainingApi.previewRecipients(
+        ? attemptApi.previewRecipients(
             attempt.id,
             selected!.id,
             debouncedAnswers,
             signal,
           )
-        : trainingApi.recipients(attempt.id, selected!.id, signal),
+        : attemptApi.recipients(attempt.id, selected!.id, signal),
     enabled: !!selected && !completed,
   });
   const persist = writes.draft.mutateAsync;
@@ -153,11 +149,7 @@ export function useAttemptEditor({ initial, onSaved }: AttemptEditorProps) {
     notificationRequired: selected?.notification_required !== false,
     serviceQueryKey: attempt.id,
     loadServices: async (q, offset, signal) => {
-      const page = await trainingApi.attemptServices(
-        attempt.id,
-        { q, offset },
-        signal,
-      );
+      const page = await attemptApi.services(attempt.id, { q, offset }, signal);
       return {
         items: page.items.map((s) => ({
           id: s.id,

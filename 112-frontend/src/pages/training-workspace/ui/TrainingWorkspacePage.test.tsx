@@ -14,7 +14,8 @@ import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import {
   activityApi,
-  trainingApi,
+  attemptApi,
+  lessonApi,
   trainingKeys,
   type StudentLesson,
 } from "@/entities/training";
@@ -56,10 +57,10 @@ beforeEach(() => {
     offset: 0,
   });
   vi.spyOn(activityApi, "proctoring").mockResolvedValue(new Response());
-  vi.spyOn(trainingApi, "studentLesson").mockResolvedValue(lesson);
-  vi.spyOn(trainingApi, "attempt").mockResolvedValue(structuredClone(initial));
-  vi.spyOn(trainingApi, "attemptEntries").mockResolvedValue([]);
-  vi.spyOn(trainingApi, "recipients").mockResolvedValue([]);
+  vi.spyOn(lessonApi, "studentLesson").mockResolvedValue(lesson);
+  vi.spyOn(attemptApi, "get").mockResolvedValue(structuredClone(initial));
+  vi.spyOn(attemptApi, "entries").mockResolvedValue([]);
+  vi.spyOn(attemptApi, "recipients").mockResolvedValue([]);
 });
 afterEach(() => {
   cleanup();
@@ -127,7 +128,7 @@ it("does not overwrite edited fields when the shared server snapshot updates", a
 });
 
 it("retries a failed attempt query when the student opens it again", async () => {
-  vi.mocked(trainingApi.attempt).mockRejectedValueOnce(new Error("offline"));
+  vi.mocked(attemptApi.get).mockRejectedValueOnce(new Error("offline"));
   open();
   const button = await screen.findByRole("button", {
     name: "Продолжить заполнение",
@@ -136,10 +137,10 @@ it("retries a failed attempt query when the student opens it again", async () =>
   await waitFor(() => expect(button).toBeEnabled());
   await userEvent.click(button);
   expect(await screen.findByRole("dialog")).toBeVisible();
-  expect(trainingApi.attempt).toHaveBeenCalledTimes(2);
+  expect(attemptApi.get).toHaveBeenCalledTimes(2);
 });
 it("keeps entered values when saving fails", async () => {
-  vi.spyOn(trainingApi, "saveDraft").mockRejectedValue(new Error("offline"));
+  vi.spyOn(attemptApi, "saveDraft").mockRejectedValue(new Error("offline"));
   open();
   await userEvent.click(
     await screen.findByRole("button", { name: "Продолжить заполнение" }),
@@ -164,11 +165,11 @@ it("keeps entered values when saving fails", async () => {
   ).not.toBeInTheDocument();
 });
 it("submits only after saving and uses the returned revision", async () => {
-  vi.spyOn(trainingApi, "saveDraft").mockResolvedValue({
+  vi.spyOn(attemptApi, "saveDraft").mockResolvedValue({
     ...initial,
     card: { ...initial.card, revision: 4 },
   });
-  vi.spyOn(trainingApi, "submit").mockResolvedValue({
+  vi.spyOn(attemptApi, "submit").mockResolvedValue({
     ...initial,
     status: "completed",
     ended_at: "2026-09-19T10:01:00Z",
@@ -185,14 +186,14 @@ it("submits only after saving and uses the returned revision", async () => {
     }),
   );
   await waitFor(() =>
-    expect(trainingApi.submit).toHaveBeenCalledWith("attempt", 4),
+    expect(attemptApi.submit).toHaveBeenCalledWith("attempt", 4),
   );
   expect(
     await screen.findByText("Карточка передана на учебную проверку."),
   ).toBeVisible();
 });
 it("does not start an unavailable legacy DDS assignment", async () => {
-  vi.mocked(trainingApi.studentLesson).mockResolvedValue({
+  vi.mocked(lessonApi.studentLesson).mockResolvedValue({
     ...lesson,
     assignments: [
       {

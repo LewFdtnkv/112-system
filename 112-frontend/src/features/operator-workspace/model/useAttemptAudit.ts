@@ -1,4 +1,4 @@
-import { trainingApi } from "@/entities/training";
+import { attemptApi } from "@/entities/training";
 import { useEffect, useMemo, useState } from "react";
 import { createObservationBuffer } from "./observationBuffer";
 import { observationPersistence } from "./observationPersistence";
@@ -14,7 +14,7 @@ export function useAttemptAudit(
     () =>
       createObservationBuffer(
         initial,
-        (events) => trainingApi.observations(attemptId, events),
+        (events) => attemptApi.observations(attemptId, events),
         setFailed,
         observationPersistence(attemptId),
       ),

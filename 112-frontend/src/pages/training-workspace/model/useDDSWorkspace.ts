@@ -1,8 +1,4 @@
-import {
-  trainingApi,
-  useAttemptSnapshot,
-  type Attempt,
-} from "@/entities/training";
+import { ddsApi, useAttemptSnapshot, type Attempt } from "@/entities/training";
 import { randomUUID } from "@/shared/lib/uuid";
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -56,8 +52,8 @@ export function useDDSWorkspace({
         comment,
       };
       return target === "service"
-        ? trainingApi.ddsAction(attempt.id, data)
-        : trainingApi.ddsCrew(attempt.id, { ...data, crew_code: crewCode });
+        ? ddsApi.action(attempt.id, data)
+        : ddsApi.crew(attempt.id, { ...data, crew_code: crewCode });
     },
     onSuccess: (value) => {
       if (target === "crew") {
@@ -73,7 +69,7 @@ export function useDDSWorkspace({
     scope: { id: `attempt:${attempt.id}` },
     onMutate: snapshot.cancelRead,
     mutationFn: () =>
-      trainingApi.ddsSubmit(attempt.id, snapshot.latest().dds!.revision),
+      ddsApi.submit(attempt.id, snapshot.latest().dds!.revision),
     onSuccess: update,
   });
   const reload = () => {

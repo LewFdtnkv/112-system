@@ -1,31 +1,25 @@
-import { trainingApi, type ScenarioInput } from "@/entities/training";
+import { scenarioApi, type ScenarioInput } from "@/entities/training";
 import { getApiError } from "@/shared/api";
 import { routePaths } from "@/shared/config/routes";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { QueryState } from "@/shared/ui/QueryState";
-import { ServerSelect, type SelectOption } from "@/shared/ui/ServerSelect";
-import {
-  Alert,
-  Button,
-  MenuItem,
-  Paper,
-  Stack,
-  TextField,
-  Typography,
-} from "@mui/material";
+import { type SelectOption } from "@/shared/ui/ServerSelect";
+import { Alert, Button, MenuItem, Stack, TextField } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useScenarioCards } from "../model/useScenarioCards";
-import { styles } from "../styles/ScenarioEditorPage";
 import type { EditorProps } from "../types/ScenarioEditorPage";
 import { AssessmentPolicyFields } from "./AssessmentPolicyFields";
-import { DDSPolicyFields } from "./DDSPolicyFields";
+import { ScenarioCardsFields } from "./ScenarioCardsFields";
+import { ScenarioDdsSettings } from "./ScenarioDdsSettings";
+import { ScenarioMetadataFields } from "./ScenarioMetadataFields";
+
 export const ScenarioEditorPage = () => {
   const { scenarioId } = useParams();
   const query = useQuery({
     queryKey: ["scenario", scenarioId],
-    queryFn: ({ signal }) => trainingApi.scenario(scenarioId!, signal),
+    queryFn: ({ signal }) => scenarioApi.get(scenarioId!, signal),
     enabled: !!scenarioId,
   });
   return (
@@ -47,6 +41,7 @@ export const ScenarioEditorPage = () => {
     </Stack>
   );
 };
+
 function Editor({ initial }: EditorProps) {
   const navigate = useNavigate();
   const client = useQueryClient();
@@ -77,7 +72,6 @@ function Editor({ initial }: EditorProps) {
     },
   }));
   const schedule = useScenarioCards(initial);
-  const { cards, choice, setChoice, move } = schedule;
   const [profile, setProfile] = useState<SelectOption | null>(() =>
     initial?.service_profile_id
       ? { id: initial.service_profile_id, label: "Назначенный профиль ДДС" }
@@ -85,12 +79,14 @@ function Editor({ initial }: EditorProps) {
   );
   const save = useMutation({
     mutationFn: () =>
-      trainingApi.saveScenario(
+      scenarioApi.save(
         {
           ...form,
-          card_ids: cards.map((c) => c.id),
+          card_ids: schedule.cards.map((card) => card.id),
           arrival_offsets_seconds:
-            form.role === "dds" ? schedule.offsets : cards.map(() => 0),
+            form.role === "dds"
+              ? schedule.offsets
+              : schedule.cards.map(() => 0),
           dds_policy: form.role === "dds" ? form.dds_policy : null,
           service_profile_id:
             form.role === "dds" ? (profile?.id ?? null) : null,
@@ -107,8 +103,8 @@ function Editor({ initial }: EditorProps) {
     <Stack
       component="form"
       spacing={2}
-      onSubmit={(e) => {
-        e.preventDefault();
+      onSubmit={(event) => {
+        event.preventDefault();
         if (
           !initial ||
           window.confirm(
@@ -124,182 +120,44 @@ function Editor({ initial }: EditorProps) {
           условия.
         </Alert>
       )}
-      <TextField
-        label="Название сценария"
-        required
-        value={form.title}
-        onChange={(e) => setForm({ ...form, title: e.target.value })}
-      />
-      <TextField
-        label="Категория"
-        value={form.category}
-        onChange={(e) => setForm({ ...form, category: e.target.value })}
-      />
-      <Stack direction="row" sx={styles.metadata}>
-        <TextField
-          select
-          label="Сложность"
-          value={form.difficulty}
-          onChange={(e) =>
-            setForm({
-              ...form,
-              difficulty: e.target.value as ScenarioInput["difficulty"],
-            })
-          }
-        >
-          <MenuItem value="basic">Базовый</MenuItem>
-          <MenuItem value="intermediate">Средний</MenuItem>
-          <MenuItem value="advanced">Сложный</MenuItem>
-        </TextField>
-        <TextField
-          type="number"
-          label="Длительность, мин"
-          slotProps={{ htmlInput: { min: 1, max: 120 } }}
-          value={form.duration_minutes}
-          onChange={(e) =>
-            setForm({ ...form, duration_minutes: Number(e.target.value) })
-          }
-        />
-        <TextField
-          type="number"
-          label={
-            form.role === "dds"
-              ? "Норматив первой реакции, с"
-              : "Учебный ориентир, с"
-          }
-          helperText={
-            form.role === "dds"
-              ? "От поступления до первого ручного статуса бригады. Без автоматического штрафа."
-              : "Для таймера, не автоматической оценки"
-          }
-          slotProps={{ htmlInput: { min: 5, max: 600 } }}
-          value={form.norm_seconds}
-          onChange={(e) =>
-            setForm({ ...form, norm_seconds: Number(e.target.value) })
-          }
-        />
-      </Stack>
-      <TextField
-        select
-        label="Учебная роль"
-        value={form.role}
-        onChange={(e) =>
-          setForm({ ...form, role: e.target.value as ScenarioInput["role"] })
-        }
-      >
-        <MenuItem value="operator_112">Оператор 112</MenuItem>
-        <MenuItem value="dds">Диспетчер ДДС</MenuItem>
-      </TextField>
+      <ScenarioMetadataFields form={form} onChange={setForm} />
       {form.role === "dds" && (
-        <>
-          <Alert severity="warning">
-            Выберите опубликованный профиль и задайте сообщения и ожидаемые
-            действия ДДС. Аудио звонков подготовьте в разделе «Записи звонков».
-          </Alert>
-          <DDSPolicyFields
-            profileId={profile?.id}
-            value={form.dds_policy!}
-            onChange={(dds_policy) => setForm({ ...form, dds_policy })}
-          />
-          <ServerSelect
-            label="Профиль службы"
-            queryKey={["profiles"]}
-            value={profile}
-            onChange={(next) => {
-              setProfile(next);
-              setForm({
-                ...form,
-                dds_policy: { ...form.dds_policy!, required_crews: [] },
-              });
-            }}
-            load={async (q, signal) =>
-              (await trainingApi.profiles(q, signal)).map((p) => ({
-                id: p.id,
-                label: p.name,
-              }))
-            }
-          />
-        </>
+        <ScenarioDdsSettings
+          form={form}
+          profile={profile}
+          onChange={setForm}
+          onProfileChange={setProfile}
+        />
       )}
       <TextField
         label="Инструкция ученику"
         multiline
         minRows={3}
         value={form.instructions}
-        onChange={(e) => setForm({ ...form, instructions: e.target.value })}
-      />
-      <Typography variant="h6" component="h2">
-        {form.role === "dds"
-          ? "Расписание поступления карточек"
-          : "Карточки по порядку выполнения"}
-      </Typography>
-      <ServerSelect
-        label="Карточка из библиотеки"
-        queryKey={["card-options"]}
-        value={choice}
-        onChange={setChoice}
-        load={async (q, signal) =>
-          (await trainingApi.cards({ q }, signal)).items.map((c) => ({
-            id: c.id,
-            label: c.title,
-          }))
+        onChange={(event) =>
+          setForm({ ...form, instructions: event.target.value })
         }
       />
-      <Button
-        disabled={!choice || cards.length >= 100}
-        onClick={() => {
-          schedule.add();
-        }}
-      >
-        Добавить карточку
-      </Button>
-      {cards.map((c, i) => (
-        <Paper key={i} sx={styles.paper}>
-          <Stack direction="row" sx={styles.stack} spacing={1}>
-            <Typography sx={styles.typography}>
-              {i + 1}. {c.label}
-            </Typography>
-            <Button
-              disabled={i === 0}
-              onClick={() => move(i, -1)}
-              aria-label={`Вверх: ${c.label}`}
-            >
-              ↑
-            </Button>
-            <Button
-              disabled={i === cards.length - 1}
-              onClick={() => move(i, 1)}
-              aria-label={`Вниз: ${c.label}`}
-            >
-              ↓
-            </Button>
-            <Button onClick={() => schedule.remove(i)}>Убрать</Button>
-          </Stack>
-          {form.role === "dds" && (
-            <TextField
-              type="number"
-              label={
-                i === 0
-                  ? "Первая карточка — сразу"
-                  : "Через сколько секунд после предыдущей"
-              }
-              value={schedule.delays[i]}
-              disabled={i === 0}
-              slotProps={{ htmlInput: { min: 0, max: 86400, step: 1 } }}
-              onChange={(e) => schedule.changeDelay(i, Number(e.target.value))}
-              helperText={`Поступление через ${schedule.offsets[i]} с от старта занятия. Завершение предыдущей карточки не требуется.`}
-            />
-          )}
-        </Paper>
-      ))}
+      <ScenarioCardsFields
+        role={form.role}
+        cards={schedule.cards}
+        choice={schedule.choice}
+        delays={schedule.delays}
+        offsets={schedule.offsets}
+        onChoiceChange={schedule.setChoice}
+        onAdd={schedule.add}
+        onRemove={schedule.remove}
+        onMove={schedule.move}
+        onDelayChange={schedule.changeDelay}
+      />
       <TextField
         select
         label="Статус публикации"
         value={form.status}
-        onChange={(e) =>
+        onChange={(event) =>
           setForm({
             ...form,
-            status: e.target.value as ScenarioInput["status"],
+            status: event.target.value as ScenarioInput["status"],
           })
         }
       >
@@ -330,7 +188,9 @@ function Editor({ initial }: EditorProps) {
         type="submit"
         variant="contained"
         disabled={
-          save.isPending || !cards.length || (form.role === "dds" && !profile)
+          save.isPending ||
+          !schedule.cards.length ||
+          (form.role === "dds" && !profile)
         }
       >
         Сохранить сценарий

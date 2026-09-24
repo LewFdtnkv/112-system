@@ -4,7 +4,7 @@ import { cleanup, configure, render, screen } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import { afterEach, expect, it, vi } from "vitest";
 import { useAuthStore } from "@/entities/user";
-import { trainingApi } from "@/entities/training";
+import { lessonApi, reviewApi, scenarioApi } from "@/entities/training";
 import { AppProviders } from "../providers/AppProviders";
 import { routes } from "./routes";
 
@@ -42,7 +42,7 @@ it.each([
   expect(router.state.location.pathname).toBe("/403");
 });
 it("shows an empty real student account without fixture lessons", async () => {
-  vi.spyOn(trainingApi, "lessons").mockResolvedValue({
+  vi.spyOn(lessonApi, "list").mockResolvedValue({
     items: [],
     total: 0,
     limit: 20,
@@ -54,15 +54,15 @@ it("shows an empty real student account without fixture lessons", async () => {
   });
   renderPage("/student", "student");
   expect(await screen.findByText("Занятия не найдены")).toBeVisible();
-  expect(trainingApi.lessons).toHaveBeenCalledWith(
+  expect(lessonApi.list).toHaveBeenCalledWith(
     true,
     expect.objectContaining({ offset: 0 }),
     expect.any(AbortSignal),
   );
 });
 it("shows a fallback for legacy work without a persisted grade", async () => {
-  vi.spyOn(trainingApi, "evaluation").mockResolvedValue(null);
-  vi.spyOn(trainingApi, "studentLesson").mockResolvedValue({
+  vi.spyOn(reviewApi, "evaluation").mockResolvedValue(null);
+  vi.spyOn(lessonApi, "studentLesson").mockResolvedValue({
     learning: defaultLearningPolicy(),
     id: "lesson",
     title: "Сданная работа",
@@ -79,7 +79,7 @@ it("shows a fallback for legacy work without a persisted grade", async () => {
   expect(screen.queryByText(/Итог:/)).not.toBeInTheDocument();
 });
 it("shows a request failure with retry instead of demo fallback", async () => {
-  vi.spyOn(trainingApi, "scenarios").mockRejectedValue(new Error("offline"));
+  vi.spyOn(scenarioApi, "list").mockRejectedValue(new Error("offline"));
   renderPage("/scenarios", "teacher");
   expect(
     await screen.findByRole("button", { name: "Повторить" }),

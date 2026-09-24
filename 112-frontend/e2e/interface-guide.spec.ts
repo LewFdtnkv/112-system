@@ -44,7 +44,8 @@ test("interface guide follows saved fields, pauses, resumes and survives reload"
           json: { detail: "Учебная помощь временно недоступна" },
         });
       const a = fixture.currentAttempt();
-      const phoneDone = a.card.data.caller_phone.replace(/\D/g, "") === "79001234567";
+      const phoneDone =
+        a.card.data.caller_phone.replace(/\D/g, "") === "79001234567";
       const done = a.card.data.address_details.street === "Лесная улица";
       await route.fulfill({
         json: {

@@ -4,7 +4,7 @@ import type { PropsWithChildren } from "react";
 import { afterEach, expect, it, vi } from "vitest";
 import {
   attemptQueryOptions,
-  trainingApi,
+  attemptApi,
   trainingKeys,
   useAttemptSnapshot,
   type Attempt,
@@ -32,7 +32,7 @@ function setup() {
 it("serializes saves and submission and shares each returned revision with all observers", async () => {
   let finishFirst!: (value: Attempt) => void;
   const save = vi
-    .spyOn(trainingApi, "saveDraft")
+    .spyOn(attemptApi, "saveDraft")
     .mockImplementationOnce(
       () =>
         new Promise((resolve) => {
@@ -43,13 +43,11 @@ it("serializes saves and submission and shares each returned revision with all o
       ...initial,
       card: { ...initial.card, revision: 5 },
     });
-  const submit = vi
-    .spyOn(trainingApi, "submit")
-    .mockResolvedValue({
-      ...initial,
-      status: "completed",
-      card: { ...initial.card, revision: 6 },
-    });
+  const submit = vi.spyOn(attemptApi, "submit").mockResolvedValue({
+    ...initial,
+    status: "completed",
+    card: { ...initial.card, revision: 6 },
+  });
   const { writes, observer, client } = setup();
   let first!: Promise<Attempt>,
     second!: Promise<Attempt>,
@@ -84,7 +82,7 @@ it("serializes saves and submission and shares each returned revision with all o
 
 it("keeps the confirmed revision after failure and lets a later save recover", async () => {
   const save = vi
-    .spyOn(trainingApi, "saveDraft")
+    .spyOn(attemptApi, "saveDraft")
     .mockRejectedValueOnce(new Error("offline"))
     .mockResolvedValueOnce({
       ...initial,
@@ -108,13 +106,13 @@ it("keeps the confirmed revision after failure and lets a later save recover", a
 
 it("cancels a stale read before saving so it cannot overwrite a new revision", async () => {
   let finishRead!: (value: Attempt) => void;
-  const read = vi.spyOn(trainingApi, "attempt").mockImplementation(
+  const read = vi.spyOn(attemptApi, "get").mockImplementation(
     () =>
       new Promise((resolve) => {
         finishRead = resolve;
       }),
   );
-  vi.spyOn(trainingApi, "saveDraft").mockResolvedValue({
+  vi.spyOn(attemptApi, "saveDraft").mockResolvedValue({
     ...initial,
     card: { ...initial.card, revision: 4 },
   });

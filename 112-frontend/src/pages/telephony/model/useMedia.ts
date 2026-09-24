@@ -2,12 +2,12 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { telephonyApi } from "@/entities/telephony";
 import type { AudioInput } from "@/entities/telephony";
-import { trainingApi } from "@/entities/training";
+import { scenarioApi } from "@/entities/training";
 export function useMedia() {
   const [version, setVersion] = useState("");
   const scenarios = useQuery({
     queryKey: ["telephony-scenarios"],
-    queryFn: ({ signal }) => trainingApi.scenarios({ limit: 100 }, signal),
+    queryFn: ({ signal }) => scenarioApi.list({ limit: 100 }, signal),
   });
   const media = useQuery({
     queryKey: ["telephony-media", version],

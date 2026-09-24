@@ -3,11 +3,7 @@ import {
   emptyIncidentAddress,
   formatAddress,
 } from "@/entities/incident-card";
-import {
-  trainingApi,
-  type CardTemplateInput,
-  type FeatureDefinition,
-} from "@/entities/training";
+import { cardApi, cardKeys, type FeatureDefinition } from "@/entities/training";
 import { matchesFeature, type FeatureValue } from "@/shared/lib/featureValues";
 import { type SelectOption } from "@/shared/ui/ServerSelect";
 import type { MapPoint } from "@/shared/lib/geo";
@@ -15,6 +11,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { usePhoneInput } from "@/entities/phone";
 import type { CardEditorProps } from "../types/CardEditor";
+import type { CardEditorForm } from "../types/CardEditorPanels";
+import { buildCardTemplateInput } from "../lib/buildCardTemplateInput";
 
 const mapPoint = (value: unknown): MapPoint | null => {
   if (
@@ -128,7 +126,7 @@ export function useCardEditor({ onClose, initial }: CardEditorProps) {
       : null,
   );
   const [optional, setOptional] = useState<string[]>([]);
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<CardEditorForm>({
     title: initial?.title ?? "",
     caller_message: initial?.caller_message ?? "",
     instructions: initial?.instructions ?? "",
@@ -142,8 +140,8 @@ export function useCardEditor({ onClose, initial }: CardEditorProps) {
     setForm((current) => ({ ...current, caller_phone })),
   );
   const routes = useQuery({
-    queryKey: ["routes", version?.id, entry?.id],
-    queryFn: ({ signal }) => trainingApi.routes(version!.id, entry!.id, signal),
+    queryKey: cardKeys.routes(version?.id, entry?.id),
+    queryFn: ({ signal }) => cardApi.routes(version!.id, entry!.id, signal),
     enabled: !!version && !!entry,
   });
   const recipients = (routes.data ?? [])
@@ -159,75 +157,33 @@ export function useCardEditor({ onClose, initial }: CardEditorProps) {
     .map((r) => r.service_id);
   const save = useMutation({
     mutationFn: () => {
-      const body: CardTemplateInput = {
-        title: form.title,
-        caller_message: form.caller_message.trim() ? form.caller_message : null,
-        instructions: form.instructions,
-        classifier_version_id: version!.id,
-        classifier_entry_id: silent ? null : entry!.id,
-        recipient_service_ids: silent
-          ? []
-          : (manualRecipients?.map((s) => s.id) ?? recipients),
-        use_recommended_recipients: manualRecipients === null,
-        data: {
-          ...initial?.data,
-          address_text: silent ? "" : structuredAddress || form.address_text,
-          address_details: silent
-            ? null
-            : Object.fromEntries(
-                Object.entries(address).filter(([, value]) => value?.trim()),
-              ),
-          features: {
-            ...initial?.data.features,
-            victimsCount: silent || victims === "" ? null : Number(victims),
-            ekp: silent ? {} : answers,
-          },
-          description: form.description,
-          caller_details: silent
-            ? null
-            : {
-                ...initial?.data.caller_details,
-                ...Object.fromEntries(
-                  Object.entries(person).map(([k, v]) => [
-                    k,
-                    v === ""
-                      ? null
-                      : ["age", "height_cm", "weight_kg"].includes(k)
-                        ? Number(v)
-                        : v,
-                  ]),
-                ),
-              },
-          caller_name: silent ? null : form.caller_name,
-          caller_phone:
-            form.caller_phone.trim() === "+" ? "" : form.caller_phone,
-          additional_fields: {
-            ...initial?.data.additional_fields,
-            location: silent ? null : location,
-            details: {
-              ...((initial?.data.additional_fields?.details as Record<
-                string,
-                unknown
-              >) ?? {}),
-              ...flags,
-              ...(silent
-                ? { callerGender: null, callerAge: null, callerStatus: null }
-                : {}),
-            },
-          },
-        },
-      };
+      const body = buildCardTemplateInput({
+        initial,
+        form,
+        version,
+        entry,
+        silent,
+        manualRecipients,
+        recipients,
+        structuredAddress,
+        address,
+        victims,
+        answers,
+        person,
+        flags,
+        location,
+      });
       return initial
-        ? trainingApi.updateCard(initial.id, {
+        ? cardApi.update(initial.id, {
             ...body,
             revision: initial.revision,
           })
-        : trainingApi.createCard(body);
+        : cardApi.create(body);
     },
     onSuccess: () => {
-      void client.invalidateQueries({ queryKey: ["cards"] });
-      void client.invalidateQueries({ queryKey: ["card", initial?.id] });
-      void client.invalidateQueries({ queryKey: ["card-options"] });
+      void client.invalidateQueries({ queryKey: cardKeys.all });
+      void client.invalidateQueries({ queryKey: cardKeys.detail(initial?.id) });
+      void client.invalidateQueries({ queryKey: cardKeys.options });
       onClose();
     },
   });

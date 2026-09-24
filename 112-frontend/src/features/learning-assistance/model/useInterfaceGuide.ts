@@ -1,4 +1,4 @@
-import { trainingApi } from "@/entities/training";
+import { attemptApi, learningHelpApi } from "@/entities/training";
 import { getApiError } from "@/shared/api";
 import { randomUUID } from "@/shared/lib/uuid";
 import {
@@ -22,7 +22,7 @@ export function useInterfaceGuide({
   const query = useQuery({
     queryKey: ["interface-guide", attempt.id, revision],
     queryFn: () =>
-      trainingApi.hint(attempt.id, {
+      learningHelpApi.hint(attempt.id, {
         request_id: randomUUID(),
         trigger: "guided",
         level: "solution",
@@ -38,7 +38,7 @@ export function useInterfaceGuide({
   useEffect(() => {
     if (!hint || paused || seen.current.has(hint.id)) return;
     seen.current.add(hint.id);
-    void trainingApi
+    void attemptApi
       .observations(attempt.id, [
         {
           command_id: randomUUID(),

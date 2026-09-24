@@ -1,4 +1,4 @@
-import { generationApi } from "@/entities/training";
+import { cardKeys, generationApi } from "@/entities/training";
 import { getApiError } from "@/shared/api";
 import { Alert, Button, Chip, TableCell, TableRow } from "@mui/material";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -9,7 +9,7 @@ export function GenerationRows({ jobs }: GenerationRowsProps) {
   const retry = useMutation({
     mutationFn: generationApi.retry,
     onSuccess: () =>
-      client.invalidateQueries({ queryKey: ["card-generations"] }),
+      client.invalidateQueries({ queryKey: cardKeys.generations }),
   });
   return (
     <>

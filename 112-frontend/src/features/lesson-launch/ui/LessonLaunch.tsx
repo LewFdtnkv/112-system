@@ -1,4 +1,4 @@
-import { trainingApi, userName } from "@/entities/training";
+import { scenarioApi, userApi, userName } from "@/entities/training";
 import { getApiError } from "@/shared/api";
 import { randomUUID } from "@/shared/lib/uuid";
 import { DateTimeField } from "@/shared/ui/DateTimeField";
@@ -66,7 +66,7 @@ export function LessonLaunch() {
           setRequestId(randomUUID());
         }}
         load={async (q, signal) =>
-          (await trainingApi.groups({ q }, signal)).items.map((item) => ({
+          (await userApi.groups({ q }, signal)).items.map((item) => ({
             id: item.id,
             label: `${item.name} (${item.student_count})`,
           }))
@@ -83,7 +83,7 @@ export function LessonLaunch() {
         }}
         load={async (q, signal) =>
           (
-            await trainingApi.users(
+            await userApi.users(
               { q, group_id: group!.id, role: "student" },
               signal,
             )
@@ -134,7 +134,7 @@ export function LessonLaunch() {
         }}
         load={async (q, signal) =>
           (
-            await trainingApi.scenarios({ q, status: "published" }, signal)
+            await scenarioApi.list({ q, status: "published" }, signal)
           ).items.map((item) => ({
             id: item.id,
             metadata: { role: item.role },

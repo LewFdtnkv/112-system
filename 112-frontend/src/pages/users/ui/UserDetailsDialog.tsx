@@ -1,6 +1,6 @@
 import {
   activityApi,
-  trainingApi,
+  userApi,
   UserPhoto,
   type UserUpdate,
 } from "@/entities/training";
@@ -32,7 +32,7 @@ import { accountDate, roleLabels } from "../model/accountDisplay";
 export function UserDetailsDialog({ userId, onClose }: UserDetailsDialogProps) {
   const query = useQuery({
     queryKey: ["user", userId],
-    queryFn: ({ signal }) => trainingApi.user(userId, signal),
+    queryFn: ({ signal }) => userApi.get(userId, signal),
   });
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="sm">
@@ -77,7 +77,7 @@ function AccountForm({ user, onClose }: AccountFormProps) {
   });
   const save = useMutation({
     mutationFn: () =>
-      trainingApi.updateUser(user.id, {
+      userApi.update(user.id, {
         ...form,
         ...(accessChanged ? { reason } : {}),
         email: form.email?.trim() || null,

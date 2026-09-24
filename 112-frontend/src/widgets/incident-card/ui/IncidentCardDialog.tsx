@@ -1,15 +1,7 @@
 import { IncidentCardStoreProvider } from "../model/IncidentCardContext";
-import {
-  emptyIncidentAddress,
-  formatAddress,
-  incidentStatuses,
-  incidentStatusLabels,
-} from "@/entities/incident-card";
 import { useIncidentEditor } from "@/features/incident-editing";
-import { LocationPicker } from "@/features/location-picker";
-import { ArmIconButton, ArmSelect, ArmTextarea } from "@/shared/ui/arm";
 import { FieldFeedbackContext } from "@/shared/ui/arm/FieldFeedback";
-import { Dialog, DialogContent, DialogTitle } from "@mui/material";
+import { Dialog, DialogTitle } from "@mui/material";
 import { useId, useState } from "react";
 import "../styles/incident-card.scss";
 import type {
@@ -19,9 +11,12 @@ import type {
 import { CardAddressPanel } from "./CardAddressPanel";
 import { CardClassification } from "./CardClassification";
 import { CardServicesDialog } from "./CardServicesDialog";
-import { CardServiceTile } from "./CardServiceTile";
+import { CardServiceHistory } from "./CardServiceHistory";
+import { CardServiceTiles } from "./CardServiceTiles";
+import { CardTrainingComment } from "./CardTrainingComment";
+import { CardFooterTools } from "./CardFooterTools";
 import { CardTelephoneBar } from "./CardTelephoneBar";
-import { CardTranslationPanel } from "./CardTranslationPanel";
+import { IncidentCardAuxiliaryDialog } from "./IncidentCardAuxiliaryDialog";
 export function IncidentCardDialog({
   card,
   ...props
@@ -60,7 +55,6 @@ function IncidentCardForm(props: IncidentCardFormProps) {
     isCallAccepted,
     elapsedSeconds,
     normSeconds,
-    renderMap,
     titleId,
   } = props;
   const editor = useIncidentEditor(props);
@@ -90,7 +84,6 @@ function IncidentCardForm(props: IncidentCardFormProps) {
       return;
     onClose();
   };
-  const { fields } = editor;
   return (
     <IncidentCardStoreProvider value={{ editor, disabled }}>
       <DialogTitle id={titleId} className="visually-hidden">
@@ -148,193 +141,50 @@ function IncidentCardForm(props: IncidentCardFormProps) {
         <footer
           className={`arm-card-footer ${viewing ? "arm-card-footer--view" : ""}`}
         >
-          <div
-            className="arm-service-tiles"
-            data-learning-target="notification"
-          >
-            <strong>Службы:</strong>
-            {editor.remote.notificationRequired === false && (
-              <span>Оповещение не требуется</span>
-            )}
-            {fields.services.map((service) => {
-              const info = editor.remote.services.find((s) => s.id === service);
-              return (
-                <CardServiceTile
-                  key={service}
-                  name={info?.name ?? `Служба ${service}`}
-                  shortName={info?.short_name}
-                  status={isSubmitted ? "Учебная проверка" : "К оповещению"}
-                  expanded={activeService === service}
-                  onClick={() =>
-                    setActiveService(
-                      activeService === service ? undefined : service,
-                    )
-                  }
-                />
-              );
-            })}
-            {!viewing && props.remote.loadServices && (
-              <ArmIconButton
-                icon="plus"
-                label="Добавить службы"
-                disabled={locked("notification")}
-                aria-expanded={servicesOpen}
-                onClick={() => setServicesOpen(!servicesOpen)}
-              />
-            )}
-          </div>
-          <div className="arm-footer-tools">
-            {!viewing && (
-              <button
-                className="arm-small-button"
-                disabled={disabled}
-                onClick={editor.saveDraft}
-              >
-                Сохранить черновик
-              </button>
-            )}
-            {!viewing && (
-              <button
-                className="arm-save"
-                data-learning-target="submit"
-                aria-label={
-                  editor.remote.notificationRequired === false
-                    ? "Сохранить без оповещения"
-                    : "Оповестить и сохранить карточку"
-                }
-                disabled={disabled}
-                onClick={editor.submit}
-              >
-                сохранить
-              </button>
-            )}
-            {!viewing && (
-              <>
-                <ArmIconButton
-                  icon="link"
-                  label="Связанные происшествия — недоступно в этом задании"
-                  disabled
-                />
-                <ArmIconButton
-                  icon="timer"
-                  label="Время заполнения карточки"
-                  onClick={() => setModal("timing")}
-                />
-                <ArmIconButton
-                  icon="hand"
-                  label="Постобработка вызова — недоступно в этом задании"
-                  disabled
-                />
-                <ArmIconButton
-                  icon="bell"
-                  label="Напоминание — недоступно в этом задании"
-                  disabled
-                />
-              </>
-            )}
-            <ArmIconButton
-              icon="comment"
-              label="Учебный комментарий и журнал"
-              aria-expanded={commentOpen}
-              onClick={() => setCommentOpen(!commentOpen)}
-            />
-            <ArmIconButton icon="close" label="Закрыть" onClick={close} />
-          </div>
+          <CardServiceTiles
+            editor={editor}
+            submitted={isSubmitted}
+            viewing={viewing}
+            activeService={activeService}
+            onActiveServiceChange={setActiveService}
+            servicesOpen={servicesOpen}
+            onServicesToggle={() => setServicesOpen(!servicesOpen)}
+            locked={locked}
+          />
+          <CardFooterTools
+            editor={editor}
+            viewing={viewing}
+            disabled={disabled}
+            commentOpen={commentOpen}
+            onCommentToggle={() => setCommentOpen(!commentOpen)}
+            onClose={close}
+            onTiming={() => setModal("timing")}
+          />
           {activeService && (
-            <section
-              className="arm-service-history"
-              aria-label={`История службы ${activeService}`}
-            >
-              <h3>
-                {editor.remote.services.find((s) => s.id === activeService)
-                  ?.name ?? `Служба ${activeService}`}
-                <ArmIconButton
-                  icon="close"
-                  label="Закрыть историю службы"
-                  onClick={() => setActiveService(undefined)}
-                />
-              </h3>
-              <p>
-                Статус:{" "}
-                {isSubmitted
-                  ? "Передана на учебную проверку"
-                  : "Выбрана для оповещения"}
-              </p>
-              <p>
-                {isSubmitted
-                  ? "Учебная карточка сохранена."
-                  : "Служба будет включена в учебное оповещение при сохранении карточки."}
-              </p>
-            </section>
+            <CardServiceHistory
+              serviceId={activeService}
+              serviceName={
+                editor.remote.services.find(
+                  (service) => service.id === activeService,
+                )?.name
+              }
+              submitted={isSubmitted}
+              onClose={() => setActiveService(undefined)}
+            />
           )}
           {commentOpen && (
-            <section
-              className="arm-training-comment"
-              aria-label="Учебный комментарий"
-            >
-              <h3>
-                Учебный комментарий
-                <ArmIconButton
-                  icon="close"
-                  label="Закрыть учебный комментарий"
-                  onClick={() => setCommentOpen(false)}
-                />
-              </h3>
-              <ArmSelect
-                label="Статус обработки"
-                disabled
-                value={fields.status}
-                onChange={(e) =>
-                  editor.setField(
-                    "status",
-                    e.target.value as typeof fields.status,
-                  )
-                }
-              >
-                {incidentStatuses.map((status) => (
-                  <option value={status} key={status}>
-                    {incidentStatusLabels[status]}
-                  </option>
-                ))}
-              </ArmSelect>
-              <ArmTextarea
-                label="Действие оператора"
-                disabled={locked("description")}
-                rows={3}
-                value={fields.operatorAction}
-                onChange={(e) =>
-                  editor.setField("operatorAction", e.target.value)
-                }
-              />
-              <button
-                className="arm-small-button"
-                disabled={disabled}
-                onClick={editor.saveDraft}
-              >
-                Сохранить комментарий
-              </button>
-              {!viewing && (
-                <button
-                  className="arm-small-button"
-                  onClick={() => {
-                    setPreview(true);
-                    setCommentOpen(false);
-                  }}
-                >
-                  Просмотр карточки
-                </button>
-              )}
-              <h4>Журнал действий</h4>
-              {log.length ? (
-                <ul>
-                  {log.map((entry, i) => (
-                    <li key={i}>{entry}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p>Действий пока нет.</p>
-              )}
-            </section>
+            <CardTrainingComment
+              editor={editor}
+              disabled={disabled}
+              viewing={viewing}
+              locked={locked}
+              log={log}
+              onClose={() => setCommentOpen(false)}
+              onPreview={() => {
+                setPreview(true);
+                setCommentOpen(false);
+              }}
+            />
           )}
         </footer>
       )}
@@ -342,84 +192,13 @@ function IncidentCardForm(props: IncidentCardFormProps) {
         open={servicesOpen && !viewing && !locked("notification")}
         onClose={() => setServicesOpen(false)}
       />
-      <Dialog
-        open={Boolean(modal)}
-        onClose={() => setModal(undefined)}
-        fullWidth
-        maxWidth={modal === "map" ? "md" : "sm"}
-        aria-labelledby={`${titleId}-aux`}
-        className="arm-aux-dialog"
-      >
-        <DialogTitle id={`${titleId}-aux`}>
-          {modal === "map"
-            ? "Карта происшествия"
-            : modal === "calls"
-              ? "Записи звонков"
-              : modal === "timing"
-                ? "Время заполнения карточки"
-                : modal === "translate"
-                  ? "Перевод сообщения"
-                  : "Список SMS"}
-          <ArmIconButton
-            icon="close"
-            label="Закрыть окно"
-            onClick={() => setModal(undefined)}
-          />
-        </DialogTitle>
-        <DialogContent>
-          {modal === "map" &&
-            (renderMap?.(formatAddress(fields.address)) ?? (
-              <LocationPicker
-                initial={fields.location ?? null}
-                initialAddress={formatAddress(fields.address)}
-                readOnly={locked("address")}
-                onConfirm={({ point, address }) => {
-                  editor.setField("location", point);
-                  if (address)
-                    editor.setField("address", {
-                      ...emptyIncidentAddress,
-                      country: address.country || "Россия",
-                      region: address.administrativeAreas[0] ?? "",
-                      locality: address.localities.at(-1) ?? "",
-                      district: address.district,
-                      area: address.area,
-                      street: address.street,
-                      house: address.house,
-                      building: address.building,
-                      structure: address.structure,
-                      apartment: address.apartment,
-                      description: address.addressLine,
-                    });
-                  setModal(undefined);
-                }}
-                onCancel={() => setModal(undefined)}
-              />
-            ))}
-          {modal === "calls" && (
-            <p>
-              SIP-звонки и аудиозапись пока не подключены. Условие задания
-              передаётся текстом.
-            </p>
-          )}
-          {modal === "timing" && (
-            <p>
-              Прошло: {elapsedSeconds} с. Учебный ориентир: {normSeconds} с.
-            </p>
-          )}
-          {modal === "translate" && (
-            <CardTranslationPanel
-              initialText={fields.description || props.remote.message || ""}
-              onClose={() => setModal(undefined)}
-              onApply={(translation) => {
-                editor.setField("description", translation);
-                editor.setDetail("foreignLanguage", true);
-                setModal(undefined);
-              }}
-            />
-          )}
-          {modal === "sms" && <p>В этом учебном задании SMS отсутствуют.</p>}
-        </DialogContent>
-      </Dialog>
+      <IncidentCardAuxiliaryDialog
+        props={props}
+        editor={editor}
+        locked={locked}
+        modal={modal}
+        setModal={setModal}
+      />
     </IncidentCardStoreProvider>
   );
 }

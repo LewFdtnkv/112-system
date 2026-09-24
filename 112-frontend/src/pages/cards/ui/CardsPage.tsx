@@ -1,16 +1,13 @@
 import {
   CardDataFields,
-  generationApi,
-  trainingApi,
+  cardGenerationQueryOptions,
+  cardListQueryOptions,
+  cardQueryOptions,
   type FeatureDefinition,
 } from "@/entities/training";
 import { CardEditor } from "@/features/card-authoring";
-import {
-  CardGenerationDialog,
-  GenerationRows,
-} from "@/features/card-generation";
+import { CardGenerationDialog } from "@/features/card-generation";
 import type { ReferenceCardSource } from "@/features/incident-editing";
-import { rowAction } from "@/shared/lib/rowAction";
 import { useDebounced } from "@/shared/lib/useDebounced";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { PageControls, QueryState } from "@/shared/ui/QueryState";
@@ -18,24 +15,17 @@ import { TrainingCardPreview } from "@/widgets/incident-card";
 import {
   Alert,
   Button,
-  Chip,
   Dialog,
   DialogContent,
   DialogTitle,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   TextField,
-  Tooltip,
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import "../styles/cards.scss";
 import { styles } from "../styles/CardsPage";
+import { CardLibraryTable } from "./CardLibraryTable";
 export const CardsPage = () => {
   const [q, setQ] = useState("");
   const search = useDebounced(q);
@@ -43,25 +33,12 @@ export const CardsPage = () => {
   const [open, setOpen] = useState(false);
   const [generate, setGenerate] = useState(false);
   const [jobPage, setJobPage] = useState(0);
-  const jobs = useQuery({
-    queryKey: ["card-generations", jobPage],
-    queryFn: ({ signal }) => generationApi.jobs(jobPage * 10, signal),
-    refetchInterval: 5000,
-  });
+  const jobs = useQuery(cardGenerationQueryOptions(jobPage));
   const [preview, setPreview] = useState<ReferenceCardSource>();
   const [detailId, setDetailId] = useState<string>();
   const [editing, setEditing] = useState(false);
-  const query = useQuery({
-    queryKey: ["cards", search, page],
-    queryFn: ({ signal }) =>
-      trainingApi.cards({ q: search, offset: page * 20 }, signal),
-    refetchInterval: 5000,
-  });
-  const detail = useQuery({
-    queryKey: ["card", detailId],
-    queryFn: ({ signal }) => trainingApi.card(detailId!, signal),
-    enabled: !!detailId,
-  });
+  const query = useQuery(cardListQueryOptions(search, page));
+  const detail = useQuery(cardQueryOptions(detailId));
   return (
     <Stack spacing={2}>
       <PageHeader title="Библиотека карточек" />
@@ -115,158 +92,18 @@ export const CardsPage = () => {
       >
         {query.data && (
           <>
-            <TableContainer>
-              <Table
-                className="card-library-table"
-                aria-label="Библиотека карточек"
-              >
-                <colgroup>
-                  <col style={styles.titleColumn} />
-                  <col style={styles.incidentColumn} />
-                  <col style={styles.addressColumn} />
-                  <col style={styles.servicesColumn} />
-                  <col style={styles.usageColumn} />
-                  <col style={styles.updatedColumn} />
-                  <col style={styles.actionsColumn} />
-                </colgroup>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Название</TableCell>
-                    <TableCell>Тип происшествия</TableCell>
-                    <TableCell>Адрес</TableCell>
-                    <TableCell>Службы</TableCell>
-                    <TableCell align="center">В сценариях</TableCell>
-                    <TableCell>Изменена</TableCell>
-                    <TableCell align="center">Действия</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  <GenerationRows jobs={jobs.data?.items ?? []} />
-                  {query.data.items.map((c) => (
-                    <TableRow
-                      key={c.id}
-                      hover
-                      {...rowAction(() => {
-                        setEditing(false);
-                        setDetailId(c.id);
-                      })}
-                    >
-                      <TableCell>
-                        <Button
-                          className="card-library-title"
-                          onClick={() => {
-                            setEditing(false);
-                            setDetailId(c.id);
-                          }}
-                        >
-                          {c.title}
-                        </Button>
-                        {c.generated_by_ai && <small>Сгенерирована</small>}
-                        <small>
-                          {c.scenario_count
-                            ? "Используется · только просмотр"
-                            : "Доступна для редактирования"}
-                        </small>
-                      </TableCell>
-                      <TableCell>
-                        <span>{c.incident_name}</span>
-                        <small
-                          title={c.classifier_label}
-                          className="card-library-clamp"
-                        >
-                          {c.classifier_label}
-                        </small>
-                      </TableCell>
-                      <TableCell>
-                        <span
-                          className="card-library-clamp"
-                          title={c.address_text}
-                        >
-                          {c.address_text || "—"}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="card-library-services">
-                          {c.recipients.length ? (
-                            c.recipients
-                              .slice(0, 2)
-                              .map((s) => (
-                                <Chip
-                                  key={s.service_id}
-                                  size="small"
-                                  label={s.short_name || s.name}
-                                  title={s.name}
-                                />
-                              ))
-                          ) : (
-                            <span>Без оповещения</span>
-                          )}
-                          {c.recipients.length > 2 && (
-                            <small
-                              title={c.recipients
-                                .slice(2)
-                                .map((s) => s.name)
-                                .join("; ")}
-                            >
-                              Ещё {c.recipients.length - 2}
-                            </small>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell align="center">{c.scenario_count}</TableCell>
-                      <TableCell>
-                        <time dateTime={c.updated_at}>
-                          {new Date(c.updated_at).toLocaleDateString("ru-RU", {
-                            timeZone: "Europe/Moscow",
-                          })}
-                          <small>
-                            {new Date(c.updated_at).toLocaleTimeString(
-                              "ru-RU",
-                              {
-                                timeZone: "Europe/Moscow",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              },
-                            )}
-                          </small>
-                        </time>
-                      </TableCell>
-                      <TableCell
-                        align="center"
-                        className="card-library-actions"
-                      >
-                        <Tooltip
-                          title={
-                            c.scenario_count
-                              ? "Карточка уже включена в сценарий. Редактирование недоступно."
-                              : "Изменить карточку"
-                          }
-                        >
-                          <span>
-                            <Button
-                              size="small"
-                              disabled={c.scenario_count > 0}
-                              aria-label={`Редактировать карточку «${c.title}»`}
-                              onClick={() => {
-                                setEditing(true);
-                                setDetailId(c.id);
-                              }}
-                            >
-                              Изменить
-                            </Button>
-                          </span>
-                        </Tooltip>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {!query.data.items.length && !jobs.data?.items.length && (
-                    <TableRow>
-                      <TableCell colSpan={7}>Карточки не найдены.</TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
+            <CardLibraryTable
+              cards={query.data.items}
+              generationJobs={jobs.data?.items ?? []}
+              onOpen={(id) => {
+                setEditing(false);
+                setDetailId(id);
+              }}
+              onEdit={(id) => {
+                setEditing(true);
+                setDetailId(id);
+              }}
+            />
             {query.data.total > 0 && (
               <PageControls
                 total={query.data.total}

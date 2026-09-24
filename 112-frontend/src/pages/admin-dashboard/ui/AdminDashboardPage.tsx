@@ -1,4 +1,4 @@
-import { trainingApi } from "@/entities/training";
+import { analyticsApi } from "@/entities/training";
 import { AccountStatistics } from "@/features/account-statistics";
 import { routePaths } from "@/shared/config/routes";
 import { PageHeader } from "@/shared/ui/PageHeader";
@@ -9,7 +9,7 @@ import { Link } from "react-router-dom";
 export const AdminDashboardPage = () => {
   const query = useQuery({
     queryKey: ["admin-summary"],
-    queryFn: ({ signal }) => trainingApi.adminSummary(signal),
+    queryFn: ({ signal }) => analyticsApi.adminSummary(signal),
   });
   return (
     <Stack spacing={2}>

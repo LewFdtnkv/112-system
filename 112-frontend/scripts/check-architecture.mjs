@@ -4,6 +4,10 @@ import ts from "typescript";
 
 const root = path.resolve("src");
 const layers = ["shared", "entities", "features", "widgets", "pages", "app"];
+const decompositionLimits = new Map([
+  ["features/card-authoring/model/useCardEditor.ts", 300],
+  ["features/card-generation/ui/CardGenerationDialog.tsx", 120],
+]);
 const files = (dir) =>
   fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const file = path.join(dir, entry.name);
@@ -36,6 +40,14 @@ for (const file of files(root)) {
   const parts = relative(file);
   const label = parts.join("/");
   const fail = (message) => errors.push(`${label}: ${message}`);
+  const maxLines = decompositionLimits.get(label);
+  if (
+    maxLines &&
+    fs.readFileSync(file, "utf8").split(/\r?\n/).length > maxLines
+  )
+    fail(`exceeds ${maxLines} lines; split the responsibility first`);
+  if (label === "entities/training/types/types.ts")
+    fail("use a domain-specific type file instead of a generic types.ts");
   if (file.endsWith(".scss") && !parts.includes("styles"))
     fail("SCSS must be in a styles segment");
   if (!/\.tsx?$/.test(file) || /\.d\.ts$/.test(file)) continue;

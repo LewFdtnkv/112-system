@@ -5,7 +5,7 @@ import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
-import { type CardTemplate, trainingApi } from "@/entities/training";
+import { cardApi, type CardTemplate } from "@/entities/training";
 import { CardEditor } from "@/features/card-authoring";
 
 vi.setConfig({ testTimeout: 20_000 });
@@ -61,11 +61,9 @@ function renderEditor() {
 let updateCard: ReturnType<typeof vi.spyOn>;
 
 beforeEach(() => {
-  vi.spyOn(trainingApi, "routes").mockResolvedValue([]);
-  vi.spyOn(trainingApi, "classifiers").mockResolvedValue([]);
-  updateCard = vi
-    .spyOn(trainingApi, "updateCard")
-    .mockResolvedValue(card as never);
+  vi.spyOn(cardApi, "routes").mockResolvedValue([]);
+  vi.spyOn(cardApi, "classifiers").mockResolvedValue([]);
+  updateCard = vi.spyOn(cardApi, "update").mockResolvedValue(card as never);
 });
 afterEach(cleanup);
 

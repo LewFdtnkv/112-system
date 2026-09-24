@@ -1,5 +1,6 @@
 import {
-  trainingApi,
+  lessonApi,
+  scenarioApi,
   defaultLearningPolicy,
   type LearningPolicy,
 } from "@/entities/training";
@@ -36,7 +37,7 @@ export function useLessonLaunch() {
     ?.role;
   const scenarioDetails = useQuery({
     queryKey: ["scenario", scenario?.id],
-    queryFn: ({ signal }) => trainingApi.scenario(scenario!.id, signal),
+    queryFn: ({ signal }) => scenarioApi.get(scenario!.id, signal),
     enabled: !!scenario && !metadataRole,
   });
   const scenarioRole = metadataRole ?? scenarioDetails.data?.role;
@@ -48,7 +49,7 @@ export function useLessonLaunch() {
   const navigate = useNavigate();
   const mutation = useMutation({
     mutationFn: () =>
-      trainingApi.startLesson({
+      lessonApi.start({
         request_id: requestId,
         ...(targets.length
           ? {

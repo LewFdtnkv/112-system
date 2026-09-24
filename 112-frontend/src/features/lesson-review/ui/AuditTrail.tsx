@@ -2,7 +2,7 @@ import {
   crewStatusLabels,
   ddsStatusLabels,
   fieldLabels,
-  trainingApi,
+  attemptApi,
 } from "@/entities/training";
 import { QueryState } from "@/shared/ui/QueryState";
 import {
@@ -147,7 +147,7 @@ export function AuditTrail({
     initialPageParam: 0,
     enabled: open,
     queryFn: ({ pageParam, signal }) =>
-      trainingApi.audit(lessonId, studentId, attemptId, pageParam, signal),
+      attemptApi.audit(lessonId, studentId, attemptId, pageParam, signal),
     getNextPageParam: (page) => page.next_sequence ?? undefined,
   });
   const events = query.data?.pages.flatMap((page) => page.items) ?? [];

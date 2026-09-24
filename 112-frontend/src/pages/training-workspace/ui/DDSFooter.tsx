@@ -29,7 +29,9 @@ export function DDSFooter() {
   const serviceTile = (r: (typeof dds.responses)[number]) => (
     <DDSTile
       key={r.service_id}
-      guideTarget={r.service_id === dds.profile.service_id ? "dds.own_service" : undefined}
+      guideTarget={
+        r.service_id === dds.profile.service_id ? "dds.own_service" : undefined
+      }
       name={r.short_name || r.name}
       title={r.name}
       status="Добавлена"

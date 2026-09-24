@@ -1,4 +1,4 @@
-import { trainingApi, crewStatusLabels } from "@/entities/training";
+import { serviceProfileApi, crewStatusLabels } from "@/entities/training";
 import {
   Alert,
   Button,
@@ -20,14 +20,15 @@ export function DDSPolicyFields({
   const profile = useQuery({
     queryKey: ["profile", profileId],
     enabled: !!profileId,
-    queryFn: ({ signal }) => trainingApi.profile(profileId!, signal),
+    queryFn: ({ signal }) => serviceProfileApi.get(profileId!, signal),
   });
   return (
     <Stack spacing={2}>
       <Alert severity="info">
         Укажите нужные бригады и цели их работы. Сообщения доступны ученику как
         сведения по ситуации: опишите, кто нужен и что произошло. Оцениваются
-        назначение и статусы бригад; службы остаются «Добавлена». Телефония настраивается администратором.
+        назначение и статусы бригад; службы остаются «Добавлена». Телефония
+        настраивается администратором.
       </Alert>
       {profile.error && (
         <Alert severity="error">

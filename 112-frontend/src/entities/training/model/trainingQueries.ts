@@ -1,17 +1,21 @@
 import { queryOptions, useQuery, useQueryClient } from "@tanstack/react-query";
-import { trainingApi } from "../api/trainingApi";
-import type { Attempt } from "../types/types";
+import { lessonApi } from "../api/lessonApi";
+import { attemptApi } from "../api/attemptApi";
+import type { Attempt } from "../types/attempt";
+import type { Params } from "../types/trainingApi";
 
 export const trainingKeys = {
   attempt: (id: string) => ["attempt", id] as const,
   studentLesson: (id: string) => ["student-lesson", id] as const,
   lessons: ["lessons"] as const,
+  lessonList: (student: boolean, params: Params) =>
+    ["lessons", student, params] as const,
 };
 
 export const attemptQueryOptions = (id: string) =>
   queryOptions({
     queryKey: trainingKeys.attempt(id),
-    queryFn: ({ signal }) => trainingApi.attempt(id, signal),
+    queryFn: ({ signal }) => attemptApi.get(id, signal),
     staleTime: 10_000,
     refetchOnWindowFocus: false,
   });
@@ -19,8 +23,15 @@ export const attemptQueryOptions = (id: string) =>
 export const studentLessonQueryOptions = (id: string) =>
   queryOptions({
     queryKey: trainingKeys.studentLesson(id),
-    queryFn: ({ signal }) => trainingApi.studentLesson(id, signal),
+    queryFn: ({ signal }) => lessonApi.studentLesson(id, signal),
     refetchInterval: 5000,
+  });
+
+export const lessonListQueryOptions = (student: boolean, params: Params) =>
+  queryOptions({
+    queryKey: trainingKeys.lessonList(student, params),
+    queryFn: ({ signal }) => lessonApi.list(student, params, signal),
+    refetchInterval: student ? 15_000 : 10_000,
   });
 
 /** Editors observe the same server snapshot as the journal; drafts stay separate. */

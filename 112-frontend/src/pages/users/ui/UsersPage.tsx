@@ -1,189 +1,64 @@
-import {
-  trainingApi,
-  userName,
-  type UserCreate,
-  type UserItem,
-} from "@/entities/training";
+import { userApi, type UserItem } from "@/entities/training";
 import { AccountStatistics } from "@/features/account-statistics";
-import { getApiError } from "@/shared/api";
-import { rowAction } from "@/shared/lib/rowAction";
 import { useDebounced } from "@/shared/lib/useDebounced";
 import { PageHeader } from "@/shared/ui/PageHeader";
-import { PageControls, QueryState } from "@/shared/ui/QueryState";
-import {
-  Alert,
-  Button,
-  Dialog,
-  DialogTitle,
-  MenuItem,
-  Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TextField,
-} from "@mui/material";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { QueryState } from "@/shared/ui/QueryState";
+import { Button, Stack } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { accountDate, roleLabels } from "../model/accountDisplay";
-import { styles } from "../styles/UsersPage";
+import { UserCreateDialog } from "./UserCreateDialog";
 import { UserDetailsDialog } from "./UserDetailsDialog";
-const blank: UserCreate = {
-  username: "",
-  initial_password: "",
-  first_name: "",
-  last_name: "",
-  role: "student",
-};
+import { UserFilters } from "./UserFilters";
+import { UsersTable } from "./UsersTable";
+
 export const UsersPage = () => {
   const [search, setSearch] = useState("");
   const [role, setRole] = useState("all");
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState<UserItem | null>(null);
   const [creating, setCreating] = useState(false);
-  const [form, setForm] = useState(blank);
-  const q = useDebounced(search);
-  const client = useQueryClient();
+  const queryText = useDebounced(search);
   const query = useQuery({
-    queryKey: ["users", q, role, page],
+    queryKey: ["users", queryText, role, page],
     queryFn: ({ signal }) =>
-      trainingApi.users({ q, role, offset: page * 20 }, signal),
+      userApi.users({ q: queryText, role, offset: page * 20 }, signal),
   });
-  const create = useMutation({
-    mutationFn: () =>
-      trainingApi.createUser({
-        ...form,
-        ...(form.email?.trim()
-          ? { email: form.email.trim() }
-          : { email: undefined }),
-      }),
-    onSuccess: () => {
-      setCreating(false);
-      setForm(blank);
-      void client.invalidateQueries({ queryKey: ["users"] });
-      void client.invalidateQueries({ queryKey: ["student-options"] });
-      void client.invalidateQueries({ queryKey: ["admin-summary"] });
-    },
-  });
-  const update = (key: keyof UserCreate, value: string | boolean) =>
-    setForm({ ...form, [key]: value });
   return (
     <Stack spacing={2}>
       <AccountStatistics />
       <PageHeader
         title="Пользователи"
         actions={
-          <Button
-            onClick={() => {
-              create.reset();
-              setCreating(true);
-            }}
-          >
+          <Button onClick={() => setCreating(true)}>
             Создать пользователя
           </Button>
         }
       />
-      <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-        <TextField
-          label="Поиск пользователя"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(0);
-          }}
-        />
-        <TextField
-          select
-          label="Роль"
-          value={role}
-          onChange={(e) => {
-            setRole(e.target.value);
-            setPage(0);
-          }}
-        >
-          {Object.entries({
-            all: "Все роли",
-            student: "Ученик",
-            teacher: "Преподаватель",
-            admin: "Администратор",
-          }).map(([v, l]) => (
-            <MenuItem key={v} value={v}>
-              {l}
-            </MenuItem>
-          ))}
-        </TextField>
-      </Stack>
+      <UserFilters
+        search={search}
+        role={role}
+        onSearchChange={(value) => {
+          setSearch(value);
+          setPage(0);
+        }}
+        onRoleChange={(value) => {
+          setRole(value);
+          setPage(0);
+        }}
+      />
       <QueryState
         pending={query.isPending}
         error={query.error}
         retry={() => void query.refetch()}
       >
         {query.data && (
-          <>
-            <TableContainer>
-              <Table size="small" aria-label="Пользователи">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Имя / логин</TableCell>
-                    <TableCell>Роль</TableCell>
-                    <TableCell>Группы</TableCell>
-                    <TableCell>Состояние</TableCell>
-                    <TableCell>Последний вход</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {query.data.items.map((user) => (
-                    <TableRow
-                      key={user.id}
-                      {...rowAction(() => setSelected(user))}
-                    >
-                      <TableCell>
-                        <Button
-                          className="table-block-link"
-                          onClick={() => setSelected(user)}
-                        >
-                          {userName(user)} ({user.username})
-                        </Button>
-                      </TableCell>
-                      <TableCell>
-                        {
-                          roleLabels[
-                            user.is_admin
-                              ? "admin"
-                              : user.is_teacher
-                                ? "teacher"
-                                : "student"
-                          ]
-                        }
-                      </TableCell>
-                      <TableCell>
-                        {user.groups.join(", ") || "Не назначена"}
-                      </TableCell>
-                      <TableCell>
-                        {!user.is_active
-                          ? "Отключён"
-                          : user.must_change_password
-                            ? "Требуется смена пароля"
-                            : "Активен"}
-                      </TableCell>
-                      <TableCell>
-                        {user.last_login_at
-                          ? accountDate(user.last_login_at)
-                          : "Ещё не входил"}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-            <PageControls
-              total={query.data.total}
-              page={page}
-              onPage={setPage}
-            />
-          </>
+          <UsersTable
+            items={query.data.items}
+            total={query.data.total}
+            page={page}
+            onPageChange={setPage}
+            onSelect={setSelected}
+          />
         )}
       </QueryState>
       {selected && (
@@ -192,95 +67,7 @@ export const UsersPage = () => {
           onClose={() => setSelected(null)}
         />
       )}
-      <Dialog
-        open={creating}
-        onClose={() => {
-          if (!create.isPending) {
-            setCreating(false);
-            setForm(blank);
-          }
-        }}
-        fullWidth
-      >
-        <DialogTitle>Создать пользователя</DialogTitle>
-        <Stack
-          component="form"
-          spacing={2}
-          sx={styles.stack}
-          onSubmit={(e) => {
-            e.preventDefault();
-            create.mutate();
-          }}
-        >
-          <TextField
-            label="Логин"
-            required
-            value={form.username}
-            onChange={(e) => update("username", e.target.value)}
-            slotProps={{
-              htmlInput: { pattern: "[A-Za-z0-9_.\\-]{1,50}", maxLength: 50 },
-            }}
-          />
-          <TextField
-            label="Стартовый пароль"
-            type="password"
-            autoComplete="new-password"
-            required
-            value={form.initial_password}
-            onChange={(e) => update("initial_password", e.target.value)}
-            slotProps={{ htmlInput: { minLength: 12, maxLength: 128 } }}
-            helperText="Пользователь заменит его при первом входе."
-          />
-          <TextField
-            label="Фамилия"
-            value={form.last_name}
-            onChange={(e) => update("last_name", e.target.value)}
-          />
-          <TextField
-            label="Имя"
-            value={form.first_name}
-            onChange={(e) => update("first_name", e.target.value)}
-          />
-          <TextField
-            label="Отчество"
-            value={form.middle_name ?? ""}
-            onChange={(e) => update("middle_name", e.target.value)}
-          />
-          <TextField
-            label="Email (необязательно)"
-            type="email"
-            value={form.email ?? ""}
-            onChange={(e) => update("email", e.target.value)}
-          />
-          <TextField
-            select
-            label="Роль пользователя"
-            value={form.role}
-            onChange={(e) => update("role", e.target.value)}
-          >
-            {Object.entries(roleLabels).map(([value, label]) => (
-              <MenuItem key={value} value={value}>
-                {label}
-              </MenuItem>
-            ))}
-          </TextField>
-          {create.error && (
-            <Alert severity="error">{getApiError(create.error).message}</Alert>
-          )}
-          <Button type="submit" disabled={create.isPending}>
-            Создать аккаунт
-          </Button>
-          <Button
-            disabled={create.isPending}
-            onClick={() => {
-              setCreating(false);
-              setForm(blank);
-            }}
-          >
-            Отмена
-          </Button>
-        </Stack>
-      </Dialog>
+      <UserCreateDialog open={creating} onClose={() => setCreating(false)} />
     </Stack>
   );
 };

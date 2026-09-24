@@ -1,5 +1,5 @@
 import {
-  trainingApi,
+  lessonApi,
   trainingKeys,
   attemptQueryOptions,
 } from "@/entities/training";
@@ -60,14 +60,14 @@ export function useStudentWorkspace({ lesson }: WorkspaceProps) {
     void client.invalidateQueries({ queryKey: trainingKeys.lessons });
   };
   const begin = useMutation({
-    mutationFn: () => trainingApi.startExecution(lesson.id),
+    mutationFn: () => lessonApi.startExecution(lesson.id),
     onSuccess: (data) => {
       client.setQueryData(trainingKeys.studentLesson(lesson.id), data);
       refresh();
     },
   });
   const start = useMutation({
-    mutationFn: trainingApi.startAttempt,
+    mutationFn: lessonApi.startAttempt,
     onSuccess: (data) => {
       client.setQueryData(trainingKeys.attempt(data.id), data);
       setSelectedAttemptId(data.id);

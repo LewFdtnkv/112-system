@@ -1,6 +1,6 @@
 import {
   activityApi,
-  trainingApi,
+  scenarioApi,
   type ScenarioItem,
 } from "@/entities/training";
 import { getApiError } from "@/shared/api";
@@ -46,7 +46,7 @@ export const ScenariosPage = () => {
   const query = useQuery({
     queryKey: ["scenarios", search, status, page],
     queryFn: ({ signal }) =>
-      trainingApi.scenarios({ q: search, status, offset: page * 20 }, signal),
+      scenarioApi.list({ q: search, status, offset: page * 20 }, signal),
   });
   return (
     <Stack spacing={2}>

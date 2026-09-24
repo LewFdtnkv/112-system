@@ -1,4 +1,4 @@
-import { trainingApi } from "@/entities/training";
+import { lessonListQueryOptions } from "@/entities/training";
 import { useDebounced } from "@/shared/lib/useDebounced";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -26,11 +26,7 @@ export function useLessonList({
     ...(studentId ? { student_id: studentId } : {}),
     ...(lessonId ? { lesson_id: lessonId } : {}),
   };
-  const query = useQuery({
-    queryKey: ["lessons", student, params],
-    queryFn: ({ signal }) => trainingApi.lessons(student, params, signal),
-    refetchInterval: student ? 15000 : 10000,
-  });
+  const query = useQuery(lessonListQueryOptions(student, params));
   return {
     search,
     setSearch,

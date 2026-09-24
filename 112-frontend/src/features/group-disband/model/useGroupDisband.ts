@@ -1,4 +1,4 @@
-import { trainingApi } from "@/entities/training";
+import { userApi } from "@/entities/training";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import type { GroupDisbandProps } from "../types/GroupDisband";
@@ -7,7 +7,7 @@ export function useGroupDisband({ group, onDisbanded }: GroupDisbandProps) {
   const [open, setOpen] = useState(false);
   const client = useQueryClient();
   const mutation = useMutation({
-    mutationFn: () => trainingApi.disbandGroup(group.id),
+    mutationFn: () => userApi.disbandGroup(group.id),
     onSuccess: () => {
       setOpen(false);
       onDisbanded?.();

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { telephonyApi } from "@/entities/telephony";
 import type { StationInput } from "@/entities/telephony";
-import { trainingApi } from "@/entities/training";
+import { userApi } from "@/entities/training";
 export function useStations() {
   const client = useQueryClient();
   const stations = useQuery({
@@ -12,7 +12,7 @@ export function useStations() {
   const students = useQuery({
     queryKey: ["telephony-students"],
     queryFn: ({ signal }) =>
-      trainingApi.users({ role: "student", limit: 100 }, signal),
+      userApi.users({ role: "student", limit: 100 }, signal),
   });
   const refresh = () =>
     client.invalidateQueries({ queryKey: ["telephony-stations"] });

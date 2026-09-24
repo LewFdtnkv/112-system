@@ -1,4 +1,4 @@
-import type { UserItem } from "../types/types";
+import type { UserItem } from "../types/user";
 export const workStatusLabels = {
   assigned: "Назначено",
   in_progress: "В процессе",
@@ -11,40 +11,48 @@ export const userName = (
     .filter(Boolean)
     .join(" ") || user.username;
 
+export type { Analytics } from "../types/analytics";
 export type {
-  Analytics,
-  AssessmentPolicy,
-  Assignment,
-  Attempt,
-  AuditEvent,
-  AuditPage,
-  AutomaticCheck,
-  CardData,
-  CardListItem,
-  CardTemplate,
-  CardTemplateInput,
   Classifier,
   ClassifierEntry,
   ClassifierRoute,
+  Recipient,
+  Service,
+} from "../types/catalog";
+export type {
+  AssessmentPolicy,
+  AuditEvent,
+  AuditPage,
+  AutomaticCheck,
   ClientObservation,
   Grade,
   GradeInput,
-  GroupItem,
+  WorkReview,
+} from "../types/review";
+export type {
+  Assignment,
   JournalCard,
-  LessonPage,
-  LessonRow,
-  LessonStart,
-  Page,
-  Recipient,
+  StudentLesson,
+} from "../types/workspace";
+export type { LessonPage, LessonRow, LessonStart } from "../types/lesson";
+export type { Page } from "../types/pagination";
+export type {
   ScenarioDetail,
   ScenarioInput,
   ScenarioItem,
-  Service,
-  StudentLesson,
+} from "../types/scenario";
+export type {
+  GroupItem,
   UserCreate,
   UserDetail,
   UserItem,
   UserRole,
   UserUpdate,
-  WorkReview,
-} from "../types/types";
+} from "../types/user";
+export type { Attempt } from "../types/attempt";
+export type {
+  CardData,
+  CardListItem,
+  CardTemplate,
+  CardTemplateInput,
+} from "../types/card";

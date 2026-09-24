@@ -1,4 +1,6 @@
 import {
+  cardGenerationOptionsQueryOptions,
+  cardKeys,
   generationApi,
   type FeatureDefinition,
   type GenerationParameters,
@@ -20,10 +22,7 @@ export function useCardGeneration({ onClose }: CardGenerationDialogProps) {
   const [serviceChoice, setServiceChoice] = useState<SelectOption | null>(null);
   const [manualServices, setManualServices] = useState(false);
   const [features, setFeatures] = useState<FeatureDefinition[]>([]);
-  const options = useQuery({
-    queryKey: ["generation-options"],
-    queryFn: ({ signal }) => generationApi.options(signal),
-  });
+  const options = useQuery(cardGenerationOptionsQueryOptions());
   function change(values: Partial<GenerationParameters>) {
     setP((prev) => {
       const next = { ...prev, ...values };
@@ -51,7 +50,7 @@ export function useCardGeneration({ onClose }: CardGenerationDialogProps) {
         service_ids: manualServices ? services.map((s) => s.id) : null,
       }),
     onSuccess: async () => {
-      await client.invalidateQueries({ queryKey: ["card-generations"] });
+      await client.invalidateQueries({ queryKey: cardKeys.generations });
       onClose();
     },
   });
