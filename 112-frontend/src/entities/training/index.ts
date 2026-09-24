@@ -27,3 +27,6 @@ export * from "./types/learning";
 export * from "./types/semanticAssessment";
 export * from "./model/learning";
 export { LearningSummary } from "./ui/LearningSummary";
+
+export * from "./types/assessmentMemory";
+export { assessmentMemoryApi } from "./api/assessmentMemoryApi";

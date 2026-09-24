@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { NavLink } from "react-router-dom";
 
 import { useAuthStore } from "@/entities/user";
+import { routePaths } from "@/shared/config/routes";
 import { navigationGroups } from "@/shared/config/navigation";
 
 export const AppSidebar = () => {
@@ -37,6 +38,11 @@ export const AppSidebar = () => {
                   <li key={item.to}>
                     <NavLink
                       to={item.to}
+                      end={
+                        item.to === routePaths.teacherDashboard ||
+                        item.to === routePaths.studentDashboard ||
+                        item.to === routePaths.adminDashboard
+                      }
                       onClick={() => {
                         if (window.innerWidth <= 760 && detailsRef.current) {
                           setIsOpen(false);

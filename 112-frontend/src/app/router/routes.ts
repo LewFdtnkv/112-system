@@ -42,7 +42,19 @@ const studentRoutes: RouteObject = {
 const staffRoutes: RouteObject = {
   Component: StaffRoute,
   children: [
-    {path: routePaths.telephonyMedia, lazy: async () => ({Component: (await import("@/pages/telephony")).TelephoneMediaPage})},
+    {
+      path: routePaths.assessmentMemory,
+      lazy: async () => ({
+        Component: (await import("@/pages/assessment-memory"))
+          .AssessmentMemoryPage,
+      }),
+    },
+    {
+      path: routePaths.telephonyMedia,
+      lazy: async () => ({
+        Component: (await import("@/pages/telephony")).TelephoneMediaPage,
+      }),
+    },
     {
       path: routePaths.studentProfile,
       lazy: async () => ({
@@ -119,7 +131,12 @@ const staffRoutes: RouteObject = {
 const adminRoutes: RouteObject = {
   Component: AdminRoute,
   children: [
-    {path: routePaths.telephonyStations, lazy: async () => ({Component: (await import("@/pages/telephony")).StationsPage})},
+    {
+      path: routePaths.telephonyStations,
+      lazy: async () => ({
+        Component: (await import("@/pages/telephony")).StationsPage,
+      }),
+    },
     {
       path: routePaths.catalogs,
       lazy: async () => ({

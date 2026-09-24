@@ -1,5 +1,8 @@
 import { Alert, Button, Stack, Typography } from "@mui/material";
 import { getApiError } from "@/shared/api";
+import { RetrievedExamples } from "./RetrievedExamples";
+import { AssessmentMemory } from "./AssessmentMemory";
+import { useAssessmentMemory } from "../model/useAssessmentMemory";
 import { useSemanticRetry } from "../model/useSemanticRetry";
 import { semanticLabels, semanticStatusLabels } from "../model/semanticLabels";
 import type {
@@ -30,6 +33,12 @@ export function SemanticStatus({ summary }: SemanticStatusProps) {
 export function SemanticReview(props: SemanticReviewProps) {
   const { review } = props;
   const retry = useSemanticRetry(props);
+  const target = {
+    lessonId: props.lessonId,
+    studentId: props.studentId,
+    attemptId: props.attemptId,
+  };
+  const memory = useAssessmentMemory(target, review.status === "succeeded");
   return (
     <Stack spacing={1}>
       <Typography variant="h6" component="h3">
@@ -51,6 +60,18 @@ export function SemanticReview(props: SemanticReviewProps) {
         </Alert>
       )}
       {review.error && <Alert severity="warning">{review.error}</Alert>}
+      {review.retrieval?.status === "unavailable" && (
+        <Alert severity="warning">
+          Память разборов недоступна. Проверка выполнена со стандартными
+          примерами.
+        </Alert>
+      )}
+      {memory.error && (
+        <Alert severity="warning">
+          Не удалось загрузить ваши разборы.{" "}
+          <Button onClick={() => memory.refetch()}>Повторить</Button>
+        </Alert>
+      )}
       {review.findings.map((finding) => (
         <Alert
           key={finding.code}
@@ -78,11 +99,27 @@ export function SemanticReview(props: SemanticReviewProps) {
               ? "Решение принято для расчёта; итог зависит от полноты проверки всех смысловых полей."
               : "Автоматически в балл не включено."}
           </small>
+          {!!review.retrieval?.used_examples?.[finding.code]?.length && (
+            <p>
+              Использовано разборов из памяти:{" "}
+              {review.retrieval.used_examples[finding.code].length}.
+            </p>
+          )}
+          {review.status === "succeeded" && memory.isSuccess && (
+            <AssessmentMemory
+              target={target}
+              finding={finding}
+              entries={memory.data}
+            />
+          )}
         </Alert>
       ))}
       <Typography variant="body2">
         Модель: {review.model ?? "—"} · Рубрика: {review.prompt_version ?? "—"}
       </Typography>
+      {review.status === "succeeded" && review.retrieval && (
+        <RetrievedExamples target={target} />
+      )}
       <details>
         <summary>Процесс выполнения и подсказки</summary>
         <p>

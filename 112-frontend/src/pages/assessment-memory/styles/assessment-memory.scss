@@ -1,0 +1,32 @@
+.memory-library-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  .MuiTextField-root {
+    flex: 1 1 220px;
+    min-width: 200px;
+  }
+}
+.memory-library-table {
+  min-width: 760px;
+  .memory-library-row {
+    cursor: pointer;
+    transition: background-color 140ms ease;
+    &:focus-visible {
+      outline: 2px solid #008eb9;
+      outline-offset: -2px;
+    }
+    &:active {
+      background: #d9eaf1;
+    }
+  }
+  .memory-library-summary {
+    max-width: 460px;
+  }
+}
+.memory-library-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

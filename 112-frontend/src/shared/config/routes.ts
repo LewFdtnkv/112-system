@@ -5,6 +5,7 @@ export const routePaths = {
   login: "/login",
   changePassword: "/change-password",
   studentDashboard: "/student",
+  assessmentMemory: "/teacher/assessment-memory",
   teacherDashboard: "/teacher",
   studentProfile: "/teacher/students/:studentId",
   adminDashboard: "/admin",

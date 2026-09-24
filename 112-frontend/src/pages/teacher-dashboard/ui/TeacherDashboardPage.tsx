@@ -25,6 +25,9 @@ export const TeacherDashboardPage = () => {
           <li>
             <Link to="/analytics">Аналитика</Link>
           </li>
+          <li>
+            <Link to="/teacher/assessment-memory">Память ИИ</Link>
+          </li>
         </ul>
       </nav>
       <LessonList student={false} />

@@ -26,6 +26,11 @@ export interface SemanticReview {
   prompt_version: string | null;
   error: string | null;
   findings: SemanticFinding[];
+  retrieval?: {
+    status?: "ready" | "disabled" | "unavailable";
+    embedding_model?: string;
+    used_examples?: Record<string, string[]>;
+  };
   process: {
     server_event_count?: number;
     browser_event_count?: number;
