@@ -1,3 +1,4 @@
+import { GuideSessionProvider } from "@/features/learning-assistance";
 import { TelephoneSessionProvider } from "@/features/telephone";
 import { useStudentWorkspace } from "../model/useStudentWorkspace";
 import type { WorkspaceProps } from "../types/TrainingWorkspacePage";
@@ -6,7 +7,9 @@ import { WorkspaceStartScreen } from "./WorkspaceStartScreen";
 export function Workspace(props: WorkspaceProps) {
   return (
     <TelephoneSessionProvider>
-      <WorkspaceContent {...props} />
+      <GuideSessionProvider key={props.lesson.id}>
+        <WorkspaceContent {...props} />
+      </GuideSessionProvider>
     </TelephoneSessionProvider>
   );
 }

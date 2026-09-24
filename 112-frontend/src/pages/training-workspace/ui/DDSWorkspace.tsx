@@ -92,7 +92,7 @@ export function DDSWorkspace(props: DDSWorkspaceProps) {
               activity={workspace.activity}
               onHighlight={workspace.setHighlight}
             />
-            <details>
+            <details data-learning-target="source" open={attempt.learning.kind === "introduction" ? true : undefined}>
               <summary>
                 Учебное задание ДДС · {dds.profile.name} · цель: {dds.goal} ·
                 {dds.reaction_norm_seconds != null

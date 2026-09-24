@@ -61,7 +61,12 @@ export function CardFooterTools({
         aria-expanded={commentOpen}
         onClick={onCommentToggle}
       />
-      <ArmIconButton icon="close" label="Закрыть" onClick={onClose} />
+      <ArmIconButton
+        icon="close"
+        label="Закрыть"
+        data-learning-target="close_card"
+        onClick={onClose}
+      />
     </div>
   );
 }

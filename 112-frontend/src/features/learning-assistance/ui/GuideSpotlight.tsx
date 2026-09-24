@@ -4,6 +4,7 @@ import type { GuideSpotlightProps } from "../types/guide";
 
 export function GuideSpotlight({
   hint,
+  hideCheck = false,
   busy,
   error,
   onCheck,
@@ -39,14 +40,20 @@ export function GuideSpotlight({
           <span>ОСВОЕНИЕ ИНТЕРФЕЙСА</span>
           <button
             type="button"
-            aria-label="Свернуть сопровождение"
+            aria-label="Отключить сопровождение"
             onClick={onPause}
           >
             ×
           </button>
         </header>
         <h2>
-          {hint.target === "submit" ? "Завершите карточку" : "Попробуйте сами"}
+          {hint.target === "source"
+            ? "Сначала прочитайте задачу"
+            : hint.task === "guide.services"
+              ? "Проверьте службы"
+              : hint.target === "submit"
+                ? "Завершите карточку"
+                : "Следующий шаг"}
         </h2>
         <div aria-live="polite" aria-atomic="true">
           {geometry?.message && (
@@ -68,10 +75,27 @@ export function GuideSpotlight({
               ? "Подтвердите действие галочкой в открытом окне."
               : busy
                 ? "Проверяем сохранённые действия…"
-                : "Следующий шаг появится после выполнения действия."}
+                : hideCheck
+                  ? hint.task === "journal.waiting"
+                    ? "Следите за новыми карточками в списке."
+                    : "Нажмите подсвеченную кнопку, когда будете готовы."
+                  : hint.advance === "confirm"
+                    ? hint.task.startsWith("guide.")
+                      ? "Продолжите, когда будете готовы."
+                      : "Допишите ответ, затем нажмите «Продолжить»."
+                    : "Перейдём дальше, когда ответ будет верным."}
           </small>
-          <button type="button" onClick={onCheck} disabled={busy}>
-            Проверить шаг
+          {!hideCheck && (
+            <button type="button" onClick={onCheck} disabled={busy}>
+              {hint.advance === "confirm" ? "Продолжить" : "Проверить шаг"}
+            </button>
+          )}
+          <button
+            type="button"
+            className="interface-guide-disable"
+            onClick={onPause}
+          >
+            Отключить сопровождение
           </button>
         </footer>
         {error && <p role="alert">{error}</p>}

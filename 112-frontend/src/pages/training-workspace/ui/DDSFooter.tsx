@@ -89,6 +89,7 @@ export function DDSFooter() {
         <ArmIconButton
           icon="close"
           label="Закрыть карточку ДДС"
+          data-learning-target="close_card"
           className="dds-footer-control"
           onClick={w.close}
           disabled={busy}

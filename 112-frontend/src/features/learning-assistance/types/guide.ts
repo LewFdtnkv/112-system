@@ -2,6 +2,7 @@ import type { LearningHint } from "@/entities/training";
 
 export interface GuideAnchor {
   element: HTMLElement;
+  include?: HTMLElement[];
   message?: string;
 }
 export interface GuideGeometry {
@@ -16,8 +17,13 @@ export interface GuideGeometry {
 }
 export interface GuideSpotlightProps {
   hint: LearningHint;
+  hideCheck?: boolean;
   busy: boolean;
   error: string | null;
   onCheck: () => void;
   onPause: () => void;
+}
+
+export interface JournalGuideProps {
+  mode: "start" | "new" | "resume" | "waiting";
 }

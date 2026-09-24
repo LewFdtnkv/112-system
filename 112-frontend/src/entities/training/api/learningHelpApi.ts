@@ -5,6 +5,7 @@ export const learningHelpApi = {
     attemptId: string,
     request: {
       request_id: string;
+      confirm_hint_id?: string;
       trigger: "request" | "automatic" | "guided";
       level: "goal" | "explanation" | "solution";
     },

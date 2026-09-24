@@ -25,7 +25,15 @@ export function useGuideGeometry(hint: LearningHint) {
             behavior: "instant",
           });
       }
-      const rect = anchor.element.getBoundingClientRect();
+      const bounds = [anchor.element, ...(anchor.include ?? [])].map((el) =>
+        el.getBoundingClientRect(),
+      );
+      const rect = {
+        left: Math.min(...bounds.map((b) => b.left)),
+        top: Math.min(...bounds.map((b) => b.top)),
+        right: Math.max(...bounds.map((b) => b.right)),
+        bottom: Math.max(...bounds.map((b) => b.bottom)),
+      };
       const left = Math.max(4, rect.left - 5);
       const top = Math.max(4, rect.top - 5);
       const next = {

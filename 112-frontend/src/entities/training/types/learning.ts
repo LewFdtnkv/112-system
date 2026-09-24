@@ -50,6 +50,8 @@ export interface LearningHint {
   text: string;
   target: string | null;
   presentation: "text" | "highlight";
+  advance?: "action" | "confirm";
+  continue_allowed?: boolean;
 }
 export interface HintRead {
   status: "ready" | "waiting" | "disabled" | "complete";

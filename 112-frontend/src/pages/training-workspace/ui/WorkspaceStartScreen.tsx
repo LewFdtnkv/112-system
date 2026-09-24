@@ -1,3 +1,4 @@
+import { JournalGuide } from "@/features/learning-assistance";
 import { LearningSummary } from "@/entities/training";
 import { StudentMessages } from "@/features/teaching-messages";
 import { getApiError } from "@/shared/api";
@@ -30,6 +31,9 @@ export function WorkspaceStartScreen({
   return (
     <Stack spacing={2} sx={styles.stack}>
       <h1>{lesson.title}</h1>
+      {lesson.learning.kind === "introduction" && canBegin && !confirmStart && (
+        <JournalGuide mode="start" />
+      )}
       <LearningSummary policy={lesson.learning} />
       <p>
         Карточек: {lesson.assignments.length}.{" "}
@@ -59,6 +63,7 @@ export function WorkspaceStartScreen({
       </Alert>
       <Button
         variant="contained"
+        data-learning-target="journal.start"
         disabled={!canBegin || opening}
         onClick={() => setConfirmStart(true)}
       >

@@ -111,3 +111,12 @@
     transition: none;
   }
 }
+
+.interface-guide-panel .interface-guide-disable {
+  background: transparent;
+  color: #52697d;
+  border-color: transparent;
+}
+.interface-guide-panel .interface-guide-disable:hover {
+  background: #edf5fc;
+}

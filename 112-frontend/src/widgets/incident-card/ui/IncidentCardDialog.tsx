@@ -99,7 +99,7 @@ function IncidentCardForm(props: IncidentCardFormProps) {
         onHistory={setModal}
       />
       {props.remote.message && (
-        <div className="arm-source-message">
+        <div className="arm-source-message" data-learning-target="source">
           <b>Сообщение заявителя:</b> {props.remote.message}
         </div>
       )}

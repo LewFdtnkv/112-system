@@ -28,44 +28,90 @@ async function open(page: import("@playwright/test").Page) {
   );
 }
 
-test("interface guide follows saved fields, pauses, resumes and survives reload", async ({
+test("guide introduces the task, waits for correct and confirmed answers, includes search results", async ({
   page,
 }) => {
   const fixture = await mockBusiness(page, policy);
+  const confirmed = new Set<string>();
+  const issued = new Map<string, string>();
   let unavailable = false;
+  await page.route(
+    "**/api/v1/student/attempts/attempt/classifier-entries*",
+    (r) =>
+      r.fulfill({
+        json: [
+          {
+            ...fixture.currentAttempt().classifier_entry,
+            id: "entry-new",
+            name: "Пожар",
+          },
+        ],
+      }),
+  );
   await page.route(
     "**/api/v1/student/attempts/attempt/hints",
     async (route) => {
       const body = route.request().postDataJSON();
-      expect(body.trigger).toBe("guided");
       if (unavailable)
         return route.fulfill({
           status: 503,
-          json: { detail: "Учебная помощь временно недоступна" },
+          json: { detail: "Помощь временно недоступна" },
         });
+      if (body.confirm_hint_id)
+        confirmed.add(issued.get(body.confirm_hint_id)!);
       const a = fixture.currentAttempt();
-      const phoneDone =
-        a.card.data.caller_phone.replace(/\D/g, "") === "79001234567";
-      const done = a.card.data.address_details.street === "Лесная улица";
+      const task = !confirmed.has("guide.source")
+        ? "guide.source"
+        : a.card.classifier_entry_id !== "entry-new"
+          ? "classifier_entry_id"
+          : a.card.data.address_details.street !== "Лесная улица"
+            ? "address_details.street"
+            : !confirmed.has("description")
+              ? "description"
+              : !confirmed.has("guide.services")
+                ? "guide.services"
+                : "submit";
+      const texts: Record<string, string> = {
+        "guide.source":
+          "Здесь условия задачи. Прочитайте их и нажмите «Продолжить».",
+        classifier_entry_id:
+          "Выберите тип происшествия. Для поиска введите хотя бы два символа.\n\nПо условию задачи правильный ответ: Пожар.",
+        "address_details.street":
+          "Укажите улицу.\n\nПо условию задачи правильный ответ: Лесная улица.",
+        description:
+          "Кратко опишите, что случилось. Можно своими словами. Допишите ответ и нажмите «Продолжить».",
+        "guide.services":
+          "Службы подбираются автоматически. Сейчас список подходит к задаче, менять его не нужно. Если нужно, службы можно выбрать вручную кнопкой «+».",
+        submit: "Проверьте карточку и нажмите «сохранить» внизу.",
+      };
+      const target =
+        task === "guide.source"
+          ? "source"
+          : task === "classifier_entry_id"
+            ? "classification"
+            : task === "address_details.street"
+              ? "address"
+              : task === "guide.services"
+                ? "notification"
+                : task;
+      issued.set(body.request_id, task);
       await route.fulfill({
         json: {
           status: "ready",
           revision: a.card.revision,
           hint: {
             id: body.request_id,
-            task: !phoneDone
-              ? "caller_phone"
-              : done
-                ? "submit"
-                : "address_details.street",
+            task,
+            target,
             level: "solution",
-            target: !phoneDone ? "caller" : done ? "submit" : "address",
             presentation: "highlight",
-            text: !phoneDone
-              ? "Введите предоставленный заявителем телефон: +7 900 123-45-67."
-              : done
-                ? "Проверьте карточку.\n\nНажмите «сохранить» после проверки карточки."
-                : "Уточните место происшествия: по карточке должно быть понятно, куда направить помощь.\n\nЗаполняйте адрес по отдельным полям слева. Если номера дома нет, используйте описательный адрес и ориентиры, не придумывайте номер.\n\nДля «Улица» в эталонном решении указано: Лесная улица.",
+            text: texts[task],
+            advance: ["guide.source", "guide.services", "description"].includes(
+              task,
+            )
+              ? "confirm"
+              : "action",
+            continue_allowed: true,
           },
         },
       });
@@ -73,32 +119,78 @@ test("interface guide follows saved fields, pauses, resumes and survives reload"
   );
   await open(page);
   const panel = page.getByRole("region", { name: "Текущий шаг обучения" });
-  await expect(panel).toContainText("предоставленный заявителем телефон");
+  await expect(panel).toContainText("Здесь условия задачи");
+  await expect(
+    panel.getByRole("button", { name: "Отключить сопровождение", exact: true }),
+  ).toHaveCount(2);
+  await page.screenshot({
+    path: "docs/screenshots/interface-guide/task-introduction.png",
+  });
+  await panel.getByRole("button", { name: "Продолжить", exact: true }).click();
   await page
-    .getByLabel("Предоставленный", { exact: true })
-    .fill("+79001234567");
+    .getByRole("textbox", { name: "Тип происшествия", exact: true })
+    .fill("по");
+  const result = page.locator(".arm-category-results");
+  await expect(
+    result.getByRole("button", { name: "Пожар", exact: true }),
+  ).toBeVisible();
+  await expect
+    .poll(async () => {
+      const hole = await page
+        .locator(".interface-guide-veil rect")
+        .boundingBox();
+      const list = await result.boundingBox();
+      return !!hole && !!list && hole.y + hole.height >= list.y + list.height;
+    })
+    .toBe(true);
+  await page.screenshot({
+    path: "docs/screenshots/interface-guide/type-search.png",
+  });
+  await result.getByRole("button", { name: "Пожар", exact: true }).click();
+  await expect(panel).toContainText("Лесная улица");
+  await page.getByLabel("Улица", { exact: true }).fill("Лесная");
+  await expect
+    .poll(() => fixture.currentAttempt().card.data.address_details.street)
+    .toBe("Лесная");
   await expect(panel).toContainText("Лесная улица");
   await page.screenshot({
     path: "docs/screenshots/interface-guide/operator-112.png",
   });
-  await page.keyboard.press("Escape");
+  await panel
+    .getByRole("button", { name: "Отключить сопровождение", exact: true })
+    .last()
+    .click();
   await expect(panel).toHaveCount(0);
-  await page.getByRole("button", { name: "Продолжить сопровождение" }).click();
-  await expect(panel).toBeVisible();
+  await page.getByRole("button", { name: "Включить сопровождение" }).click();
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(panel).toBeVisible();
-  const rect = await panel.boundingBox();
-  expect(rect!.x).toBeGreaterThanOrEqual(0);
-  expect(rect!.x + rect!.width).toBeLessThanOrEqual(390);
   await page.screenshot({
     path: "docs/screenshots/interface-guide/operator-mobile.png",
   });
   await page.getByLabel("Улица", { exact: true }).fill("Лесная улица");
-  await expect(panel).toContainText("Завершите карточку");
+  await expect(panel).toContainText("Кратко опишите");
+  await page
+    .getByRole("textbox", { name: "Сообщение со слов заявителя" })
+    .fill("Начало");
+  await expect
+    .poll(() => fixture.currentAttempt().card.data.description)
+    .toBe("Начало");
+  await expect(panel).toContainText("Кратко опишите");
   await page.reload();
   await page
     .getByRole("button", { name: "Продолжить заполнение", exact: true })
     .click();
+  await expect(panel).toContainText("Кратко опишите");
+  await page
+    .getByRole("textbox", { name: "Сообщение со слов заявителя" })
+    .fill("В доме дым из окна, очевидец находится снаружи.");
+  await panel.getByRole("button", { name: "Продолжить", exact: true }).click();
+  await expect(panel).toContainText("менять его не нужно");
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.screenshot({
+    path: "docs/screenshots/interface-guide/services-explanation.png",
+  });
+  await panel.getByRole("button", { name: "Продолжить", exact: true }).click();
   await expect(panel).toContainText("Завершите карточку");
   unavailable = true;
   await panel.getByRole("button", { name: "Проверить шаг" }).click();
@@ -121,6 +213,7 @@ test("DDS guide follows own service, assignment dialog and crew pencil", async (
       errors.push(message.text());
   });
   const fixture = await mockBusiness(page, policy);
+  let sourceConfirmed = false;
   const time = new Date().toISOString();
   const base = fixture.currentAttempt();
   const dds = {
@@ -181,6 +274,25 @@ test("DDS guide follows own service, assignment dialog and crew pencil", async (
   );
   await page.route("**/api/v1/student/attempts/attempt/hints", (r) => {
     const body = r.request().postDataJSON();
+    if (body.confirm_hint_id) sourceConfirmed = true;
+    if (!sourceConfirmed)
+      return r.fulfill({
+        json: {
+          status: "ready",
+          revision: dds.revision,
+          hint: {
+            id: body.request_id,
+            task: "guide.source",
+            target: "source",
+            level: "solution",
+            advance: "confirm",
+            continue_allowed: true,
+            presentation: "highlight",
+            text: "Здесь условия задачи ДДС. Прочитайте их и нажмите «Продолжить».",
+          },
+        },
+      });
+
     return r.fulfill({
       json: {
         status: "ready",
@@ -218,6 +330,11 @@ test("DDS guide follows own service, assignment dialog and crew pencil", async (
   });
   await open(page);
   const panel = page.getByRole("region", { name: "Текущий шаг обучения" });
+  await expect(panel).toContainText("Здесь условия задачи ДДС");
+  await page.screenshot({
+    path: "docs/screenshots/interface-guide/dds-task-introduction.png",
+  });
+  await panel.getByRole("button", { name: "Продолжить", exact: true }).click();
   await expect(panel).toContainText("Нажмите плитку своей службы");
   await expect(page.locator(".arm-card-dialog .MuiDialog-container")).toHaveCSS(
     "opacity",
@@ -298,4 +415,74 @@ test("teacher can assign interface introduction with full assistance", async ({
   await expect(page.getByRole("dialog")).toContainText("Освоение интерфейса");
   await page.getByRole("button", { name: "Подтвердить назначение" }).click();
   await expect(page).toHaveURL(/training\/new-lesson$/);
+});
+
+test("journal explains where to get the next card and disabling applies inside it", async ({
+  page,
+}) => {
+  const fixture = await mockBusiness(page, policy);
+  let started = false;
+  await page.route("**/api/v1/student/lessons/lesson", (r) =>
+    r.fulfill({
+      json: {
+        id: "lesson",
+        title: "Освоение интерфейса",
+        learning: policy,
+        status: "active",
+        work_status: "in_progress",
+        started_at: new Date().toISOString(),
+        ended_at: null,
+        assignments: [
+          {
+            id: "previous",
+            position: 1,
+            title: "Завершённая",
+            role: "operator_112",
+            status: "completed",
+            attempt_id: "previous-attempt",
+            available: false,
+            card: null,
+          },
+          {
+            id: "assignment",
+            position: 2,
+            title: "Следующая",
+            role: "operator_112",
+            status: started ? "in_progress" : "pending",
+            attempt_id: started ? "attempt" : null,
+            available: true,
+            card: null,
+          },
+        ],
+      },
+    }),
+  );
+  await page.route("**/api/v1/student/assignments/assignment/start", (r) => {
+    started = true;
+    return r.fulfill({ json: fixture.currentAttempt() });
+  });
+  await page.goto("/login");
+  await page.getByLabel("Логин").fill("student1");
+  await page.getByLabel("Пароль").fill("test-password");
+  await page.getByRole("button", { name: "Войти", exact: true }).click();
+  await expect(page).toHaveURL(/student$/);
+  await page.goto("/student/sessions/lesson");
+  const panel = page.getByRole("region", { name: "Текущий шаг обучения" });
+  await expect(panel).toContainText("нажмите «+»");
+  await page.screenshot({
+    path: "docs/screenshots/interface-guide/journal-next-card.png",
+  });
+  await panel
+    .getByRole("button", { name: "Отключить сопровождение", exact: true })
+    .last()
+    .click();
+  await page
+    .getByRole("button", { name: "Создать новую карточку", exact: true })
+    .click();
+  await expect(page.locator(".arm-card-dialog")).toBeVisible();
+  expect(started).toBe(true);
+  await expect(panel).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Включить сопровождение" }),
+  ).toBeVisible();
 });

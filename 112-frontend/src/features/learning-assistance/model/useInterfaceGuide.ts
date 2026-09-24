@@ -7,7 +7,8 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { useGuideSession } from "./guideSession";
+import { useEffect, useRef } from "react";
 import type { LearningHelpProps } from "../types";
 
 export function useInterfaceGuide({
@@ -15,7 +16,7 @@ export function useInterfaceGuide({
   busy,
   beforeRequest,
 }: LearningHelpProps) {
-  const [paused, setPaused] = useState(false);
+  const { paused, setPaused } = useGuideSession();
   const revision = attempt.dds?.revision ?? attempt.card.revision;
   const active = attempt.status === "in_progress";
   const client = useQueryClient();
@@ -52,6 +53,18 @@ export function useInterfaceGuide({
   const check = useMutation({
     mutationFn: async () => {
       await beforeRequest?.();
+      if (hint?.advance === "confirm") {
+        const response = await learningHelpApi.hint(attempt.id, {
+          request_id: randomUUID(),
+          trigger: "guided",
+          level: "solution",
+          confirm_hint_id: hint.id,
+        });
+        client.setQueryData(
+          ["interface-guide", attempt.id, response.revision],
+          response,
+        );
+      }
       await client.invalidateQueries({
         queryKey: ["interface-guide", attempt.id],
       });

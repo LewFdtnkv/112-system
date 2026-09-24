@@ -1,3 +1,4 @@
+import { JournalGuide } from "@/features/learning-assistance";
 import { lessonKindLabels } from "@/entities/training";
 import { StudentMessages } from "@/features/teaching-messages";
 import { getApiError } from "@/shared/api";
@@ -32,6 +33,14 @@ export function WorkspaceDesk({ lesson, workspace }: WorkspaceStageProps) {
   ).length;
   return (
     <div className="incident-desk">
+      {lesson.learning.kind === "introduction" &&
+        !attempt &&
+        lesson.status === "active" &&
+        (next || (stream && lesson.work_status !== "submitted")) && (
+          <JournalGuide
+            mode={next ? (next.attempt_id ? "resume" : "new") : "waiting"}
+          />
+        )}
       <div className="operator-training-bar">
         <strong>
           {lesson.title} · {lessonKindLabels[lesson.learning.kind]}
@@ -48,6 +57,7 @@ export function WorkspaceDesk({ lesson, workspace }: WorkspaceStageProps) {
         </span>
         {next && (
           <Button
+            data-learning-target="journal.resume"
             disabled={opening}
             onClick={() =>
               openAttempt({ assignmentId: next.id, attemptId: next.attempt_id })
@@ -90,69 +100,72 @@ export function WorkspaceDesk({ lesson, workspace }: WorkspaceStageProps) {
           Задание завершено. Автоматическая оценка доступна в результатах.
         </Alert>
       )}
-      <IncidentFeed
-        incidents={incidents}
-        workflowStatus={
-          stream
-            ? (card) => {
-                const assignment = lesson.assignments.find(
-                  (row) => row.card?.id === card.id,
-                );
-                return assignment?.status === "completed"
-                  ? "Завершена"
-                  : assignment?.status === "interrupted"
-                    ? "Время истекло"
-                    : assignment?.first_opened_at
-                      ? "В работе"
-                      : "Ожидает открытия";
-              }
-            : undefined
-        }
-        timing={
-          stream
-            ? (card) => {
-                const assignment = lesson.assignments.find(
-                  (row) => row.card?.id === card.id,
-                );
-                return assignment ? (
-                  <DDSReactionTime assignment={assignment} />
-                ) : null;
-              }
-            : undefined
-        }
-        selectedId={attempt?.card.id}
-        onOpen={(card) => {
-          const assignment = lesson.assignments.find(
-            (row) => row.card?.id === card.id,
-          );
-          if (assignment && !opening)
-            openAttempt({
-              assignmentId: assignment.id,
-              attemptId: assignment.attempt_id,
-            });
-        }}
-        toolbar={
-          <div className="arm-journal-actions">
-            {!stream && (
-              <ArmIconButton
-                icon="plus"
-                label={
-                  isDDS
-                    ? "Получить следующую карточку"
-                    : "Создать новую карточку"
+      <div data-learning-target="journal.waiting">
+        <IncidentFeed
+          incidents={incidents}
+          workflowStatus={
+            stream
+              ? (card) => {
+                  const assignment = lesson.assignments.find(
+                    (row) => row.card?.id === card.id,
+                  );
+                  return assignment?.status === "completed"
+                    ? "Завершена"
+                    : assignment?.status === "interrupted"
+                      ? "Время истекло"
+                      : assignment?.first_opened_at
+                        ? "В работе"
+                        : "Ожидает открытия";
                 }
-                disabled={!next || !!next.attempt_id || opening}
-                onClick={() => {
-                  if (next)
-                    openAttempt({ assignmentId: next.id, attemptId: null });
-                }}
-              />
-            )}
-            <Link to={routePaths.studentDashboard}>Мои занятия</Link>
-            <Button onClick={refresh}>Обновить журнал</Button>
-          </div>
-        }
-      />
+              : undefined
+          }
+          timing={
+            stream
+              ? (card) => {
+                  const assignment = lesson.assignments.find(
+                    (row) => row.card?.id === card.id,
+                  );
+                  return assignment ? (
+                    <DDSReactionTime assignment={assignment} />
+                  ) : null;
+                }
+              : undefined
+          }
+          selectedId={attempt?.card.id}
+          onOpen={(card) => {
+            const assignment = lesson.assignments.find(
+              (row) => row.card?.id === card.id,
+            );
+            if (assignment && !opening)
+              openAttempt({
+                assignmentId: assignment.id,
+                attemptId: assignment.attempt_id,
+              });
+          }}
+          toolbar={
+            <div className="arm-journal-actions">
+              {!stream && (
+                <ArmIconButton
+                  icon="plus"
+                  data-learning-target="journal.new"
+                  label={
+                    isDDS
+                      ? "Получить следующую карточку"
+                      : "Создать новую карточку"
+                  }
+                  disabled={!next || !!next.attempt_id || opening}
+                  onClick={() => {
+                    if (next)
+                      openAttempt({ assignmentId: next.id, attemptId: null });
+                  }}
+                />
+              )}
+              <Link to={routePaths.studentDashboard}>Мои занятия</Link>
+              <Button onClick={refresh}>Обновить журнал</Button>
+            </div>
+          }
+        />
+      </div>
       {attempt?.dds ? (
         <DDSWorkspace
           key={`${attempt.id}:${attempt.status}`}

@@ -51,9 +51,16 @@ export function guideAnchor(hint: LearningHint): GuideAnchor | null {
     if (assign) return { element: assign };
   }
   const element =
-    exact(hint.task) ??
-    visible(`[data-learning-target="${CSS.escape(hint.target ?? "")}"]`);
-  return element
-    ? { element: element.closest<HTMLElement>("label") ?? element }
-    : null;
+    exact(
+      hint.task === "address_text" ? "address_details.description" : hint.task,
+    ) ?? visible(`[data-learning-target="${CSS.escape(hint.target ?? "")}"]`);
+  if (!element) return null;
+  const results =
+    hint.task === "classifier_entry_id"
+      ? visible(".arm-category-results")
+      : undefined;
+  return {
+    element: element.closest<HTMLElement>("label") ?? element,
+    include: results ? [results] : [],
+  };
 }
