@@ -42,6 +42,9 @@ async def enqueue(session, evaluation, check):
     if not attempt.settings_snapshot.get("semantic_assessment"):
         return
     context = await build_context(session, evaluation, check)
+    assignment = await session.get(Assignment, attempt.assignment_id)
+    lesson = await session.get(Lesson, assignment.lesson_id)
+    context.update(rag_enabled=settings.assessment_rag_enabled, teacher_id=str(lesson.teacher_id))
     if not context["criteria"]:
         return
     key = uuid5(NAMESPACE_URL, f"system112:semantic:{evaluation.id}:{PROMPT_VERSION}")
@@ -92,6 +95,15 @@ async def finish(session, job_id, token, output):
         or job.context["input_hash"] != context_hash(job.input)
     ):
         raise ValueError("Assessment context changed")
+    if "retrieval" in job.context:
+        import json
+        from hashlib import sha256
+
+        digest = sha256(
+            json.dumps(job.context["retrieval"], sort_keys=True, ensure_ascii=False).encode()
+        ).hexdigest()
+        if output.get("retrieval", {}).get("snapshot_hash") != digest:
+            raise ValueError("Assessment retrieval snapshot changed")
     # Revalidate the worker output; identity and criteria cannot come from a model.
     from app.schemas.semantic_assessment import SemanticFinding
 

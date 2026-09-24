@@ -1,10 +1,12 @@
 """Bounded Ollama calls and conservative acceptance of semantic decisions."""
 
+import hashlib
 import json
 import urllib.request
 
 from app.core.config import settings
 from app.schemas.semantic_assessment import SemanticDecision, SemanticFinding
+from app.services.semantic_assessment.evidence import explicitly_conflicting, response_schema
 from app.services.semantic_assessment.prompts import messages
 
 CREDIT = {"correct": 1.0, "partial": 0.5, "incorrect": 0.0}
@@ -23,7 +25,7 @@ def call(criterion, facts, model, verification=False):
                 "stream": False,
                 "think": False,
                 "keep_alive": "60s",
-                "format": SemanticDecision.model_json_schema(),
+                "format": response_schema(criterion),
                 "messages": prompt,
                 "options": {
                     "num_ctx": 4096,
@@ -57,7 +59,7 @@ def call(criterion, facts, model, verification=False):
             "eval_count",
         )
     }
-    return decision, {**metrics, "messages": prompt}
+    return decision, {**metrics, "messages": prompt, "response_schema": response_schema(criterion)}
 
 
 def supported(decision, criterion):
@@ -85,8 +87,34 @@ def evaluate(job, invoke=call):
             "browser_coverage": "incomplete_or_unknown",
         }
     }
-    for criterion in job.input["criteria"]:
+    retrieval = getattr(job, "context", {}).get("retrieval", {})
+    used = {}
+    for original in job.input["criteria"]:
+        examples = list(retrieval.get("examples", {}).get(original["code"], []))
+        criterion = original | {"_retrieved_examples": examples}
+        while examples and sum(len(m["content"]) for m in messages(criterion, facts, True)) > 8000:
+            examples.pop()
+        used[criterion["code"]] = [e["id"] for e in examples]
         base = {"code": criterion["code"], "label": criterion["label"]}
+        if explicitly_conflicting(criterion["situation"]) or explicitly_conflicting(
+            criterion["reference"]
+        ):
+            used[criterion["code"]] = []
+            results.append(
+                SemanticFinding(
+                    **base,
+                    verdict="uncertain",
+                    reason=(
+                        "В условии прямо указано противоречие между источниками. "
+                        "Автоматический смысловой штраф запрещён."
+                    ),
+                    recommendation=(
+                        "Преподавателю следует уточнить условие и проверить ответ вручную."
+                    ),
+                )
+            )
+            trace.append({"code": criterion["code"], "guard": "explicit_source_conflict"})
+            continue
         if sum(len(m["content"]) for m in messages(criterion, facts, True)) > 8000:
             results.append(
                 SemanticFinding(
@@ -156,4 +184,15 @@ def evaluate(job, invoke=call):
                 answer_quote=first.answer_quote,
             )
         )
-    return {"findings": [r.model_dump() for r in results], "trace": trace}
+    return {
+        "findings": [r.model_dump() for r in results],
+        "trace": trace,
+        "retrieval": {
+            "status": retrieval.get("status", "disabled"),
+            "embedding_model": retrieval.get("embedding_model"),
+            "snapshot_hash": hashlib.sha256(
+                json.dumps(retrieval, sort_keys=True, ensure_ascii=False).encode()
+            ).hexdigest(),
+            "used_examples": used,
+        },
+    }

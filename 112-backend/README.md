@@ -243,3 +243,6 @@ Pre-commit запускает Ruff, проверку lock-файла, YAML/TOML,
 
 Поток карточек ДДС по QA3, расписание, норматив первой реакции и применение миграции:
 [docs/DDS_STREAM.md](docs/DDS_STREAM.md).
+
+Память разборов преподавателя, pgvector, модель embeddings и команды наполнения:
+[docs/ASSESSMENT_MEMORY.md](docs/ASSESSMENT_MEMORY.md).

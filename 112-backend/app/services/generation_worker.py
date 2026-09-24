@@ -202,6 +202,10 @@ async def heartbeat(job_id, token):
 async def process(job):
     beat = asyncio.create_task(heartbeat(job.id, job.worker_id))
     try:
+        if job.purpose == AIPurpose.EVALUATION:
+            from app.services.assessment_memory.worker import prepare
+
+            await prepare(job)
         text, metadata = await asyncio.to_thread(call_model, job)
         async with session_factory() as session:
             await finish(session, job.id, job.worker_id, text, metadata)

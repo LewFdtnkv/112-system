@@ -397,3 +397,7 @@ API, жизненный цикл, очередь и границы адапте�
 - `attempts.first_opened_at`, `first_response_at`: открытие и первый ручной статус.
 
 [Поведение и ограничения](DDS_STREAM.md).
+
+Миграции 0024/0025 добавляют pgvector и память разборов: `assessment_examples`
+(вектор, полный разбор, автор/исходная AIJob/версия рубрики) и
+`assessment_memory_preferences` (личное отключение/скрытие). [Контракт](ASSESSMENT_MEMORY.md).

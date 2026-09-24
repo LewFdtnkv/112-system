@@ -6,6 +6,7 @@ from app.models.activity import (
     UserActivity,
     UserPhoto,
 )
+from app.models.assessment_example import AssessmentExample, AssessmentMemoryPreference
 from app.models.auth_session import AuthSession
 from app.models.authoring import CardTemplate, CardTemplateRecipient, ScenarioCard
 from app.models.classifier import ClassifierEntry, ClassifierRoute, ClassifierVersion
@@ -51,6 +52,8 @@ __all__ = [
     "UserActivity",
     "UserPhoto",
     "AIJob",
+    "AssessmentExample",
+    "AssessmentMemoryPreference",
     "AnswerKey",
     "Assignment",
     "Attempt",

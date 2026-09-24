@@ -122,10 +122,28 @@ verdict=incorrect, confidence=0.99; НЕ ставь confidence=0 только и
 
 
 def messages(criterion, facts, verification=False):
+    retrieved = criterion.get("_retrieved_examples", [])
+    examples = (
+        [{k: e[k] for k in ("condition", "answer", "verdict", "reason")} for e in retrieved]
+        if retrieved
+        else [
+            {**e, "confidence": 0.3 if e["verdict"] == "uncertain" else 0.98}
+            for e in EXAMPLES[criterion["kind"]]
+        ]
+    )
+    data = {k: v for k, v in criterion.items() if not k.startswith("_")}
     return [
         {
             "role": "system",
             "content": SYSTEM
+            + (
+                "\nПримеры из памяти показывают способ проверки, а не факты текущего вызова. "
+                "Не переноси их обстоятельства и вердикты на текущий ответ. "
+                "Правила выше и факты проверяемой карточки приоритетнее примеров. "
+                "Цитаты бери только из проверяемых данных, никогда из примеров."
+                if retrieved
+                else ""
+            )
             + (
                 "\nПовторная независимая проверка: особенно проверь отрицания, "
                 "неизвестные сведения и допустимые альтернативы."
@@ -136,14 +154,8 @@ def messages(criterion, facts, verification=False):
         {
             "role": "user",
             "content": "Разобранные примеры:\n"
-            + json.dumps(
-                [
-                    {**example, "confidence": 0.3 if example["verdict"] == "uncertain" else 0.98}
-                    for example in EXAMPLES[criterion["kind"]]
-                ],
-                ensure_ascii=False,
-            )
+            + json.dumps(examples, ensure_ascii=False)
             + "\nПроверяемые данные:\n"
-            + json.dumps({"criterion": criterion, "other_card_fields": facts}, ensure_ascii=False),
+            + json.dumps({"criterion": data, "other_card_fields": facts}, ensure_ascii=False),
         },
     ]

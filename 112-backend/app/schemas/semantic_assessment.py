@@ -44,6 +44,7 @@ class SemanticReview(BaseModel):
     prompt_version: str | None = None
     findings: list[SemanticFinding] = Field(default_factory=list)
     process: dict = Field(default_factory=dict)
+    retrieval: dict = Field(default_factory=dict)
     error: str | None = None
 
 

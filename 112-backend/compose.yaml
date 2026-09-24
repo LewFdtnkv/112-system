@@ -19,6 +19,8 @@ x-backend: &backend
     TELEPHONY_WS_URL: ${TELEPHONY_WS_URL:-/sip-ws}
     LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-300}
     SEMANTIC_ASSESSMENT_ENABLED: ${SEMANTIC_ASSESSMENT_ENABLED:-true}
+    ASSESSMENT_RAG_ENABLED: ${ASSESSMENT_RAG_ENABLED:-true}
+    EMBEDDING_MODEL: ${EMBEDDING_MODEL:-qwen3-embedding:0.6b}
     ASSESSMENT_MODEL: ${ASSESSMENT_MODEL:-qwen3:4b-instruct-2507-q4_K_M}
 
 services:
@@ -105,7 +107,8 @@ services:
         condition: service_healthy
 
   db:
-    image: postgres:17
+    build: ./docker/postgres
+    image: system112-postgres:17-pgvector0.8.2
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-trainer}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-trainer}

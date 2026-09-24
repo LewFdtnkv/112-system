@@ -3,6 +3,8 @@ from fastapi import APIRouter, Depends
 from app.api.dependencies import require_user
 from app.api.v1.activity import router as activity_router
 from app.api.v1.admin_activity import router as admin_activity_router
+from app.api.v1.assessment_library import router as assessment_library_router
+from app.api.v1.assessment_memory import router as assessment_memory_router
 from app.api.v1.auth import router as auth_router
 from app.api.v1.authoring import router as authoring_router
 from app.api.v1.catalog import router as catalog_router
@@ -38,6 +40,8 @@ protected_router.include_router(catalog_editor_router)
 protected_router.include_router(catalog_admin_router)
 protected_router.include_router(student_router)
 protected_router.include_router(lesson_evaluation_router)
+protected_router.include_router(assessment_memory_router)
+protected_router.include_router(assessment_library_router)
 protected_router.include_router(views_router)
 protected_router.include_router(telephony_router)
 protected_router.include_router(media_router)

@@ -54,6 +54,7 @@ def review(job):
         findings=(job.output or {}).get("findings", []),
         process=job.input.get("process", {}),
         error=job.error,
+        retrieval=(job.output or {}).get("retrieval", {}),
     )
 
 

@@ -33,6 +33,9 @@ class Settings(BaseSettings):
     llm_timeout_seconds: int = Field(default=300, ge=10, le=1800)
     semantic_assessment_enabled: bool = True
     assessment_model: str | None = None
+    assessment_rag_enabled: bool = True
+    embedding_model: str = "qwen3-embedding:0.6b"
+    embedding_timeout_seconds: int = Field(default=120, ge=10, le=600)
     generation_poll_seconds: int = Field(default=2, ge=1, le=60)
     dadata_api_key: SecretStr | None = None
     yandex_translate_api_key: SecretStr | None = None
