@@ -42,6 +42,9 @@ def operator_task(source, read):
     # Type comes first: showing child answers before selecting their type is misleading.
     ordered = sorted(check.fields, key=lambda f: 0 if f.field == "classifier_entry_id" else 1)
     for field in ordered:
+        # ARM records this information in description; there is no separate input.
+        if field.field == "victim_details":
+            continue
         skill = field_skill(field.field)
         if skill not in skills or skill == "notification":
             continue
@@ -156,7 +159,7 @@ def dds_task(read, goals):
             if not route:
                 return (
                     f"crew.{goal['crew_code']}.finished",
-                    "dds_response",
+                    "submit",
                     GOALS["dds_response"],
                     f"У бригады «{goal['name']}» уже конечный статус. Он не соответствует заданию. "
                     f"Этот цикл нельзя исправить; завершите попытку и разберите результат.",
@@ -212,6 +215,10 @@ async def issue_hint(session, attempt_id, student_id, command):
         raise HTTPException(403, "Запрос подсказки отключён преподавателем.")
     if command.trigger == "automatic" and command.level != "goal":
         raise HTTPException(422, "Автоматически можно только напомнить цель.")
+    if command.trigger == "guided" and (
+        read.learning.kind != "introduction" or command.level != "solution"
+    ):
+        raise HTTPException(422, "Guided steps require an introduction lesson and solution level")
     request = command.model_dump(mode="json", exclude={"request_id"})
     existing = await session.scalar(
         select(AttemptEvent).where(
@@ -314,6 +321,10 @@ async def issue_hint(session, attempt_id, student_id, command):
             if command.trigger == "automatic"
             else HintRead.model_validate(previous.payload["response"])
         )
+    if read.learning.kind == "introduction":
+        from app.services.interface_guide import guide_text
+
+        solution = guide_text(task, target, goal, explanation, solution)
     hint = LearningHint(
         id=str(command.request_id),
         task=task,

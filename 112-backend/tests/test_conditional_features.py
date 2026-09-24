@@ -166,7 +166,7 @@ async def test_local_training_uses_source_catalog_and_repeats(db_session, tmp_pa
     assert (
         await populate_training(gateway, state, catalog["classifier_id"], load_catalog()) == first
     )
-    for model, count in [(User, 3), (CardTemplate, 8), (Lesson, 11), (ClassifierVersion, 1)]:
+    for model, count in [(User, 3), (CardTemplate, 8), (Lesson, 13), (ClassifierVersion, 1)]:
         assert await db_session.scalar(select(func.count()).select_from(model)) == count
     from test_seed_demo import assert_dds_seed, assert_learning_seed
 

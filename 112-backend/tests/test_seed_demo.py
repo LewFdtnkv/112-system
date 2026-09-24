@@ -39,7 +39,7 @@ async def test_seed_from_admin_only_database_and_repeat(
     for model, expected in [
         (User, 3 if with_training else 1),
         (TrainingGroup, 1 if with_training else 0),
-        (Lesson, 11 if with_training else 0),
+        (Lesson, 13 if with_training else 0),
         (Service, 211),
         (ClassifierEntry, 51),
         (ClassifierVersion, 1),
@@ -199,7 +199,13 @@ async def assert_learning_seed(session, result):
     assert set(result["lessons"]) == {"operator_112", "dds"}
     seen_students = set()
     for role, lesson_ids in result["lessons"].items():
-        assert set(lesson_ids) == {"practice", "skill_practice", "review", "assessment"}
+        assert set(lesson_ids) == {
+            "introduction",
+            "practice",
+            "skill_practice",
+            "review",
+            "assessment",
+        }
         skills = set()
         for kind, lesson_id in lesson_ids.items():
             lesson = await session.get(Lesson, UUID(lesson_id))
@@ -268,7 +274,7 @@ async def test_add_learning_formats_to_existing_seed(
         gateway, state, catalog["classifier_id"], load_catalog()
     )
     assert old["lesson_id"] == new["lesson_id"] and old["dds"] == new["dds"]
-    assert await db_session.scalar(select(func.count()).select_from(Lesson)) == 11
+    assert await db_session.scalar(select(func.count()).select_from(Lesson)) == 13
     assert (
         await db_session.scalar(select(Assignment.id).where(Assignment.student_id == extra.id))
         is None

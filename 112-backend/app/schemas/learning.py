@@ -51,15 +51,19 @@ class LearningPolicy(BaseModel):
             raise ValueError("Assessment lessons cannot provide learning assistance")
         if self.kind in (LessonKind.PRACTICE, LessonKind.ASSESSMENT) and self.target_skills:
             raise ValueError("Whole scenarios cannot select individual skills")
+        if self.kind == LessonKind.INTRODUCTION:
+            if self.target_skills:
+                raise ValueError("Interface introduction covers the whole workspace")
+            self.assistance = AssistancePolicy(max_level="solution", on_request=True)
         if LearningSkill.INTERFACE in self.target_skills:
-            raise ValueError("Interface training is not available yet")
+            raise ValueError("Choose introduction for interface training")
         return self
 
 
 class HintRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     request_id: UUID
-    trigger: Literal["request", "automatic"] = "request"
+    trigger: Literal["request", "automatic", "guided"] = "request"
     level: Literal["goal", "explanation", "solution"] = "goal"
 
 

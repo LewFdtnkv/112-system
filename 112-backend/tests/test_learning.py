@@ -77,7 +77,6 @@ async def test_learning_policy_launch_snapshot_and_permissions(exercise, db_sess
 async def test_unsupported_modes_and_role_mismatch_cannot_launch(teaching):
     d = await teaching.prepare()
     for policy in [
-        {"kind": "introduction"},
         {"kind": "worked_example"},
         {"target_skills": ["dds_crews"]},
     ]:

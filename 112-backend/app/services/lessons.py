@@ -97,7 +97,7 @@ async def replay(
 async def start_lesson(
     session: AsyncSession, teacher_id: UUID, payload: LessonStart
 ) -> tuple[LessonRead, bool]:
-    if payload.learning.kind in ("introduction", "worked_example"):
+    if payload.learning.kind == "worked_example":
         raise HTTPException(422, "Guided learning is not available yet")
     fingerprint_payload = payload.model_dump(mode="json", exclude={"request_id"})
     for key in ("group_ids", "student_ids", "available_from", "available_until"):

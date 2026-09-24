@@ -176,6 +176,7 @@ async def test_unavailable_skill_data_and_whole_scenario_conflicts(exercise):
 @pytest.mark.parametrize(
     "kind,skills",
     [
+        ("introduction", []),
         ("practice", []),
         ("assessment", []),
         ("skill_practice", ["dds_response"]),
@@ -326,3 +327,28 @@ async def test_learning_v2_migration_keeps_history(exercise, db_session):
     assert snapshot["learning"]["assistance"] == {"max_level": "explanation", "on_request": True}
     assert "learning_engine" not in snapshot
     assert snapshot["assessment_policy"]["version"] == "weighted-fields-v1"
+
+
+async def test_interface_guide_follows_saved_work_and_records_help(exercise, db_session):
+    e = exercise
+    a = await launch(e, "introduction", level="none")
+    assert a["learning"]["assistance"]["max_level"] == "solution"
+    path = f"student/attempts/{a['id']}"
+    command = {"request_id": str(uuid4()), "trigger": "guided", "level": "solution"}
+    first = await e.request("POST", path + "/hints", command)
+    assert first["hint"]["task"] == "classifier_entry_id"
+    assert "два символа" in first["hint"]["text"]
+    assert "Учебное происшествие" in first["hint"]["text"]
+    assert await e.request("POST", path + "/hints", command) == first
+    await e.request("POST", path + "/hints", command, actor="student2", status=404)
+    a = await e.fill(a)
+    hint = await e.request("POST", path + "/hints", command | {"request_id": str(uuid4())})
+    assert hint["hint"]["task"] == "submit"
+    event = await db_session.scalar(
+        select(AttemptEvent).where(AttemptEvent.command_id == UUID(first["hint"]["id"]))
+    )
+    assert event.payload["trigger"] == "guided"
+    await e.request("POST", path + "/submit", {"revision": a["card"]["revision"]})
+    assert (await e.request("POST", path + "/hints", command))["status"] == "complete"
+    regular = await launch(e, "practice")
+    await e.request("POST", f"student/attempts/{regular['id']}/hints", command, status=422)

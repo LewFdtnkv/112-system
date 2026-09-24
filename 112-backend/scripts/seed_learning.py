@@ -91,6 +91,13 @@ async def populate_learning(state, create, group_id, student_id, source_cards, p
         lessons[role] = {}
         for kind, title, skills, level, goal in (
             (
+                "introduction",
+                "Освоение интерфейса",
+                [],
+                "solution",
+                "Освойте рабочее место: выполняйте действия в подсвеченных элементах карточки.",
+            ),
+            (
                 "practice",
                 "Полная учебная ситуация",
                 [],
