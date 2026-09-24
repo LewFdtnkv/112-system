@@ -55,11 +55,19 @@ async def message(payload: MessageCreate, session: SessionDep, teacher: TeacherD
 
 
 @router.get("/student/messages")
-async def messages(session: SessionDep, student: StudentDep, limit: Limit = 20, offset: Offset = 0):
+async def messages(
+    session: SessionDep,
+    student: StudentDep,
+    limit: Limit = 20,
+    offset: Offset = 0,
+    include_advice: bool = True,
+):
     query = (
         select(
             TeachingMessage.id,
             TeachingMessage.text,
+            TeachingMessage.source,
+            TeachingMessage.details,
             TeachingMessage.created_at,
             MessageRecipient.read_at,
             TrainingGroup.name.label("group_name"),
@@ -67,10 +75,12 @@ async def messages(session: SessionDep, student: StudentDep, limit: Limit = 20, 
         )
         .select_from(TeachingMessage)
         .join(MessageRecipient, MessageRecipient.message_id == TeachingMessage.id)
-        .join(User, User.id == TeachingMessage.teacher_id)
+        .outerjoin(User, User.id == TeachingMessage.teacher_id)
         .outerjoin(TrainingGroup, TrainingGroup.id == TeachingMessage.group_id)
         .where(MessageRecipient.student_id == student.id)
     )
+    if not include_advice:
+        query = query.where(TeachingMessage.source == "teacher")
     total = await session.scalar(select(func.count()).select_from(query.subquery()))
     rows = (
         (
@@ -83,7 +93,26 @@ async def messages(session: SessionDep, student: StudentDep, limit: Limit = 20, 
         .mappings()
         .all()
     )
-    return {"items": rows, "total": total, "limit": limit, "offset": offset}
+    items = [dict(row) for row in rows]
+    if include_advice:
+        from app.services.learning_recommendations.jobs import available_lessons
+
+        available = set()
+        for role in {m["details"].get("role") for m in items if m["source"] == "learning_advice"}:
+            available.update(
+                str(lesson.id) for lesson in await available_lessons(session, student.id, role)
+            )
+        for item in items:
+            if item["source"] == "learning_advice":
+                item["details"] = item["details"] | {
+                    "suggestions": [
+                        s
+                        if s.get("lesson_id") in available and not item["details"].get("obsolete")
+                        else s | {"lesson_id": None, "lesson_title": None}
+                        for s in item["details"].get("suggestions", [])
+                    ]
+                }
+    return {"items": items, "total": total, "limit": limit, "offset": offset}
 
 
 @router.post("/student/messages/{message_id}/read", status_code=204)
@@ -92,6 +121,26 @@ async def read_message(message_id: UUID, session: SessionDep, student: StudentDe
     if recipient is None:
         raise HTTPException(404, "Message not found")
     recipient.read_at = recipient.read_at or datetime.now(UTC)
+    await session.commit()
+
+
+@router.post("/student/messages/{message_id}/feedback", status_code=204)
+async def recommendation_feedback(
+    message_id: UUID, session: SessionDep, student: StudentDep, helpful: bool
+):
+    row = await session.scalar(
+        select(TeachingMessage)
+        .join(MessageRecipient)
+        .where(
+            TeachingMessage.id == message_id,
+            MessageRecipient.student_id == student.id,
+            TeachingMessage.source == "learning_advice",
+        )
+        .with_for_update(of=TeachingMessage)
+    )
+    if row is None:
+        raise HTTPException(404, "Recommendation not found")
+    row.details = row.details | {"feedback": "helpful" if helpful else "not_helpful"}
     await session.commit()
 
 

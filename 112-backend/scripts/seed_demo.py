@@ -137,7 +137,12 @@ class State:
 
 
 def run(
-    base_url: str, state_path: Path, prefix: str, admin_password: str, with_training=False
+    base_url: str,
+    state_path: Path,
+    prefix: str,
+    admin_password: str,
+    with_training=False,
+    recommendation_cards=6,
 ) -> dict:
     ensure(
         bool(re.fullmatch(r"[a-z0-9][a-z0-9_-]{0,19}", prefix)),
@@ -188,7 +193,9 @@ def run(
         else:
             from seed_training import HTTPGateway, populate_training
         result["training"] = asyncio.run(
-            populate_training(HTTPGateway(admin, API), state, classifier_id, document)
+            populate_training(
+                HTTPGateway(admin, API), state, classifier_id, document, recommendation_cards
+            )
         )
     return result
 
@@ -206,9 +213,18 @@ def main():
     parser.add_argument(
         "--with-training",
         action="store_true",
-        help="Создать аккаунты, 8 карточек, все 4 формата занятий 112/ДДС и оценённый урок",
+        help="Создать аккаунты, занятия 112/ДДС, карточки и результаты для рекомендаций",
+    )
+    parser.add_argument(
+        "--recommendation-cards",
+        type=int,
+        default=6,
+        help="С --with-training: 3–30 завершённых карточек для ИИ-рекомендаций; "
+        "0 — отключить (по умолчанию 6)",
     )
     args = parser.parse_args()
+    if args.recommendation_cards != 0 and not 3 <= args.recommendation_cards <= 30:
+        parser.error("--recommendation-cards: 0 или число от 3 до 30")
     try:
         if args.database:
             import asyncio
@@ -245,6 +261,7 @@ def main():
                             state,
                             result["classifier_id"],
                             load_catalog(),
+                            args.recommendation_cards,
                         )
                     return result
 
@@ -256,6 +273,7 @@ def main():
                 args.prefix,
                 os.environ.get("DEMO_ADMIN_PASSWORD", "admin"),
                 args.with_training,
+                args.recommendation_cards,
             )
     except (APIError, URLError, OSError, ValueError, RuntimeError) as exc:
         hint = ""

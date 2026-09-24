@@ -39,7 +39,7 @@ async def test_seed_from_admin_only_database_and_repeat(
     for model, expected in [
         (User, 3 if with_training else 1),
         (TrainingGroup, 1 if with_training else 0),
-        (Lesson, 13 if with_training else 0),
+        (Lesson, 16 if with_training else 0),
         (Service, 211),
         (ClassifierEntry, 51),
         (ClassifierVersion, 1),
@@ -47,7 +47,7 @@ async def test_seed_from_admin_only_database_and_repeat(
         assert await db_session.scalar(select(func.count()).select_from(model)) == expected
     assert first["feature_count"] == 177
     if with_training:
-        assert first["training"]["card_count"] == 8
+        assert first["training"]["card_count"] == 14
         await assert_dds_seed(db_session, first["training"]["dds"])
         await assert_learning_seed(db_session, first["training"]["learning"])
     assert stat.S_IMODE(state_path.stat().st_mode) == 0o600
@@ -261,7 +261,7 @@ async def test_add_learning_formats_to_existing_seed(
     state = seed_demo.State(tmp_path / "state.json", "http://local", "demo")
     gateway = seed_training.DatabaseGateway(db_session, admin)
     old = await seed_training.populate_training(
-        gateway, state, catalog["classifier_id"], load_catalog()
+        gateway, state, catalog["classifier_id"], load_catalog(), recommendation_cards=0
     )
     assert await db_session.scalar(select(func.count()).select_from(Lesson)) == 3
     # An existing group can have other students; the new set is only for the seed student.
@@ -271,7 +271,7 @@ async def test_add_learning_formats_to_existing_seed(
     await gateway.enroll(state.data["ids"]["source-training-group"], str(extra.id))
     monkeypatch.setattr(seed_training, "populate_learning", original)
     new = await seed_training.populate_training(
-        gateway, state, catalog["classifier_id"], load_catalog()
+        gateway, state, catalog["classifier_id"], load_catalog(), recommendation_cards=0
     )
     assert old["lesson_id"] == new["lesson_id"] and old["dds"] == new["dds"]
     assert await db_session.scalar(select(func.count()).select_from(Lesson)) == 13
@@ -282,7 +282,7 @@ async def test_add_learning_formats_to_existing_seed(
     await assert_learning_seed(db_session, new["learning"])
     assert (
         await seed_training.populate_training(
-            gateway, state, catalog["classifier_id"], load_catalog()
+            gateway, state, catalog["classifier_id"], load_catalog(), recommendation_cards=0
         )
         == new
     )

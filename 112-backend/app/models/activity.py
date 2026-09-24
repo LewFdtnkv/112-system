@@ -3,7 +3,15 @@
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import DateTime, ForeignKey, LargeBinary, String, Text, UniqueConstraint
+from sqlalchemy import (
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    LargeBinary,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -24,7 +32,17 @@ class UserActivity(UUIDPrimaryKey, CreatedAt, Base):
 class TeachingMessage(UUIDPrimaryKey, CreatedAt, Base):
     __tablename__ = "teaching_messages"
 
-    teacher_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"), index=True)
+    __table_args__ = (
+        CheckConstraint(
+            "(source = 'teacher' AND teacher_id IS NOT NULL AND ai_job_id IS NULL) OR "
+            "(source = 'learning_advice' AND teacher_id IS NULL AND ai_job_id IS NOT NULL)",
+            name="sender",
+        ),
+    )
+    source: Mapped[str] = mapped_column(String(30), default="teacher", server_default="teacher")
+    ai_job_id: Mapped[UUID | None] = mapped_column(ForeignKey("ai_jobs.id"), unique=True)
+    details: Mapped[dict] = mapped_column(JSONB, default=dict, server_default="{}")
+    teacher_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"), index=True)
     group_id: Mapped[UUID | None] = mapped_column(ForeignKey("training_groups.id"))
     text: Mapped[str] = mapped_column(Text)
 

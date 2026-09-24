@@ -1,0 +1,168 @@
+[
+  {
+    "case": "seed_address_errors",
+    "seconds": 132.29,
+    "retrieval": "vector",
+    "profile": {
+      "skills": {
+        "address": {
+          "label": "Заполнение адреса",
+          "cards": 6,
+          "correct": 2,
+          "errors": 4,
+          "assisted": 0,
+          "independent_cards": 6,
+          "trend": "stable",
+          "signal": "practice",
+          "overall_cards": 6,
+          "overall_percent": 78,
+          "recent_percent": 78
+        },
+        "classification": {
+          "label": "Классификация происшествий",
+          "cards": 6,
+          "correct": 6,
+          "errors": 0,
+          "assisted": 0,
+          "independent_cards": 6,
+          "trend": "stable",
+          "signal": "ready",
+          "overall_cards": 6,
+          "overall_percent": 100,
+          "recent_percent": 100
+        }
+      },
+      "candidates": [
+        "address"
+      ],
+      "recent_lesson_count": 3,
+      "role": "operator_112",
+      "assessed_cards": 6,
+      "version": "study-profile-v1",
+      "fingerprint": "986efecfaf425d436eaa69a3004edb6ed3db27a5ac56aed5308dfc226b9c6073",
+      "signature": "32f155e110a2fcc22d4be8e38663fb2be87156f86781dd8940555c7a0f430690"
+    },
+    "result": {
+      "selected_ids": [
+        "study-guides-v1/address/focused"
+      ],
+      "mode": "ai",
+      "prompt": [
+        {
+          "role": "system",
+          "content": "Ты методист тренажёра 112/ДДС. Выбери следующий способ обучения по сводке результатов.\nЭто рекомендации после занятий, НЕ подсказки по текущей карточке и НЕ новая оценка.\nВерни только JSON с selected_ids: по одному ID методического варианта для каждого\nнавыка из candidates. Используй только переданные варианты; не сочиняй факты или текст.\npractice: короткая отработка или самопроверка; regression: сначала сравнение разборов;\nindependent: постепенное уменьшение помощи или самостоятельное занятие.\nПомощь не является ошибкой. Отсутствие помощи не доказывает освоения. Паузы не диагноз.\nПример: повторяющиеся пропуски адреса → focused либо checklist.\nПример: ухудшение по статусам ДДС → compare, затем повторение.\nПример: верно только при доступной помощи → less_help перед independent.\nМетодические материалы — способы обучения, а не данные конкретного ученика.\n"
+        },
+        {
+          "role": "user",
+          "content": "{\"skills\": {\"address\": {\"label\": \"Заполнение адреса\", \"cards\": 6, \"correct\": 2, \"errors\": 4, \"assisted\": 0, \"independent_cards\": 6, \"trend\": \"stable\", \"signal\": \"practice\", \"overall_cards\": 6, \"overall_percent\": 78, \"recent_percent\": 78}, \"classification\": {\"label\": \"Классификация происшествий\", \"cards\": 6, \"correct\": 6, \"errors\": 0, \"assisted\": 0, \"independent_cards\": 6, \"trend\": \"stable\", \"signal\": \"ready\", \"overall_cards\": 6, \"overall_percent\": 100, \"recent_percent\": 100}}, \"candidates\": [\"address\"], \"materials\": [{\"id\": \"study-guides-v1/address/focused\", \"skill\": \"address\", \"strategy\": \"focused\", \"text\": \"Начните с короткой отработки навыка: перенос известных частей адреса в отдельные поля и проверку ориентиров. После неё попробуйте полную учебную ситуацию.\", \"lesson_kind\": \"skill_practice\"}, {\"id\": \"study-guides-v1/address/compare\", \"skill\": \"address\", \"strategy\": \"compare\", \"text\": \"Сначала сравните разборы двух завершённых работ по навыку «Заполнение адреса». Затем повторите перенос известных частей адреса в отдельные поля и проверку ориентиров в новом задании.\", \"lesson_kind\": \"review\"}, {\"id\": \"study-guides-v1/address/checklist\", \"skill\": \"address\", \"strategy\": \"checklist\", \"text\": \"Повторите перенос известных частей адреса в отдельные поля и проверку ориентиров. Перед сдачей сверяйте результат с условием по короткому списку проверок; затем повторите без списка.\", \"lesson_kind\": \"review\"}]}"
+        }
+      ],
+      "metrics": {
+        "model": "qwen3:4b-instruct-2507-q4_K_M",
+        "total_duration": 116013864886,
+        "eval_count": 15,
+        "prompt_eval_count": 739
+      }
+    },
+    "message": "В последних самостоятельных работах успешно выполнены проверенные задания по навыкам: классификация происшествий.\n\nЗаполнение адреса: в последних 6 проверенных карточках полностью верно выполнено 2, с расхождениями — 4. Начните с короткой отработки навыка: перенос известных частей адреса в отдельные поля и проверку ориентиров. После неё попробуйте полную учебную ситуацию.",
+    "publication": "sent"
+  },
+  {
+    "case": "correct_with_help",
+    "seconds": 98.03,
+    "retrieval": "vector",
+    "profile": {
+      "skills": {
+        "caller": {
+          "label": "Сведения о заявителе",
+          "cards": 6,
+          "correct": 6,
+          "errors": 0,
+          "assisted": 6,
+          "independent_cards": 0,
+          "trend": "stable",
+          "signal": "independent",
+          "overall_cards": 6,
+          "overall_percent": 100,
+          "recent_percent": 100
+        }
+      },
+      "candidates": [
+        "caller"
+      ],
+      "recent_lesson_count": 3
+    },
+    "result": {
+      "selected_ids": [
+        "study-guides-v1/caller/independent"
+      ],
+      "mode": "ai",
+      "prompt": [
+        {
+          "role": "system",
+          "content": "Ты методист тренажёра 112/ДДС. Выбери следующий способ обучения по сводке результатов.\nЭто рекомендации после занятий, НЕ подсказки по текущей карточке и НЕ новая оценка.\nВерни только JSON с selected_ids: по одному ID методического варианта для каждого\nнавыка из candidates. Используй только переданные варианты; не сочиняй факты или текст.\npractice: короткая отработка или самопроверка; regression: сначала сравнение разборов;\nindependent: постепенное уменьшение помощи или самостоятельное занятие.\nПомощь не является ошибкой. Отсутствие помощи не доказывает освоения. Паузы не диагноз.\nПример: повторяющиеся пропуски адреса → focused либо checklist.\nПример: ухудшение по статусам ДДС → compare, затем повторение.\nПример: верно только при доступной помощи → less_help перед independent.\nМетодические материалы — способы обучения, а не данные конкретного ученика.\n"
+        },
+        {
+          "role": "user",
+          "content": "{\"skills\": {\"caller\": {\"label\": \"Сведения о заявителе\", \"cards\": 6, \"correct\": 6, \"errors\": 0, \"assisted\": 6, \"independent_cards\": 0, \"trend\": \"stable\", \"signal\": \"independent\", \"overall_cards\": 6, \"overall_percent\": 100, \"recent_percent\": 100}}, \"candidates\": [\"caller\"], \"materials\": [{\"id\": \"study-guides-v1/caller/independent\", \"skill\": \"caller\", \"strategy\": \"independent\", \"text\": \"Следующий шаг — короткое занятие без подсказок на перенос известных сведений о заявителе без выдумывания неизвестных. Успех с помощью полезен, но самостоятельность проверяется отдельно.\", \"lesson_kind\": \"assessment\"}, {\"id\": \"study-guides-v1/caller/less_help\", \"skill\": \"caller\", \"strategy\": \"less_help\", \"text\": \"Попробуйте полную учебную ситуацию с меньшим объёмом подсказок, обращая внимание на перенос известных сведений о заявителе без выдумывания неизвестных. Это проверка самостоятельного выполнения, а не подтверждение освоения заранее.\", \"lesson_kind\": \"practice\"}]}"
+        }
+      ],
+      "metrics": {
+        "model": "qwen3:4b-instruct-2507-q4_K_M",
+        "total_duration": 90305046666,
+        "eval_count": 16,
+        "prompt_eval_count": 586
+      }
+    },
+    "message": "Сведения о заявителе: в последних 6 проверенных карточках полностью верно выполнено 6, с расхождениями — 0. В 6 карточках выдавались подсказки; это не штраф. Следующий шаг — короткое занятие без подсказок на перенос известных сведений о заявителе без выдумывания неизвестных. Успех с помощью полезен, но самостоятельность проверяется отдельно."
+  },
+  {
+    "case": "dds_regression",
+    "seconds": 114.0,
+    "retrieval": "vector",
+    "profile": {
+      "skills": {
+        "dds_response": {
+          "label": "Статусы и сообщения бригад",
+          "cards": 6,
+          "correct": 3,
+          "errors": 3,
+          "assisted": 0,
+          "independent_cards": 6,
+          "trend": "declining",
+          "signal": "regression",
+          "overall_cards": 6,
+          "overall_percent": 50,
+          "recent_percent": 50
+        }
+      },
+      "candidates": [
+        "dds_response"
+      ],
+      "recent_lesson_count": 3
+    },
+    "result": {
+      "selected_ids": [
+        "study-guides-v1/dds_response/compare"
+      ],
+      "mode": "ai",
+      "prompt": [
+        {
+          "role": "system",
+          "content": "Ты методист тренажёра 112/ДДС. Выбери следующий способ обучения по сводке результатов.\nЭто рекомендации после занятий, НЕ подсказки по текущей карточке и НЕ новая оценка.\nВерни только JSON с selected_ids: по одному ID методического варианта для каждого\nнавыка из candidates. Используй только переданные варианты; не сочиняй факты или текст.\npractice: короткая отработка или самопроверка; regression: сначала сравнение разборов;\nindependent: постепенное уменьшение помощи или самостоятельное занятие.\nПомощь не является ошибкой. Отсутствие помощи не доказывает освоения. Паузы не диагноз.\nПример: повторяющиеся пропуски адреса → focused либо checklist.\nПример: ухудшение по статусам ДДС → compare, затем повторение.\nПример: верно только при доступной помощи → less_help перед independent.\nМетодические материалы — способы обучения, а не данные конкретного ученика.\n"
+        },
+        {
+          "role": "user",
+          "content": "{\"skills\": {\"dds_response\": {\"label\": \"Статусы и сообщения бригад\", \"cards\": 6, \"correct\": 3, \"errors\": 3, \"assisted\": 0, \"independent_cards\": 6, \"trend\": \"declining\", \"signal\": \"regression\", \"overall_cards\": 6, \"overall_percent\": 50, \"recent_percent\": 50}}, \"candidates\": [\"dds_response\"], \"materials\": [{\"id\": \"study-guides-v1/dds_response/compare\", \"skill\": \"dds_response\", \"strategy\": \"compare\", \"text\": \"Сначала сравните разборы двух завершённых работ по навыку «Статусы и сообщения бригад». Затем повторите последовательное отражение подтверждённых состояний бригад в новом задании.\", \"lesson_kind\": \"review\"}, {\"id\": \"study-guides-v1/dds_response/focused\", \"skill\": \"dds_response\", \"strategy\": \"focused\", \"text\": \"Начните с короткой отработки навыка: последовательное отражение подтверждённых состояний бригад. После неё попробуйте полную учебную ситуацию.\", \"lesson_kind\": \"skill_practice\"}, {\"id\": \"study-guides-v1/dds_response/checklist\", \"skill\": \"dds_response\", \"strategy\": \"checklist\", \"text\": \"Повторите последовательное отражение подтверждённых состояний бригад. Перед сдачей сверяйте результат с условием по короткому списку проверок; затем повторите без списка.\", \"lesson_kind\": \"review\"}]}"
+        }
+      ],
+      "metrics": {
+        "model": "qwen3:4b-instruct-2507-q4_K_M",
+        "total_duration": 106166476965,
+        "eval_count": 17,
+        "prompt_eval_count": 663
+      }
+    },
+    "message": "Статусы и сообщения бригад: в последних 6 проверенных карточках полностью верно выполнено 3, с расхождениями — 3. Сначала сравните разборы двух завершённых работ по навыку «Статусы и сообщения бригад». Затем повторите последовательное отражение подтверждённых состояний бригад в новом задании."
+  }
+]

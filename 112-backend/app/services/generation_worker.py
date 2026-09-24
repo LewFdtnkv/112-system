@@ -31,7 +31,7 @@ async def claim(session):
         .where(
             or_(
                 and_(AIJob.purpose == AIPurpose.GENERATION, AIJob.created_by_id.is_not(None)),
-                AIJob.purpose == AIPurpose.EVALUATION,
+                AIJob.purpose.in_([AIPurpose.EVALUATION, AIPurpose.RECOMMENDATION]),
             ),
             or_(
                 and_(AIJob.status == JobStatus.QUEUED, AIJob.available_at <= now),
@@ -45,15 +45,21 @@ async def claim(session):
     if job is None:
         await session.rollback()
         return None
+    from app.services.learning_recommendations.inference import PROMPT_VERSION as STUDY_PROMPT
     from app.services.semantic_assessment.context import PROMPT_VERSION as ASSESSMENT_PROMPT
 
-    expected_prompt = ASSESSMENT_PROMPT if job.purpose == AIPurpose.EVALUATION else PROMPT_VERSION
+    expected_prompt = {
+        AIPurpose.EVALUATION: ASSESSMENT_PROMPT,
+        AIPurpose.RECOMMENDATION: STUDY_PROMPT,
+    }.get(job.purpose, PROMPT_VERSION)
     if job.prompt_version != expected_prompt:
         job.status, job.completed_at = JobStatus.FAILED, now
         job.error = (
             "Версия смысловой проверки не поддерживается этим воркером. "
             "Сохранена оценка по правилам."
             if job.purpose == AIPurpose.EVALUATION
+            else "Версия рекомендаций обновлена; задача больше не поддерживается."
+            if job.purpose == AIPurpose.RECOMMENDATION
             else "Формат генерации обновлён. Создайте новый пакет карточек."
         )
         job.worker_id = job.lease_expires_at = None
@@ -99,6 +105,10 @@ async def renew(session, job_id, token):
 
 
 def call_model(job):
+    if job.purpose == AIPurpose.RECOMMENDATION:
+        from app.services.learning_recommendations.inference import evaluate
+
+        return evaluate(job), {}
     if job.purpose == AIPurpose.EVALUATION:
         from app.services.semantic_assessment.inference import evaluate
 
@@ -110,6 +120,10 @@ def call_model(job):
 
 async def finish(session, job_id, token, text: GeneratedText, metadata):
     target = await session.get(AIJob, job_id)
+    if target and target.purpose == AIPurpose.RECOMMENDATION:
+        from app.services.learning_recommendations.jobs import finish as finish_advice
+
+        return await finish_advice(session, job_id, token, text)
     if target and target.purpose == AIPurpose.EVALUATION:
         from app.services.semantic_assessment.jobs import finish as finish_assessment
 
@@ -178,6 +192,8 @@ async def fail(session, job_id, token, error):
         "Смысловая проверка недоступна или ответ модели не прошёл проверку. "
         "Сохранена оценка по правилам."
         if job.purpose == AIPurpose.EVALUATION
+        else "Не удалось подготовить рекомендацию по дальнейшему обучению."
+        if job.purpose == AIPurpose.RECOMMENDATION
         else public_error(error)
     )
     job.status = JobStatus.FAILED if job.retry_count >= MAX_ATTEMPTS else JobStatus.QUEUED
@@ -202,6 +218,10 @@ async def heartbeat(job_id, token):
 async def process(job):
     beat = asyncio.create_task(heartbeat(job.id, job.worker_id))
     try:
+        if job.purpose == AIPurpose.RECOMMENDATION:
+            from app.services.learning_recommendations.jobs import prepare
+
+            await prepare(job)
         if job.purpose == AIPurpose.EVALUATION:
             from app.services.assessment_memory.worker import prepare
 
@@ -221,10 +241,20 @@ async def process(job):
 async def run():
     logging.basicConfig(level=logging.INFO)
     logger.info(
-        "Generation and assessment worker started; model=%s, concurrency=1", settings.llm_model
+        "Generation, assessment and study recommendation worker started; model=%s, concurrency=1",
+        settings.llm_model,
     )
+    last_recommendations = 0.0
     while True:
         try:
+            from time import monotonic
+
+            if monotonic() - last_recommendations >= 60:
+                from app.services.learning_recommendations.jobs import schedule
+
+                async with session_factory() as session:
+                    await schedule(session)
+                last_recommendations = monotonic()
             from app.services.semantic_assessment.results import reconcile
 
             async with session_factory() as session:

@@ -6,9 +6,11 @@ from uuid import NAMESPACE_URL, UUID, uuid5
 if __package__:
     from scripts.seed_dds import DatabaseDDSGateway, HTTPDDSGateway, populate_dds
     from scripts.seed_learning import populate_learning
+    from scripts.seed_recommendations import populate_recommendations
 else:
     from seed_dds import DatabaseDDSGateway, HTTPDDSGateway, populate_dds
     from seed_learning import populate_learning
+    from seed_recommendations import populate_recommendations
 
 
 def cases():
@@ -70,7 +72,7 @@ def matches(expected, actual):
     )
 
 
-async def populate_training(gateway, state, catalog_id, document):
+async def populate_training(gateway, state, catalog_id, document, recommendation_cards=6):
     """The same plan is executed through HTTP or local application services."""
     prefix = state.data["prefix"]
     accounts = state.data.setdefault("accounts", {})
@@ -171,10 +173,14 @@ async def populate_training(gateway, state, catalog_id, document):
     learning = await populate_learning(
         state, create, group_id, ids["student"], source_cards, dds["profile_id"]
     )
+    recommendations = await populate_recommendations(
+        gateway, state, create, ids["student"], source_cards, recommendation_cards
+    )
     return {
+        "recommendations": recommendations,
         "teacher": accounts["teacher"]["username"],
         "student": accounts["student"]["username"],
-        "card_count": len(card_ids) + len(learning["card_ids"]),
+        "card_count": len(card_ids) + len(learning["card_ids"]) + len(recommendations["card_ids"]),
         "lesson_id": lesson_id,
         "dds": dds,
         "learning": learning,

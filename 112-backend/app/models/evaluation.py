@@ -28,6 +28,9 @@ class AIJob(UUIDPrimaryKey, CreatedAt, Base):
     __tablename__ = "ai_jobs"
     __table_args__ = (
         UniqueConstraint("id", "attempt_id"),
+        CheckConstraint(
+            "purpose != 'recommendation' OR student_id IS NOT NULL", name="recommendation_target"
+        ),
         CheckConstraint("retry_count >= 0", name="nonnegative_retries"),
         CheckConstraint(
             "purpose != 'evaluation' OR attempt_id IS NOT NULL", name="evaluation_target"
@@ -39,6 +42,9 @@ class AIJob(UUIDPrimaryKey, CreatedAt, Base):
         Index("ix_ai_jobs_poll", "status", "available_at"),
     )
 
+    student_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT"), index=True
+    )
     purpose: Mapped[AIPurpose] = mapped_column(enum_column(AIPurpose, "ai_purpose"))
     created_by_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("users.id", ondelete="RESTRICT"), index=True

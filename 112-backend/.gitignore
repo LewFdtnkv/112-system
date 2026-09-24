@@ -18,3 +18,4 @@ build/
 /var/log/
 
 .backups/
+.recommendation-check/
