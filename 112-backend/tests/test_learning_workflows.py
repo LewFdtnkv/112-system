@@ -216,6 +216,19 @@ async def test_new_dds_uses_crews_without_changing_service(crews, api, db_sessio
             actor="student",
         )
         assert hint["status"] == "ready"
+        if kind == "introduction":
+            assert hint["hint"]["task"] == "guide.source"
+            hint = await api(
+                "POST",
+                path + "/hints",
+                {
+                    "request_id": str(uuid4()),
+                    "trigger": "guided",
+                    "level": "solution",
+                    "confirm_hint_id": hint["hint"]["id"],
+                },
+                actor="student",
+            )
         assert hint["hint"]["target"] == (
             "dds_response" if skills == ["dds_response"] else "dds_crews"
         )
@@ -334,21 +347,110 @@ async def test_interface_guide_follows_saved_work_and_records_help(exercise, db_
     a = await launch(e, "introduction", level="none")
     assert a["learning"]["assistance"]["max_level"] == "solution"
     path = f"student/attempts/{a['id']}"
-    command = {"request_id": str(uuid4()), "trigger": "guided", "level": "solution"}
-    first = await e.request("POST", path + "/hints", command)
+
+    async def hint(confirm=None, status=200):
+        command = {"request_id": str(uuid4()), "trigger": "guided", "level": "solution"}
+        if confirm:
+            command["confirm_hint_id"] = confirm
+        return await e.request("POST", path + "/hints", command, status=status)
+
+    source = await hint()
+    assert source["hint"]["task"] == "guide.source"
+    assert (await hint())["hint"]["task"] == "guide.source"
+    await hint(str(uuid4()), status=422)
+    first = await hint(source["hint"]["id"])
     assert first["hint"]["task"] == "classifier_entry_id"
     assert "два символа" in first["hint"]["text"]
-    assert "Учебное происшествие" in first["hint"]["text"]
-    assert await e.request("POST", path + "/hints", command) == first
-    await e.request("POST", path + "/hints", command, actor="student2", status=404)
-    a = await e.fill(a)
-    hint = await e.request("POST", path + "/hints", command | {"request_id": str(uuid4())})
-    assert hint["hint"]["task"] == "submit"
-    event = await db_session.scalar(
-        select(AttemptEvent).where(AttemptEvent.command_id == UUID(first["hint"]["id"]))
+    assert "По условию задачи правильный ответ" in first["hint"]["text"]
+    # An action step cannot be skipped with a forged Continue command.
+    await hint(first["hint"]["id"], status=409)
+    await e.request(
+        "POST", path + "/hints", {"request_id": str(uuid4())}, actor="student2", status=404
     )
-    assert event.payload["trigger"] == "guided"
+    a = await e.fill(a)
+    free = await hint()
+    assert free["hint"]["task"] == "address_text"
+    assert free["hint"]["advance"] == "confirm"
+    assert (await hint())["hint"]["task"] == "address_text"
+    # Partial free text never advances on autosave. Empty text cannot be confirmed.
+    a = await e.request(
+        "PUT",
+        path + "/card",
+        {
+            "revision": a["card"]["revision"],
+            "classifier_entry_id": str(e.t.entry.id),
+            "data": {"address_text": "", "description": "Слова ученика"},
+        },
+    )
+    await hint(free["hint"]["id"], status=422)
+    a = await e.fill(a)
+    description = await hint(free["hint"]["id"])
+    assert description["hint"]["task"] == "description"
+    assert (await hint(free["hint"]["id"]))["hint"]["task"] == "description"
+    services = await hint(description["hint"]["id"])
+    assert services["hint"]["task"] == "guide.services"
+    assert "менять его не нужно" in services["hint"]["text"]
+    assert (await hint(services["hint"]["id"]))["hint"]["task"] == "submit"
+    # Editing a confirmed free answer requires confirmation again.
+    a = await e.request(
+        "PUT",
+        path + "/card",
+        {
+            "revision": a["card"]["revision"],
+            "classifier_entry_id": str(e.t.entry.id),
+            "data": {"address_text": "Другой адрес", "description": "Слова ученика"},
+        },
+    )
+    assert (await hint())["hint"]["task"] == "address_text"
+    events = list(
+        await db_session.scalars(
+            select(AttemptEvent).where(
+                AttemptEvent.attempt_id == UUID(a["id"]),
+                AttemptEvent.kind == "learning.guide_confirmed",
+            )
+        )
+    )
+    assert [e.payload["task"] for e in events] == [
+        "guide.source",
+        "address_text",
+        "description",
+        "guide.services",
+    ]
     await e.request("POST", path + "/submit", {"revision": a["card"]["revision"]})
-    assert (await e.request("POST", path + "/hints", command))["status"] == "complete"
+    assert (await hint())["status"] == "complete"
     regular = await launch(e, "practice")
-    await e.request("POST", f"student/attempts/{regular['id']}/hints", command, status=422)
+    await e.request(
+        "POST",
+        f"student/attempts/{regular['id']}/hints",
+        {
+            "request_id": str(uuid4()),
+            "trigger": "guided",
+            "level": "solution",
+        },
+        status=422,
+    )
+
+
+async def test_guide_exact_address_waits_for_full_match(exercise):
+    from app.schemas.student import StudentAttemptRead
+    from app.services.learning_hints import operator_task
+
+    e = exercise
+    a = await e.fill(await launch(e, "introduction"))
+    source = {
+        "classifier_entry_id": str(e.t.entry.id),
+        "data": {"address_details": {"street": "Лесная улица", "house": "12"}},
+        "recipients": [],
+    }
+    a["card"]["data"]["address_details"] = {"street": "Лесная", "house": "1"}
+    assert (
+        operator_task(source, StudentAttemptRead.model_validate(a), {})[0]
+        == "address_details.street"
+    )
+    a["card"]["data"]["address_details"]["street"] = "Лесная улица"
+    assert (
+        operator_task(source, StudentAttemptRead.model_validate(a), {})[0]
+        == "address_details.house"
+    )
+    a["card"]["data"]["address_details"]["house"] = "12"
+    assert operator_task(source, StudentAttemptRead.model_validate(a), {})[0] == "recipients"

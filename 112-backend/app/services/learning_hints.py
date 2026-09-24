@@ -34,7 +34,7 @@ GOALS = {
 }
 
 
-def operator_task(source, read):
+def operator_task(source, read, confirmed=None):
     from app.services.field_evaluation import check_fields
 
     skills = skills_for(read.learning.model_dump(mode="json"))
@@ -45,10 +45,26 @@ def operator_task(source, read):
         # ARM records this information in description; there is no separate input.
         if field.field == "victim_details":
             continue
+        if (
+            confirmed is not None
+            and field.field == "address_text"
+            and (source.get("data", {}).get("address_details") or {}).get("description")
+        ):
+            # Both projections refer to the same descriptive-address input.
+            continue
         skill = field_skill(field.field)
         if skill not in skills or skill == "notification":
             continue
-        if field.status == "matched" or (not field.scored and field.status != "missing"):
+        if confirmed is not None:
+            from app.services.interface_guide import field_token, is_free_text
+
+            manual = is_free_text(source, field)
+            if manual:
+                if field.actual.strip() and confirmed.get(field.field) == field_token(field.actual):
+                    continue
+            elif field.status == "matched":
+                continue
+        elif field.status == "matched" or (not field.scored and field.status != "missing"):
             continue
         if field.field.startswith("features.ekp."):
             from app.schemas.catalog_document import FeatureDefinition
@@ -92,7 +108,11 @@ def operator_task(source, read):
             else GOALS[skill],
             f"Проверьте «{field.label}»: {reason}. "
             "Найдите соответствующие сведения в сообщении заявителя.",
-            f"Для «{field.label}» в эталонном решении указано: {reference}.",
+            (
+                f"По условию задачи правильный ответ в поле «{field.label}»: {reference}."
+                if confirmed is not None
+                else f"Для «{field.label}» в эталонном решении указано: {reference}."
+            ),
         )
     if "notification" in skills:
         expected = {str(r["service_id"]) for r in source.get("recipients", [])}
@@ -219,7 +239,9 @@ async def issue_hint(session, attempt_id, student_id, command):
         read.learning.kind != "introduction" or command.level != "solution"
     ):
         raise HTTPException(422, "Guided steps require an introduction lesson and solution level")
-    request = command.model_dump(mode="json", exclude={"request_id"})
+    if command.confirm_hint_id and command.trigger != "guided":
+        raise HTTPException(422, "Подтверждение шага доступно только в сопровождении.")
+    request = command.model_dump(mode="json", exclude={"request_id"}, exclude_none=True)
     existing = await session.scalar(
         select(AttemptEvent).where(
             AttemptEvent.attempt_id == attempt.id, AttemptEvent.command_id == command.request_id
@@ -300,9 +322,21 @@ async def issue_hint(session, attempt_id, student_id, command):
             {**g, "name": names[g["crew_code"]]}
             for g in attempt.settings_snapshot["dds_policy"]["required_crews"]
         ]
-    task, target, goal, explanation, solution = (
-        dds_task(read, goals) if read.dds else operator_task(source_data, read)
-    )
+    advance, continue_allowed = "action", False
+    if read.learning.kind == "introduction":
+        from app.services.interface_guide import next_step
+
+        step, advance, continue_allowed = await next_step(
+            session,
+            attempt,
+            read,
+            None if read.dds else source_data,
+            goals if read.dds else None,
+            command.confirm_hint_id,
+        )
+    else:
+        step = dds_task(read, goals) if read.dds else operator_task(source_data, read)
+    task, target, goal, explanation, solution = step
     previous = await session.scalar(
         select(AttemptEvent)
         .where(
@@ -311,11 +345,17 @@ async def issue_hint(session, attempt_id, student_id, command):
             AttemptEvent.payload["task"].astext == task,
             AttemptEvent.payload["level"].astext == command.level,
             AttemptEvent.payload["revision"].as_integer() == revision,
+            *(
+                [AttemptEvent.payload["guide_version"].as_integer() == 2]
+                if read.learning.kind == "introduction"
+                else []
+            ),
         )
         .order_by(AttemptEvent.sequence.desc())
         .limit(1)
     )
     if previous:
+        await session.commit()
         return (
             HintRead(status="waiting", revision=revision)
             if command.trigger == "automatic"
@@ -329,9 +369,13 @@ async def issue_hint(session, attempt_id, student_id, command):
         id=str(command.request_id),
         task=task,
         level=command.level,
-        text={"goal": goal, "explanation": explanation, "solution": solution}[command.level],
+        text=solution
+        if read.learning.kind == "introduction"
+        else {"goal": goal, "explanation": explanation, "solution": solution}[command.level],
         target=None if command.level == "goal" else target,
         presentation="text" if command.level == "goal" else "highlight",
+        advance=advance,
+        continue_allowed=continue_allowed,
     )
     result = HintRead(status="ready", revision=revision, hint=hint)
     await append_event(
@@ -345,6 +389,7 @@ async def issue_hint(session, attempt_id, student_id, command):
             "level": command.level,
             "revision": revision,
             "trigger": command.trigger,
+            "guide_version": 2 if read.learning.kind == "introduction" else None,
         },
         command_id=command.request_id,
     )
