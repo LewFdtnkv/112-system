@@ -251,12 +251,13 @@ class DatabaseGateway:
         self.session, self.admin, self.teacher = session, admin, None
 
     async def create(self, resource, payload):
-        from app.api.v1.groups import create_group
         from app.schemas.authoring import CardCreate, LessonStart, ScenarioCreate
         from app.schemas.group import GroupCreate
         from app.schemas.service_profile import ProfileInput
         from app.schemas.user import UserCreate
-        from app.services.authoring import create_card, create_scenario
+        from app.services.authoring.cards import create_card
+        from app.services.authoring.scenarios import create_scenario
+        from app.services.groups import create_group
         from app.services.lessons import start_lesson
         from app.services.service_profiles import create_profile
         from app.services.users import create_user
@@ -269,7 +270,7 @@ class DatabaseGateway:
             result = await create_profile(self.session, ProfileInput.model_validate(payload))
         elif resource == "groups":
             result = await create_group(
-                GroupCreate.model_validate(payload), self.session, self.teacher
+                self.session, self.teacher.id, GroupCreate.model_validate(payload)
             )
         elif resource == "cards":
             result = await create_card(

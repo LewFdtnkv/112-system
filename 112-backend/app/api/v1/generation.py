@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException
 from sqlalchemy import func, select
 
 from app.api.dependencies import SessionDep, TeacherDep
-from app.api.v1.authoring import Limit, Offset
+from app.api.pagination import Limit, Offset
 from app.models import AIJob, User
 from app.models.enums import AIPurpose, JobStatus
 from app.schemas.generation import GenerationCreate, GenerationRead

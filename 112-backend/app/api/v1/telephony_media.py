@@ -7,7 +7,7 @@ from sqlalchemy import select
 from app.api.dependencies import SessionDep, TeacherDep
 from app.models import CallCue, ScenarioCard, SpeechAsset
 from app.schemas.telephony import AudioUpdate
-from app.services.authoring import owned_scenario
+from app.services.authoring.scenarios import owned_scenario
 from app.services.telephony import media
 
 router = APIRouter(prefix="/telephony", tags=["telephone audio"])

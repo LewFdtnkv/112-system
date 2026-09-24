@@ -7,6 +7,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import GroupMembership, TrainingGroup, User, UserActivity
+from app.schemas.group import GroupCreate
 
 
 async def owned_group(
@@ -72,4 +73,14 @@ async def disband_group(session: AsyncSession, group_id: UUID, teacher_id: UUID)
             ]
         )
         await session.commit()
+    return group
+
+
+async def create_group(
+    session: AsyncSession, teacher_id: UUID, payload: GroupCreate
+) -> TrainingGroup:
+    group = TrainingGroup(name=payload.name, teacher_id=teacher_id)
+    session.add(group)
+    await session.commit()
+    await session.refresh(group)
     return group

@@ -211,7 +211,7 @@ async def test_local_training_uses_source_catalog_and_repeats(db_session, tmp_pa
     from uuid import UUID
 
     from app.schemas.student import DraftSave
-    from app.services.student import save_card
+    from app.services.student.commands import save_card
 
     focused = next(a for a in opened if a["exercise_scope"] == ["address", "caller"])
     saved = await save_card(

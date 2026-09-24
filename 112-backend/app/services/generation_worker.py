@@ -15,9 +15,20 @@ from app.models import AIJob, CardTemplate, CardTemplateRecipient, User
 from app.models.enums import AIPurpose, JobStatus
 from app.schemas.authoring import CardCreate
 from app.schemas.generation import GeneratedText
-from app.services.authoring import validate_card_definition
+from app.services.assessment_memory import worker as memory_worker
+from app.services.authoring.cards import validate_card_definition
 from app.services.card_generation import PROMPT_VERSION
+from app.services.generation.llm import compose
 from app.services.generation.narration import protect
+from app.services.learning_recommendations import inference as recommendation_inference
+from app.services.learning_recommendations import jobs as recommendation_jobs
+from app.services.learning_recommendations.inference import PROMPT_VERSION as STUDY_PROMPT
+from app.services.learning_recommendations.jobs import finish as finish_advice
+from app.services.semantic_assessment import inference as assessment_inference
+from app.services.semantic_assessment.context import PROMPT_VERSION as ASSESSMENT_PROMPT
+from app.services.semantic_assessment.jobs import finish as finish_assessment
+from app.services.semantic_assessment.jobs import publish_failed
+from app.services.semantic_assessment.results import reconcile
 
 LEASE_SECONDS = 90
 MAX_ATTEMPTS = 3
@@ -45,8 +56,6 @@ async def claim(session):
     if job is None:
         await session.rollback()
         return None
-    from app.services.learning_recommendations.inference import PROMPT_VERSION as STUDY_PROMPT
-    from app.services.semantic_assessment.context import PROMPT_VERSION as ASSESSMENT_PROMPT
 
     expected_prompt = {
         AIPurpose.EVALUATION: ASSESSMENT_PROMPT,
@@ -65,8 +74,6 @@ async def claim(session):
         job.worker_id = job.lease_expires_at = None
         await session.commit()
         if job.purpose == AIPurpose.EVALUATION:
-            from app.services.semantic_assessment.jobs import publish_failed
-
             await publish_failed(session, job.id)
         return None
     if job.retry_count >= MAX_ATTEMPTS:
@@ -75,8 +82,6 @@ async def claim(session):
         job.worker_id = job.lease_expires_at = None
         await session.commit()
         if job.purpose == AIPurpose.EVALUATION:
-            from app.services.semantic_assessment.jobs import publish_failed
-
             await publish_failed(session, job.id)
         return None
     job.status = JobStatus.RUNNING
@@ -106,14 +111,9 @@ async def renew(session, job_id, token):
 
 def call_model(job):
     if job.purpose == AIPurpose.RECOMMENDATION:
-        from app.services.learning_recommendations.inference import evaluate
-
-        return evaluate(job), {}
+        return recommendation_inference.evaluate(job), {}
     if job.purpose == AIPurpose.EVALUATION:
-        from app.services.semantic_assessment.inference import evaluate
-
-        return evaluate(job), {}
-    from app.services.generation.llm import compose
+        return assessment_inference.evaluate(job), {}
 
     return compose(job)
 
@@ -121,12 +121,8 @@ def call_model(job):
 async def finish(session, job_id, token, text: GeneratedText, metadata):
     target = await session.get(AIJob, job_id)
     if target and target.purpose == AIPurpose.RECOMMENDATION:
-        from app.services.learning_recommendations.jobs import finish as finish_advice
-
         return await finish_advice(session, job_id, token, text)
     if target and target.purpose == AIPurpose.EVALUATION:
-        from app.services.semantic_assessment.jobs import finish as finish_assessment
-
         return await finish_assessment(session, job_id, token, text)
     job = await session.scalar(select(AIJob).where(AIJob.id == job_id).with_for_update())
     if (
@@ -202,8 +198,6 @@ async def fail(session, job_id, token, error):
     job.worker_id = job.lease_expires_at = None
     await session.commit()
     if job.purpose == AIPurpose.EVALUATION and job.status == JobStatus.FAILED:
-        from app.services.semantic_assessment.jobs import publish_failed
-
         await publish_failed(session, job.id)
 
 
@@ -219,13 +213,9 @@ async def process(job):
     beat = asyncio.create_task(heartbeat(job.id, job.worker_id))
     try:
         if job.purpose == AIPurpose.RECOMMENDATION:
-            from app.services.learning_recommendations.jobs import prepare
-
-            await prepare(job)
+            await recommendation_jobs.prepare(job)
         if job.purpose == AIPurpose.EVALUATION:
-            from app.services.assessment_memory.worker import prepare
-
-            await prepare(job)
+            await memory_worker.prepare(job)
         text, metadata = await asyncio.to_thread(call_model, job)
         async with session_factory() as session:
             await finish(session, job.id, job.worker_id, text, metadata)
@@ -250,12 +240,9 @@ async def run():
             from time import monotonic
 
             if monotonic() - last_recommendations >= 60:
-                from app.services.learning_recommendations.jobs import schedule
-
                 async with session_factory() as session:
-                    await schedule(session)
+                    await recommendation_jobs.schedule(session)
                 last_recommendations = monotonic()
-            from app.services.semantic_assessment.results import reconcile
 
             async with session_factory() as session:
                 await reconcile(session)

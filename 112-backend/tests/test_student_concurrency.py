@@ -12,7 +12,8 @@ from app.schemas.audit import ObservationBatch
 from app.schemas.student import CardSubmit, DraftSave
 from app.services.attempt_audit import record_observations
 from app.services.lessons import start_lesson
-from app.services.student import save_card, start_attempt, submit_card
+from app.services.student.attempts import start_attempt
+from app.services.student.commands import save_card, submit_card
 
 pytestmark = pytest.mark.anyio
 

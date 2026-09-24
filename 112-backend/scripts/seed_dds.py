@@ -202,20 +202,22 @@ class DatabaseDDSGateway:
         self.student_id = self.identity.user.id
 
     async def lesson(self, lesson_id):
-        from app.services.student import lesson_work, student_lesson
+        from app.services.student.access import student_lesson
+        from app.services.student.journal import lesson_work
 
         lesson = await student_lesson(self.session, UUID(lesson_id), self.student_id)
         return (await lesson_work(self.session, lesson, self.student_id)).model_dump(mode="json")
 
     async def start(self, assignment_id):
-        from app.services.student import start_attempt
+        from app.services.student.attempts import start_attempt
 
         attempt, _ = await start_attempt(self.session, UUID(assignment_id), self.student_id)
         return attempt.model_dump(mode="json")
 
     async def command(self, attempt_id, kind, payload):
         from app.schemas.dds import CrewCommand, DDSAction, DDSFinish
-        from app.services import dds, dds_crews
+        from app.services.dds import commands as dds
+        from app.services.dds import crews as dds_crews
 
         action, schema = {
             "actions": (dds.act, DDSAction),

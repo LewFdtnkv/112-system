@@ -12,11 +12,15 @@ from app.models import AIJob, ClassifierEntry, ClassifierRoute, ClassifierVersio
 from app.models.enums import AIPurpose, JobStatus, PublicationStatus
 from app.schemas.authoring import CardCreate
 from app.schemas.generation import GenerationCreate, GenerationRead
-from app.services.authoring import validate_card_definition
+from app.services import generation_flags
+from app.services.authoring.cards import validate_card_definition
 from app.services.catalog_rules import (
     applicable_routes,
     feature_definitions,
 )
+from app.services.generation import planner
+from app.services.generation.evidence import extra_evidence
+from app.services.generation.presentation import prepare_message, resolve_address, resolve_caller
 
 PROMPT_VERSION = "card-generation-v4"
 CHOICES = {
@@ -151,8 +155,6 @@ async def enqueue(session, teacher_id: UUID, request: GenerationCreate):
             if set(p.service_ids) == {r.service_id for r in routes_by_entry[e.id]}
         ]
         entries = preferred or entries
-    from app.services import generation_flags
-    from app.services.generation import planner
 
     recent = await session.scalars(
         select(AIJob)
@@ -167,8 +169,6 @@ async def enqueue(session, teacher_id: UUID, request: GenerationCreate):
             usage[template_id] = usage.get(template_id, 0) + 1
     jobs = []
     for i, key in enumerate(keys):
-        from app.services.generation.presentation import prepare_message
-
         entry, plan = planner.choose(entries, p, rng, usage)
         definitions = feature_definitions(entry)
         prepare_message(plan, p, definitions, rng)
@@ -184,7 +184,6 @@ async def enqueue(session, teacher_id: UUID, request: GenerationCreate):
         )
         if not set(service_ids) <= services.keys():
             raise HTTPException(409, "Маршрут ЕКП содержит отключённую службу")
-        from app.services.generation.presentation import resolve_address, resolve_caller
 
         name, gender_label, age, phone = resolve_caller(p, plan, rng)
         address, address_text = resolve_address(p, plan, rng)
@@ -229,7 +228,6 @@ async def enqueue(session, teacher_id: UUID, request: GenerationCreate):
             recipient_service_ids=service_ids,
             use_recommended_recipients=p.service_ids is None,
         )
-        from app.services.generation.evidence import extra_evidence
 
         plan["extra_evidence"] = extra_evidence(definitions, answers, plan)
         await validate_card_definition(session, card)

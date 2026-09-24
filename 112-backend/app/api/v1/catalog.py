@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import select
 
 from app.api.dependencies import SessionDep, TeacherDep
-from app.api.v1.authoring import Limit, Offset
+from app.api.pagination import Limit, Offset
 from app.models import ClassifierEntry, ClassifierRoute, ClassifierVersion, Service, ServiceProfile
 from app.models.enums import PublicationStatus
 from app.schemas.catalog import (
@@ -15,7 +15,7 @@ from app.schemas.catalog import (
     ServiceRead,
 )
 from app.schemas.service_profile import ProfileRead
-from app.services.authoring import published_classifier, published_profile
+from app.services.authoring.catalog_access import published_classifier, published_profile
 from app.services.service_profiles import profile_read
 
 router = APIRouter(tags=["teaching catalogs"])

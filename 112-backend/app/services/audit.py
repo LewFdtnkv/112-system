@@ -1,6 +1,9 @@
 """Semantic audit. Authoritative commands and untrusted browser observations stay distinct."""
 
+from uuid import UUID
+
 from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Attempt, AttemptEvent
 from app.models.enums import EventActor
@@ -49,3 +52,11 @@ def field_changes(before, after, path=""):
             for change in field_changes(before.get(key), after.get(key), f"{path}.{key}".strip("."))
         ]
     return [] if before == after else [{"field": path, "before": before, "after": after}]
+
+
+async def append_student_event(
+    session: AsyncSession, attempt: Attempt, student_id: UUID, kind: str, payload: dict
+):
+    return await append_event(
+        session, attempt.id, kind, payload, actor=EventActor.STUDENT, actor_id=student_id
+    )

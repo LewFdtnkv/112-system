@@ -4,6 +4,7 @@ from decimal import ROUND_HALF_UP, Decimal
 from app.schemas.dds import CREW_LABELS, STATUS_LABELS
 from app.schemas.lesson_evaluation import FieldCheck
 from app.services.field_evaluation import normalized, summarize
+from app.services.learning_scope import skills_for
 
 
 def crew_goal_met(crew, expected):
@@ -127,8 +128,6 @@ def criteria_dds(check):
 
 
 def check_crew_exercise(policy, read):
-    from app.services.learning_scope import skills_for
-
     skills = skills_for(read.learning.model_dump(mode="json"), "dds")
     crews = {c["crew_code"]: c for c in read.dds.get("crews", [])}
     names = {c["code"]: c["name"] for c in read.dds["profile"].get("crews", [])}

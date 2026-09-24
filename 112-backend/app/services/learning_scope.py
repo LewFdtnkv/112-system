@@ -5,6 +5,7 @@ from copy import deepcopy
 from fastapi import HTTPException
 
 from app.schemas.student import DraftData
+from app.services.field_evaluation import summarize
 
 CARD_SKILLS = {"address", "caller", "classification", "notification", "description"}
 DATA_KEYS = {
@@ -161,8 +162,6 @@ def constrain_draft(attempt, card, payload):
 
 
 def scoped_check(check, read):
-    from app.services.field_evaluation import summarize
-
     if read.exercise_scope is None:
         return check
     fields = [f for f in check.fields if field_skill(f.field) in read.exercise_scope]

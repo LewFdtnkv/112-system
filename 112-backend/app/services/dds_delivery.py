@@ -7,6 +7,8 @@ from sqlalchemy import select
 
 from app.models import Assignment, Attempt, LessonExecution, ScenarioVersion
 from app.services.audit import append_event
+from app.services.student.creation import create_attempt
+from app.services.student.reads import attempt_read
 
 DELIVERY = "dds-stream-v1"
 
@@ -49,8 +51,6 @@ async def begin(session, lesson, student_id):
 
 
 async def release_due(session, lesson, now):
-    from app.services.student import create_attempt
-
     rows = list(
         await session.scalars(
             select(Assignment)
@@ -75,8 +75,6 @@ async def release_due(session, lesson, now):
 
 
 async def open_assignment(session, lesson, assignment, student_id):
-    from app.services.student import attempt_read
-
     execution = await execution_for(session, lesson.id, student_id)
     created = execution.started_at is None
     if created:

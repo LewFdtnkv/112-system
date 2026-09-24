@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, Query, Response
 from sqlalchemy import func, select
 
 from app.api.dependencies import SessionDep, StudentDep
-from app.api.v1.authoring import Limit, Offset
+from app.api.pagination import Limit, Offset
 from app.models import Assignment, ClassifierEntry, IncidentCard, Lesson, Service
 from app.schemas.audit import ObservationBatch
 from app.schemas.catalog import ClassifierEntryRead, ServiceRead
@@ -18,19 +18,15 @@ from app.schemas.student import (
     StudentAttemptRead,
     StudentLessonRead,
 )
-from app.services import dds as dds_service
-from app.services import dds_crews
 from app.services.attempt_audit import record_observations, reject_command
-from app.services.student import (
-    attempt_read,
-    lesson_work,
-    owned_attempt,
-    recipients,
-    save_card,
-    start_attempt,
-    student_lesson,
-    submit_card,
-)
+from app.services.dds import commands as dds_service
+from app.services.dds import crews as dds_crews
+from app.services.student.access import owned_attempt, student_lesson
+from app.services.student.attempts import start_attempt
+from app.services.student.commands import save_card, submit_card
+from app.services.student.journal import lesson_work
+from app.services.student.reads import attempt_read
+from app.services.student.routing import recipients
 
 router = APIRouter(prefix="/student", tags=["student workflow"])
 
@@ -64,7 +60,7 @@ async def lesson(lesson_id: UUID, session: SessionDep, student: StudentDep):
 async def start_execution(lesson_id: UUID, session: SessionDep, student: StudentDep):
     from app.services.dds_delivery import begin
 
-    row = await student_lesson(session, lesson_id, student.id, lock=True)
+    row = await student_lesson(session, lesson_id, student.id)
     await begin(session, row, student.id)
     await session.commit()
     return await lesson_work(session, row, student.id)
@@ -241,6 +237,6 @@ async def preview_fields(
 
 @router.post("/attempts/{attempt_id}/hints", response_model=HintRead)
 async def hint(attempt_id: UUID, payload: HintRequest, session: SessionDep, student: StudentDep):
-    from app.services.learning_hints import issue_hint
+    from app.services.learning_hints.service import issue_hint
 
     return await issue_hint(session, attempt_id, student.id, payload)

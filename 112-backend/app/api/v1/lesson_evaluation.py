@@ -9,7 +9,7 @@ from app.schemas.audit import AuditPage
 from app.schemas.lesson_evaluation import LessonGradeCreate, LessonGradeRead, LessonWorkReview
 from app.services.attempt_audit import assessment_context, audit_page, teacher_attempt
 from app.services.lesson_evaluation import ensure_automatic_grade, grade_lesson, review_work
-from app.services.student import student_lesson
+from app.services.student.access import student_lesson
 
 router = APIRouter(tags=["lesson assessment"])
 

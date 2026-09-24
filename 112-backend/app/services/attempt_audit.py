@@ -8,7 +8,8 @@ from app.models.enums import EvaluationMethod, EventActor
 from app.schemas.audit import AuditPage
 from app.schemas.semantic_assessment import SemanticDecision
 from app.services.audit import append_event
-from app.services.student import owned_attempt
+from app.services.semantic_assessment.results import jobs_for, review
+from app.services.student.access import owned_attempt
 
 
 async def record_observations(session, attempt_id, student_id, batch):
@@ -122,7 +123,6 @@ async def assessment_context(session, attempt):
             status_code=409, detail="Submit the card before requesting assessment context"
         )
     snapshot = evaluation.context_snapshot
-    from app.services.semantic_assessment.results import jobs_for, review
 
     jobs = await jobs_for(session, [attempt.id])
     return {

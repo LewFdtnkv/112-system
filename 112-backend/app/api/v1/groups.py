@@ -1,33 +1,30 @@
-from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter
 from sqlalchemy import select
 
 from app.api.dependencies import SessionDep, TeacherDep
+from app.api.pagination import Limit, Offset
 from app.models import GroupMembership, TrainingGroup, User
 from app.schemas.group import GroupCreate, GroupMemberRead, GroupRead
 from app.schemas.user import UserRead
 from app.services.groups import add_student, disband_group, owned_group
+from app.services.groups import create_group as create_training_group
 
 router = APIRouter(prefix="/groups", tags=["groups"])
 
 
 @router.post("", response_model=GroupRead, status_code=201)
 async def create_group(payload: GroupCreate, session: SessionDep, teacher: TeacherDep):
-    group = TrainingGroup(name=payload.name, teacher_id=teacher.id)
-    session.add(group)
-    await session.commit()
-    await session.refresh(group)
-    return group
+    return await create_training_group(session, teacher.id, payload)
 
 
 @router.get("", response_model=list[GroupRead])
 async def list_groups(
     session: SessionDep,
     teacher: TeacherDep,
-    limit: Annotated[int, Query(ge=1, le=100)] = 20,
-    offset: Annotated[int, Query(ge=0)] = 0,
+    limit: Limit = 20,
+    offset: Offset = 0,
 ):
     return list(
         await session.scalars(
@@ -55,8 +52,8 @@ async def list_students(
     group_id: UUID,
     session: SessionDep,
     teacher: TeacherDep,
-    limit: Annotated[int, Query(ge=1, le=100)] = 20,
-    offset: Annotated[int, Query(ge=0)] = 0,
+    limit: Limit = 20,
+    offset: Offset = 0,
 ):
     await owned_group(session, group_id, teacher.id)
     return list(

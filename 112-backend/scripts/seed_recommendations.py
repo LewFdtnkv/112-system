@@ -82,7 +82,7 @@ async def populate_recommendations(gateway, state, create, student_id, source_ca
             }
             if hasattr(student, "session"):
                 from app.schemas.student import CardSubmit, DraftSave
-                from app.services.student import save_card, submit_card
+                from app.services.student.commands import save_card, submit_card
 
                 saved = await save_card(
                     student.session,

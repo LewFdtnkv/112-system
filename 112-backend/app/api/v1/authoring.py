@@ -1,17 +1,15 @@
-from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Query, Response
-from sqlalchemy import delete, select
+from fastapi import APIRouter, Response
+from sqlalchemy import select
 
 from app.api.dependencies import SessionDep, TeacherDep
+from app.api.pagination import Limit, Offset
 from app.models import (
-    AnswerKey,
     Assignment,
     CardTemplate,
     Lesson,
     Scenario,
-    ScenarioCard,
     ScenarioVersion,
 )
 from app.schemas.authoring import (
@@ -26,20 +24,12 @@ from app.schemas.authoring import (
     ScenarioListItem,
     ScenarioRead,
 )
-from app.services.authoring import (
-    card_read,
-    create_card,
-    create_scenario,
-    owned_card,
-    owned_scenario,
-    scenario_read,
-    update_card,
-)
+from app.services.authoring.cards import card_read, create_card, owned_card, update_card
+from app.services.authoring.scenarios import create_scenario, owned_scenario, scenario_read
+from app.services.authoring.scenarios import delete_scenario as remove_scenario
 from app.services.lessons import lesson_read, lesson_reads, owned_lesson, start_lesson
 
 router = APIRouter(tags=["teacher authoring"])
-Limit = Annotated[int, Query(ge=1, le=100)]
-Offset = Annotated[int, Query(ge=0)]
 
 
 @router.post("/cards", response_model=CardRead, status_code=201)
@@ -177,30 +167,4 @@ async def new_scenario_version(
 
 @router.delete("/scenarios/{version_id}")
 async def delete_scenario(version_id: UUID, session: SessionDep, teacher: TeacherDep):
-    version = await owned_scenario(session, version_id, teacher.id)
-    scenario = await session.scalar(
-        select(Scenario).where(Scenario.id == version.scenario_id).with_for_update()
-    )
-    if scenario is None:
-        raise HTTPException(404, "Scenario not found")
-    versions = select(ScenarioVersion.id).where(ScenarioVersion.scenario_id == scenario.id)
-    used = await session.scalar(
-        select(Assignment.id).where(Assignment.scenario_version_id.in_(versions)).limit(1)
-    )
-    if used or await session.scalar(
-        select(Lesson.id).where(Lesson.scenario_version_id.in_(versions)).limit(1)
-    ):
-        scenario.is_archived = True
-        result = "archived"
-    else:
-        await session.execute(delete(AnswerKey).where(AnswerKey.scenario_version_id.in_(versions)))
-        await session.execute(
-            delete(ScenarioCard).where(ScenarioCard.scenario_version_id.in_(versions))
-        )
-        await session.execute(
-            delete(ScenarioVersion).where(ScenarioVersion.scenario_id == scenario.id)
-        )
-        await session.delete(scenario)
-        result = "deleted"
-    await session.commit()
-    return {"result": result}
+    return await remove_scenario(session, version_id, teacher.id)

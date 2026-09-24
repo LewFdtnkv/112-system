@@ -10,7 +10,7 @@ from app.api.dependencies import AdminDep, SessionDep, StudentDep, TeacherDep
 from app.core.config import settings
 from app.models import Assignment, Lesson, TelephonyStation, TrainingCall, User
 from app.schemas.telephony import CallRead, CallStart, StationCreate, StationRead, StationUpdate
-from app.services.student import owned_attempt
+from app.services.student.access import owned_attempt
 from app.services.telephony import calls
 
 router = APIRouter(prefix="/telephony", tags=["telephony"])

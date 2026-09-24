@@ -9,6 +9,10 @@ from sqlalchemy import select
 from app.models import Assignment, Attempt, Lesson
 from app.models.enums import AttemptStatus, LessonStatus
 from app.services.audit import append_event
+from app.services.automatic_assessment.results import publish_lesson_result
+from app.services.automatic_assessment.submission import assess_submission
+from app.services.dds_delivery import release_due
+from app.services.student.reads import attempt_read
 
 TERMINAL = (AttemptStatus.COMPLETED, AttemptStatus.INTERRUPTED)
 
@@ -23,8 +27,6 @@ def attempt_deadline(attempt, lesson):
 
 async def enforce_deadlines(session, lesson, now=None):
     """Caller locks the lesson. Persists expiry before a rejected mutation can roll back."""
-    from app.services.automatic_assessment import assess_submission, publish_lesson_result
-    from app.services.student import attempt_read
 
     now = now or datetime.now(UTC)
     if lesson.status not in (LessonStatus.ACTIVE, LessonStatus.PLANNED):
@@ -38,7 +40,6 @@ async def enforce_deadlines(session, lesson, now=None):
         lesson.status = LessonStatus.ACTIVE
         lesson.started_at = lesson.available_from
         changed = True
-    from app.services.dds_delivery import release_due
 
     if lesson.status == LessonStatus.ACTIVE:
         changed = await release_due(session, lesson, now) or changed

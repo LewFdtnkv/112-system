@@ -1,7 +1,5 @@
 """Scenario-driven guidance with explicit, audited confirmation of open-ended work."""
 
-import hashlib
-
 from fastapi import HTTPException
 from sqlalchemy import select
 
@@ -9,6 +7,9 @@ from app.models import AttemptEvent
 from app.models.enums import EventActor
 from app.services.audit import append_event
 from app.services.field_evaluation import check_fields
+from app.services.learning_hints.confirmation import field_token, is_free_text
+from app.services.learning_hints.dds import dds_task
+from app.services.learning_hints.operator import operator_task
 
 INSTRUCTIONS = {
     "classification": "Выберите тип происшествия. Для поиска введите хотя бы два символа.",
@@ -20,19 +21,6 @@ INSTRUCTIONS = {
     "dds_crews": "Откройте свою службу и нажмите «Назначить бригаду».",
     "dds_response": "Нажмите карандаш бригады, выберите статус и подтвердите галочкой.",
 }
-
-
-def field_token(value):
-    return hashlib.sha256(value.strip().encode()).hexdigest()
-
-
-def is_free_text(source, field):
-    if not field.scored:
-        return True
-    return any(
-        f.get("type") == "text" and field.field == f"features.ekp.{f['key']}"
-        for f in source.get("feature_definitions", [])
-    )
 
 
 def guide_text(task, target, goal, explanation, solution):
@@ -49,8 +37,6 @@ def guide_text(task, target, goal, explanation, solution):
 
 
 def choose_step(source, read, goals, confirmed):
-    from app.services.learning_hints import dds_task, operator_task
-
     if "guide.source" not in confirmed:
         return (
             (

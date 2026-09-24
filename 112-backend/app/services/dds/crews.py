@@ -9,60 +9,11 @@ from app.models import AttemptEvent, CrewAssignment
 from app.models.enums import AttemptStatus, EventActor, LessonStatus
 from app.schemas.dds import CREW_TRANSITIONS
 from app.services.audit import append_event
-
-
-async def crew_context(session, attempt):
-    rows = list(
-        await session.scalars(
-            select(CrewAssignment)
-            .where(CrewAssignment.attempt_id == attempt.id)
-            .order_by(CrewAssignment.assigned_at, CrewAssignment.id)
-        )
-    )
-    events = list(
-        await session.scalars(
-            select(AttemptEvent)
-            .where(
-                AttemptEvent.attempt_id == attempt.id,
-                AttemptEvent.kind == "dds.crew_changed",
-            )
-            .order_by(AttemptEvent.sequence)
-        )
-    )
-    return [
-        {
-            "id": str(row.id),
-            "crew_code": row.crew_code,
-            "name": row.snapshot["name"],
-            "description": row.snapshot.get("description", ""),
-            "contact_code": row.snapshot.get("contact_code"),
-            "status": row.status,
-            "assigned_at": row.assigned_at.isoformat(),
-            "status_updated_at": next(
-                (
-                    e.occurred_at
-                    for e in reversed(events)
-                    if e.payload["crew_code"] == row.crew_code
-                ),
-                row.assigned_at,
-            ).isoformat(),
-            "crew_number": row.crew_number,
-            "comment": row.comment,
-            "allowed_statuses": sorted(CREW_TRANSITIONS[row.status]),
-            "history": [
-                {"id": str(e.id), "at": e.occurred_at.isoformat(), **e.payload}
-                for e in events
-                if e.payload["crew_code"] == row.crew_code
-            ],
-        }
-        for row in rows
-    ]
+from app.services.dds.access import owned_dds
+from app.services.student.reads import attempt_read
 
 
 async def act(session, attempt_id, student_id, data):
-    from app.services.dds import owned_dds
-    from app.services.student import attempt_read
-
     attempt, lesson, response = await owned_dds(session, attempt_id, student_id)
     command = data.model_dump(mode="json", exclude={"request_id"})
     existing = await session.scalar(

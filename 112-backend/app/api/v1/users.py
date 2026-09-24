@@ -1,10 +1,10 @@
-from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException
 from sqlalchemy import select
 
 from app.api.dependencies import AdminDep, CurrentUserDep, SessionDep, StaffDep
+from app.api.pagination import Limit, Offset
 from app.models import User
 from app.schemas.user import UserCreate, UserRead, UserUpdate
 from app.services.users import create_user, update_user
@@ -26,8 +26,8 @@ async def me(user: CurrentUserDep) -> User:
 async def list_users(
     session: SessionDep,
     staff: StaffDep,
-    limit: Annotated[int, Query(ge=1, le=100)] = 20,
-    offset: Annotated[int, Query(ge=0)] = 0,
+    limit: Limit = 20,
+    offset: Offset = 0,
 ) -> list[User]:
     return list(
         await session.scalars(

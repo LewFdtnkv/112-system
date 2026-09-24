@@ -8,7 +8,7 @@ from test_teacher_api import teaching as teaching
 from app.models import Attempt, CriterionEvidence, CriterionResult, Evaluation, LessonEvaluation
 from app.schemas.assessment import AssessmentPolicy
 from app.schemas.student import StudentAttemptRead
-from app.services.automatic_assessment import weighted_criteria
+from app.services.automatic_assessment.criteria import weighted_criteria
 from app.services.field_evaluation import check_fields
 
 pytestmark = pytest.mark.anyio

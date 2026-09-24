@@ -4,6 +4,7 @@ from collections import Counter, defaultdict
 
 from sqlalchemy import select
 
+from app.core.fingerprints import context_hash
 from app.models import (
     AIJob,
     Assignment,
@@ -14,7 +15,6 @@ from app.models import (
     LessonEvaluation,
 )
 from app.models.enums import AIPurpose, EvaluationMethod
-from app.services.automatic_assessment import context_hash
 from app.services.learning_scope import field_skill
 
 LABELS = {

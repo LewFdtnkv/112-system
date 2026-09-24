@@ -9,12 +9,13 @@ from app.models.enums import AttemptStatus, EventActor, LessonStatus
 from app.schemas.catalog import ClassifierEntryRead
 from app.schemas.lesson_evaluation import AssignmentReview, LessonGradeCreate, LessonWorkReview
 from app.services.audit import append_event
-from app.services.automatic_assessment import publish_lesson_result
+from app.services.automatic_assessment.results import publish_lesson_result
 from app.services.dds_assessment import check_dds
 from app.services.field_evaluation import check_fields, summarize
 from app.services.learning import learning_result
 from app.services.learning_scope import scoped_check
-from app.services.student import review_attempts
+from app.services.semantic_assessment.results import jobs_for, review
+from app.services.student.reads import review_attempts
 
 
 async def review_rows(
@@ -73,7 +74,6 @@ async def review_work(session: AsyncSession, lesson_id: UUID, student_id: UUID, 
         )
     }
     attempts = await review_attempts(session, [attempt for _, attempt in rows if attempt])
-    from app.services.semantic_assessment.results import jobs_for, review
 
     semantic_jobs = {job.attempt_id: job for job in await jobs_for(session, list(attempts))}
     for assignment, attempt in rows:

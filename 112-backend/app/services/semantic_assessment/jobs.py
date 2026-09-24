@@ -7,15 +7,15 @@ from fastapi import HTTPException
 from sqlalchemy import select
 
 from app.core.config import settings
+from app.core.fingerprints import context_hash
 from app.models import AIJob, Assignment, Attempt, Evaluation, Lesson
 from app.models.enums import AIPurpose, EvaluationMethod, EvaluationStatus, JobStatus
 from app.services.audit import append_event
 from app.services.semantic_assessment.context import PROMPT_VERSION, build_context
+from app.services.semantic_assessment.results import publish_result, review
 
 
 async def retry(session, attempt):
-    from app.services.semantic_assessment.results import review
-
     job = await session.scalar(
         select(AIJob)
         .where(
@@ -36,8 +36,6 @@ async def retry(session, attempt):
 
 
 async def enqueue(session, evaluation, check):
-    from app.services.automatic_assessment import context_hash
-
     attempt = await session.get(Attempt, evaluation.attempt_id)
     if not attempt.settings_snapshot.get("semantic_assessment"):
         return
@@ -65,8 +63,6 @@ async def enqueue(session, evaluation, check):
 
 
 async def finish(session, job_id, token, output):
-    from app.services.automatic_assessment import context_hash
-    from app.services.semantic_assessment.results import publish_result
 
     # Serialize grading by lesson before locking the job and appending attempt events.
     target = (
@@ -154,8 +150,6 @@ async def finish(session, job_id, token, output):
 
 
 async def publish_failed(session, job_id):
-    from app.services.semantic_assessment.results import publish_result
-
     target = (
         await session.execute(
             select(Assignment.lesson_id, Attempt.student_id)

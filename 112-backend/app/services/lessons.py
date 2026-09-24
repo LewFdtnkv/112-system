@@ -21,8 +21,11 @@ from app.models import (
 )
 from app.models.enums import LessonStatus, PublicationStatus, TrainingMode
 from app.schemas.authoring import LessonRead, LessonStart
-from app.services.authoring import owned_scenario, published_classifier, published_profile
+from app.services.authoring.catalog_access import published_classifier, published_profile
+from app.services.authoring.scenarios import owned_scenario
 from app.services.groups import owned_group
+from app.services.learning_scope import validate_exercise
+from app.services.telephony.media import prepare_scenario
 
 
 async def owned_lesson(session: AsyncSession, lesson_id: UUID, teacher_id: UUID) -> Lesson:
@@ -158,7 +161,6 @@ async def start_lesson(
             .order_by(ScenarioCard.position)
         )
     )
-    from app.services.learning_scope import validate_exercise
 
     validate_exercise(payload.learning, scenario, cards)
     if not cards:
@@ -261,7 +263,6 @@ async def start_lesson(
                 for card in cards
             ]
         )
-        from app.services.telephony.media import prepare_scenario
 
         await prepare_scenario(session, scenario)
         await session.commit()

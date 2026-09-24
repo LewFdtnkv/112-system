@@ -19,6 +19,7 @@ from app.models import (
 )
 from app.models.enums import AIPurpose, JobStatus
 from app.services.learning_recommendations.inference import PROMPT_VERSION, validate
+from app.services.learning_recommendations.materials import retrieve
 from app.services.learning_recommendations.profile import build_profile
 
 
@@ -92,7 +93,6 @@ async def schedule(session):
 async def prepare(job):
     if "materials" in job.context:
         return
-    from app.services.learning_recommendations.materials import retrieve
 
     async with session_factory() as session:
         bundle = await retrieve(session, job.input["profile"])

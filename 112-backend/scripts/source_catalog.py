@@ -14,9 +14,9 @@ async def populate_database(session):
     """Administrative CLI mode: use application validation, preserve existing credentials."""
     from sqlalchemy import select
 
-    from app.api.v1.catalog_admin import publish_classifier
     from app.models import ClassifierVersion, User
     from app.schemas.catalog_document import CatalogDocument
+    from app.services.catalog_admin import publish_classifier
     from app.services.catalog_editor import import_document
 
     document = CatalogDocument.model_validate(load_catalog())
@@ -39,7 +39,7 @@ async def populate_database(session):
             raise RuntimeError(
                 "Справочник с таким названием уже изменён; автоматическая замена запрещена"
             )
-    version = await publish_classifier(version.id, session, admin)
+    version = await publish_classifier(session, version.id, admin.id)
     return summary(str(version.id))
 
 
