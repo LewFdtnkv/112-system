@@ -64,8 +64,9 @@ test("guide introduces the task, waits for correct and confirmed answers, includ
         ? "guide.source"
         : a.card.classifier_entry_id !== "entry-new"
           ? "classifier_entry_id"
-          : a.card.data.address_details.street !== "Лесная улица"
-            ? "address_details.street"
+          : a.card.data.address_details.street !== "Лесная улица" ||
+              a.card.data.address_details.house !== "12"
+            ? "guide.address"
             : !confirmed.has("description")
               ? "description"
               : !confirmed.has("guide.services")
@@ -76,8 +77,8 @@ test("guide introduces the task, waits for correct and confirmed answers, includ
           "Здесь условия задачи. Прочитайте их и нажмите «Продолжить».",
         classifier_entry_id:
           "Выберите тип происшествия. Для поиска введите хотя бы два символа.\n\nПо условию задачи правильный ответ: Пожар.",
-        "address_details.street":
-          "Укажите улицу.\n\nПо условию задачи правильный ответ: Лесная улица.",
+        "guide.address":
+          "Заполните адрес по условию задачи в отдельных полях. Неизвестные сведения оставьте пустыми. Описательный адрес здесь не нужен.\n\nУлица — Лесная улица; Дом — 12.",
         description:
           "Кратко опишите, что случилось. Можно своими словами. Допишите ответ и нажмите «Продолжить».",
         "guide.services":
@@ -89,7 +90,7 @@ test("guide introduces the task, waits for correct and confirmed answers, includ
           ? "source"
           : task === "classifier_entry_id"
             ? "classification"
-            : task === "address_details.street"
+            : task === "guide.address"
               ? "address"
               : task === "guide.services"
                 ? "notification"
@@ -148,6 +149,40 @@ test("guide introduces the task, waits for correct and confirmed answers, includ
   });
   await result.getByRole("button", { name: "Пожар", exact: true }).click();
   await expect(panel).toContainText("Лесная улица");
+  await expect
+    .poll(async () => {
+      const hole = await page
+        .locator(".interface-guide-veil rect")
+        .boundingBox();
+      const address = await page
+        .locator('[data-learning-target="address"]')
+        .boundingBox();
+      return (
+        !!hole &&
+        !!address &&
+        hole.x <= address.x &&
+        hole.y <= address.y &&
+        hole.x + hole.width >= address.x + address.width &&
+        hole.y + hole.height >= address.y + address.height
+      );
+    })
+    .toBe(true);
+  await expect
+    .poll(async () => {
+      const tooltip = await panel.boundingBox();
+      const address = await page
+        .locator('[data-learning-target="address"]')
+        .boundingBox();
+      return (
+        !!tooltip &&
+        !!address &&
+        (tooltip.x >= address.x + address.width ||
+          tooltip.x + tooltip.width <= address.x ||
+          tooltip.y >= address.y + address.height ||
+          tooltip.y + tooltip.height <= address.y)
+      );
+    })
+    .toBe(true);
   await page.getByLabel("Улица", { exact: true }).fill("Лесная");
   await expect
     .poll(() => fixture.currentAttempt().card.data.address_details.street)
@@ -168,6 +203,16 @@ test("guide introduces the task, waits for correct and confirmed answers, includ
     path: "docs/screenshots/interface-guide/operator-mobile.png",
   });
   await page.getByLabel("Улица", { exact: true }).fill("Лесная улица");
+  await expect
+    .poll(() => fixture.currentAttempt().card.data.address_details.street)
+    .toBe("Лесная улица");
+  await expect(panel).toContainText("Дом — 12");
+  await page.getByLabel("Дом/Вл", { exact: true }).fill("1");
+  await expect
+    .poll(() => fixture.currentAttempt().card.data.address_details.house)
+    .toBe("1");
+  await expect(panel).toContainText("Дом — 12");
+  await page.getByLabel("Дом/Вл", { exact: true }).fill("12");
   await expect(panel).toContainText("Кратко опишите");
   await page
     .getByRole("textbox", { name: "Сообщение со слов заявителя" })

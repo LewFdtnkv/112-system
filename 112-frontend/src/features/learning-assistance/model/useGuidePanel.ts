@@ -38,7 +38,7 @@ export function useGuidePanel({
   const top =
     g && below + height > h - 12 ? Math.max(12, g.top - height - 12) : below;
   const side =
-    g && g.height + height + 24 > h
+    g && below + height > h - 12 && g.top - height - 12 < 12
       ? g.left + g.width + width + 24 < w
         ? g.left + g.width + 12
         : g.left > width + 24
