@@ -1,5 +1,6 @@
 import { test, expect } from "./auth-fixture";
 import { mockBusiness } from "./business-fixture";
+import generationOptions from "./fixtures/generation-options.json" with { type: "json" };
 
 const emptyPage = { items: [], total: 0, offset: 0, limit: 20 };
 
@@ -90,7 +91,7 @@ test("ARM flags toggle, persist and remain visible on small screens", async ({
   });
 });
 
-test("teacher sets reference flags and generates a silent call without invented facts", async ({
+test("teacher sets reference flags and passes supported flags to generation", async ({
   page,
 }, info) => {
   let submitted: Record<string, unknown> | undefined;
@@ -101,18 +102,7 @@ test("teacher sets reference flags and generates a silent call without invented 
     );
     if (path === "card-generations/options")
       return route.fulfill({
-        json: {
-          locality: ["Москва"],
-          street: ["Учебная улица"],
-          house: ["7"],
-          object: ["Дом"],
-          caller_name: { male: ["Иван"], female: ["Анна"] },
-          gender: [],
-          time_of_day: [],
-          caller_state: [],
-          detail_level: [],
-          max_count: 10,
-        },
+        json: { ...generationOptions, street: ["Учебная улица"] },
       });
     if (path === "card-generations") {
       if (route.request().method() === "POST") {
@@ -164,32 +154,14 @@ test("teacher sets reference flags and generates a silent call without invented 
     .getByRole("combobox", { name: "Пострадавшие", exact: true })
     .click();
   await page.getByRole("option", { name: "Да", exact: true }).click();
-  await dialog
-    .getByRole("combobox", { name: "Срыв звонка", exact: true })
-    .click();
-  await page.getByRole("option", { name: "Да", exact: true }).click();
-  await dialog
-    .getByRole("combobox", { name: "Нет контакта", exact: true })
-    .scrollIntoViewIfNeeded();
-  await page.screenshot({
-    path: info.outputPath("generation-flags.png"),
-    animations: "disabled",
-  });
-  await dialog
-    .getByRole("combobox", { name: "Нет контакта", exact: true })
-    .click();
-  await page.getByRole("option", { name: "Да", exact: true }).click();
   await expect(
-    dialog.getByRole("combobox", { name: "Улица", exact: true }),
-  ).toBeDisabled();
-  await expect(
-    dialog.getByRole("combobox", { name: "Пострадавшие", exact: true }),
-  ).toHaveAttribute("aria-disabled", "true");
+    dialog.getByRole("combobox", { name: "Нет контакта", exact: true }),
+  ).toHaveCount(0);
   await expect(
     dialog.getByRole("combobox", { name: "Срыв звонка", exact: true }),
-  ).toContainText("Да");
+  ).toHaveCount(0);
   await page.screenshot({
-    path: info.outputPath("generation-silent-call.png"),
+    path: info.outputPath("generation-flags.png"),
     animations: "disabled",
   });
   await dialog.getByRole("button", { name: "Запустить генерацию" }).click();
@@ -197,19 +169,11 @@ test("teacher sets reference flags and generates a silent call without invented 
     .poll(() => submitted)
     .toMatchObject({
       count: 3,
-      parameters: {
-        no_contact: true,
-        call_dropped: true,
-        classifier_entry_id: null,
-        service_ids: null,
-      },
+      parameters: { street: "Учебная улица", has_victims: true },
     });
-  expect(
-    (submitted!.parameters as Record<string, unknown>).street,
-  ).toBeUndefined();
-  expect(
-    (submitted!.parameters as Record<string, unknown>).has_victims,
-  ).toBeUndefined();
+  const parameters = submitted!.parameters as Record<string, unknown>;
+  expect(parameters).not.toHaveProperty("no_contact");
+  expect(parameters).not.toHaveProperty("call_dropped");
 });
 
 test("a silent call can be saved without choosing a type or inventing an address", async ({
