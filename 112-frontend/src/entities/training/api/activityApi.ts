@@ -29,10 +29,17 @@ export const activityApi = {
         hidden_count: number;
       }>
     >(),
-  messages: (offset = 0) =>
+  messages: (offset = 0, includeAdvice = true, signal?: AbortSignal) =>
     backendApi
-      .get("student/messages", { searchParams: { offset } })
+      .get("student/messages", {
+        searchParams: { offset, include_advice: includeAdvice },
+        signal,
+      })
       .json<Page<Message>>(),
+  recommendationFeedback: (id: string, helpful: boolean) =>
+    backendApi.post(`student/messages/${encodeURIComponent(id)}/feedback`, {
+      searchParams: { helpful },
+    }),
   readMessage: (id: string) => backendApi.post(`student/messages/${id}/read`),
   send: (text: string, target: { group_id?: string; student_id?: string }) =>
     backendApi

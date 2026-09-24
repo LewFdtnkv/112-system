@@ -48,3 +48,5 @@ export { LearningSummary } from "./ui/LearningSummary";
 
 export * from "./types/assessmentMemory";
 export { assessmentMemoryApi } from "./api/assessmentMemoryApi";
+
+export type { Message, RecommendationDetails } from "./types/activityApi";

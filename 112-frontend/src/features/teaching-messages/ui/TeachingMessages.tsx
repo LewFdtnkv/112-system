@@ -1,3 +1,5 @@
+import { useStudentMessages } from "../model/useStudentMessages";
+import { StudentMessage } from "./StudentMessage";
 import { activityApi } from "@/entities/training";
 import { getApiError } from "@/shared/api";
 import { PageControls, QueryState } from "@/shared/ui/QueryState";
@@ -9,7 +11,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { styles } from "../styles/TeachingMessages";
 import type {
@@ -59,19 +61,7 @@ export function MessageComposer({ groupId, studentId }: MessageComposerProps) {
 }
 
 export function StudentMessages({ compact = false }: StudentMessagesProps) {
-  const [page, setPage] = useState(0);
-  const client = useQueryClient();
-  const query = useQuery({
-    queryKey: ["messages", page],
-    queryFn: () => activityApi.messages(page * 20),
-    refetchInterval: 5000,
-  });
-  const read = useMutation({
-    mutationFn: activityApi.readMessage,
-    onSuccess: () => {
-      void client.invalidateQueries({ queryKey: ["messages"] });
-    },
-  });
+  const { page, setPage, query, read } = useStudentMessages(compact);
   return (
     <Paper
       component={compact ? "details" : "section"}
@@ -84,7 +74,9 @@ export function StudentMessages({ compact = false }: StudentMessagesProps) {
         </summary>
       )}
       <Stack spacing={1}>
-        <Typography variant="h6">Сообщения преподавателя</Typography>
+        <Typography variant="h6">
+          {compact ? "Сообщения преподавателя" : "Сообщения и рекомендации"}
+        </Typography>
         <QueryState
           pending={query.isPending}
           error={query.error}
@@ -94,26 +86,12 @@ export function StudentMessages({ compact = false }: StudentMessagesProps) {
             <Typography color="text.secondary">Сообщений пока нет</Typography>
           )}
           {query.data?.items.map((m) => (
-            <Alert
+            <StudentMessage
               key={m.id}
-              severity={m.read_at ? "info" : "warning"}
-              action={
-                !m.read_at && (
-                  <Button
-                    disabled={read.isPending}
-                    onClick={() => read.mutate(m.id)}
-                  >
-                    Прочитано
-                  </Button>
-                )
-              }
-            >
-              <strong>
-                {m.teacher_name} · {m.group_name ?? "Лично вам"}
-              </strong>
-              <Typography sx={styles.typography}>{m.text}</Typography>
-              <small>{new Date(m.created_at).toLocaleString("ru-RU")}</small>
-            </Alert>
+              message={m}
+              pending={read.isPending}
+              onRead={read.mutate}
+            />
           ))}
           {!!query.data?.total && (
             <PageControls
