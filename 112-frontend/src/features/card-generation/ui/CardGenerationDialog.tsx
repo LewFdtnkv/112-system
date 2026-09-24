@@ -57,7 +57,11 @@ export function CardGenerationDialog({ onClose }: CardGenerationDialogProps) {
   ) => (
     <Autocomplete
       key={key}
-      disabled={p.no_contact === true}
+      disabled={
+        (key === "caller_name" && p.caller_information === "anonymous") ||
+        (key === "house" &&
+          (p.address_format === "descriptive" || !!p.address_description))
+      }
       freeSolo
       options={["Случайно", ...values]}
       value={p[key] ?? "Случайно"}
@@ -153,7 +157,7 @@ export function CardGenerationDialog({ onClose }: CardGenerationDialogProps) {
                 <ServerSelect
                   label="Тип происшествия"
                   value={entry}
-                  disabled={!version?.id || p.no_contact === true}
+                  disabled={!version?.id}
                   queryKey={["generation-entries", version?.id]}
                   load={async (q, signal) => [
                     random,
@@ -174,7 +178,6 @@ export function CardGenerationDialog({ onClose }: CardGenerationDialogProps) {
                 <TextField
                   select
                   label="Службы для оповещения"
-                  disabled={p.no_contact === true}
                   value={manualServices ? "manual" : "random"}
                   onChange={(e) => {
                     setManualServices(e.target.value === "manual");
@@ -280,36 +283,37 @@ export function CardGenerationDialog({ onClose }: CardGenerationDialogProps) {
                 решение.
               </p>
               <div className="generation-grid">
-                {cardFlagFields.map(({ parameter, label }) => (
-                  <TextField
-                    key={parameter}
-                    select
-                    label={label}
-                    disabled={
-                      p.no_contact === true &&
-                      parameter !== "no_contact" &&
-                      parameter !== "call_dropped"
-                    }
-                    value={
-                      p[parameter] == null ? "random" : String(p[parameter])
-                    }
-                    onChange={(e) =>
-                      change({
-                        [parameter]:
-                          e.target.value === "random"
-                            ? null
-                            : e.target.value === "true",
-                      })
-                    }
-                  >
-                    <MenuItem value="random">Случайно</MenuItem>
-                    <MenuItem value="true">Да</MenuItem>
-                    <MenuItem value="false">Нет</MenuItem>
-                  </TextField>
-                ))}
+                {cardFlagFields.map(({ parameter, label }) => {
+                  if (
+                    parameter === "no_contact" ||
+                    parameter === "call_dropped"
+                  )
+                    return null;
+                  return (
+                    <TextField
+                      key={parameter}
+                      select
+                      label={label}
+                      value={
+                        p[parameter] == null ? "random" : String(p[parameter])
+                      }
+                      onChange={(e) =>
+                        change({
+                          [parameter]:
+                            e.target.value === "random"
+                              ? null
+                              : e.target.value === "true",
+                        })
+                      }
+                    >
+                      <MenuItem value="random">Случайно</MenuItem>
+                      <MenuItem value="true">Да</MenuItem>
+                      <MenuItem value="false">Нет</MenuItem>
+                    </TextField>
+                  );
+                })}
                 <TextField
                   label="Количество пострадавших"
-                  disabled={p.no_contact === true}
                   type="number"
                   value={p.victims_count ?? ""}
                   placeholder="Случайно"
@@ -323,14 +327,30 @@ export function CardGenerationDialog({ onClose }: CardGenerationDialogProps) {
                   }
                 />
               </div>
-              {p.no_contact === true && (
-                <Alert severity="info">
-                  Молчаливый вызов: параметры происшествия и заявителя сброшены.
-                  Эти сведения неизвестны, службы не оповещаются. Ученик получит
-                  описание тишины и, при выбранной отметке, срыва звонка.
-                </Alert>
-              )}
+              <Alert severity="info">
+                Молчаливые вызовы и обрыв связи пока не генерируются.
+              </Alert>
               <h3>Место происшествия</h3>
+              <TextField
+                select
+                label="Формат адреса"
+                value={p.address_format ?? "random"}
+                onChange={(e) =>
+                  change({
+                    address_format:
+                      e.target.value === "random"
+                        ? null
+                        : (e.target.value as "structured" | "descriptive"),
+                  })
+                }
+              >
+                <MenuItem value="random">Случайно</MenuItem>
+                {options.data.address_format.map((v) => (
+                  <MenuItem key={v.value} value={v.value}>
+                    {v.label}
+                  </MenuItem>
+                ))}
+              </TextField>
               <div className="generation-grid">
                 {textChoice(
                   "locality",
@@ -341,10 +361,25 @@ export function CardGenerationDialog({ onClose }: CardGenerationDialogProps) {
                 {textChoice("house", "Дом", options.data.house)}
                 {textChoice("object", "Объект", options.data.object)}
               </div>
+              <TextField
+                label="Описательный адрес — ориентиры"
+                multiline
+                minRows={2}
+                value={p.address_description ?? ""}
+                disabled={p.address_format === "structured" || !!p.house}
+                placeholder="Случайный ориентир из заготовок"
+                helperText="Например: за остановкой, рядом с зелёным ограждением. Номер дома не выдумывается."
+                onChange={(e) =>
+                  change({ address_description: e.target.value || null })
+                }
+                slotProps={{ htmlInput: { maxLength: 200 } }}
+              />
               <h3>Заявитель и подача сообщения</h3>
               <div className="generation-grid">
                 {(
                   [
+                    ["message_format", "Формат сообщения"],
+                    ["caller_information", "Сведения о заявителе"],
                     ["gender", "Пол заявителя"],
                     ["time_of_day", "Время суток"],
                     ["caller_state", "Состояние заявителя"],
@@ -356,8 +391,9 @@ export function CardGenerationDialog({ onClose }: CardGenerationDialogProps) {
                     select
                     label={title}
                     disabled={
-                      p.no_contact === true &&
-                      (key === "gender" || key === "caller_state")
+                      key === "gender" &&
+                      (p.caller_information === "anonymous" ||
+                        p.caller_information === "name_only")
                     }
                     value={p[key] ?? "random"}
                     onChange={(e) =>
@@ -377,7 +413,10 @@ export function CardGenerationDialog({ onClose }: CardGenerationDialogProps) {
                 ))}
                 <TextField
                   label="Возраст заявителя"
-                  disabled={p.no_contact === true}
+                  disabled={
+                    p.caller_information === "anonymous" ||
+                    p.caller_information === "name_only"
+                  }
                   type="number"
                   value={p.age ?? ""}
                   placeholder="Случайно"
@@ -398,7 +437,9 @@ export function CardGenerationDialog({ onClose }: CardGenerationDialogProps) {
                 )}
               </div>
               <p>
-                Телефоны создаются автоматически как вымышленные учебные номера.
+                СМС по умолчанию не содержит ФИО, пола, возраста и телефона. Для
+                телефонного сообщения номер АОН вымышленный учебный. Неизвестные
+                сведения не входят в эталонное решение.
               </p>
             </fieldset>
           )}

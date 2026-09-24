@@ -9,8 +9,10 @@ export interface GenerationParameters {
   victims_count?: number | null;
   refused_ambulance?: boolean | null;
   blocked?: boolean | null;
-  no_contact?: boolean | null;
-  call_dropped?: boolean | null;
+  message_format?: "call" | "sms" | null;
+  caller_information?: "full" | "name_only" | "anonymous" | null;
+  address_format?: "structured" | "descriptive" | null;
+  address_description?: string | null;
   gender?: "male" | "female" | null;
   age?: number | null;
   caller_name?: string | null;
@@ -50,5 +52,8 @@ export interface GenerationOptions {
   time_of_day: { value: string; label: string }[];
   caller_state: { value: string; label: string }[];
   detail_level: { value: string; label: string }[];
+  message_format: { value: string; label: string }[];
+  caller_information: { value: string; label: string }[];
+  address_format: { value: string; label: string }[];
   max_count: number;
 }

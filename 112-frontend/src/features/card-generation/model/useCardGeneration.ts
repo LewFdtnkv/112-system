@@ -25,21 +25,21 @@ export function useCardGeneration({ onClose }: CardGenerationDialogProps) {
     queryFn: ({ signal }) => generationApi.options(signal),
   });
   function change(values: Partial<GenerationParameters>) {
-    if (values.no_contact === true) {
-      setEntry(random);
-      setServices([]);
-      setManualServices(false);
-      setFeatures([]);
-      setP((prev) => ({
-        mode: prev.mode,
-        time_of_day: prev.time_of_day,
-        detail_level: prev.detail_level,
-        call_dropped: prev.call_dropped,
-        no_contact: true,
-      }));
-    } else {
-      setP((prev) => ({ ...prev, ...values }));
-    }
+    setP((prev) => {
+      const next = { ...prev, ...values };
+      if (values.caller_information === "anonymous") {
+        next.caller_name = null;
+        next.gender = null;
+        next.age = null;
+      } else if (values.caller_information === "name_only") {
+        next.gender = null;
+        next.age = null;
+      }
+      if (values.address_format === "descriptive") next.house = null;
+      if (values.address_format === "structured")
+        next.address_description = null;
+      return next;
+    });
     setRequestId(createUuid());
   }
   const save = useMutation({

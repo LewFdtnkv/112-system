@@ -1,0 +1,120 @@
+{
+  "message_format": [
+    {
+      "value": "call",
+      "label": "Телефонное сообщение"
+    },
+    {
+      "value": "sms",
+      "label": "СМС"
+    }
+  ],
+  "caller_information": [
+    {
+      "value": "full",
+      "label": "ФИО, пол и возраст"
+    },
+    {
+      "value": "name_only",
+      "label": "Только имя"
+    },
+    {
+      "value": "anonymous",
+      "label": "Без сведений о заявителе"
+    }
+  ],
+  "address_format": [
+    {
+      "value": "structured",
+      "label": "Улица и номер дома"
+    },
+    {
+      "value": "descriptive",
+      "label": "Описательный адрес, ориентиры"
+    }
+  ],
+  "locality": ["Москва", "Зеленоград", "Троицк"],
+  "street": [
+    "Учебная улица",
+    "улица Ленина",
+    "Лесная улица",
+    "Садовая улица",
+    "Центральная улица"
+  ],
+  "house": ["1", "7", "12", "24", "35", "48"],
+  "object": ["жилой дом", "двор", "магазин", "дорога", "парк", "школа"],
+  "gender": [
+    {
+      "value": "male",
+      "label": "Мужской"
+    },
+    {
+      "value": "female",
+      "label": "Женский"
+    }
+  ],
+  "time_of_day": [
+    {
+      "value": "morning",
+      "label": "Утро"
+    },
+    {
+      "value": "day",
+      "label": "День"
+    },
+    {
+      "value": "evening",
+      "label": "Вечер"
+    },
+    {
+      "value": "night",
+      "label": "Ночь"
+    }
+  ],
+  "caller_state": [
+    {
+      "value": "calm",
+      "label": "Спокоен"
+    },
+    {
+      "value": "worried",
+      "label": "Взволнован"
+    },
+    {
+      "value": "panicked",
+      "label": "Паникует"
+    }
+  ],
+  "detail_level": [
+    {
+      "value": "brief",
+      "label": "Краткое сообщение"
+    },
+    {
+      "value": "normal",
+      "label": "Обычное сообщение"
+    },
+    {
+      "value": "detailed",
+      "label": "Подробное сообщение"
+    }
+  ],
+  "caller_name": {
+    "male": [
+      "Александр Иванов",
+      "Михаил Петров",
+      "Дмитрий Соколов",
+      "Андрей Орлов"
+    ],
+    "female": [
+      "Анна Иванова",
+      "Мария Петрова",
+      "Елена Соколова",
+      "Ольга Орлова"
+    ]
+  },
+  "max_count": 10,
+  "template_count": 37,
+  "template_version": "situations-v1",
+  "supported_types": ["101", "ДТП", "104"]
+}
