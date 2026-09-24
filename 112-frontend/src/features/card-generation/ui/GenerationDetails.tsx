@@ -1,10 +1,12 @@
 import { cardFlagFields } from "@/entities/incident-card";
-import { MenuItem, TextField } from "@mui/material";
+import { Link, MenuItem, TextField } from "@mui/material";
 import { GenerationTextChoice } from "./GenerationTextChoice";
 import type { CardGenerationPanelProps } from "../types/CardGenerationPanels";
+import { addressChoices } from "../lib/catalogChoices";
 
 export function GenerationDetails({ model }: CardGenerationPanelProps) {
   const data = model.options.data!;
+  const addresses = addressChoices(data, model.p);
   return (
     <>
       <h3>Отметки карточки</h3>
@@ -54,6 +56,19 @@ export function GenerationDetails({ model }: CardGenerationPanelProps) {
         />
       </div>
       <h3>Место происшествия</h3>
+      <p>
+        Случайный адрес выбирается целиком из {data.addresses.length} московских
+        адресов. Для своего адреса укажите улицу и дом или ориентир. Адресные
+        данные:{" "}
+        <Link
+          href={data.address_source.source_url}
+          target="_blank"
+          rel="noreferrer"
+        >
+          {data.address_source.source} ({data.address_source.license})
+        </Link>
+        .
+      </p>
       <TextField
         select
         label="Формат адреса"
@@ -79,19 +94,19 @@ export function GenerationDetails({ model }: CardGenerationPanelProps) {
           model={model}
           name="locality"
           label="Населённый пункт"
-          values={data.locality}
+          values={addresses.locality}
         />
         <GenerationTextChoice
           model={model}
           name="street"
           label="Улица"
-          values={data.street}
+          values={addresses.street}
         />
         <GenerationTextChoice
           model={model}
           name="house"
           label="Дом"
-          values={data.house}
+          values={addresses.house}
         />
         <GenerationTextChoice
           model={model}
@@ -114,6 +129,11 @@ export function GenerationDetails({ model }: CardGenerationPanelProps) {
         slotProps={{ htmlInput: { maxLength: 200 } }}
       />
       <h3>Заявитель и подача сообщения</h3>
+      <p>
+        Имя и фамилия выбираются случайно с учётом пола. Отчество добавляется в{" "}
+        {Math.round(data.patronymic_probability * 100)}% случаев. Можно указать
+        своё ФИО или ФИ; пол в этом случае задайте отдельно, если он известен.
+      </p>
       <div className="generation-grid">
         {(
           [
@@ -170,11 +190,7 @@ export function GenerationDetails({ model }: CardGenerationPanelProps) {
           model={model}
           name="caller_name"
           label="ФИО заявителя"
-          values={
-            model.p.gender
-              ? data.caller_name[model.p.gender]
-              : Object.values(data.caller_name).flat()
-          }
+          values={[]}
         />
       </div>
       <p>

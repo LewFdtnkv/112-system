@@ -37,6 +37,10 @@ export function useCardGeneration({ onClose }: CardGenerationDialogProps) {
       if (values.address_format === "descriptive") next.house = null;
       if (values.address_format === "structured")
         next.address_description = null;
+      if (values.locality !== undefined) {
+        next.street = null;
+        next.house = null;
+      } else if (values.street !== undefined) next.house = null;
       return next;
     });
     setRequestId(createUuid());

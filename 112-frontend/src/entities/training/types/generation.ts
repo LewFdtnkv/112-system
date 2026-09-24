@@ -43,11 +43,10 @@ export interface GenerationOptions {
   template_count: number;
   template_version: string;
   supported_types: string[];
-  locality: string[];
-  street: string[];
-  house: string[];
+  addresses: { id: string; locality: string; street: string; house: string }[];
+  address_source: { source: string; source_url: string; license: string };
   object: string[];
-  caller_name: Record<"male" | "female", string[]>;
+  patronymic_probability: number;
   gender: { value: string; label: string }[];
   time_of_day: { value: string; label: string }[];
   caller_state: { value: string; label: string }[];

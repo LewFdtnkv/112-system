@@ -102,7 +102,17 @@ test("teacher sets reference flags and passes supported flags to generation", as
     );
     if (path === "card-generations/options")
       return route.fulfill({
-        json: { ...generationOptions, street: ["Учебная улица"] },
+        json: {
+          ...generationOptions,
+          addresses: [
+            {
+              id: "test",
+              locality: "Москва",
+              street: "Учебная улица",
+              house: "7",
+            },
+          ],
+        },
       });
     if (path === "card-generations") {
       if (route.request().method() === "POST") {
