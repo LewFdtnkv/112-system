@@ -77,7 +77,9 @@ export function StudentProfileDialog({
           component={Link}
           to={getStudentProfilePath(studentId)}
           disabled={!query.data}
-          onClick={onClose}
+          target="_blank"
+          // Internal same-origin link: inherit the teacher sessionStorage in the new tab.
+          rel="opener"
           variant="contained"
         >
           Подробнее

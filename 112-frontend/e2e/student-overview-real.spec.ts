@@ -219,41 +219,50 @@ test("student dashboard and teacher profile share real progress and performance"
     fullPage: true,
     animations: "disabled",
   });
+  const profileOpened = page.waitForEvent("popup");
   await modal.getByRole("link", { name: "Подробнее", exact: true }).click();
-  await expect(page).toHaveURL(`/teacher/students/${student.id}`);
+  const profilePage = await profileOpened;
+  profilePage.on("pageerror", (error) => errors.push(error.message));
+  await expect(page).toHaveURL("/groups");
+  await expect(modal).toBeVisible();
+  await expect(profilePage).toHaveURL(`/teacher/students/${student.id}`);
   await expect(
-    page.getByRole("img", { name: "Общая успеваемость: 50%" }),
+    profilePage.getByRole("img", { name: "Общая успеваемость: 50%" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("table", { name: "Учебные занятия" }).getByRole("row"),
+    profilePage.getByRole("table", { name: "Учебные занятия" }).getByRole("row"),
   ).toHaveCount(10);
-  await expect(page.getByRole("link", { name: /Продолжить урок/ })).toHaveCount(
-    0,
-  );
-  const download = page.waitForEvent("download");
-  await page
+  await expect(
+    profilePage.getByRole("link", { name: /Продолжить урок/ }),
+  ).toHaveCount(0);
+  const download = profilePage.waitForEvent("download");
+  await profilePage
     .getByRole("button", { name: "Скачать отчёт ученика XLSX" })
     .click();
   expect((await download).suggestedFilename()).toBe("student-report.xlsx");
-  await page.screenshot({
+  await profilePage.screenshot({
     path: info.outputPath("student-profile-teacher.png"),
     fullPage: true,
     animations: "disabled",
   });
-  await page.setViewportSize({ width: 768, height: 1024 });
+  await profilePage.setViewportSize({ width: 768, height: 1024 });
   // Metric content must remain inside its card on narrow screens.
-  for (const metric of await page.locator(".student-performance-card").all()) {
+  for (const metric of await profilePage
+    .locator(".student-performance-card")
+    .all()) {
     expect(
       await metric.evaluate(
         (element) => element.scrollWidth <= element.clientWidth,
       ),
     ).toBe(true);
   }
-  await page.screenshot({
+  await profilePage.screenshot({
     path: info.outputPath("student-profile-tablet.png"),
     fullPage: true,
     animations: "disabled",
   });
+
+  await profilePage.close();
 
   // Mixed lesson types use the same server filter in both accounts.
   const service = await call("admin/services", admin, {
