@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends
 from app.api.dependencies import require_user
 from app.api.v1.activity import router as activity_router
 from app.api.v1.admin_activity import router as admin_activity_router
+from app.api.v1.ai_jobs import router as ai_jobs_router
 from app.api.v1.assessment_library import router as assessment_library_router
 from app.api.v1.assessment_memory import router as assessment_memory_router
 from app.api.v1.auth import router as auth_router
@@ -30,6 +31,7 @@ router.include_router(auth_router)
 # Add all application routers here so forced password changes cannot be bypassed.
 protected_router = APIRouter(dependencies=[Depends(require_user)])
 protected_router.include_router(admin_activity_router)
+protected_router.include_router(ai_jobs_router)
 protected_router.include_router(activity_router)
 protected_router.include_router(users_router)
 protected_router.include_router(groups_router)
