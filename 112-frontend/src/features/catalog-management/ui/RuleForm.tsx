@@ -1,5 +1,5 @@
-import { getApiError } from "@/shared/api";
-import { Alert, Button, Stack } from "@mui/material";
+import { ValidatedForm } from "@/shared/ui/form-validation";
+import { Button, Stack } from "@mui/material";
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { normalizeCatalogRule } from "../lib/normalizeCatalogRule";
@@ -16,8 +16,8 @@ export function RuleForm({ initial, editable, save, onSaved }: RuleFormProps) {
     onSuccess: onSaved,
   });
   return (
-    <Stack
-      component="form"
+    <ValidatedForm
+      error={mutation.error}
       spacing={2}
       sx={styles.stack}
       onSubmit={(event) => {
@@ -40,9 +40,6 @@ export function RuleForm({ initial, editable, save, onSaved }: RuleFormProps) {
           {editable && <Button type="submit">Сохранить правило</Button>}
         </Stack>
       </fieldset>
-      {mutation.error && (
-        <Alert severity="error">{getApiError(mutation.error).message}</Alert>
-      )}
-    </Stack>
+    </ValidatedForm>
   );
 }

@@ -1,17 +1,15 @@
+import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
+import { ValidatedForm } from "@/shared/ui/form-validation";
 import { catalogApi } from "@/entities/training";
-import { getApiError } from "@/shared/api";
 import { rowAction } from "@/shared/lib/rowAction";
 import { PageControls, QueryState } from "@/shared/ui/QueryState";
 import {
-  Alert,
   Button,
-  Stack,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableRow,
-  TextField,
   Typography,
 } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -72,8 +70,8 @@ export function CatalogServiceSection({
       <Typography variant="h6" component="h2">
         Службы
       </Typography>
-      <Stack
-        component="form"
+      <ValidatedForm
+        error={save.error}
         direction="row"
         spacing={2}
         onSubmit={(event) => {
@@ -82,6 +80,7 @@ export function CatalogServiceSection({
         }}
       >
         <TextField
+          name="code"
           label="Код службы"
           disabled={!!editingId}
           required
@@ -90,12 +89,14 @@ export function CatalogServiceSection({
           onChange={(event) => setCode(event.target.value)}
         />
         <TextField
+          name="short_name"
           label="Короткое название службы"
           value={shortName}
           slotProps={{ htmlInput: { maxLength: 100 } }}
           onChange={(event) => setShortName(event.target.value)}
         />
         <TextField
+          name="name"
           label="Полное наименование службы"
           required
           value={name}
@@ -105,10 +106,7 @@ export function CatalogServiceSection({
           {editingId ? "Сохранить службу" : "Создать службу"}
         </Button>
         {editingId && <Button onClick={reset}>Отмена</Button>}
-      </Stack>
-      {save.error && (
-        <Alert severity="error">{getApiError(save.error).message}</Alert>
-      )}
+      </ValidatedForm>
       <QueryState
         pending={services.isPending}
         error={services.error}

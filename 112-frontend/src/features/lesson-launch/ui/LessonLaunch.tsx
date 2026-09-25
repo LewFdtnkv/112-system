@@ -1,3 +1,5 @@
+import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
+import { ValidatedForm, ValidationField } from "@/shared/ui/form-validation";
 import { scenarioApi, userApi, userName } from "@/entities/training";
 import { getApiError } from "@/shared/api";
 import { randomUUID } from "@/shared/lib/uuid";
@@ -11,7 +13,6 @@ import {
   DialogContent,
   DialogTitle,
   Stack,
-  TextField,
 } from "@mui/material";
 import { styles } from "../styles/LessonLaunch";
 import { useLessonLaunch } from "../model/useLessonLaunch";
@@ -46,8 +47,8 @@ export function LessonLaunch() {
     mutation,
   } = useLessonLaunch();
   return (
-    <Stack
-      component="form"
+    <ValidatedForm
+      error={mutation.error}
       spacing={2}
       onChange={() => setRequestId(randomUUID())}
       onSubmit={(e) => {
@@ -57,6 +58,8 @@ export function LessonLaunch() {
     >
       <h2>Назначить задание</h2>
       <ServerSelect
+        name="group_id"
+        required={!targets.length}
         label="Группа"
         queryKey={["group-options"]}
         value={group}
@@ -124,6 +127,8 @@ export function LessonLaunch() {
         </Alert>
       )}
       <ServerSelect
+        name="scenario_version_id"
+        required
         label="Готовый сценарий"
         queryKey={["scenario-options"]}
         value={scenario}
@@ -143,11 +148,13 @@ export function LessonLaunch() {
         }
       />
       <TextField
+        name="title"
         label="Название задания (необязательно)"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
       />
       <DateTimeField
+        name="available_from"
         label="Дата и время начала"
         value={from}
         onChange={(value) => {
@@ -157,6 +164,7 @@ export function LessonLaunch() {
         helperText="Пусто — доступно сразу. Время вашего браузера."
       />
       <DateTimeField
+        name="available_until"
         label="Дата и время окончания"
         value={until}
         min={from || undefined}
@@ -166,31 +174,30 @@ export function LessonLaunch() {
         }}
         helperText="Пусто — без общей даты окончания. По окончании срока непройденные карточки учитываются как 0."
       />
-      <LearningSettings
-        value={learning}
-        onChange={setLearning}
-        role={scenarioRole}
-      />
+      <ValidationField
+        name="learning.target_skills"
+        label="Навыки"
+        validate={() =>
+          !learningValid
+            ? "Выберите навыки для отработки. Проверьте совместимость выбранных навыков."
+            : undefined
+        }
+      >
+        <LearningSettings
+          value={learning}
+          onChange={setLearning}
+          role={scenarioRole}
+        />
+      </ValidationField>
       <TextField
+        name="time_limit_seconds"
         label="Лимит времени на карточку, с (необязательно)"
         type="number"
         value={limit}
         onChange={(e) => setLimit(e.target.value)}
         slotProps={{ htmlInput: { min: 1, max: 86400 } }}
       />
-      {mutation.error && (
-        <Alert severity="error">{getApiError(mutation.error).message}</Alert>
-      )}
-      <Button
-        type="submit"
-        variant="contained"
-        disabled={
-          (!group && !targets.length) ||
-          !scenario ||
-          !learningValid ||
-          mutation.isPending
-        }
-      >
+      <Button type="submit" variant="contained" disabled={mutation.isPending}>
         Назначить задание
       </Button>
       <Dialog open={confirm} onClose={() => setConfirm(false)} fullWidth>
@@ -215,7 +222,9 @@ export function LessonLaunch() {
             )}
             <Button
               disabled={mutation.isPending || !learningValid}
-              onClick={() => mutation.mutate()}
+              onClick={() =>
+                mutation.mutate(undefined, { onError: () => setConfirm(false) })
+              }
             >
               Подтвердить назначение
             </Button>
@@ -228,6 +237,6 @@ export function LessonLaunch() {
           </Stack>
         </DialogContent>
       </Dialog>
-    </Stack>
+    </ValidatedForm>
   );
 }

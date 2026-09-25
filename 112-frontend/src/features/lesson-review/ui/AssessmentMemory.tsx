@@ -1,4 +1,8 @@
-import { useState } from "react";
+import {
+  ValidatedForm,
+  ValidatedTextField as TextField,
+} from "@/shared/ui/form-validation";
+import { useId, useState } from "react";
 import {
   Alert,
   Button,
@@ -8,7 +12,6 @@ import {
   DialogTitle,
   MenuItem,
   Stack,
-  TextField,
   Typography,
 } from "@mui/material";
 import { getApiError } from "@/shared/api";
@@ -24,12 +27,13 @@ export function AssessmentMemory({
   finding,
   entries,
 }: AssessmentMemoryProps) {
+  const formId = useId();
   const [draft, setDraft] = useState<MemoryDraft | null>(null);
   const { publish, withdraw } = useMemoryCommands(target);
   const current = entries.find(
     (e) => e.active && e.criterion_code === finding.code,
   );
-  const error = publish.error ?? withdraw.error;
+  const error = withdraw.error;
   return (
     <Stack spacing={1}>
       {current && (
@@ -77,7 +81,14 @@ export function AssessmentMemory({
         {draft && (
           <>
             <DialogContent>
-              <Stack spacing={2}>
+              <ValidatedForm
+                id={formId}
+                spacing={2}
+                error={publish.error}
+                onSubmit={() =>
+                  publish.mutate(draft, { onSuccess: () => setDraft(null) })
+                }
+              >
                 <Alert severity="info">
                   Пример будет использоваться только при проверке ваших занятий.
                   Оценка этой работы не меняется — её можно изменить отдельно.
@@ -85,6 +96,7 @@ export function AssessmentMemory({
                 <Typography>{finding.label}</Typography>
                 <TextField
                   select
+                  name="verdict"
                   label="Ваш вердикт"
                   value={draft.verdict}
                   onChange={(e) =>
@@ -101,6 +113,8 @@ export function AssessmentMemory({
                   ))}
                 </TextField>
                 <TextField
+                  name="reason"
+                  required
                   label="Почему такой вердикт верен"
                   multiline
                   minRows={3}
@@ -109,14 +123,9 @@ export function AssessmentMemory({
                     setDraft({ ...draft, reason: e.target.value })
                   }
                   helperText="Объясните допустимую формулировку, пропуск или противоречие. 15–700 символов."
-                  slotProps={{ htmlInput: { maxLength: 700 } }}
+                  slotProps={{ htmlInput: { minLength: 15, maxLength: 700 } }}
                 />
-                {publish.error && (
-                  <Alert severity="error">
-                    {getApiError(publish.error).message}
-                  </Alert>
-                )}
-              </Stack>
+              </ValidatedForm>
             </DialogContent>
             <DialogActions>
               <Button
@@ -127,10 +136,9 @@ export function AssessmentMemory({
               </Button>
               <Button
                 variant="contained"
-                disabled={publish.isPending || draft.reason.trim().length < 15}
-                onClick={() =>
-                  publish.mutate(draft, { onSuccess: () => setDraft(null) })
-                }
+                disabled={publish.isPending}
+                type="submit"
+                form={formId}
               >
                 Использовать в будущих проверках
               </Button>

@@ -83,6 +83,11 @@ it("blocks submission while the draft request is pending", async () => {
   });
   const save = vi.fn(() => promise);
   const { result, onSubmit } = setup(save);
+  act(() => {
+    result.current.setCategory("entry");
+    result.current.setAddressField("street", "Учебная");
+    result.current.setField("description", "Дым");
+  });
   act(() => result.current.saveDraft());
   await waitFor(() => expect(result.current.pending).toBe(true));
   act(() => {
@@ -95,4 +100,26 @@ it("blocks submission while the draft request is pending", async () => {
   await waitFor(() => expect(result.current.pending).toBe(false));
   act(() => result.current.submit());
   await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
+});
+
+it("allows incomplete drafts, highlights submission errors and clears only edited fields", async () => {
+  const save = vi.fn().mockResolvedValue(undefined);
+  const { result, onSubmit } = setup(save);
+  act(() => result.current.saveDraft());
+  await waitFor(() => expect(result.current.saved).toBe(true));
+  act(() => result.current.submit());
+  await waitFor(() => expect(result.current.fieldIssues).toHaveLength(3));
+  expect(onSubmit).not.toHaveBeenCalled();
+  act(() => result.current.setField("description", "Дым"));
+  expect(result.current.fieldIssues.map((i) => i.path)).toEqual([
+    "classifier_entry_id",
+    "data.address_text",
+  ]);
+  act(() => {
+    result.current.setCategory("entry");
+    result.current.setAddressField("description", "В парке у беседки");
+  });
+  expect(result.current.fieldIssues).toEqual([]);
+  act(() => result.current.submit());
+  await waitFor(() => expect(onSubmit).toHaveBeenCalledOnce());
 });

@@ -1,3 +1,4 @@
+import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
 import { serviceProfileApi, crewStatusLabels } from "@/entities/training";
 import {
   Alert,
@@ -7,7 +8,6 @@ import {
   MenuItem,
   Paper,
   Stack,
-  TextField,
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { styles } from "../styles/DDSPolicyFields";
@@ -110,6 +110,7 @@ export function DDSPolicyFields({
               required
               multiline
               minRows={2}
+              name={`dds_policy.steps.${i}.message`}
               label={`Сведения по ситуации ${i + 1}`}
               value={step.message}
               onChange={(e) =>

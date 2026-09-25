@@ -1,6 +1,7 @@
+import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
 import { cardApi } from "@/entities/training";
 import { ServerSelect } from "@/shared/ui/ServerSelect";
-import { Button, Paper, Stack, TextField, Typography } from "@mui/material";
+import { Button, Paper, Stack, Typography } from "@mui/material";
 import { styles } from "../styles/ScenarioEditorPage";
 import type { ScenarioCardsFieldsProps } from "../types/ScenarioEditorPage";
 

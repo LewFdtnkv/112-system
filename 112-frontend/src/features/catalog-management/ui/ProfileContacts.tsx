@@ -1,6 +1,7 @@
+import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
 import { catalogApi } from "@/entities/training";
 import { ServerSelect } from "@/shared/ui/ServerSelect";
-import { Button, Paper, Stack, TextField } from "@mui/material";
+import { Button, Paper, Stack } from "@mui/material";
 import { styles } from "../styles/ProfileForm";
 import type { ProfileContactsProps } from "../types/ProfileFormSections";
 
@@ -25,6 +26,8 @@ export function ProfileContacts({ form, onChange }: ProfileContactsProps) {
         <Paper key={index} sx={styles.paper3}>
           <Stack spacing={1}>
             <ServerSelect
+              name={`contacts.${index}.target_service_id`}
+              required
               label={`Служба контакта ${index + 1}`}
               queryKey={["admin-service-options"]}
               load={services}
@@ -58,6 +61,7 @@ export function ProfileContacts({ form, onChange }: ProfileContactsProps) {
             ).map((key) => (
               <TextField
                 key={key}
+                name={`contacts.${index}.${key}`}
                 required={["code", "name", "endpoint_key"].includes(key)}
                 label={labels[key]}
                 value={contact[key] ?? ""}

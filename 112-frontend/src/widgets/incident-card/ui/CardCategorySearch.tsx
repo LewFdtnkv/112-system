@@ -28,6 +28,7 @@ export function CardCategorySearch({
       }}
     >
       <ArmField
+        name="classifier_entry_id"
         label="Введите тип происшествия"
         aria-label="Тип происшествия"
         placeholder={

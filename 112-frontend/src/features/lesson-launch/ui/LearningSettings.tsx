@@ -1,3 +1,4 @@
+import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
 import {
   assistanceLabels,
   learningSkillLabels,
@@ -10,7 +11,7 @@ import type {
   LearningSkill,
   LessonKind,
 } from "@/entities/training";
-import { Alert, Chip, MenuItem, TextField } from "@mui/material";
+import { Alert, Chip, MenuItem } from "@mui/material";
 import type { LearningSettingsProps } from "../types/LearningSettings";
 import "../styles/learning-settings.scss";
 
@@ -64,6 +65,7 @@ export function LearningSettings({
       </div>
       <div className="learning-settings-fields">
         <TextField
+          name="learning.objective"
           label="Учебная цель"
           multiline
           minRows={2}
@@ -167,6 +169,7 @@ export function LearningSettings({
         )}
         <TextField
           select
+          name="learning.assistance.max_level"
           label="Максимальная помощь"
           value={value.assistance.max_level}
           disabled={

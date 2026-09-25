@@ -1,4 +1,5 @@
-import { TextField } from "@mui/material";
+import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
+
 import type { CardEditorTextFieldsProps } from "../types/CardEditorPanels";
 
 export function CardEditorTextFields({
@@ -19,6 +20,11 @@ export function CardEditorTextFields({
     .map(([key, label]) => (
       <TextField
         key={key}
+        name={
+          ["title", "caller_message", "instructions"].includes(key)
+            ? key
+            : `data.${key}`
+        }
         label={label}
         disabled={silent && ["caller_name", "address_text"].includes(key)}
         required={

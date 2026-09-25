@@ -1,14 +1,7 @@
+import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
+import { ValidatedForm } from "@/shared/ui/form-validation";
 import { userApi, type UserCreate } from "@/entities/training";
-import { getApiError } from "@/shared/api";
-import {
-  Alert,
-  Button,
-  Dialog,
-  DialogTitle,
-  MenuItem,
-  Stack,
-  TextField,
-} from "@mui/material";
+import { Button, Dialog, DialogTitle, MenuItem } from "@mui/material";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { roleLabels } from "../model/accountDisplay";
@@ -52,8 +45,8 @@ export function UserCreateDialog({ open, onClose }: UserCreateDialogProps) {
   return (
     <Dialog open={open} onClose={close} fullWidth>
       <DialogTitle>Создать пользователя</DialogTitle>
-      <Stack
-        component="form"
+      <ValidatedForm
+        error={create.error}
         spacing={2}
         sx={styles.stack}
         onSubmit={(event) => {
@@ -62,6 +55,7 @@ export function UserCreateDialog({ open, onClose }: UserCreateDialogProps) {
         }}
       >
         <TextField
+          name="username"
           label="Логин"
           required
           value={form.username}
@@ -71,6 +65,7 @@ export function UserCreateDialog({ open, onClose }: UserCreateDialogProps) {
           }}
         />
         <TextField
+          name="initial_password"
           label="Стартовый пароль"
           type="password"
           autoComplete="new-password"
@@ -83,6 +78,7 @@ export function UserCreateDialog({ open, onClose }: UserCreateDialogProps) {
         {(["last_name", "first_name", "middle_name", "email"] as const).map(
           (key) => (
             <TextField
+              name={key}
               key={key}
               label={
                 {
@@ -110,16 +106,13 @@ export function UserCreateDialog({ open, onClose }: UserCreateDialogProps) {
             </MenuItem>
           ))}
         </TextField>
-        {create.error && (
-          <Alert severity="error">{getApiError(create.error).message}</Alert>
-        )}
         <Button type="submit" disabled={create.isPending}>
           Создать аккаунт
         </Button>
         <Button disabled={create.isPending} onClick={close}>
           Отмена
         </Button>
-      </Stack>
+      </ValidatedForm>
     </Dialog>
   );
 }

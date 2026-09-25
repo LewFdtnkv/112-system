@@ -1,12 +1,7 @@
+import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
+import { ValidatedForm } from "@/shared/ui/form-validation";
 import { useForm } from "react-hook-form";
-import {
-  Alert,
-  Button,
-  Chip,
-  Stack,
-  TextField,
-  Typography,
-} from "@mui/material";
+import { Alert, Button, Chip, Stack, Typography } from "@mui/material";
 import { audioStatusLabels } from "@/entities/telephony";
 import type { AudioInput, MediaCue } from "@/entities/telephony";
 import { getApiError } from "@/shared/api";
@@ -39,7 +34,10 @@ export function MediaEditor({ cue }: { cue: MediaCue }) {
           color={cue.audio.status === "ready" ? "success" : "default"}
         />
       </div>
-      <form onSubmit={form.handleSubmit((data) => update.mutate(data))}>
+      <ValidatedForm
+        error={update.error}
+        onSubmit={form.handleSubmit((data) => update.mutate(data))}
+      >
         <TextField
           fullWidth
           label="Текст учебного собеседника"
@@ -88,7 +86,7 @@ export function MediaEditor({ cue }: { cue: MediaCue }) {
             </Button>
           )}
         </div>
-      </form>
+      </ValidatedForm>
       {url && <audio src={url} controls autoPlay />}
       {(error || cue.audio.error) && (
         <Alert severity="error">

@@ -76,9 +76,13 @@ test("teacher configures learning intent and assessment removes assistance", asy
   await page
     .getByRole("button", { name: "Отработка навыка", exact: false })
     .click();
-  await expect(
-    page.getByRole("button", { name: "Назначить задание", exact: true }),
-  ).toBeDisabled();
+  await page
+    .getByRole("button", { name: "Назначить задание", exact: true })
+    .click();
+  await expect(page.locator(".form-validation-summary")).toContainText(
+    "Выберите навыки",
+  );
+  await expect(page.getByRole("dialog")).toHaveCount(0);
   await page
     .getByRole("button", { name: "Адрес происшествия", exact: true })
     .click();

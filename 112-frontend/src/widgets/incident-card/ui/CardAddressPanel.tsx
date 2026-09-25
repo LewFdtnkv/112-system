@@ -1,3 +1,4 @@
+import { ValidationField } from "@/shared/ui/form-validation";
 import {
   useIncidentCardStore,
   useCardSkillDisabled,
@@ -61,6 +62,7 @@ export function CardAddressPanel({ viewing, onMap, onTranslate }: Props) {
       <div className="arm-applicant" data-learning-target="caller">
         <ArmField
           data-guide-target="caller_name"
+          name="data.caller_name"
           label="Заявитель"
           inline
           placeholder="Фамилия и имя заявителя"
@@ -69,6 +71,7 @@ export function CardAddressPanel({ viewing, onMap, onTranslate }: Props) {
           onChange={(e) => setField("callerName", e.target.value)}
         />
         <ArmSelect
+          name="data.additional_fields.details.callerStatus"
           data-guide-target="additional_fields.details.callerStatus"
           label="Статус заявителя"
           className="arm-applicant__status"
@@ -82,6 +85,7 @@ export function CardAddressPanel({ viewing, onMap, onTranslate }: Props) {
           <option>Пострадавший</option>
         </ArmSelect>
         <ArmSelect
+          name="data.additional_fields.details.callerGender"
           data-guide-target="additional_fields.details.callerGender"
           label="Пол заявителя"
           disabled={callerDisabled}
@@ -93,6 +97,7 @@ export function CardAddressPanel({ viewing, onMap, onTranslate }: Props) {
           <option>Женский</option>
         </ArmSelect>
         <ArmField
+          name="data.additional_fields.details.callerAge"
           data-guide-target="additional_fields.details.callerAge"
           label="Возраст заявителя"
           inline
@@ -110,20 +115,73 @@ export function CardAddressPanel({ viewing, onMap, onTranslate }: Props) {
           onClick={onTranslate}
         />
       </div>
-      <div className="arm-address-block" data-learning-target="address">
-        <div className="arm-address-heading">
-          <span>Адрес:</span>
-          <ArmIconButton
-            icon="map"
-            label="Показать адрес на карте"
-            onClick={onMap}
+      <ValidationField name="data.address_text" label="Адрес происшествия">
+        <div className="arm-address-block" data-learning-target="address">
+          <div className="arm-address-heading">
+            <span>Адрес:</span>
+            <ArmIconButton
+              icon="map"
+              label="Показать адрес на карте"
+              onClick={onMap}
+            />
+          </div>
+          <div className="arm-address-line">
+            {addressLine || "—"}
+            <ArmIconButton
+              icon="close"
+              label="Очистить адрес"
+              disabled={addressDisabled}
+              onClick={() =>
+                setField("address", {
+                  ...emptyIncidentAddress,
+                  country: "",
+                  region: fields.details?.noContact ? "" : "Москва",
+                })
+              }
+            />
+          </div>
+          <div className="arm-address-grid">
+            {(
+              [
+                ["country", "Страна", "Россия", "country"],
+                ["region", "Субъект", "Москва", "region"],
+                ["locality", "Населённый пункт", "", "locality"],
+                ["object", "Объект", "", "object"],
+                ["district", "Округ", "", "district"],
+                ["area", "Район", "", "area"],
+                ["street", "Улица", "", "street"],
+                ["house", "Дом/Вл", "", "house"],
+                ["building", "Корпус/Стр", "", "building"],
+                ["structure", "Стр/соор", "", "structure"],
+                ["apartment", "Квартира/офис", "", "apartment"],
+                ["entrance", "Подъезд", "", "entrance"],
+                ["floor", "Этаж", "", "floor"],
+                ["doorCode", "Код", "", "code"],
+              ] as const
+            ).map(([key, label, fallback, area]) => (
+              <ArmField
+                key={key}
+                name={`data.address_details.${key}`}
+                data-guide-target={`address_details.${key}`}
+                className={`arm-address-grid__${area}`}
+                label={label}
+                disabled={addressDisabled}
+                value={address[key] ?? (omitDefaults ? "" : fallback)}
+                onChange={(e) => setAddressField(key, e.target.value)}
+              />
+            ))}
+          </div>
+          <ArmTextarea
+            data-guide-target="address_details.description"
+            name="data.address_details.description"
+            label="Описательный адрес"
+            disabled={addressDisabled}
+            rows={2}
+            value={address.description}
+            onChange={(e) => setAddressField("description", e.target.value)}
           />
-        </div>
-        <div className="arm-address-line">
-          {addressLine || "—"}
-          <ArmIconButton
-            icon="close"
-            label="Очистить адрес"
+          <button
+            className="arm-small-button arm-address-clear"
             disabled={addressDisabled}
             onClick={() =>
               setField("address", {
@@ -132,62 +190,14 @@ export function CardAddressPanel({ viewing, onMap, onTranslate }: Props) {
                 region: fields.details?.noContact ? "" : "Москва",
               })
             }
-          />
+          >
+            очистить адрес
+          </button>
         </div>
-        <div className="arm-address-grid">
-          {(
-            [
-              ["country", "Страна", "Россия", "country"],
-              ["region", "Субъект", "Москва", "region"],
-              ["locality", "Населённый пункт", "", "locality"],
-              ["object", "Объект", "", "object"],
-              ["district", "Округ", "", "district"],
-              ["area", "Район", "", "area"],
-              ["street", "Улица", "", "street"],
-              ["house", "Дом/Вл", "", "house"],
-              ["building", "Корпус/Стр", "", "building"],
-              ["structure", "Стр/соор", "", "structure"],
-              ["apartment", "Квартира/офис", "", "apartment"],
-              ["entrance", "Подъезд", "", "entrance"],
-              ["floor", "Этаж", "", "floor"],
-              ["doorCode", "Код", "", "code"],
-            ] as const
-          ).map(([key, label, fallback, area]) => (
-            <ArmField
-              key={key}
-              data-guide-target={`address_details.${key}`}
-              className={`arm-address-grid__${area}`}
-              label={label}
-              disabled={addressDisabled}
-              value={address[key] ?? (omitDefaults ? "" : fallback)}
-              onChange={(e) => setAddressField(key, e.target.value)}
-            />
-          ))}
-        </div>
-        <ArmTextarea
-          data-guide-target="address_details.description"
-          label="Описательный адрес"
-          disabled={addressDisabled}
-          rows={2}
-          value={address.description}
-          onChange={(e) => setAddressField("description", e.target.value)}
-        />
-        <button
-          className="arm-small-button arm-address-clear"
-          disabled={addressDisabled}
-          onClick={() =>
-            setField("address", {
-              ...emptyIncidentAddress,
-              country: "",
-              region: fields.details?.noContact ? "" : "Москва",
-            })
-          }
-        >
-          очистить адрес
-        </button>
-      </div>
+      </ValidationField>
       <div className="arm-description-block" data-learning-target="description">
         <ArmTextarea
+          name="data.description"
           label="Описание со слов заявителя"
           aria-label="Сообщение со слов заявителя"
           placeholder="введите"

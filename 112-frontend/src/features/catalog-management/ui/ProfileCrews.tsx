@@ -1,3 +1,4 @@
+import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
 import {
   Button,
   Checkbox,
@@ -5,7 +6,6 @@ import {
   MenuItem,
   Paper,
   Stack,
-  TextField,
 } from "@mui/material";
 import { styles } from "../styles/ProfileForm";
 import type { ProfileCrewsProps } from "../types/ProfileCrews";
@@ -24,6 +24,7 @@ export function ProfileCrews({ value, contacts, onChange }: ProfileCrewsProps) {
             <TextField
               label={`Код бригады ${i + 1}`}
               required
+              name={`crews.${i}.code`}
               value={crew.code}
               helperText="Латинские буквы, цифры, дефис или подчёркивание"
               onChange={(e) =>
@@ -37,6 +38,7 @@ export function ProfileCrews({ value, contacts, onChange }: ProfileCrewsProps) {
             <TextField
               label={`Название бригады ${i + 1}`}
               required
+              name={`crews.${i}.name`}
               value={crew.name}
               onChange={(e) =>
                 onChange(
@@ -49,6 +51,7 @@ export function ProfileCrews({ value, contacts, onChange }: ProfileCrewsProps) {
             <TextField
               label={`Назначение бригады ${i + 1}`}
               multiline
+              name={`crews.${i}.description`}
               value={crew.description}
               onChange={(e) =>
                 onChange(
@@ -61,6 +64,7 @@ export function ProfileCrews({ value, contacts, onChange }: ProfileCrewsProps) {
             <TextField
               select
               label={`Контакт старшего бригады ${i + 1}`}
+              name={`crews.${i}.contact_code`}
               value={crew.contact_code ?? ""}
               onChange={(e) =>
                 onChange(

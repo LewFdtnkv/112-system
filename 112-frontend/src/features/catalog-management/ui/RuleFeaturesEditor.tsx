@@ -1,3 +1,4 @@
+import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
 import {
   Alert,
   Button,
@@ -5,7 +6,6 @@ import {
   FormControlLabel,
   MenuItem,
   Stack,
-  TextField,
 } from "@mui/material";
 import { FeatureVisibilityEditor } from "./FeatureVisibilityEditor";
 import type { RuleFeaturesEditorProps } from "../types/RuleFormEditors";
@@ -25,6 +25,7 @@ export function RuleFeaturesEditor({
         <Stack key={index} spacing={1}>
           <TextField
             required
+            name={`features.${index}.key`}
             label={`Ключ признака ${index + 1}`}
             value={feature.key}
             onChange={(event) =>
@@ -57,6 +58,7 @@ export function RuleFeaturesEditor({
           <TextField
             required
             fullWidth
+            name={`features.${index}.label`}
             label={`Название признака ${index + 1}`}
             value={feature.label}
             onChange={(event) =>
@@ -72,6 +74,7 @@ export function RuleFeaturesEditor({
           />
           <TextField
             select
+            name={`features.${index}.type`}
             label={`Формат признака ${index + 1}`}
             disabled={hasDependents(feature.key)}
             value={feature.type ?? "boolean"}
@@ -118,6 +121,7 @@ export function RuleFeaturesEditor({
           {(feature.type === "choice" || feature.type === "array") && (
             <TextField
               multiline
+              name={`features.${index}.options`}
               label={`Варианты признака ${index + 1}`}
               required={feature.type === "choice"}
               helperText="По одному значению в строке. Для списка можно оставить пустым — свободный ввод."

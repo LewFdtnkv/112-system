@@ -1,11 +1,11 @@
+import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
+import { ValidatedForm } from "@/shared/ui/form-validation";
 import { userApi, type GroupItem } from "@/entities/training";
 import { GroupDisband } from "@/features/group-disband";
-import { getApiError } from "@/shared/api";
 import { rowAction } from "@/shared/lib/rowAction";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { PageControls, QueryState } from "@/shared/ui/QueryState";
 import {
-  Alert,
   Button,
   Stack,
   Table,
@@ -13,7 +13,6 @@ import {
   TableCell,
   TableHead,
   TableRow,
-  TextField,
 } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -50,8 +49,8 @@ export const GroupsPage = () => {
           setPage(0);
         }}
       />
-      <Stack
-        component="form"
+      <ValidatedForm
+        error={create.error}
         direction="row"
         spacing={2}
         onSubmit={(event) => {
@@ -60,6 +59,7 @@ export const GroupsPage = () => {
         }}
       >
         <TextField
+          name="name"
           label="Название группы"
           required
           value={name}
@@ -68,10 +68,7 @@ export const GroupsPage = () => {
         <Button type="submit" disabled={create.isPending}>
           Создать группу
         </Button>
-      </Stack>
-      {create.error && (
-        <Alert severity="error">{getApiError(create.error).message}</Alert>
-      )}
+      </ValidatedForm>
       <QueryState
         pending={groups.isPending}
         error={groups.error}

@@ -1,17 +1,17 @@
-import { catalogApi } from "@/entities/training";
 import { getApiError } from "@/shared/api";
+import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
+import { ValidatedForm } from "@/shared/ui/form-validation";
+import { catalogApi } from "@/entities/training";
 import { rowAction } from "@/shared/lib/rowAction";
 import { PageControls, QueryState } from "@/shared/ui/QueryState";
 import {
   Alert,
   Button,
-  Stack,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableRow,
-  TextField,
   Typography,
 } from "@mui/material";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -67,8 +67,8 @@ export function CatalogClassifierSection({
         <summary>Формат JSON</summary>
         <pre>{example}</pre>
       </details>
-      <Stack
-        component="form"
+      <ValidatedForm
+        error={create.error}
         spacing={1}
         onSubmit={(event) => {
           event.preventDefault();
@@ -82,21 +82,23 @@ export function CatalogClassifierSection({
         }}
       >
         <TextField
+          name="json"
           label="JSON справочника"
+          error={!!parseError}
+          helperText={parseError}
           multiline
           minRows={6}
           required
           value={json}
-          onChange={(event) => setJson(event.target.value)}
+          onChange={(event) => {
+            setJson(event.target.value);
+            setParseError("");
+          }}
         />
         <Button type="submit" disabled={create.isPending}>
           Создать черновик ЕКП
         </Button>
-      </Stack>
-      {parseError && <Alert severity="error">{parseError}</Alert>}
-      {create.error && (
-        <Alert severity="error">{getApiError(create.error).message}</Alert>
-      )}
+      </ValidatedForm>
       {publish.error && (
         <Alert severity="error">{getApiError(publish.error).message}</Alert>
       )}

@@ -1,4 +1,5 @@
-import { Stack, TextField, Typography } from "@mui/material";
+import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
+import { Stack, Typography } from "@mui/material";
 import { styles } from "../styles/AssessmentPolicyFields";
 import type { AssessmentPolicyFieldsProps } from "../types/AssessmentPolicyFields";
 
@@ -26,6 +27,7 @@ export function AssessmentPolicyFields({
         <Stack sx={styles.stack2}>
           {Object.entries(labels).map(([code, label]) => (
             <TextField
+              name={`assessment_policy.weights.${code}`}
               key={code}
               type="number"
               fullWidth

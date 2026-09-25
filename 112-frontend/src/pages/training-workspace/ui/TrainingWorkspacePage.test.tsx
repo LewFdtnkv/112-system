@@ -165,6 +165,10 @@ it("keeps entered values when saving fails", async () => {
   ).not.toBeInTheDocument();
 });
 it("submits only after saving and uses the returned revision", async () => {
+  vi.mocked(attemptApi.get).mockResolvedValue({
+    ...structuredClone(initial),
+    card: { ...initial.card, classifier_entry_id: "entry" },
+  });
   vi.spyOn(attemptApi, "saveDraft").mockResolvedValue({
     ...initial,
     card: { ...initial.card, revision: 4 },

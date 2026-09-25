@@ -1,10 +1,11 @@
+import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
+import { ValidatedForm, ValidationField } from "@/shared/ui/form-validation";
 import { scenarioApi, type ScenarioInput } from "@/entities/training";
-import { getApiError } from "@/shared/api";
 import { routePaths } from "@/shared/config/routes";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { QueryState } from "@/shared/ui/QueryState";
 import { type SelectOption } from "@/shared/ui/ServerSelect";
-import { Alert, Button, MenuItem, Stack, TextField } from "@mui/material";
+import { Alert, Button, MenuItem, Stack } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -101,8 +102,8 @@ function Editor({ initial }: EditorProps) {
     },
   });
   return (
-    <Stack
-      component="form"
+    <ValidatedForm
+      error={save.error}
       spacing={2}
       onSubmit={(event) => {
         event.preventDefault();
@@ -131,6 +132,7 @@ function Editor({ initial }: EditorProps) {
         />
       )}
       <TextField
+        name="instructions"
         label="Инструкция ученику"
         multiline
         minRows={3}
@@ -139,19 +141,30 @@ function Editor({ initial }: EditorProps) {
           setForm({ ...form, instructions: event.target.value })
         }
       />
-      <ScenarioCardsFields
-        role={form.role}
-        cards={schedule.cards}
-        choice={schedule.choice}
-        delays={schedule.delays}
-        offsets={schedule.offsets}
-        onChoiceChange={schedule.setChoice}
-        onAdd={schedule.add}
-        onRemove={schedule.remove}
-        onMove={schedule.move}
-        onDelayChange={schedule.changeDelay}
-      />
+      <ValidationField
+        name="card_ids"
+        label="Карточки сценария"
+        validate={() =>
+          !schedule.cards.length
+            ? "Добавьте хотя бы одну карточку в сценарий."
+            : undefined
+        }
+      >
+        <ScenarioCardsFields
+          role={form.role}
+          cards={schedule.cards}
+          choice={schedule.choice}
+          delays={schedule.delays}
+          offsets={schedule.offsets}
+          onChoiceChange={schedule.setChoice}
+          onAdd={schedule.add}
+          onRemove={schedule.remove}
+          onMove={schedule.move}
+          onDelayChange={schedule.changeDelay}
+        />
+      </ValidationField>
       <TextField
+        name="status"
         select
         label="Статус публикации"
         value={form.status}
@@ -182,20 +195,9 @@ function Editor({ initial }: EditorProps) {
           }
         />
       )}
-      {save.error && (
-        <Alert severity="error">{getApiError(save.error).message}</Alert>
-      )}
-      <Button
-        type="submit"
-        variant="contained"
-        disabled={
-          save.isPending ||
-          !schedule.cards.length ||
-          (form.role === "dds" && !profile)
-        }
-      >
+      <Button type="submit" variant="contained" disabled={save.isPending}>
         Сохранить сценарий
       </Button>
-    </Stack>
+    </ValidatedForm>
   );
 }

@@ -16,4 +16,6 @@ export interface FeatureInputProps {
   onChange: (value: FeatureValue | undefined) => void;
   disabled?: boolean;
   condition?: boolean;
+  validationName?: string;
+  requireAnswer?: boolean;
 }

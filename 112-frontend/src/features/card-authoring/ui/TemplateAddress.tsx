@@ -1,4 +1,5 @@
-import { Stack, TextField, Typography } from "@mui/material";
+import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
+import { Stack, Typography } from "@mui/material";
 import { styles } from "../styles/TemplateAddress";
 import type { TemplateAddressProps } from "../types/TemplateAddress";
 
@@ -27,6 +28,7 @@ export function TemplateAddress({ value, onChange }: TemplateAddressProps) {
         {Object.entries(fields).map(([key, label]) => (
           <TextField
             key={key}
+            name={`data.address_details.${key}`}
             label={label}
             value={value[key as keyof typeof fields] ?? ""}
             slotProps={{ htmlInput: { maxLength: 255 } }}

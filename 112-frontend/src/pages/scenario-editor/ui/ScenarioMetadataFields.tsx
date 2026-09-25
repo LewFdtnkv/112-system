@@ -1,5 +1,6 @@
+import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
 import type { ScenarioInput } from "@/entities/training";
-import { MenuItem, Stack, TextField } from "@mui/material";
+import { MenuItem, Stack } from "@mui/material";
 import { styles } from "../styles/ScenarioEditorPage";
 import type { ScenarioMetadataFieldsProps } from "../types/ScenarioEditorPage";
 
@@ -10,12 +11,14 @@ export function ScenarioMetadataFields({
   return (
     <>
       <TextField
+        name="title"
         label="Название сценария"
         required
         value={form.title}
         onChange={(event) => onChange({ ...form, title: event.target.value })}
       />
       <TextField
+        name="category"
         label="Категория"
         value={form.category}
         onChange={(event) =>
@@ -39,6 +42,7 @@ export function ScenarioMetadataFields({
           <MenuItem value="advanced">Сложный</MenuItem>
         </TextField>
         <TextField
+          name="duration_minutes"
           type="number"
           label="Длительность, мин"
           slotProps={{ htmlInput: { min: 1, max: 120 } }}
@@ -48,6 +52,7 @@ export function ScenarioMetadataFields({
           }
         />
         <TextField
+          name="norm_seconds"
           type="number"
           label={
             form.role === "dds"
@@ -67,6 +72,7 @@ export function ScenarioMetadataFields({
         />
       </Stack>
       <TextField
+        name="role"
         select
         label="Учебная роль"
         value={form.role}

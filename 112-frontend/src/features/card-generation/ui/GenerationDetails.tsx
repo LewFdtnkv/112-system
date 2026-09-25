@@ -1,5 +1,6 @@
+import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
 import { cardFlagFields } from "@/entities/incident-card";
-import { Link, MenuItem, TextField } from "@mui/material";
+import { Link, MenuItem } from "@mui/material";
 import { GenerationTextChoice } from "./GenerationTextChoice";
 import type { CardGenerationPanelProps } from "../types/CardGenerationPanels";
 import { addressChoices } from "../lib/catalogChoices";
@@ -17,6 +18,7 @@ export function GenerationDetails({ model }: CardGenerationPanelProps) {
             return null;
           return (
             <TextField
+              name={`parameters.${parameter}`}
               key={parameter}
               select
               label={label}
@@ -41,6 +43,7 @@ export function GenerationDetails({ model }: CardGenerationPanelProps) {
           );
         })}
         <TextField
+          name="parameters.victims_count"
           label="Количество пострадавших"
           type="number"
           value={model.p.victims_count ?? ""}
@@ -70,6 +73,7 @@ export function GenerationDetails({ model }: CardGenerationPanelProps) {
         .
       </p>
       <TextField
+        name="parameters.address_format"
         select
         label="Формат адреса"
         value={model.p.address_format ?? "random"}
@@ -116,6 +120,7 @@ export function GenerationDetails({ model }: CardGenerationPanelProps) {
         />
       </div>
       <TextField
+        name="parameters.address_description"
         label="Описательный адрес — ориентиры"
         multiline
         minRows={2}
@@ -146,6 +151,7 @@ export function GenerationDetails({ model }: CardGenerationPanelProps) {
           ] as const
         ).map(([key, title]) => (
           <TextField
+            name={`parameters.${key}`}
             key={key}
             select
             label={title}
@@ -170,6 +176,7 @@ export function GenerationDetails({ model }: CardGenerationPanelProps) {
           </TextField>
         ))}
         <TextField
+          name="parameters.age"
           label="Возраст заявителя"
           disabled={
             model.p.caller_information === "anonymous" ||

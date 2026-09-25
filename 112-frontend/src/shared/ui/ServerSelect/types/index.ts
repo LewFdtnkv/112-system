@@ -6,6 +6,8 @@ export interface SelectOption {
 
 export type ServerSelectProps = {
   label: string;
+  name?: string;
+  required?: boolean;
   queryKey: readonly unknown[];
   load: (search: string, signal: AbortSignal) => Promise<SelectOption[]>;
   value: SelectOption | null;

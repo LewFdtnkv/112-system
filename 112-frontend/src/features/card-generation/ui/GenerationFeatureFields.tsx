@@ -17,6 +17,8 @@ export function GenerationFeatureFields({ model }: CardGenerationPanelProps) {
           (feature) => (
             <div key={feature.key}>
               <FeatureInput
+                requireAnswer={false}
+                validationName={`parameters.feature_answers.${feature.key}`}
                 feature={feature}
                 value={model.p.feature_answers?.[feature.key]}
                 onChange={(value) => {

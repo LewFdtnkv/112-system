@@ -1,4 +1,5 @@
-import { Button, Paper, Stack, TextField } from "@mui/material";
+import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
+import { Button, Paper, Stack } from "@mui/material";
 import { styles } from "../styles/ProfileForm";
 import type { ProfileObjectsProps } from "../types/ProfileFormSections";
 
@@ -28,6 +29,7 @@ export function ProfileObjects({ form, onChange }: ProfileObjectsProps) {
             ).map((key) => (
               <TextField
                 key={key}
+                name={`objects.${index}.${key}`}
                 required={key !== "territory_code"}
                 label={labels[key]}
                 value={object[key] ?? ""}

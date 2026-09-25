@@ -1,5 +1,6 @@
+import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
 import type { GenerationParameters } from "@/entities/training";
-import { Autocomplete, TextField } from "@mui/material";
+import { Autocomplete } from "@mui/material";
 import type { GenerationTextChoiceProps } from "../types/CardGenerationPanels";
 
 export function GenerationTextChoice({
@@ -30,6 +31,7 @@ export function GenerationTextChoice({
       renderInput={(params) => (
         <TextField
           {...params}
+          name={`parameters.${name}`}
           label={label}
           helperText="Выберите или введите своё значение"
         />

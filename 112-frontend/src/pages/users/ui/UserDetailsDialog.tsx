@@ -1,10 +1,12 @@
+import { getApiError } from "@/shared/api";
+import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
+import { ValidatedForm } from "@/shared/ui/form-validation";
 import {
   activityApi,
   userApi,
   UserPhoto,
   type UserUpdate,
 } from "@/entities/training";
-import { getApiError } from "@/shared/api";
 import { QueryState } from "@/shared/ui/QueryState";
 import {
   Alert,
@@ -15,7 +17,6 @@ import {
   FormControlLabel,
   Stack,
   Switch,
-  TextField,
   Typography,
 } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -90,8 +91,8 @@ function AccountForm({ user, onClose }: AccountFormProps) {
     },
   });
   return (
-    <Stack
-      component="form"
+    <ValidatedForm
+      error={save.error}
       spacing={2}
       sx={styles.stack}
       onSubmit={(e) => {
@@ -131,9 +132,15 @@ function AccountForm({ user, onClose }: AccountFormProps) {
       >
         <DialogTitle>Подтвердите изменение доступа</DialogTitle>
         <DialogContent>
-          <Stack spacing={2} sx={styles.stack2}>
+          <ValidatedForm
+            error={save.error}
+            spacing={2}
+            sx={styles.stack2}
+            onSubmit={() => save.mutate()}
+          >
             <TextField
               autoFocus
+              name="reason"
               label="Причина изменения доступа"
               required
               multiline
@@ -141,19 +148,13 @@ function AccountForm({ user, onClose }: AccountFormProps) {
               onChange={(e) => setReason(e.target.value)}
               slotProps={{ htmlInput: { maxLength: 2000 } }}
             />
-            <Button
-              disabled={!reason.trim() || save.isPending}
-              onClick={() => save.mutate()}
-            >
+            <Button disabled={save.isPending} type="submit">
               Подтвердить
             </Button>
-            {save.error && (
-              <Alert severity="error">{getApiError(save.error).message}</Alert>
-            )}
             <Button onClick={() => setConfirm(false)} disabled={save.isPending}>
               Отмена
             </Button>
-          </Stack>
+          </ValidatedForm>
         </DialogContent>
       </Dialog>
       <TextField
@@ -170,6 +171,7 @@ function AccountForm({ user, onClose }: AccountFormProps) {
         ] as const
       ).map(([key, label]) => (
         <TextField
+          name={key}
           key={key}
           label={label}
           value={form[key] ?? ""}
@@ -221,15 +223,12 @@ function AccountForm({ user, onClose }: AccountFormProps) {
           ID: {user.id} · Время московское
         </Typography>
       </Stack>
-      {save.error && (
-        <Alert severity="error">{getApiError(save.error).message}</Alert>
-      )}
       <Button type="submit" disabled={save.isPending}>
         Сохранить изменения
       </Button>
       <Button onClick={onClose} disabled={save.isPending}>
         Закрыть
       </Button>
-    </Stack>
+    </ValidatedForm>
   );
 }

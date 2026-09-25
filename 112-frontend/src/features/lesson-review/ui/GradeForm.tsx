@@ -1,7 +1,8 @@
+import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
+import { ValidatedForm } from "@/shared/ui/form-validation";
 import { reviewApi } from "@/entities/training";
-import { getApiError } from "@/shared/api";
 import { randomUUID } from "@/shared/lib/uuid";
-import { Alert, Button, Stack, TextField, Typography } from "@mui/material";
+import { Alert, Button, Stack, Typography } from "@mui/material";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import type { GradeFormProps } from "../types/LessonReview";
@@ -36,8 +37,8 @@ export function GradeForm({ data, reload }: GradeFormProps) {
     },
   });
   return (
-    <Stack
-      component="form"
+    <ValidatedForm
+      error={save.error}
       spacing={2}
       onSubmit={(event) => {
         event.preventDefault();
@@ -56,6 +57,7 @@ export function GradeForm({ data, reload }: GradeFormProps) {
         <TextField
           required
           type="number"
+          name="score"
           label="Балл"
           value={score}
           slotProps={{ htmlInput: { min: 0, max: Number(max), step: "0.01" } }}
@@ -67,6 +69,7 @@ export function GradeForm({ data, reload }: GradeFormProps) {
         <TextField
           required
           type="number"
+          name="max_score"
           label="Максимальный балл"
           value={max}
           slotProps={{ htmlInput: { min: 0.01, step: "0.01" } }}
@@ -78,6 +81,7 @@ export function GradeForm({ data, reload }: GradeFormProps) {
       </Stack>
       <TextField
         required
+        name="comment"
         label="Комментарий преподавателя"
         multiline
         minRows={3}
@@ -88,17 +92,12 @@ export function GradeForm({ data, reload }: GradeFormProps) {
         }}
       />
       {save.error && (
-        <Alert
-          severity="error"
-          action={<Button onClick={reload}>Загрузить актуальную оценку</Button>}
-        >
-          {getApiError(save.error).message}
-        </Alert>
+        <Button onClick={reload}>Загрузить актуальную оценку</Button>
       )}
       {save.isSuccess && <Alert severity="success">Оценка сохранена</Alert>}
       <Button type="submit" disabled={!data.submitted || save.isPending}>
         Сохранить оценку
       </Button>
-    </Stack>
+    </ValidatedForm>
   );
 }

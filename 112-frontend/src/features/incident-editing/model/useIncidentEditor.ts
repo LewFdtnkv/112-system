@@ -1,3 +1,5 @@
+import { incidentIssues, IncidentValidationError } from "../lib/validation";
+import { cardData } from "./cardAdapter";
 import type {
   IncidentAddress,
   IncidentCardDetails,
@@ -5,9 +7,9 @@ import type {
   IncidentPhones,
   ResponseService,
 } from "@/entities/incident-card";
-import { getApiError } from "@/shared/api";
+import { getApiError, getApiFieldErrors } from "@/shared/api";
 import { useMutation } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type {
   IncidentEditorOptions,
   EditorCommand,
@@ -24,10 +26,47 @@ export function useIncidentEditor({
   const command = useMutation({
     mutationFn: async ({ kind, fields: submitted }: EditorCommand) => {
       if (kind === "save") await remote.onSave(submitted);
-      else await onSubmit(submitted);
+      else {
+        const issues = incidentIssues(submitted, remote);
+        if (issues.length) throw new IncidentValidationError(issues);
+        await onSubmit(submitted);
+      }
       return submitted;
     },
   });
+  const fieldIssues = useMemo(() => {
+    if (command.error instanceof IncidentValidationError) {
+      const previous = command.error.issues;
+      return incidentIssues(fields, remote).filter((issue) =>
+        previous.some((old) => old.path === issue.path),
+      );
+    }
+    const errors = getApiFieldErrors(command.error);
+    if (!command.variables) return [];
+    const original = {
+      data: cardData(command.variables.fields, { additional_fields: {} }),
+      classifier_entry_id: command.variables.fields.categoryId,
+    };
+    const current = {
+      data: cardData(fields, { additional_fields: {} }),
+      classifier_entry_id: fields.categoryId,
+    };
+    const at = (obj: unknown, path: string): unknown =>
+      path
+        .split(".")
+        .reduce<unknown>(
+          (value, key) =>
+            value && typeof value === "object"
+              ? (value as Record<string, unknown>)[key]
+              : undefined,
+          obj,
+        );
+    return errors.filter(
+      (issue) =>
+        JSON.stringify(at(original, issue.path)) ===
+        JSON.stringify(at(current, issue.path)),
+    );
+  }, [command.error, command.variables, fields, remote]);
   const dirty =
     JSON.stringify(fields) !== JSON.stringify(command.data ?? card.fields);
   const onFieldsChange = remote.onFieldsChange;
@@ -117,7 +156,14 @@ export function useIncidentEditor({
     pending: command.isPending,
     dirty,
     saved: command.isSuccess && command.variables.kind === "save" && !dirty,
-    error: command.error ? getApiError(command.error).message : undefined,
+    fieldIssues,
+    validationAttempt: command.error,
+    error:
+      command.error instanceof IncidentValidationError
+        ? undefined
+        : command.error && !getApiFieldErrors(command.error).length
+          ? getApiError(command.error).message
+          : undefined,
     saveDraft: () => run("save"),
     submit: () => run("submit"),
     setField,

@@ -1,3 +1,4 @@
+import { ValidationField } from "@/shared/ui/form-validation";
 import { QueryState } from "@/shared/ui/QueryState";
 import { ServerSelect } from "@/shared/ui/ServerSelect";
 import { cardApi } from "@/entities/training";
@@ -21,7 +22,19 @@ export function CardEditorRecipients({
     silent,
   } = editor;
   return (
-    <>
+    <ValidationField
+      name="recipient_service_ids"
+      label="Службы для оповещения"
+      validate={() =>
+        !silent &&
+        entry &&
+        editor.notificationRequired &&
+        manualRecipients === null &&
+        !recipients.length
+          ? "Не удалось подобрать службы. Уточните признаки или задайте службы вручную."
+          : undefined
+      }
+    >
       {!silent && entry && (
         <FormControlLabel
           label="Задать службы эталонного решения вручную"
@@ -134,6 +147,6 @@ export function CardEditorRecipients({
             Выполнение учеником условных маршрутов пока недоступно.
           </Alert>
         )}
-    </>
+    </ValidationField>
   );
 }

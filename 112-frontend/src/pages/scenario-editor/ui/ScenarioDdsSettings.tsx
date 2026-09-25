@@ -22,6 +22,8 @@ export function ScenarioDdsSettings({
         onChange={(dds_policy) => onChange({ ...form, dds_policy })}
       />
       <ServerSelect
+        name="service_profile_id"
+        required
         label="Профиль службы"
         queryKey={["profiles"]}
         value={profile}

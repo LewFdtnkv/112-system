@@ -1,7 +1,6 @@
-import { getApiError } from "@/shared/api";
+import { ValidatedForm } from "@/shared/ui/form-validation";
 import { QueryState } from "@/shared/ui/QueryState";
 import {
-  Alert,
   Button,
   Dialog,
   DialogActions,
@@ -18,11 +17,7 @@ import { GenerationSetup } from "./GenerationSetup";
 /** Coordinates the generation dialog; each form section owns its own controls. */
 export function CardGenerationDialog({ onClose }: CardGenerationDialogProps) {
   const model = useCardGeneration({ onClose });
-  const { options, save, count } = model;
-  const validCount =
-    Number.isInteger(count) &&
-    count >= 1 &&
-    count <= (options.data?.max_count ?? 10);
+  const { options, save } = model;
   return (
     <Dialog
       open
@@ -33,22 +28,25 @@ export function CardGenerationDialog({ onClose }: CardGenerationDialogProps) {
     >
       <DialogTitle id="generation-title">Сгенерировать карточки</DialogTitle>
       <DialogContent>
-        <QueryState
-          pending={options.isPending}
-          error={options.error}
-          retry={() => void options.refetch()}
+        <ValidatedForm
+          id="card-generation-form"
+          error={save.error}
+          onSubmit={() => save.mutate()}
         >
-          {options.data && (
-            <fieldset className="generation-form" disabled={save.isPending}>
-              <GenerationSetup model={model} />
-              <GenerationFeatureFields model={model} />
-              <GenerationDetails model={model} />
-            </fieldset>
-          )}
-        </QueryState>
-        {save.error && (
-          <Alert severity="error">{getApiError(save.error).message}</Alert>
-        )}
+          <QueryState
+            pending={options.isPending}
+            error={options.error}
+            retry={() => void options.refetch()}
+          >
+            {options.data && (
+              <fieldset className="generation-form" disabled={save.isPending}>
+                <GenerationSetup model={model} />
+                <GenerationFeatureFields model={model} />
+                <GenerationDetails model={model} />
+              </fieldset>
+            )}
+          </QueryState>
+        </ValidatedForm>
       </DialogContent>
       <DialogActions>
         <Button disabled={save.isPending} onClick={onClose}>
@@ -56,8 +54,9 @@ export function CardGenerationDialog({ onClose }: CardGenerationDialogProps) {
         </Button>
         <Button
           variant="contained"
-          disabled={!options.data || save.isPending || !validCount}
-          onClick={() => save.mutate()}
+          disabled={!options.data || save.isPending}
+          type="submit"
+          form="card-generation-form"
         >
           {save.isPending ? "Регистрация…" : "Запустить генерацию"}
         </Button>

@@ -153,7 +153,9 @@ test("teacher sets reference flags and passes supported flags to generation", as
   await page.getByRole("button", { name: "Отмена", exact: true }).click();
   await page.getByRole("button", { name: "Сгенерировать карточки" }).click();
   const dialog = page.getByRole("dialog");
-  await dialog.getByLabel("Количество карточек", { exact: true }).fill("3");
+  await dialog
+    .getByRole("spinbutton", { name: /Количество карточек/ })
+    .fill("3");
   await dialog
     .getByRole("combobox", { name: "Улица", exact: true })
     .fill("Учебная улица");

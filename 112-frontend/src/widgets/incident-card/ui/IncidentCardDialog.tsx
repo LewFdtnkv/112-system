@@ -1,3 +1,4 @@
+import { FieldErrors } from "@/shared/ui/form-validation";
 import { IncidentCardStoreProvider } from "../model/IncidentCardContext";
 import { useIncidentEditor } from "@/features/incident-editing";
 import { FieldFeedbackContext } from "@/shared/ui/arm/FieldFeedback";
@@ -86,119 +87,124 @@ function IncidentCardForm(props: IncidentCardFormProps) {
   };
   return (
     <IncidentCardStoreProvider value={{ editor, disabled }}>
-      <DialogTitle id={titleId} className="visually-hidden">
-        Карточка происшествия № {card.id}
-      </DialogTitle>
-      <CardTelephoneBar
-        card={card}
-        elapsedSeconds={elapsedSeconds}
-        normSeconds={normSeconds}
-        viewing={viewing}
-        submitted={isSubmitted || !!props.readOnly}
-        onViewChange={() => setPreview(!preview)}
-        onHistory={setModal}
-      />
-      {props.remote.message && (
-        <div className="arm-source-message" data-learning-target="source">
-          <b>Сообщение заявителя:</b> {props.remote.message}
-        </div>
-      )}
-      {props.trainingNotice}
-      <div className="arm-card-body" key={viewing ? "view" : "edit"}>
-        <CardAddressPanel
-          viewing={summaryLayout}
-          onMap={() => setModal("map")}
-          onTranslate={() => setModal("translate")}
+      <FieldErrors
+        issues={editor.fieldIssues}
+        focusKey={editor.validationAttempt}
+      >
+        <DialogTitle id={titleId} className="visually-hidden">
+          Карточка происшествия № {card.id}
+        </DialogTitle>
+        <CardTelephoneBar
+          card={card}
+          elapsedSeconds={elapsedSeconds}
+          normSeconds={normSeconds}
+          viewing={viewing}
+          submitted={isSubmitted || !!props.readOnly}
+          onViewChange={() => setPreview(!preview)}
+          onHistory={setModal}
         />
-        <CardClassification viewing={summaryLayout} />
-      </div>
-      {editor.saved && (
-        <p className="arm-card-notice" role="status">
-          Черновик сохранён на сервере.
-        </p>
-      )}
-      {props.remote.error && (
-        <p className="arm-card-notice arm-card-notice--error" role="alert">
-          {props.remote.error}
-        </p>
-      )}
-      {editor.error && (
-        <p className="arm-card-notice arm-card-notice--error" role="alert">
-          {editor.error}
-        </p>
-      )}
-      {!isSubmitted && !isCallAccepted && (
-        <p className="arm-card-notice" role="status">
-          Примите учебный вызов, чтобы начать работу с карточкой.
-        </p>
-      )}
-      {isSubmitted && !props.readOnly && (
-        <p className="arm-card-notice" role="status">
-          Карточка передана на учебную проверку.
-        </p>
-      )}
-      {props.responseFooter ?? (
-        <footer
-          className={`arm-card-footer ${viewing ? "arm-card-footer--view" : ""}`}
-        >
-          <CardServiceTiles
-            editor={editor}
-            submitted={isSubmitted}
-            viewing={viewing}
-            activeService={activeService}
-            onActiveServiceChange={setActiveService}
-            servicesOpen={servicesOpen}
-            onServicesToggle={() => setServicesOpen(!servicesOpen)}
-            locked={locked}
+        {props.remote.message && (
+          <div className="arm-source-message" data-learning-target="source">
+            <b>Сообщение заявителя:</b> {props.remote.message}
+          </div>
+        )}
+        {props.trainingNotice}
+        <div className="arm-card-body" key={viewing ? "view" : "edit"}>
+          <CardAddressPanel
+            viewing={summaryLayout}
+            onMap={() => setModal("map")}
+            onTranslate={() => setModal("translate")}
           />
-          <CardFooterTools
-            editor={editor}
-            viewing={viewing}
-            disabled={disabled}
-            commentOpen={commentOpen}
-            onCommentToggle={() => setCommentOpen(!commentOpen)}
-            onClose={close}
-            onTiming={() => setModal("timing")}
-          />
-          {activeService && (
-            <CardServiceHistory
-              serviceId={activeService}
-              serviceName={
-                editor.remote.services.find(
-                  (service) => service.id === activeService,
-                )?.name
-              }
-              submitted={isSubmitted}
-              onClose={() => setActiveService(undefined)}
-            />
-          )}
-          {commentOpen && (
-            <CardTrainingComment
+          <CardClassification viewing={summaryLayout} />
+        </div>
+        {editor.saved && (
+          <p className="arm-card-notice" role="status">
+            Черновик сохранён на сервере.
+          </p>
+        )}
+        {props.remote.error && (
+          <p className="arm-card-notice arm-card-notice--error" role="alert">
+            {props.remote.error}
+          </p>
+        )}
+        {editor.error && (
+          <p className="arm-card-notice arm-card-notice--error" role="alert">
+            {editor.error}
+          </p>
+        )}
+        {!isSubmitted && !isCallAccepted && (
+          <p className="arm-card-notice" role="status">
+            Примите учебный вызов, чтобы начать работу с карточкой.
+          </p>
+        )}
+        {isSubmitted && !props.readOnly && (
+          <p className="arm-card-notice" role="status">
+            Карточка передана на учебную проверку.
+          </p>
+        )}
+        {props.responseFooter ?? (
+          <footer
+            className={`arm-card-footer ${viewing ? "arm-card-footer--view" : ""}`}
+          >
+            <CardServiceTiles
               editor={editor}
-              disabled={disabled}
+              submitted={isSubmitted}
               viewing={viewing}
+              activeService={activeService}
+              onActiveServiceChange={setActiveService}
+              servicesOpen={servicesOpen}
+              onServicesToggle={() => setServicesOpen(!servicesOpen)}
               locked={locked}
-              log={log}
-              onClose={() => setCommentOpen(false)}
-              onPreview={() => {
-                setPreview(true);
-                setCommentOpen(false);
-              }}
             />
-          )}
-        </footer>
-      )}
-      <CardServicesDialog
-        open={servicesOpen && !viewing && !locked("notification")}
-        onClose={() => setServicesOpen(false)}
-      />
-      <IncidentCardAuxiliaryDialog
-        props={props}
-        editor={editor}
-        locked={locked}
-        modal={modal}
-        setModal={setModal}
-      />
+            <CardFooterTools
+              editor={editor}
+              viewing={viewing}
+              disabled={disabled}
+              commentOpen={commentOpen}
+              onCommentToggle={() => setCommentOpen(!commentOpen)}
+              onClose={close}
+              onTiming={() => setModal("timing")}
+            />
+            {activeService && (
+              <CardServiceHistory
+                serviceId={activeService}
+                serviceName={
+                  editor.remote.services.find(
+                    (service) => service.id === activeService,
+                  )?.name
+                }
+                submitted={isSubmitted}
+                onClose={() => setActiveService(undefined)}
+              />
+            )}
+            {commentOpen && (
+              <CardTrainingComment
+                editor={editor}
+                disabled={disabled}
+                viewing={viewing}
+                locked={locked}
+                log={log}
+                onClose={() => setCommentOpen(false)}
+                onPreview={() => {
+                  setPreview(true);
+                  setCommentOpen(false);
+                }}
+              />
+            )}
+          </footer>
+        )}
+        <CardServicesDialog
+          open={servicesOpen && !viewing && !locked("notification")}
+          onClose={() => setServicesOpen(false)}
+        />
+        <IncidentCardAuxiliaryDialog
+          props={props}
+          editor={editor}
+          locked={locked}
+          modal={modal}
+          setModal={setModal}
+        />
+      </FieldErrors>
     </IncidentCardStoreProvider>
   );
 }

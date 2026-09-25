@@ -1,7 +1,8 @@
+import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
 import { cardApi, type FeatureDefinition } from "@/entities/training";
 import { randomUUID as createUuid } from "@/shared/lib/uuid";
 import { ServerSelect, type SelectOption } from "@/shared/ui/ServerSelect";
-import { Alert, Chip, MenuItem, Stack, TextField } from "@mui/material";
+import { Alert, Chip, MenuItem, Stack } from "@mui/material";
 import { styles } from "../styles/CardGenerationDialog";
 import type { CardGenerationPanelProps } from "../types/CardGenerationPanels";
 
@@ -19,6 +20,7 @@ export function GenerationSetup({ model }: CardGenerationPanelProps) {
         добавлением в сценарий.
       </Alert>
       <TextField
+        name="parameters.mode"
         select
         label="Способ подготовки"
         value={p.mode ?? "assisted"}
@@ -35,6 +37,8 @@ export function GenerationSetup({ model }: CardGenerationPanelProps) {
         типов пока используйте ручное создание.
       </Alert>
       <TextField
+        name="count"
+        required
         label="Количество карточек"
         type="number"
         value={model.count}
@@ -48,6 +52,7 @@ export function GenerationSetup({ model }: CardGenerationPanelProps) {
       <h3>Происшествие и службы</h3>
       <div className="generation-grid">
         <ServerSelect
+          name="parameters.classifier_version_id"
           label="Версия ЕКП"
           value={model.version}
           queryKey={["generation-classifiers"]}
@@ -66,6 +71,7 @@ export function GenerationSetup({ model }: CardGenerationPanelProps) {
           }}
         />
         <ServerSelect
+          name="parameters.classifier_entry_id"
           label="Тип происшествия"
           value={model.entry}
           disabled={!model.version?.id}

@@ -1,3 +1,4 @@
+import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
 import { emptyIncidentAddress } from "@/entities/incident-card";
 import { LocationPicker } from "@/shared/ui/location-picker";
 import MapOutlinedIcon from "@mui/icons-material/MapOutlined";
@@ -8,7 +9,6 @@ import {
   DialogTitle,
   IconButton,
   Stack,
-  TextField,
   Tooltip,
 } from "@mui/material";
 import { useState } from "react";
@@ -43,6 +43,7 @@ export function CardEditorCaller({
           fields={["caller_name"]}
         />
         <TextField
+          name="data.caller_phone"
           label={labels.caller_phone}
           type="tel"
           autoComplete="off"
@@ -76,6 +77,7 @@ export function CardEditorCaller({
         ).map(([key, label]) => (
           <TextField
             key={key}
+            name={`data.person.${key}`}
             label={label}
             type={key === "gender" ? "text" : "number"}
             disabled={silent}
@@ -94,6 +96,7 @@ export function CardEditorCaller({
         ))}
       </Stack>
       <TextField
+        name="data.person.appearance"
         label="Внешность и особые приметы"
         disabled={silent}
         multiline

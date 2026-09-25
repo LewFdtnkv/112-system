@@ -1,5 +1,6 @@
+import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
 import { cardFlagFields } from "@/entities/incident-card";
-import { Alert, MenuItem, TextField } from "@mui/material";
+import { Alert, MenuItem } from "@mui/material";
 import type { CardEditorPanelProps } from "../types/CardEditorPanels";
 import { CardEditorCaller } from "./CardEditorCaller";
 

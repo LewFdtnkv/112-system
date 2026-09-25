@@ -1,12 +1,12 @@
+import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
 import { cardApi, type FeatureDefinition } from "@/entities/training";
-import { getApiError } from "@/shared/api";
 import {
   activeFeatureDefinitions,
   updateFeatureAnswer,
 } from "@/shared/lib/featureValues";
 import { FeatureInput } from "@/shared/ui/FeatureInput";
 import { ServerSelect } from "@/shared/ui/ServerSelect";
-import { Alert, Button, TextField } from "@mui/material";
+import { Button } from "@mui/material";
 import type { CardEditorPanelProps } from "../types/CardEditorPanels";
 import { CardEditorRecipients } from "./CardEditorRecipients";
 
@@ -36,6 +36,7 @@ export function CardEditorRouting({
       <h4>Происшествие и службы</h4>
       <TextField
         disabled={silent}
+        name="data.features.victimsCount"
         label="Количество пострадавших"
         type="number"
         value={victims}
@@ -44,6 +45,8 @@ export function CardEditorRouting({
         helperText="Оставьте пустым, если в условии не указано. Ноль означает, что пострадавших нет."
       />
       <ServerSelect
+        name="classifier_version_id"
+        required
         label="Опубликованная версия ЕКП"
         queryKey={["classifier-options"]}
         value={version}
@@ -64,6 +67,8 @@ export function CardEditorRouting({
         }
       />
       <ServerSelect
+        name="classifier_entry_id"
+        required={!silent}
         label="Тип происшествия (ЕКП)"
         queryKey={["entry-options-with-features", version?.id]}
         disabled={!version || silent}
@@ -108,17 +113,8 @@ export function CardEditorRouting({
           />
         ))}
       <CardEditorRecipients editor={editor} initial={initial} />
-      {save.error && (
-        <Alert
-          severity="error"
-          action={
-            initial && onReload ? (
-              <Button onClick={onReload}>Загрузить актуальную карточку</Button>
-            ) : undefined
-          }
-        >
-          {getApiError(save.error).message}
-        </Alert>
+      {save.error && initial && onReload && (
+        <Button onClick={onReload}>Загрузить актуальную карточку</Button>
       )}
     </>
   );

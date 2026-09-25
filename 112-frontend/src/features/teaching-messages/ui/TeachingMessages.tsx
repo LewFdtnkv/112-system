@@ -1,16 +1,13 @@
+import { getApiError } from "@/shared/api";
 import { useStudentMessages } from "../model/useStudentMessages";
 import { StudentMessage } from "./StudentMessage";
 import { activityApi } from "@/entities/training";
-import { getApiError } from "@/shared/api";
-import { PageControls, QueryState } from "@/shared/ui/QueryState";
 import {
-  Alert,
-  Button,
-  Paper,
-  Stack,
-  TextField,
-  Typography,
-} from "@mui/material";
+  ValidatedForm,
+  ValidatedTextField as TextField,
+} from "@/shared/ui/form-validation";
+import { PageControls, QueryState } from "@/shared/ui/QueryState";
+import { Alert, Button, Paper, Stack, Typography } from "@mui/material";
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { styles } from "../styles/TeachingMessages";
@@ -30,8 +27,14 @@ export function MessageComposer({ groupId, studentId }: MessageComposerProps) {
     onSuccess: () => setText(""),
   });
   return (
-    <Stack spacing={1}>
+    <ValidatedForm
+      spacing={1}
+      error={send.error}
+      onSubmit={() => send.mutate()}
+    >
       <TextField
+        name="text"
+        required
         label={groupId ? "Объявление для группы" : "Комментарий ученику"}
         multiline
         minRows={2}
@@ -42,21 +45,15 @@ export function MessageComposer({ groupId, studentId }: MessageComposerProps) {
         }}
         slotProps={{ htmlInput: { maxLength: 4000 } }}
       />
-      <Button
-        disabled={!text.trim() || send.isPending}
-        onClick={() => send.mutate()}
-      >
+      <Button disabled={send.isPending} type="submit">
         Отправить комментарий
       </Button>
-      {send.error && (
-        <Alert severity="error">{getApiError(send.error).message}</Alert>
-      )}
       {send.isSuccess && (
         <Alert severity="success">
           Отправлено. Получателей: {send.data.recipient_count}
         </Alert>
       )}
-    </Stack>
+    </ValidatedForm>
   );
 }
 

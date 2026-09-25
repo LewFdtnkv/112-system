@@ -1,5 +1,5 @@
+import { ValidatedForm } from "@/shared/ui/form-validation";
 import { crewStatusLabels, ddsStatusLabels } from "@/entities/training";
-import { getApiError } from "@/shared/api";
 import { ArmField, ArmIconButton, ArmSelect } from "@/shared/ui/arm";
 import { Dialog, DialogContent, DialogTitle } from "@mui/material";
 import { useDDSWorkspaceStore } from "../model/DDSWorkspaceContext";
@@ -36,7 +36,9 @@ export function DDSStatusEditor() {
           : `Статус службы: ${w.dds.profile.name}`}
       </DialogTitle>
       <DialogContent>
-        <form
+        <ValidatedForm
+          direction="row"
+          error={w.save.error}
           data-guide-target="dds.editor"
           onSubmit={(e) => {
             e.preventDefault();
@@ -45,6 +47,7 @@ export function DDSStatusEditor() {
         >
           {isCrew && !crew && (
             <ArmSelect
+              name="crew_code"
               label="Бригада"
               required
               value={w.crewCode}
@@ -69,6 +72,7 @@ export function DDSStatusEditor() {
             </ArmSelect>
           )}
           <ArmSelect
+            name="status"
             label={isCrew ? "Статус бригады" : "Статус реагирования"}
             required
             value={w.status}
@@ -86,6 +90,7 @@ export function DDSStatusEditor() {
             ))}
           </ArmSelect>
           <ArmField
+            name="crew_number"
             label="Номер наряда"
             placeholder="Номер наряда"
             value={w.number}
@@ -97,6 +102,7 @@ export function DDSStatusEditor() {
             }}
           />
           <ArmField
+            name="message"
             label={isCrew ? "Комментарий бригады" : "Комментарий ДДС"}
             placeholder="Комментарий"
             value={w.comment}
@@ -113,12 +119,7 @@ export function DDSStatusEditor() {
             label={isCrew && !crew ? "Назначить бригаду" : "Сохранить статус"}
             className="dds-status-confirm"
             type="submit"
-            disabled={
-              !w.status ||
-              (!isCrew && !w.comment.trim()) ||
-              w.busy ||
-              (isCrew && !w.crewCode)
-            }
+            disabled={w.busy}
           />
           <ArmIconButton
             icon="close"
@@ -126,10 +127,7 @@ export function DDSStatusEditor() {
             disabled={w.busy}
             onClick={() => w.setEditing(false)}
           />
-        </form>
-        {w.save.error && (
-          <p role="alert">{getApiError(w.save.error).message}</p>
-        )}
+        </ValidatedForm>
       </DialogContent>
     </Dialog>
   );

@@ -1,3 +1,5 @@
+import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
+import { ValidatedForm } from "@/shared/ui/form-validation";
 import { catalogApi } from "@/entities/training";
 import { getApiError } from "@/shared/api";
 import { rowAction } from "@/shared/lib/rowAction";
@@ -15,7 +17,6 @@ import {
   TableCell,
   TableHead,
   TableRow,
-  TextField,
 } from "@mui/material";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -78,8 +79,8 @@ export function CatalogRules({
               черновик.
             </Alert>
           )}
-          <Stack
-            component="form"
+          <ValidatedForm
+            error={clone.error}
             direction="row"
             spacing={1}
             onSubmit={(e) => {
@@ -90,6 +91,7 @@ export function CatalogRules({
             <TextField
               fullWidth
               required
+              name="label"
               label="Название новой версии ЕКП"
               value={label}
               onChange={(e) => setLabel(e.target.value)}
@@ -97,10 +99,10 @@ export function CatalogRules({
             <Button type="submit" disabled={clone.isPending}>
               Создать новую версию
             </Button>
-          </Stack>
-          {(clone.error || download.error) && (
+          </ValidatedForm>
+          {download.error && (
             <Alert severity="error">
-              {getApiError(clone.error || download.error).message}
+              {getApiError(download.error).message}
             </Alert>
           )}
           <TextField

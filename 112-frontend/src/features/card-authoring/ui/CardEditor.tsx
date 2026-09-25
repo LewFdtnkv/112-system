@@ -1,3 +1,4 @@
+import { ValidatedForm } from "@/shared/ui/form-validation";
 import { Button, Stack } from "@mui/material";
 import { useCardEditor } from "../model/useCardEditor";
 import type { CardEditorProps } from "../types/CardEditor";
@@ -8,8 +9,8 @@ export function CardEditor({ onClose, initial, onReload }: CardEditorProps) {
   const editor = useCardEditor({ onClose, initial });
   const { callerPhone, phoneRef, save } = editor;
   return (
-    <Stack
-      component="form"
+    <ValidatedForm
+      error={save.error}
       className="template-editor"
       onSubmit={(event) => {
         event.preventDefault();
@@ -30,16 +31,7 @@ export function CardEditor({ onClose, initial, onReload }: CardEditorProps) {
       <Stack className="template-editor-actions" direction="row" spacing={2}>
         <Button
           type="submit"
-          disabled={
-            save.isPending ||
-            !editor.version ||
-            (!editor.entry && !editor.silent) ||
-            (editor.manualRecipients === null &&
-              !editor.silent &&
-              editor.notificationRequired &&
-              !editor.recipients.length) ||
-            editor.routes.isFetching
-          }
+          disabled={save.isPending || editor.routes.isFetching}
         >
           {initial ? "Сохранить изменения" : "Сохранить карточку"}
         </Button>
@@ -47,6 +39,6 @@ export function CardEditor({ onClose, initial, onReload }: CardEditorProps) {
           Отмена
         </Button>
       </Stack>
-    </Stack>
+    </ValidatedForm>
   );
 }

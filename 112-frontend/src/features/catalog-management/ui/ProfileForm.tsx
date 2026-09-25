@@ -1,7 +1,8 @@
+import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
+import { ValidatedForm } from "@/shared/ui/form-validation";
 import { catalogApi, serviceProfileApi } from "@/entities/training";
-import { getApiError } from "@/shared/api";
 import { ServerSelect } from "@/shared/ui/ServerSelect";
-import { Alert, Button, Stack, TextField } from "@mui/material";
+import { Alert, Button } from "@mui/material";
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { styles } from "../styles/ProfileForm";
@@ -29,8 +30,8 @@ export function ProfileForm({ initial, existing, onSaved }: ProfileFormProps) {
     onSuccess: onSaved,
   });
   return (
-    <Stack
-      component="form"
+    <ValidatedForm
+      error={save.error}
       spacing={2}
       sx={styles.stack}
       onSubmit={(event) => {
@@ -44,6 +45,8 @@ export function ProfileForm({ initial, existing, onSaved }: ProfileFormProps) {
         </Alert>
       )}
       <ServerSelect
+        name="service_id"
+        required
         label="Служба профиля"
         queryKey={["admin-service-options"]}
         disabled={!!existing}
@@ -57,12 +60,14 @@ export function ProfileForm({ initial, existing, onSaved }: ProfileFormProps) {
         }}
       />
       <TextField
+        name="name"
         label="Название профиля"
         required
         value={form.name}
         onChange={(event) => setForm({ ...form, name: event.target.value })}
       />
       <TextField
+        name="responsibility"
         label="Зона ответственности"
         required
         multiline
@@ -73,6 +78,7 @@ export function ProfileForm({ initial, existing, onSaved }: ProfileFormProps) {
         }
       />
       <TextField
+        name="procedure"
         label="Порядок действий и правила службы"
         multiline
         minRows={2}
@@ -89,12 +95,9 @@ export function ProfileForm({ initial, existing, onSaved }: ProfileFormProps) {
         contacts={form.contacts}
         onChange={(crews) => setForm({ ...form, crews })}
       />
-      {save.error && (
-        <Alert severity="error">{getApiError(save.error).message}</Alert>
-      )}
-      <Button type="submit" disabled={!form.service_id || save.isPending}>
+      <Button type="submit" disabled={save.isPending}>
         {published ? "Сохранить новую версию профиля" : "Сохранить профиль"}
       </Button>
-    </Stack>
+    </ValidatedForm>
   );
 }

@@ -1,3 +1,5 @@
+import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
+import { ValidatedForm } from "@/shared/ui/form-validation";
 import { useForm, useWatch } from "react-hook-form";
 import {
   Alert,
@@ -8,7 +10,6 @@ import {
   DialogTitle,
   MenuItem,
   Stack,
-  TextField,
   Typography,
 } from "@mui/material";
 import { stationModeLabels } from "@/entities/telephony";
@@ -44,7 +45,9 @@ export function StationsPage() {
         телефон связывается с открытой карточкой.
       </Typography>
       {error && <Alert severity="error">{getApiError(error).message}</Alert>}
-      <form
+      <ValidatedForm
+        direction="row"
+        error={create.error}
         className="telephony-page__form"
         onSubmit={form.handleSubmit((data) => {
           create.mutate(
@@ -106,7 +109,7 @@ export function StationsPage() {
         <Button type="submit" variant="contained" disabled={create.isPending}>
           Добавить рабочее место
         </Button>
-      </form>
+      </ValidatedForm>
       <div className="telephony-page__table">
         <table>
           <thead>

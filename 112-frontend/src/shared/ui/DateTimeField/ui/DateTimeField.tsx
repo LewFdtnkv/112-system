@@ -1,10 +1,12 @@
+import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
 import CloseIcon from "@mui/icons-material/Close";
-import { IconButton, InputAdornment, TextField } from "@mui/material";
+import { IconButton, InputAdornment } from "@mui/material";
 import { useRef } from "react";
 import type { DateTimeFieldProps } from "../types/DateTimeField";
 
 export function DateTimeField({
   label,
+  name,
   value,
   onChange,
   helperText,
@@ -15,6 +17,7 @@ export function DateTimeField({
   return (
     <TextField
       label={label}
+      name={name}
       type="datetime-local"
       value={value}
       onChange={(event) => onChange(event.target.value)}
