@@ -3,6 +3,7 @@ from typing import Annotated, Literal
 from uuid import UUID
 
 from pydantic import (
+    AfterValidator,
     AwareDatetime,
     BaseModel,
     ConfigDict,
@@ -21,6 +22,7 @@ from app.schemas.dds import DDSPolicy
 from app.schemas.group import Title
 from app.schemas.learning import LearningPolicy
 from app.schemas.location import validate_location
+from app.schemas.numbers import INT32_MAX, browser_model_numbers
 from app.schemas.student import RecipientRead
 
 NonblankText = Annotated[
@@ -66,11 +68,12 @@ class CardDefinition(BaseModel):
 
 
 class CardCreate(CardDefinition):
+    data: Annotated[CardData, AfterValidator(browser_model_numbers)]
     use_recommended_recipients: bool = True
 
 
 class CardUpdate(CardCreate):
-    revision: int = Field(ge=1)
+    revision: int = Field(ge=1, le=INT32_MAX, strict=True)
 
 
 class CardRead(CardDefinition):

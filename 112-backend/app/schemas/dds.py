@@ -4,6 +4,7 @@ from uuid import UUID
 from pydantic import Field, StringConstraints, model_validator
 
 from app.schemas.catalog_document import StrictModel
+from app.schemas.numbers import INT32_MAX
 
 DDSStatus = Literal[
     "accepted", "not_accepted", "responding", "arrived", "in_progress", "completed", "refused"
@@ -73,7 +74,7 @@ class DDSPolicy(StrictModel):
 
 class DDSAction(StrictModel):
     request_id: UUID
-    revision: int = Field(ge=1)
+    revision: int = Field(ge=1, le=INT32_MAX, strict=True)
     information_event_id: UUID
     status: DDSStatus
     crew_number: str | None = Field(default=None, max_length=100)
@@ -83,7 +84,7 @@ class DDSAction(StrictModel):
 
 
 class DDSFinish(StrictModel):
-    revision: int = Field(ge=1)
+    revision: int = Field(ge=1, le=INT32_MAX, strict=True)
 
 
 CREW_TRANSITIONS = {
@@ -99,7 +100,7 @@ CREW_LABELS = {**STATUS_LABELS, "assigned": "Назначена", "cancelled": "
 
 class CrewCommand(StrictModel):
     request_id: UUID
-    revision: int = Field(ge=1)
+    revision: int = Field(ge=1, le=INT32_MAX, strict=True)
     information_event_id: UUID
     crew_code: str = Field(pattern=r"^[A-Za-z0-9_-]{1,100}$")
     status: Literal["assigned", "responding", "arrived", "in_progress", "completed", "cancelled"]

@@ -4,6 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter, Query
 
 from app.api.dependencies import SessionDep, TeacherDep
+from app.api.pagination import Limit, Offset
 from app.schemas.assessment_memory import (
     MemoryLibraryItem,
     MemoryLibraryPage,
@@ -22,8 +23,8 @@ async def listing(
     kind: Literal["text", "services", "dds"] | None = None,
     state: Literal["all", "enabled", "disabled"] = "all",
     include_removed: bool = False,
-    limit: int = Query(default=20, ge=1, le=100),
-    offset: int = Query(default=0, ge=0),
+    limit: Limit = 20,
+    offset: Offset = 0,
 ):
     return await catalog.listing(
         session, teacher.id, q, kind, state, include_removed, limit, offset

@@ -1,9 +1,10 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Query, Response
+from fastapi import APIRouter, Response
 from sqlalchemy import select
 
 from app.api.dependencies import SessionDep, StudentDep, TeacherDep
+from app.api.pagination import EventSequence, Limit
 from app.models import LessonEvaluation
 from app.schemas.audit import AuditPage
 from app.schemas.lesson_evaluation import LessonGradeCreate, LessonGradeRead, LessonWorkReview
@@ -42,9 +43,9 @@ async def events(
     attempt_id: UUID,
     session: SessionDep,
     teacher: TeacherDep,
-    after: int = Query(default=0, ge=0),
-    limit: int = Query(default=50, ge=1, le=100),
-    through: int | None = Query(default=None, ge=0),
+    after: EventSequence = 0,
+    limit: Limit = 50,
+    through: EventSequence | None = None,
 ):
     await teacher_attempt(session, lesson_id, student_id, attempt_id, teacher.id)
     return await audit_page(session, attempt_id, after, limit, through)

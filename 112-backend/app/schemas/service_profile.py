@@ -5,6 +5,7 @@ from pydantic import Field, model_validator
 
 from app.schemas.catalog_document import StrictModel
 from app.schemas.group import Title
+from app.schemas.numbers import INT32_MAX
 
 
 class TerritoryInput(StrictModel):
@@ -64,7 +65,7 @@ class ProfileInput(StrictModel):
 
 
 class ProfileUpdate(ProfileInput):
-    expected_revision: int = Field(ge=1)
+    expected_revision: int = Field(ge=1, le=INT32_MAX, strict=True)
 
 
 class ProfileRead(ProfileInput):

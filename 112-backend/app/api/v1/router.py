@@ -21,8 +21,9 @@ from app.api.v1.telephony_adapter import router as adapter_router
 from app.api.v1.telephony_media import router as media_router
 from app.api.v1.users import router as users_router
 from app.api.v1.views import router as views_router
+from app.api.validation import validate_json_numbers
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(validate_json_numbers)])
 router.include_router(adapter_router)
 router.include_router(auth_router)
 

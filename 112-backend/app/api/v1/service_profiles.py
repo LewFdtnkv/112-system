@@ -4,6 +4,7 @@ from fastapi import APIRouter, Query
 from sqlalchemy import func, select
 
 from app.api.dependencies import AdminDep, SessionDep
+from app.api.pagination import Limit, Offset
 from app.models import ServiceProfile
 from app.schemas.service_profile import ProfileInput, ProfileRead, ProfileUpdate
 from app.services import service_profiles as service
@@ -16,8 +17,8 @@ async def listing(
     session: SessionDep,
     admin: AdminDep,
     q: str = Query(default="", max_length=200),
-    offset: int = Query(default=0, ge=0),
-    limit: int = Query(default=20, ge=1, le=100),
+    offset: Offset = 0,
+    limit: Limit = 20,
 ):
     query = select(ServiceProfile).where(ServiceProfile.name.ilike(f"%{q}%"))
     total = await session.scalar(select(func.count()).select_from(query.subquery()))

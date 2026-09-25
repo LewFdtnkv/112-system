@@ -9,6 +9,7 @@ from app.schemas.assessment import AssessmentDetails
 from app.schemas.authoring import NonblankText
 from app.schemas.catalog import ClassifierEntryRead
 from app.schemas.learning import LearningPolicy, LearningResult
+from app.schemas.numbers import INT32_MAX
 from app.schemas.semantic_assessment import SemanticReview
 from app.schemas.student import StudentAttemptRead
 
@@ -17,7 +18,7 @@ class LessonGradeCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     request_id: UUID
-    expected_revision: int = Field(default=0, ge=0)
+    expected_revision: int = Field(default=0, ge=0, le=INT32_MAX, strict=True)
     score: Decimal = Field(ge=0, max_digits=10, decimal_places=2)
     max_score: Decimal = Field(gt=0, max_digits=10, decimal_places=2)
     comment: NonblankText

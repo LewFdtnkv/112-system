@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field, StrictBool, StringConstraints
 
 from app.schemas.catalog_admin import EntryPresentation, ServiceCreate
 from app.schemas.group import Title
+from app.schemas.numbers import INT32_MAX
 
 FeatureString = Annotated[
     str, StringConstraints(strict=True, strip_whitespace=True, min_length=1, max_length=200)
@@ -125,7 +126,7 @@ class CatalogDocument(StrictModel):
 
 
 class EntryUpdate(StrictModel):
-    expected_revision: int = Field(ge=1)
+    expected_revision: int = Field(ge=1, le=INT32_MAX, strict=True)
     entry: EntryDefinition
 
 

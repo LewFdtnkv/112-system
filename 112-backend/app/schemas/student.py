@@ -1,14 +1,15 @@
 from datetime import datetime
-from typing import Literal
+from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, JsonValue, field_validator
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, JsonValue, field_validator
 
 from app.models.enums import AttemptStatus, CardStatus, LessonStatus, TrainingRole
 from app.schemas.card_flags import validate_count, validate_flags
 from app.schemas.catalog import ClassifierEntryRead
 from app.schemas.learning import LearningPolicy, LearningResult
 from app.schemas.location import validate_location
+from app.schemas.numbers import INT32_MAX, browser_model_numbers
 
 
 class DraftData(BaseModel):
@@ -32,9 +33,9 @@ class DraftData(BaseModel):
 class DraftSave(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    revision: int = Field(ge=1)
+    revision: int = Field(ge=1, le=INT32_MAX, strict=True)
     classifier_entry_id: UUID | None = None
-    data: DraftData
+    data: Annotated[DraftData, AfterValidator(browser_model_numbers)]
     recipient_service_ids: list[UUID] | None = Field(default=None, max_length=100)
 
     @field_validator("recipient_service_ids")
@@ -48,7 +49,7 @@ class DraftSave(BaseModel):
 class CardSubmit(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    revision: int = Field(ge=1)
+    revision: int = Field(ge=1, le=INT32_MAX, strict=True)
 
 
 class StudentCardRead(BaseModel):

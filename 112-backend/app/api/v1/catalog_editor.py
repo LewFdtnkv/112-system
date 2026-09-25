@@ -6,6 +6,7 @@ from pydantic import ValidationError
 from sqlalchemy import func, select
 
 from app.api.dependencies import AdminDep, SessionDep
+from app.api.pagination import Limit, Offset
 from app.models import ClassifierEntry
 from app.schemas.catalog_admin import ClassifierAdminRead
 from app.schemas.catalog_document import CatalogClone, CatalogDocument, EntryUpdate
@@ -61,8 +62,8 @@ async def entries(
     session: SessionDep,
     admin: AdminDep,
     q: str = Query(default="", max_length=200),
-    offset: int = Query(default=0, ge=0),
-    limit: int = Query(default=20, ge=1, le=100),
+    offset: Offset = 0,
+    limit: Limit = 20,
 ):
     version = await service.version_row(session, version_id)
     query = select(ClassifierEntry).where(
