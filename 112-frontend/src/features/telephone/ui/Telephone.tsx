@@ -4,6 +4,8 @@ import {
   stationModeLabels,
 } from "@/entities/telephony";
 import { getApiError } from "@/shared/api";
+import { CrewCallProgress } from "./CrewCallProgress";
+import { DialogueStatus } from "./DialogueStatus";
 import { useTelephone } from "../model/useTelephone";
 import type { TelephoneProps } from "../types/telephone";
 import "../styles/telephone.scss";
@@ -23,13 +25,24 @@ export function Telephone(props: TelephoneProps) {
         </button>
       </section>
     );
-  if (!data?.enabled) return null;
+  if (!data) return null;
+  if (!data.enabled)
+    return data.crew_calls_required ? (
+      <section className="training-telephone" role="status">
+        В этом задании нужно оповестить бригаду по телефону. Телефония отключена
+        — обратитесь к преподавателю.
+      </section>
+    ) : null;
   const station = data.station;
   const bound = station?.enabled && station.attempt_id === props.attemptId;
   const ready =
     bound && (station.mode !== "browser" || phone.state === "ready");
   return (
-    <section className="training-telephone" aria-label="Учебный телефон">
+    <section
+      className="training-telephone"
+      aria-label="Учебный телефон"
+      data-learning-target="telephone"
+    >
       <div className="training-telephone__heading">
         <b>Учебный телефон</b>
         <span>
@@ -38,6 +51,10 @@ export function Telephone(props: TelephoneProps) {
             : "Рабочее место не назначено"}
         </span>
       </div>
+      <CrewCallProgress
+        calls={data.crew_calls ?? []}
+        enabled={!!data.crew_calls_required}
+      />
       {!props.completed &&
         station?.enabled &&
         (!bound ||
@@ -89,6 +106,7 @@ export function Telephone(props: TelephoneProps) {
           <b>
             {active.contact_name} · {callStatusLabels[active.status]}
           </b>
+          <DialogueStatus phase={active.dialogue?.phase} />
           {active.attempt_id !== props.attemptId && (
             <span>Звонок относится к другой карточке занятия.</span>
           )}
@@ -135,9 +153,9 @@ export function Telephone(props: TelephoneProps) {
       {!props.completed && !active && (
         <ul className="training-telephone__contacts">
           {data.cues.map((cue) => (
-            <li key={cue.id}>
+            <li key={`${cue.id}:${cue.crew_code ?? ""}`}>
               <span>
-                {cue.name}
+                {cue.crew_name ? `${cue.crew_name} · ${cue.name}` : cue.name}
                 <small>{audioStatusLabels[cue.status]}</small>
               </span>
               <button
@@ -150,6 +168,7 @@ export function Telephone(props: TelephoneProps) {
                 onClick={() =>
                   start.mutate({
                     cue_id: cue.id,
+                    crew_code: cue.crew_code,
                     direction: "outgoing",
                     transport: "manual",
                   })
@@ -157,13 +176,14 @@ export function Telephone(props: TelephoneProps) {
               >
                 {station?.mode === "browser" ? "Позвонить" : "Выбрать контакт"}
               </button>
-              {station?.mode !== "external" && (
+              {station?.mode !== "external" && !data.crew_calls_required && (
                 <button
                   className="arm-small-button"
                   disabled={!ready || busy || cue.status !== "ready"}
                   onClick={() =>
                     start.mutate({
                       cue_id: cue.id,
+                      crew_code: cue.crew_code,
                       direction: "incoming",
                       transport: "callback",
                     })
@@ -178,8 +198,9 @@ export function Telephone(props: TelephoneProps) {
       )}
       {!props.completed && data.cues.length === 0 && (
         <p>
-          Для карточки ещё нет телефонных сообщений. Их подготовит
-          преподаватель.
+          {data.crew_calls_required
+            ? "Назначьте бригаду в нижней панели — здесь появится её руководитель для звонка."
+            : "Для карточки ещё нет телефонных сообщений. Их подготовит преподаватель."}
         </p>
       )}
       {data.calls.length > 0 && (
@@ -190,6 +211,7 @@ export function Telephone(props: TelephoneProps) {
               <li key={call.id}>
                 {new Date(call.started_at).toLocaleTimeString("ru-RU")} ·{" "}
                 {call.contact_name} · {callStatusLabels[call.status]}
+                {call.result && <small>{call.result}</small>}
               </li>
             ))}
           </ul>

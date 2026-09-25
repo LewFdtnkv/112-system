@@ -58,6 +58,7 @@ export interface ServiceProfile extends ProfileInput {
 }
 
 export interface DDSPolicy {
+  crew_calls_required?: boolean;
   workflow?: "service-v1" | "crews-v1";
   steps: { status: string; message: string; crew_number: string | null }[];
   required_crews?: { crew_code: string; status: string }[];

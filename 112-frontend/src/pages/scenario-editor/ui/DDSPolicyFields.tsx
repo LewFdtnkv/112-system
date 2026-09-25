@@ -1,6 +1,8 @@
 import { serviceProfileApi, crewStatusLabels } from "@/entities/training";
 import {
   Alert,
+  Checkbox,
+  FormControlLabel,
   Button,
   MenuItem,
   Paper,
@@ -30,6 +32,26 @@ export function DDSPolicyFields({
         назначение и статусы бригад; службы остаются «Добавлена». Телефония
         настраивается администратором.
       </Alert>
+      <FormControlLabel
+        control={
+          <Checkbox
+            checked={value.crew_calls_required ?? false}
+            onChange={(_, checked) =>
+              onChange({ ...value, crew_calls_required: checked })
+            }
+          />
+        }
+        label="Ученик должен позвонить руководителям назначенных бригад"
+      />
+      {value.crew_calls_required && (
+        <Alert severity="info">
+          Для бригад нужны контакты руководителей в профиле службы и рабочее
+          место Asterisk. Приветствие и ответ «Принято» подготовлены заранее.
+          Засчитывается исходящий разговор: ученик произнёс сообщение и дослушал
+          подтверждение. Смысл речи пока не проверяется. В отработке только
+          статусов звонок не требуется.
+        </Alert>
+      )}
       {profile.error && (
         <Alert severity="error">
           Не удалось загрузить бригады профиля.{" "}

@@ -34,15 +34,25 @@ export interface TrainingCall {
   result: string | null;
   cancel_requested: boolean;
   provider_confirmed: boolean;
+  dialogue?: { phase: string; crew_code: string; voice: string } | null;
 }
 export interface CallCue {
   id: string;
   name: string;
   contact_key: string;
+  crew_code?: string | null;
+  crew_name?: string | null;
   status: string;
   duration_seconds: number | null;
 }
+export interface CrewNotification {
+  crew_code: string;
+  name: string;
+  completed: boolean;
+}
 export interface TelephoneState {
+  crew_calls_required?: boolean;
+  crew_calls?: CrewNotification[];
   active_call?: TrainingCall | null;
   enabled: boolean;
   station: Station | null;
@@ -75,6 +85,7 @@ export interface MediaCue {
 export interface CallCommand {
   command_id: string;
   cue_id: string;
+  crew_code?: string | null;
   direction: "incoming" | "outgoing";
   transport: "manual" | "callback";
 }

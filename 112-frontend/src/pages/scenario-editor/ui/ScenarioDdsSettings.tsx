@@ -14,7 +14,7 @@ export function ScenarioDdsSettings({
     <>
       <Alert severity="warning">
         Выберите опубликованный профиль и задайте сообщения и ожидаемые действия
-        ДДС. Аудио звонков подготовьте в разделе «Записи звонков».
+        ДДС. Для оповещения бригад используются готовые голосовые реплики.
       </Alert>
       <DDSPolicyFields
         profileId={profile?.id}

@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { attemptQueryOptions } from "@/entities/training";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { telephonyApi } from "@/entities/telephony";
 import type { CallCommand } from "@/entities/telephony";
@@ -12,6 +14,18 @@ export function useTelephone({ attemptId }: TelephoneProps) {
     refetchInterval: (query) =>
       query.state.data?.enabled === false ? false : 2000,
   });
+  const lastFinished = query.data?.calls.find(
+    (call) => call.dialogue && call.ended_at,
+  )?.id;
+  useEffect(() => {
+    if (lastFinished)
+      void client
+        .fetchQuery({
+          ...attemptQueryOptions(attemptId),
+          staleTime: 0,
+        })
+        .catch(() => undefined);
+  }, [attemptId, client, lastFinished]);
   const phone = useTelephoneSession();
   const refresh = () => client.invalidateQueries({ queryKey: key });
   const binding = useMutation({

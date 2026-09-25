@@ -68,6 +68,7 @@ function Editor({ initial }: EditorProps) {
     service_profile_id: initial?.service_profile_id ?? null,
     dds_policy: initial?.dds_policy ?? {
       workflow: "crews-v1",
+      crew_calls_required: true,
       steps: [{ status: "accepted", message: "", crew_number: null }],
     },
   }));
