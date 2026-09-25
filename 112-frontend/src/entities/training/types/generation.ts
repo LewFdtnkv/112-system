@@ -55,4 +55,5 @@ export interface GenerationOptions {
   caller_information: { value: string; label: string }[];
   address_format: { value: string; label: string }[];
   max_count: number;
+  max_victims_count: number;
 }

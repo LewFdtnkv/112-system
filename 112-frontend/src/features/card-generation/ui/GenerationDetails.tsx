@@ -48,8 +48,10 @@ export function GenerationDetails({ model }: CardGenerationPanelProps) {
           type="number"
           value={model.p.victims_count ?? ""}
           placeholder="Случайно"
-          helperText="Пусто — случайно; 0 — пострадавших нет"
-          slotProps={{ htmlInput: { min: 0, max: 100000, step: 1 } }}
+          helperText={`Пусто — случайно; 0 — пострадавших нет. В заготовках максимум ${data.max_victims_count}; для отдельных сюжетов меньше.`}
+          slotProps={{
+            htmlInput: { min: 0, max: data.max_victims_count, step: 1 },
+          }}
           onChange={(e) =>
             model.change({
               victims_count:

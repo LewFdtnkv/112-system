@@ -36,7 +36,10 @@ export function getApiFieldErrors(error: unknown): ApiFieldError[] {
     return [
       {
         path,
-        message: messages[row.type ?? ""] ?? "Проверьте значение этого поля.",
+        message:
+          row.type === "generation_constraint" && typeof row.msg === "string"
+            ? row.msg
+            : (messages[row.type ?? ""] ?? "Проверьте значение этого поля."),
       },
     ];
   });

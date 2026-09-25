@@ -33,14 +33,7 @@
       "label": "Описательный адрес, ориентиры"
     }
   ],
-  "object": [
-    "жилой дом",
-    "двор",
-    "магазин",
-    "дорога",
-    "парк",
-    "школа"
-  ],
+  "object": ["жилой дом", "двор", "магазин", "дорога", "парк", "школа"],
   "gender": [
     {
       "value": "male",
@@ -100,11 +93,7 @@
   "max_count": 10,
   "template_count": 37,
   "template_version": "situations-v1",
-  "supported_types": [
-    "101",
-    "ДТП",
-    "104"
-  ],
+  "supported_types": ["101", "ДТП", "104"],
   "addresses": [
     {
       "id": "osm-way-238756693",
@@ -760,5 +749,6 @@
     "source_url": "https://www.openstreetmap.org/copyright",
     "license": "ODbL-1.0"
   },
-  "patronymic_probability": 0.8
+  "patronymic_probability": 0.8,
+  "max_victims_count": 3
 }
