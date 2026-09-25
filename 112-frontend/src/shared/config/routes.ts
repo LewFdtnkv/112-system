@@ -9,6 +9,7 @@ export const routePaths = {
   teacherDashboard: "/teacher",
   studentProfile: "/teacher/students/:studentId",
   adminDashboard: "/admin",
+  aiJobs: "/admin/ai-jobs",
   scenarios: "/scenarios",
   scenarioCreate: "/scenarios/new",
   scenarioEditor: "/scenarios/:scenarioId/edit",

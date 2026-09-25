@@ -132,6 +132,12 @@ const adminRoutes: RouteObject = {
   Component: AdminRoute,
   children: [
     {
+      path: routePaths.aiJobs,
+      lazy: async () => ({
+        Component: (await import("@/pages/ai-jobs")).AIJobsPage,
+      }),
+    },
+    {
       path: routePaths.telephonyStations,
       lazy: async () => ({
         Component: (await import("@/pages/telephony")).StationsPage,

@@ -67,6 +67,7 @@ export const navigationGroups = [
         roles: ["admin"],
       },
       { label: "Службы и ЕКП", to: routePaths.catalogs, roles: ["admin"] },
+      { label: "ИИ-задачи", to: routePaths.aiJobs, roles: ["admin"] },
       { label: "Пользователи", to: routePaths.users, roles: ["admin"] },
       {
         label: "Аналитика",

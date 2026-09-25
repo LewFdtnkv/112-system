@@ -16,6 +16,7 @@ export const AdminDashboardPage = () => {
       <PageHeader title="Кабинет администратора" />
       <AccountStatistics />
       <div className="action-links">
+        <Link to={routePaths.aiJobs}>ИИ-задачи</Link>
         <Link to={routePaths.users}>Пользователи</Link>
         <Link to={routePaths.catalogs}>Службы и ЕКП</Link>
       </div>

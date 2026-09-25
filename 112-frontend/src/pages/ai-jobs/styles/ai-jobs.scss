@@ -1,0 +1,125 @@
+.ai-jobs {
+  min-width: 0;
+  &__stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    article {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 20px;
+      background: #fff;
+      border: 1px solid #cbd6dc;
+      border-top: 3px solid #1496bd;
+    }
+    strong {
+      font-size: 32px;
+      font-weight: 600;
+      color: #243840;
+    }
+    small {
+      color: #526773;
+    }
+  }
+  &__filters {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 16px;
+  }
+  &__table {
+    background: white;
+    border: 1px solid #cbd6dc;
+    table {
+      min-width: 1050px;
+    }
+    th {
+      font-weight: 600;
+    }
+    td {
+      vertical-align: top;
+      padding-top: 14px;
+      padding-bottom: 14px;
+    }
+  }
+  &__model {
+    max-width: 200px;
+    overflow-wrap: anywhere;
+  }
+  &__date {
+    min-width: 135px;
+  }
+  &__error {
+    max-width: 240px;
+    overflow: hidden;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  &__id {
+    overflow-wrap: anywhere;
+    font-family: monospace;
+  }
+  &__detail {
+    .MuiAlert-root {
+      margin: 12px 0;
+    }
+    .MuiTabs-root {
+      margin-top: 16px;
+    }
+  }
+  &__fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 24px;
+    div {
+      padding: 12px 0;
+      border-bottom: 1px solid #e0e7eb;
+    }
+    dt {
+      color: #526773;
+      font-size: 13px;
+    }
+    dd {
+      margin: 6px 0 0;
+      overflow-wrap: anywhere;
+    }
+  }
+  &__json {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    background: #f3f6f8;
+    padding: 16px;
+    max-height: 55vh;
+    overflow: auto;
+    line-height: 1.5;
+  }
+}
+@media (max-width: 700px) {
+  .ai-jobs {
+    &__stats,
+    &__filters,
+    &__fields {
+      grid-template-columns: 1fr;
+    }
+    &__stats article {
+      padding: 14px;
+    }
+    &__stats strong {
+      font-size: 26px;
+    }
+  }
+}
+
+.ai-jobs__detail .MuiAlert-message {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+@media (max-width: 600px) {
+  .ai-jobs__detail .MuiTab-root {
+    min-width: 0;
+    padding: 8px 3px;
+    font-size: 10px;
+  }
+}
