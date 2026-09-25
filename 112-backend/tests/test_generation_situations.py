@@ -166,3 +166,20 @@ def test_every_boolean_reference_has_observable_evidence():
     assert "fire" not in data["narrative"]["answers"]
     assert "trapped" not in data["narrative"]["answers"]
     assert "Никто не пострадал" in text.caller_message
+
+
+def test_medical_victim_limit_and_address_errors_have_form_locations():
+    from app.services.generation.presentation import resolve_address
+
+    medical = next(e for e in entries() if e.name == "103")
+    with pytest.raises(HTTPException) as exc:
+        choose([medical], GenerationParameters(victims_count=2), random.Random(1), {})
+    assert exc.value.detail[0]["loc"] == ["body", "parameters", "victims_count"]
+    assert "максимум на 1" in exc.value.detail[0]["msg"]
+    with pytest.raises(HTTPException) as exc:
+        resolve_address(
+            GenerationParameters(street="Несуществующая учебная улица"),
+            {"service_call": False},
+            random.Random(1),
+        )
+    assert [row["loc"][-1] for row in exc.value.detail] == ["street", "house", "address_format"]

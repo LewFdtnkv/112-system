@@ -3,8 +3,6 @@
 import json
 from pathlib import Path
 
-from fastapi import HTTPException
-
 from app.services.catalog_rules import feature_is_visible
 from app.services.generation.catalogs import (
     CALLER_NAME_SOURCE,
@@ -13,6 +11,7 @@ from app.services.generation.catalogs import (
     random_caller,
 )
 from app.services.generation.evidence import BOOLEAN_PHRASES
+from app.services.generation.validation import reject_parameters
 
 
 def prepare_message(plan, p, definitions, rng):
@@ -91,10 +90,12 @@ def resolve_address(p, plan, rng):
         or not p.house
         and not (p.address_format == "descriptive" or p.address_description)
     ):
-        raise HTTPException(
-            422,
+        reject_parameters(
             "В справочнике нет подходящего адреса. Укажите улицу и дом вручную "
             "или выберите описательный адрес.",
+            "street",
+            "house",
+            "address_format",
         )
     address = {
         "locality": p.locality or (selected["locality"] if selected else "Москва"),

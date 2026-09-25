@@ -4,6 +4,7 @@ from fastapi import HTTPException
 
 from app.services.catalog_rules import feature_definitions, feature_is_visible, validate_answers
 from app.services.generation.library import for_entry, library
+from app.services.generation.validation import ParameterConflict, reject_parameters
 
 LINKED_VICTIMS = {"injured", "victims"}
 
@@ -14,22 +15,51 @@ def build(entry, template, p, rng):
     explicit = p.feature_answers
     # Validate types here; visibility is checked with the completed parent answers below.
     if any(k not in by_key or not by_key[k].accepts(v) for k, v in explicit.items()):
-        raise ValueError("Значение признака отсутствует в выбранной версии ЕКП")
+        raise ParameterConflict(
+            "Значение признака отсутствует в выбранной версии ЕКП",
+            *(
+                f"feature_answers.{k}"
+                for k, v in explicit.items()
+                if k not in by_key or not by_key[k].accepts(v)
+            ),
+        )
     if p.object is not None and p.object.casefold() not in {o.casefold() for o in template.objects}:
-        raise ValueError("Объект несовместим с сюжетом")
+        raise ParameterConflict(
+            "Для выбранного объекта нет подходящей заготовки. "
+            "Выберите другой объект или «Случайно».",
+            "object",
+        )
     if template.service_call and any(
         (p.locality, p.street, p.house, p.address_description, p.address_format)
     ):
-        raise ValueError("Для этого служебного вызова адрес происшествия не предусмотрен")
+        raise ParameterConflict(
+            "Для этого служебного вызова адрес происшествия не предусмотрен. "
+            "Уберите заданный адрес или выберите другой тип происшествия.",
+            "classifier_entry_id",
+            *(
+                key
+                for key in ("locality", "street", "house", "address_description", "address_format")
+                if getattr(p, key)
+            ),
+        )
     required_victims = [v for v in [p.has_victims, template.has_victims] if v is not None]
     required_victims += [v for k, v in explicit.items() if k in LINKED_VICTIMS]
     if p.victims_count is not None:
         required_victims.append(p.victims_count > 0)
     if len(set(required_victims)) > 1:
-        raise ValueError("Пострадавшие противоречат выбранному сюжету или признакам")
+        raise ParameterConflict(
+            "Отметка и количество пострадавших должны согласовываться с признаками происшествия.",
+            "has_victims",
+            "victims_count",
+            *(f"feature_answers.{k}" for k in explicit if k in LINKED_VICTIMS),
+        )
     victims = required_victims[0] if required_victims else rng.random() < 0.2
     if p.victims_count is not None and p.victims_count > template.victims_limit:
-        raise ValueError(f"Этот сюжет рассчитан максимум на {template.victims_limit} пострадавших")
+        raise ParameterConflict(
+            f"Подходящая заготовка рассчитана максимум на {template.victims_limit} пострадавших. "
+            "Уменьшите количество или измените признаки происшествия.",
+            "victims_count",
+        )
     count = (
         p.victims_count
         if p.victims_count is not None
@@ -43,15 +73,27 @@ def build(entry, template, p, rng):
     if explicit.get("access") == "Нет доступа":
         blocked_values.append(True)
     if len(set(blocked_values)) > 1:
-        raise ValueError("Отметка о доступе противоречит сюжету или признакам")
+        raise ParameterConflict(
+            "Отметка о доступе противоречит сюжету или признакам.",
+            "blocked",
+            *(f"feature_answers.{k}" for k in explicit if k in {"trapped", "access"}),
+        )
     blocked = blocked_values[0] if blocked_values else rng.random() < 0.1
     refused = p.refused_ambulance if p.refused_ambulance is not None else False
     if refused and (not victims or template.answers.get("conscious") is False):
-        raise ValueError("Отказ от помощи несовместим с отсутствием пострадавших или сознания")
+        raise ParameterConflict(
+            "Отказ от помощи несовместим с отсутствием пострадавших или сознания.",
+            "refused_ambulance",
+            "has_victims",
+        )
     answers = {k: v for k, v in template.answers.items() if k in by_key}
     for key, value in explicit.items():
         if key in answers and answers[key] != value:
-            raise ValueError("Признаки несовместимы с подготовленной ситуацией")
+            raise ParameterConflict(
+                "Для этого значения признака нет подходящей заготовки. "
+                "Выберите другое значение или «Случайно».",
+                f"feature_answers.{key}",
+            )
         answers[key] = value
     linked = {k: victims for k in LINKED_VICTIMS}
     linked |= {"trapped": blocked, "medical_help": victims}
@@ -61,7 +103,9 @@ def build(entry, template, p, rng):
         if key not in by_key:
             continue
         if key in answers and answers[key] != value:
-            raise ValueError("Связанные признаки противоречат друг другу")
+            raise ParameterConflict(
+                "Связанные признаки противоречат друг другу.", f"feature_answers.{key}"
+            )
         answers[key] = value
     if blocked and "access" in by_key:
         answers["access"] = "Нет доступа"
@@ -69,16 +113,27 @@ def build(entry, template, p, rng):
     for f in definitions:
         if not feature_is_visible(f, visible):
             if f.key in explicit:
-                raise ValueError("Задано значение скрытого поля")
+                raise ParameterConflict(
+                    "Уберите значение скрытого признака или измените родительский признак.",
+                    "classifier_entry_id",
+                )
             continue
         if f.key in answers:
             visible[f.key] = answers[f.key]
         elif f.required:
-            raise ValueError(f"В заготовке нет обязательного признака «{f.label}»")
+            raise ParameterConflict(
+                f"В заготовках нет обязательного признака «{f.label}». "
+                "Выберите другой тип или создайте карточку вручную.",
+                "classifier_entry_id",
+            )
     try:
         validate_answers(definitions, visible)
     except HTTPException as exc:
-        raise ValueError("Заготовка несовместима с текущей схемой признаков ЕКП") from exc
+        raise ParameterConflict(
+            "Заготовка несовместима с текущими признаками ЕКП. "
+            "Выберите другой тип или создайте карточку вручную.",
+            "classifier_entry_id",
+        ) from exc
     flags = {
         "hasVictims": victims,
         "blocked": blocked,
@@ -99,17 +154,32 @@ def build(entry, template, p, rng):
 
 
 def choose(entries, p, rng, usage):
+    templates = [template for entry in entries for template in for_entry(entry)]
+    if templates and p.victims_count is not None:
+        limit = max(template.victims_limit for template in templates)
+        if p.victims_count > limit:
+            reject_parameters(
+                f"Для выбранного типа доступны заготовки максимум на {limit} пострадавших. "
+                "Уменьшите количество или создайте карточку вручную.",
+                "victims_count",
+            )
     candidates, errors = [], []
     for entry in entries:
         for template in for_entry(entry):
             try:
                 plan = build(entry, template, p, rng)
                 candidates.append((entry, plan))
-            except ValueError as exc:
-                errors.append(str(exc))
+            except ParameterConflict as exc:
+                errors.append(exc)
     if not candidates:
-        detail = errors[0] if errors else "Для выбранного типа пока нет подготовленных ситуаций"
-        raise HTTPException(422, detail + ". Измените параметры или создайте карточку вручную.")
+        if errors:
+            reject_parameters(str(errors[0]), *errors[0].fields)
+        reject_parameters(
+            "Для выбранного типа пока нет подготовленных ситуаций. "
+            "Выберите другой тип "
+            "или создайте карточку вручную.",
+            "classifier_entry_id",
+        )
     least = min(usage.get(plan["template_id"], 0) for _, plan in candidates)
     candidates = [row for row in candidates if usage.get(row[1]["template_id"], 0) == least]
     entry, plan = rng.choice(candidates)

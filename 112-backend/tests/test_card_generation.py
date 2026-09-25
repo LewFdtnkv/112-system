@@ -268,3 +268,26 @@ async def test_old_pending_jobs_are_closed_without_running_old_generator(teachin
     await db_session.refresh(job)
     assert job.status == JobStatus.FAILED and "новый пакет" in job.error
     await t.post(f"card-generations/{job.id}/retry", {}, expected=409)
+
+
+async def test_generation_invalid_victim_count_points_to_form_field(teaching, db_client):
+    t = teaching
+    options = await db_client.get("/api/v1/card-generations/options", headers=t.headers["teacher"])
+    assert options.json()["max_victims_count"] == 3
+    response = await db_client.post(
+        "/api/v1/card-generations",
+        headers=t.headers["teacher"],
+        json=payload(t, has_victims=True, victims_count=5, age=90, locality="москва"),
+    )
+    assert response.status_code == 422
+    issue = response.json()["detail"][0]
+    assert issue["loc"] == ["body", "parameters", "victims_count"]
+    assert issue["type"] == "generation_constraint"
+    assert "максимум на 3" in issue["msg"]
+    jobs = await t.post(
+        "card-generations",
+        payload(t, has_victims=True, victims_count=3, age=90, locality="москва"),
+        expected=202,
+    )
+    assert len(jobs) == 2
+    assert all(job["facts"]["Возраст"] == 90 for job in jobs)

@@ -26,6 +26,7 @@ async def options(teacher: TeacherDep):
         "addresses": address_catalog()["addresses"],
         "address_source": {k: address_catalog()[k] for k in ("source", "source_url", "license")},
         "max_count": 10,
+        "max_victims_count": max(row.victims_limit for row in templates),
         "template_count": len(templates),
         "template_version": version,
         "supported_types": sorted({name for row in templates for name in row.types}),
