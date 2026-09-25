@@ -13,6 +13,7 @@ export interface CardData {
 }
 
 export interface CardTemplate {
+  generation_example?: boolean;
   generated_by_ai?: boolean;
   generation_method?: string | null;
   generation_note?: string | null;

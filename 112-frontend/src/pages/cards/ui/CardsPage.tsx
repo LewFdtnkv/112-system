@@ -6,7 +6,10 @@ import {
   type FeatureDefinition,
 } from "@/entities/training";
 import { CardEditor } from "@/features/card-authoring";
-import { CardGenerationDialog } from "@/features/card-generation";
+import {
+  CardGenerationDialog,
+  GenerationExample,
+} from "@/features/card-generation";
 import type { ReferenceCardSource } from "@/features/incident-editing";
 import { useDebounced } from "@/shared/lib/useDebounced";
 import { PageHeader } from "@/shared/ui/PageHeader";
@@ -144,11 +147,12 @@ export const CardsPage = () => {
           >
             {detail.data?.generated_by_ai && (
               <Alert severity="info">
-                {detail.data.generation_method === "assisted"
-                  ? "Формулировки подобраны ИИ по подготовленной ситуации."
-                  : detail.data.generation_method === "template-fallback"
-                    ? "Использован текст заготовки: ИИ недоступен или ответ не прошёл проверку."
-                    : "Карточка подготовлена автоматически."}
+                {detail.data.generation_note ||
+                  (detail.data.generation_method === "assisted"
+                    ? "Сообщение подготовлено ИИ по заданным фактам."
+                    : detail.data.generation_method === "template-fallback"
+                      ? "Использован текст заготовки: ИИ недоступен или ответ не прошёл проверку."
+                      : "Карточка подготовлена автоматически.")}
                 {detail.data.generation_template &&
                   ` Сюжет: ${detail.data.generation_template}.`}{" "}
                 Проверьте условие и эталонное решение перед включением в
@@ -229,6 +233,9 @@ export const CardsPage = () => {
               </div>
             )}
           </QueryState>
+          {(!editing || !detail.data?.can_edit) && detail.data && (
+            <GenerationExample key={detail.data.id} card={detail.data} />
+          )}
           {(!editing || !detail.data?.can_edit) && (
             <Stack direction="row" spacing={1} sx={styles.actions}>
               {detail.data?.can_edit && (

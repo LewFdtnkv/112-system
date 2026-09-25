@@ -15,9 +15,10 @@ export function GenerationSetup({ model }: CardGenerationPanelProps) {
     <>
       <Alert severity="info">
         Выбираем совместимый сюжет из {data.template_count} заготовок.
-        «Случайно» меняет параметры для каждой карточки. ИИ выбирает
-        формулировки, сохраняя факты. Готовые материалы проверьте перед
-        добавлением в сценарий.
+        «Случайно» меняет параметры для каждой карточки. ИИ пишет сообщение
+        заявителя, затем отдельно проверяет его по заданным фактам. Ваши
+        отмеченные карточки служат примерами речи. Готовые материалы проверьте
+        перед добавлением в сценарий.
       </Alert>
       <TextField
         name="parameters.mode"
@@ -27,9 +28,11 @@ export function GenerationSetup({ model }: CardGenerationPanelProps) {
         onChange={(e) =>
           model.change({ mode: e.target.value as "assisted" | "template" })
         }
-        helperText="Если ИИ недоступен, используем текст заготовки и отметим это в карточке."
+        helperText="Если текст не прошёл проверку или ИИ недоступен, используем заготовку и отметим это в карточке."
       >
-        <MenuItem value="assisted">Заготовка + подбор формулировок ИИ</MenuItem>
+        <MenuItem value="assisted">
+          Живое сообщение ИИ + проверка фактов
+        </MenuItem>
         <MenuItem value="template">Заготовка без ИИ — быстро</MenuItem>
       </TextField>
       <Alert severity="info">

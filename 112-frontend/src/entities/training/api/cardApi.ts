@@ -22,6 +22,12 @@ export const cardApi = {
     backendApi.post("cards", { json: body }).json<CardTemplate>(),
   update: (cardId: string, body: CardTemplateInput & { revision: number }) =>
     backendApi.put(`cards/${id(cardId)}`, { json: body }).json<CardTemplate>(),
+  setGenerationExample: (cardId: string, revision: number, enabled: boolean) =>
+    backendApi
+      .put(`cards/${id(cardId)}/generation-example`, {
+        json: { revision, enabled },
+      })
+      .json<CardTemplate>(),
   services: (query: string, signal?: AbortSignal) =>
     get<Service[]>("services", { q: query, limit: 20 }, signal),
   classifiers: (query: string, signal?: AbortSignal) =>
