@@ -21,6 +21,7 @@ export type LessonListFiltersProps = {
 export type LessonListTableProps = {
   items: import("@/entities/training").LessonRow[];
   student: boolean;
+  resultsOnly: boolean;
   studentId?: string;
   onStudentSelect: (id: string) => void;
   onNavigate: (path: string) => void;

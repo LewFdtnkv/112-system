@@ -25,6 +25,7 @@ import type { LessonListTableProps } from "../types/LessonList";
 export function LessonListTable({
   items,
   student,
+  resultsOnly,
   studentId,
   onStudentSelect,
   onNavigate,
@@ -39,7 +40,7 @@ export function LessonListTable({
             <TableCell>Учебная роль</TableCell>
             <TableCell>Вид занятия / помощь</TableCell>
             <TableCell>Доступно (МСК)</TableCell>
-            <TableCell>Статус</TableCell>
+            {!resultsOnly && <TableCell>Статус</TableCell>}
             <TableCell>Завершено (МСК)</TableCell>
             <TableCell>Карточки</TableCell>
             <TableCell>Результат</TableCell>
@@ -101,7 +102,9 @@ export function LessonListTable({
                       : "Без срока"}
                   </small>
                 </TableCell>
-                <TableCell>{workStatusLabels[row.work_status]}</TableCell>
+                {!resultsOnly && (
+                  <TableCell>{workStatusLabels[row.work_status]}</TableCell>
+                )}
                 <TableCell sx={styles.tableCell2}>
                   {row.completed_at ? (
                     <time dateTime={row.completed_at}>

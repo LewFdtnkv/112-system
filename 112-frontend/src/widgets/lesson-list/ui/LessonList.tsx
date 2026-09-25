@@ -59,6 +59,7 @@ export function LessonList({
               <LessonListTable
                 items={state.query.data.items}
                 student={student}
+                resultsOnly={resultsOnly}
                 studentId={studentId}
                 onStudentSelect={setProfile}
                 onNavigate={navigate}
