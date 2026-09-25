@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     llm_base_url: str = "http://llm:11434"
     llm_model: str = "qwen3:4b-instruct-2507-q4_K_M"
     llm_timeout_seconds: int = Field(default=300, ge=10, le=1800)
+    generation_llm_threads: int = Field(default=0, ge=0, le=32)
     learning_recommendations_enabled: bool = True
     recommendation_model: str | None = None
     semantic_assessment_enabled: bool = True

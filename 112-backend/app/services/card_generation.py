@@ -22,7 +22,7 @@ from app.services.generation import planner
 from app.services.generation.evidence import extra_evidence
 from app.services.generation.presentation import prepare_message, resolve_address, resolve_caller
 
-PROMPT_VERSION = "card-generation-v4"
+PROMPT_VERSION = "card-generation-v5"
 CHOICES = {
     "message_format": [
         {"value": "call", "label": "Телефонное сообщение"},

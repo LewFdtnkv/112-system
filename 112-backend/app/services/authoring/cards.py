@@ -20,6 +20,7 @@ from app.schemas.authoring import (
     CardCreate,
     CardRead,
     CardUpdate,
+    GenerationExampleUpdate,
 )
 from app.schemas.catalog import ClassifierEntryRead
 from app.schemas.student import RecipientRead
@@ -59,6 +60,7 @@ async def card_read(session: AsyncSession, card: CardTemplate) -> CardRead:
     job = await session.scalar(select(AIJob).where(AIJob.card_template_id == card.id))
     inference = (job.output or {}).get("inference", {}) if job else {}
     return CardRead(
+        generation_example=card.generation_example,
         generated_by_ai=job is not None,
         generation_method=inference.get("source"),
         generation_note=inference.get("quality_note"),
@@ -177,6 +179,7 @@ async def update_card(
     ).items():
         setattr(card, key, value)
     card.data = payload.data.model_dump(mode="json")
+    card.generation_example = False
     card.revision += 1
     card.updated_at = datetime.now(UTC)
     await session.execute(
@@ -185,5 +188,25 @@ async def update_card(
     session.add_all(
         [CardTemplateRecipient(card_template_id=card.id, service_id=s.id) for s in recipients]
     )
+    await session.commit()
+    return await card_read(session, card)
+
+
+async def set_generation_example(
+    session: AsyncSession, teacher_id: UUID, card_id: UUID, payload: GenerationExampleUpdate
+) -> CardRead:
+    card = await owned_card(session, card_id, teacher_id, lock=True)
+    if card.revision != payload.revision:
+        raise HTTPException(409, "Карточка изменилась. Обновите её перед подтверждением.")
+    if payload.enabled and (
+        not (card.caller_message or "").strip() or len(card.caller_message) > 2500
+    ):
+        raise HTTPException(422, "Для образца нужно условие длиной от 1 до 2500 символов.")
+    if payload.enabled and any(
+        card.data.get("additional_fields", {}).get("details", {}).get(key)
+        for key in ("noContact", "callDropped")
+    ):
+        raise HTTPException(422, "Молчаливые вызовы и обрывы пока не используются в генерации.")
+    card.generation_example = payload.enabled
     await session.commit()
     return await card_read(session, card)

@@ -18,13 +18,20 @@ from app.schemas.authoring import (
     CardListItem,
     CardRead,
     CardUpdate,
+    GenerationExampleUpdate,
     LessonRead,
     LessonStart,
     ScenarioCreate,
     ScenarioListItem,
     ScenarioRead,
 )
-from app.services.authoring.cards import card_read, create_card, owned_card, update_card
+from app.services.authoring.cards import (
+    card_read,
+    create_card,
+    owned_card,
+    set_generation_example,
+    update_card,
+)
 from app.services.authoring.scenarios import create_scenario, owned_scenario, scenario_read
 from app.services.authoring.scenarios import delete_scenario as remove_scenario
 from app.services.lessons import lesson_read, lesson_reads, owned_lesson, start_lesson
@@ -62,6 +69,13 @@ async def get_card(card_id: UUID, session: SessionDep, teacher: TeacherDep):
 @router.put("/cards/{card_id}", response_model=CardRead)
 async def put_card(card_id: UUID, payload: CardUpdate, session: SessionDep, teacher: TeacherDep):
     return await update_card(session, teacher.id, card_id, payload)
+
+
+@router.put("/cards/{card_id}/generation-example", response_model=CardRead)
+async def put_generation_example(
+    card_id: UUID, payload: GenerationExampleUpdate, session: SessionDep, teacher: TeacherDep
+):
+    return await set_generation_example(session, teacher.id, card_id, payload)
 
 
 @router.post("/scenarios", response_model=ScenarioRead, status_code=201)

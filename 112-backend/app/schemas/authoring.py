@@ -9,6 +9,7 @@ from pydantic import (
     ConfigDict,
     Field,
     JsonValue,
+    StrictBool,
     StringConstraints,
     field_validator,
     model_validator,
@@ -77,6 +78,7 @@ class CardUpdate(CardCreate):
 
 
 class CardRead(CardDefinition):
+    generation_example: bool = False
     generated_by_ai: bool = False
     generation_method: str | None = None
     generation_note: str | None = None
@@ -91,6 +93,12 @@ class CardRead(CardDefinition):
     id: UUID
     created_by_id: UUID
     created_at: datetime
+
+
+class GenerationExampleUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    enabled: StrictBool
+    revision: int = Field(ge=1, le=INT32_MAX, strict=True)
 
 
 class CardListItem(BaseModel):

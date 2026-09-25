@@ -10,8 +10,9 @@ from app.schemas.generation import GenerationParameters
 from app.services.catalog_rules import feature_definitions, validate_answers
 from app.services.generation.library import for_entry, library
 from app.services.generation.llm import compose
-from app.services.generation.narration import fallback, protect
+from app.services.generation.narration import fallback
 from app.services.generation.planner import build, choose
+from app.services.generation.protection import protect
 
 
 def entries():
@@ -113,7 +114,7 @@ def test_fallback_preserves_address_and_does_not_introduce_control_answer_table(
     assert secured == text and metadata["source"] == "template-fallback"
 
 
-def test_model_cannot_supply_new_text_or_invalid_choices(monkeypatch):
+def test_model_rejects_obsolete_choices_instead_of_claiming_prose_success(monkeypatch):
     import io
     import urllib.request
 
@@ -121,7 +122,7 @@ def test_model_cannot_supply_new_text_or_invalid_choices(monkeypatch):
         def open(self, request, timeout):
             payload = json.loads(request.data)
             assert "Лесная" not in payload["messages"][0]["content"]
-            assert timeout <= 90
+            assert timeout <= 300
             return io.BytesIO(
                 json.dumps(
                     {
@@ -161,6 +162,7 @@ def test_template_mode_never_calls_model(monkeypatch):
 def test_every_boolean_reference_has_observable_evidence():
     data = job_input("road-collision")
     text = fallback(data)
-    assert "Возгорания нет" in text.caller_message
-    assert "Заблокированных людей нет" in text.caller_message
-    assert "Пострадавших нет" in text.caller_message
+    # Optional, unrequested negatives are unknown, not scored answers.
+    assert "fire" not in data["narrative"]["answers"]
+    assert "trapped" not in data["narrative"]["answers"]
+    assert "Никто не пострадал" in text.caller_message

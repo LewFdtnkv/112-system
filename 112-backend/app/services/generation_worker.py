@@ -18,8 +18,10 @@ from app.schemas.generation import GeneratedText
 from app.services.assessment_memory import worker as memory_worker
 from app.services.authoring.cards import validate_card_definition
 from app.services.card_generation import PROMPT_VERSION
+from app.services.generation import examples as generation_examples
 from app.services.generation.llm import compose
-from app.services.generation.narration import protect
+from app.services.generation.narration import fallback
+from app.services.generation.protection import protect
 from app.services.learning_recommendations import inference as recommendation_inference
 from app.services.learning_recommendations import jobs as recommendation_jobs
 from app.services.learning_recommendations.inference import PROMPT_VERSION as STUDY_PROMPT
@@ -137,6 +139,16 @@ async def finish(session, job_id, token, text: GeneratedText, metadata):
     if not owner or not owner.is_active or not owner.is_teacher:
         raise ValueError("Generation owner is no longer an active teacher")
     payload = CardCreate.model_validate(job.input["card"])
+    if not await generation_examples.still_approved(
+        session, job.created_by_id, metadata.get("examples", [])
+    ):
+        text = fallback(job.input)
+        metadata = {
+            **metadata,
+            "source": "template-fallback",
+            "selection": job.input["narrative"]["default_wording"],
+            "quality_note": "Образец преподавателя отозван или изменён. Использована заготовка.",
+        }
     text, metadata = protect(job.input, text, metadata)
     payload.title = text.title
     payload.data.description = text.description
@@ -216,6 +228,8 @@ async def process(job):
             await recommendation_jobs.prepare(job)
         if job.purpose == AIPurpose.EVALUATION:
             await memory_worker.prepare(job)
+        if job.purpose == AIPurpose.GENERATION:
+            await generation_examples.prepare(job)
         text, metadata = await asyncio.to_thread(call_model, job)
         async with session_factory() as session:
             await finish(session, job.id, job.worker_id, text, metadata)

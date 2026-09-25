@@ -5,6 +5,7 @@ from typing import Any
 from uuid import UUID
 
 from sqlalchemy import (
+    Boolean,
     CheckConstraint,
     DateTime,
     ForeignKey,
@@ -42,6 +43,7 @@ class CardTemplate(UUIDPrimaryKey, CreatedAt, Base):
     )
     classifier_entry_id: Mapped[UUID | None] = mapped_column(index=True)
     caller_message: Mapped[str | None] = mapped_column(Text)
+    generation_example: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
     instructions: Mapped[str] = mapped_column(Text, default="", server_default="")
     data: Mapped[dict[str, Any]] = mapped_column(JSONB)
     revision: Mapped[int] = mapped_column(Integer, default=1, server_default="1")

@@ -93,7 +93,7 @@ async def test_unknown_sms_information_is_not_a_scored_reference(exercise):
     assert plan["flags"] == {} and plan["victims_count"] is None
     assert "medical_help" not in plan["answers"]
     text, _ = compose(SimpleNamespace(input=data))
-    assert "Пострадавших нет" not in text.caller_message
+    assert "Никто не пострадал" not in text.caller_message
     actual = StudentAttemptRead.model_validate(await exercise.complete())
     reference = data["card"]["data"] | {
         "description": text.description,
@@ -161,4 +161,4 @@ def test_unconscious_patient_is_not_described_as_giving_consent():
     text, _ = compose(SimpleNamespace(input=data))
     assert "потерял сознание" in text.caller_message
     assert "согласны" not in text.caller_message
-    assert "Отказа от медицинской помощи не было" in text.caller_message
+    assert "От скорой никто не отказывался" in text.caller_message

@@ -1,0 +1,204 @@
+[
+  {
+    "id": "fire-call",
+    "channel": "call",
+    "templates": [
+      "fire-rubbish"
+    ],
+    "message": "Алло, у нас во дворе мусор горит! Дым идёт, пламя хорошо видно. Это [АДРЕС]."
+  },
+  {
+    "id": "fire-sms",
+    "channel": "sms",
+    "templates": [
+      "fire-rubbish"
+    ],
+    "message": "[АДРЕС]. На улице загорелся мусор, видно дым и пламя. Пришлите помощь."
+  },
+  {
+    "id": "road-call",
+    "channel": "call",
+    "templates": [
+      "road-collision"
+    ],
+    "message": "Алло, вы слышите? Здесь две машины столкнулись, прямо на дороге. Это [АДРЕС]."
+  },
+  {
+    "id": "road-sms",
+    "channel": "sms",
+    "templates": [
+      "road-collision"
+    ],
+    "message": "На дороге столкнулись две машины. [АДРЕС]. Нужна помощь."
+  },
+  {
+    "id": "medical-call",
+    "channel": "call",
+    "templates": [
+      "medical-faint"
+    ],
+    "message": "Помогите, человек без сознания! Дышит, но в себя не приходит. Это [АДРЕС]."
+  },
+  {
+    "id": "gas-call",
+    "channel": "call",
+    "templates": [
+      "gas-stove"
+    ],
+    "message": "Здравствуйте. У нас в помещении от плиты газом пахнет. Это [АДРЕС]. Помогите, пожалуйста."
+  },
+  {
+    "id": "service-call",
+    "channel": "call",
+    "templates": [
+      "wrong-number"
+    ],
+    "message": "Ой, это экстренная служба? Извините, я номер неправильно набрала. Ничего не случилось, помощь не нужна."
+  },
+  {
+    "id": "medical-injury-call",
+    "channel": "call",
+    "templates": [
+      "medical-injury"
+    ],
+    "message": "Здравствуйте, нужна помощь! Человек получил травму, он в сознании, дышит. Это [АДРЕС]."
+  },
+  {
+    "id": "gas-sms",
+    "channel": "sms",
+    "templates": [
+      "gas-stove"
+    ],
+    "message": "[АДРЕС], в помещении около плиты пахнет газом. Нужна помощь."
+  },
+  {
+    "id": "fire-flat-call",
+    "channel": "call",
+    "templates": [
+      "fire-flat"
+    ],
+    "message": "Из квартиры дым идёт, и пламя видно! Это [АДРЕС]. Помогите, пожалуйста."
+  },
+  {
+    "id": "road-rollover-call",
+    "channel": "call",
+    "templates": [
+      "road-rollover"
+    ],
+    "message": "Здесь машина перевернулась, прямо на дороге! Это [АДРЕС]."
+  },
+  {
+    "id": "consultation-call",
+    "channel": "call",
+    "templates": [
+      "consultation-numbers"
+    ],
+    "message": "Добрый день. Я [ИМЯ], хочу уточнить номера экстренных служб. Подскажете, пожалуйста?"
+  },
+  {
+    "id": "test-call",
+    "channel": "call",
+    "templates": [
+      "test-call"
+    ],
+    "message": "Здравствуйте, это проверка связи. Меня слышно?  Помощь не нужна, звонок тестовый."
+  },
+  {
+    "id": "gas-street-call",
+    "channel": "call",
+    "templates": [
+      "gas-street"
+    ],
+    "message": "Алло, на улице пахнет газом. Это [АДРЕС]."
+  },
+  {
+    "id": "theft-call",
+    "channel": "call",
+    "templates": [
+      "police-theft"
+    ],
+    "message": "У меня сумку украли. Это случилось на [АДРЕС], сейчас уже никого не обворовывают."
+  },
+  {
+    "id": "obstacle-call",
+    "channel": "call",
+    "templates": [
+      "obstacle-tree"
+    ],
+    "message": "Это [АДРЕС], на проезжую часть дерево упало."
+  },
+  {
+    "id": "fire-clear-a",
+    "channel": "call",
+    "templates": [
+      "fire-rubbish"
+    ],
+    "requires": {
+      "flags": {
+        "hasVictims": false,
+        "blocked": false
+      }
+    },
+    "message": "Здравствуйте! Во дворе мусор загорелся, дым идёт и пламя видно. Это [АДРЕС]. Никто не пострадал, подъехать сюда можно. Пришлите помощь, пожалуйста."
+  },
+  {
+    "id": "fire-clear-b",
+    "channel": "call",
+    "templates": [
+      "fire-rubbish"
+    ],
+    "requires": {
+      "flags": {
+        "hasVictims": false,
+        "blocked": false
+      }
+    },
+    "message": "Это [АДРЕС]. У нас на улице мусор горит! И дым, и пламя видно. Люди не пострадали. Проезд свободен, помогите, пожалуйста."
+  },
+  {
+    "id": "road-two-clear",
+    "channel": "call",
+    "templates": [
+      "road-collision"
+    ],
+    "requires": {
+      "flags": {
+        "hasVictims": true,
+        "blocked": false,
+        "refusedAmbulance": false
+      },
+      "victims_count": 2
+    },
+    "message": "Алло! Тут на дороге две машины столкнулись, это [АДРЕС]. Двое пострадали, им помощь нужна. Подъехать можно. Нет, от скорой никто не отказывается, пришлите, пожалуйста."
+  },
+  {
+    "id": "medical-clear",
+    "channel": "call",
+    "templates": [
+      "medical-faint"
+    ],
+    "requires": {
+      "flags": {
+        "hasVictims": true,
+        "blocked": false,
+        "refusedAmbulance": false
+      },
+      "victims_count": 1
+    },
+    "message": "Помогите, человек без сознания! Он дышит, но в себя не приходит. Это [АДРЕС]. Ему одному нужна помощь, подойти сюда можно. Нет, от скорой никто не отказывался."
+  },
+  {
+    "id": "gas-clear",
+    "channel": "call",
+    "templates": [
+      "gas-stove"
+    ],
+    "requires": {
+      "flags": {
+        "hasVictims": false,
+        "blocked": false
+      }
+    },
+    "message": "Алло, помогите, у нас от плиты газом пахнет, внутри помещения. Это [АДРЕС]. Никто не пострадал, подойти сюда можно. Что нам делать?"
+  }
+]

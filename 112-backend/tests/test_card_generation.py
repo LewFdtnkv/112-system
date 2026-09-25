@@ -9,7 +9,7 @@ from app.models import AIJob, CardTemplate, CardTemplateRecipient, Service
 from app.models.enums import JobStatus
 from app.schemas.generation import GeneratedText
 from app.services.card_generation import PROMPT_VERSION
-from app.services.generation.narration import prompt
+from app.services.generation.prose import generation_prompt
 from app.services.generation_worker import claim, fail, finish, renew
 
 pytestmark = pytest.mark.anyio
@@ -71,8 +71,8 @@ async def test_generation_resolves_facts_once_and_enforces_owner(teaching, db_cl
     await t.post(f"card-generations/{jobs[0]['id']}/retry", {}, actor="other", expected=404)
     assert await db_session.scalar(select(func.count()).select_from(CardTemplate)) == 0
     stored = await db_session.get(AIJob, UUID(jobs[0]["id"]))
-    assert "Случайно" not in prompt(stored.input["narrative"], stored.input["facts"])
-    assert "улица Ленина" not in prompt(stored.input["narrative"], stored.input["facts"])
+    assert "Случайно" not in generation_prompt(stored.input)
+    assert "улица Ленина" not in generation_prompt(stored.input)
 
 
 async def test_generation_random_package_uses_one_version_and_distinct_seeds(teaching, db_session):

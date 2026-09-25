@@ -13,9 +13,10 @@ from app.services.catalog_rules import feature_definitions
 from app.services.generation.evidence import extra_evidence
 from app.services.generation.library import for_entry
 from app.services.generation.llm import compose
-from app.services.generation.narration import prompt, protect
 from app.services.generation.planner import build
 from app.services.generation.presentation import prepare_message, resolve_address, resolve_caller
+from app.services.generation.prose import generation_prompt
+from app.services.generation.protection import protect
 from app.services.generation_flags import facts as flag_facts
 
 
@@ -136,7 +137,7 @@ def main():
                     "seconds": round(time.monotonic() - start, 2),
                     "facts": data["facts"],
                     "input": data,
-                    "prompt": prompt(data["narrative"], data["facts"]),
+                    "prompt": generation_prompt(data),
                     "text": text.model_dump(),
                     "metadata": metadata,
                 },

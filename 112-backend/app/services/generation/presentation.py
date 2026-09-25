@@ -26,9 +26,7 @@ def prepare_message(plan, p, definitions, rng):
         if plan["message_format"] == "sms"
         else rng.choice(["full", "name_only", "anonymous"])
     )
-    if plan["message_format"] != "sms":
-        return
-    # Do not turn unreported optional negatives into scored facts in a short SMS.
+    # Unreported optional negatives are unknown in either channel, not scored facts.
     plan["answers"] = {
         f.key: plan["answers"][f.key]
         for f in definitions

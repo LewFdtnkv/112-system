@@ -61,9 +61,11 @@ async def test_worker_prepares_only_the_context_required_by_its_job(monkeypatch,
 
     recommendation = AsyncMock()
     assessment = AsyncMock()
+    generation = AsyncMock()
     finished, failed = AsyncMock(), AsyncMock()
     monkeypatch.setattr(worker.recommendation_jobs, "prepare", recommendation)
     monkeypatch.setattr(worker.memory_worker, "prepare", assessment)
+    monkeypatch.setattr(worker.generation_examples, "prepare", generation)
     monkeypatch.setattr(worker, "session_factory", session_factory)
     monkeypatch.setattr(worker, "heartbeat", heartbeat)
     monkeypatch.setattr(worker, "call_model", lambda value: ("result", {}))
@@ -72,5 +74,6 @@ async def test_worker_prepares_only_the_context_required_by_its_job(monkeypatch,
     await worker.process(job)
     assert recommendation.await_count == (purpose == AIPurpose.RECOMMENDATION)
     assert assessment.await_count == (purpose == AIPurpose.EVALUATION)
+    assert generation.await_count == (purpose == AIPurpose.GENERATION)
     finished.assert_awaited_once_with(session, job.id, job.worker_id, "result", {})
     failed.assert_not_awaited()
