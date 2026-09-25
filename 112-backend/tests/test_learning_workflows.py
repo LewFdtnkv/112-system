@@ -404,10 +404,12 @@ async def test_interface_guide_follows_saved_work_and_records_help(exercise, db_
     assert (await hint())["hint"]["task"] == "address_text"
     events = list(
         await db_session.scalars(
-            select(AttemptEvent).where(
+            select(AttemptEvent)
+            .where(
                 AttemptEvent.attempt_id == UUID(a["id"]),
                 AttemptEvent.kind == "learning.guide_confirmed",
             )
+            .order_by(AttemptEvent.sequence)
         )
     )
     assert [e.payload["task"] for e in events] == [

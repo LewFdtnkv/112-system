@@ -13,6 +13,7 @@ from sqlalchemy.dialects.postgresql import insert
 
 from app.core.config import settings
 from app.models import CallCue, ScenarioCard, SpeechAsset, TrainingContact
+from app.services.telephony.voice_pack import greeting_bytes
 
 MAX_BYTES = 10_000_000
 
@@ -83,7 +84,14 @@ async def prepare_scenario(session, scenario):
         for key, name, text in targets:
             if not text.strip():
                 continue
-            asset = await asset_for(session, text)
+            if scenario.role == "dds" and scenario.completion_rules.get("dds", {}).get(
+                "crew_calls_required"
+            ):
+                greeting, data = greeting_bytes()
+                asset = await asset_for(session, greeting, "crew-voice-pack", "crew-dialogue-v1")
+                complete(asset, data)
+            else:
+                asset = await asset_for(session, text)
             await session.execute(
                 insert(CallCue)
                 .values(

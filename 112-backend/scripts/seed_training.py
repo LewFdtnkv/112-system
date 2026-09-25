@@ -72,7 +72,9 @@ def matches(expected, actual):
     )
 
 
-async def populate_training(gateway, state, catalog_id, document, recommendation_cards=6):
+async def populate_training(
+    gateway, state, catalog_id, document, recommendation_cards=6, with_crew_calls=False
+):
     """The same plan is executed through HTTP or local application services."""
     prefix = state.data["prefix"]
     accounts = state.data.setdefault("accounts", {})
@@ -169,7 +171,9 @@ async def populate_training(gateway, state, catalog_id, document, recommendation
             "learning": {"kind": "practice"},
         },
     )
-    dds = await populate_dds(gateway.dds(), state, create, group_id, card_ids, fire_service_id)
+    dds = await populate_dds(
+        gateway.dds(), state, create, group_id, card_ids, fire_service_id, with_crew_calls
+    )
     learning = await populate_learning(
         state, create, group_id, ids["student"], source_cards, dds["profile_id"]
     )

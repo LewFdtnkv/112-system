@@ -23,7 +23,9 @@ from app.models.enums import AttemptStatus, CallStatus
 from app.services.audit import append_event
 from app.services.deadlines import attempt_deadline
 from app.services.student.access import owned_attempt
+from app.services.telephony.crew_notifications import required, selected_crew
 from app.services.telephony.media import audio_path
+from app.services.telephony.voice_pack import choose_dialogue
 
 ACTIVE = [CallStatus.DIALING, CallStatus.CONNECTED]
 TERMINAL = ["ended", "busy", "no_answer", "failed"]
@@ -110,15 +112,38 @@ async def available_cues(session, attempt):
     )
 
 
-def request_key(cue_id, direction, transport):
-    return hashlib.sha256(f"{cue_id}:{direction}:{transport}".encode()).hexdigest()
+def request_key(cue_id, direction, transport, crew_code=None):
+    value = f"{cue_id}:{direction}:{transport}"
+    if crew_code:
+        value += f":{crew_code}"
+    return hashlib.sha256(value.encode()).hexdigest()
 
 
 async def new_call(
-    session, station, attempt, cue, *, command_id, direction, transport, require_audio=True
+    session,
+    station,
+    attempt,
+    cue,
+    *,
+    command_id,
+    direction,
+    transport,
+    require_audio=True,
+    crew_code=None,
 ):
     if "dds_policy" in attempt.settings_snapshot and cue.contact_key == "caller":
         raise HTTPException(422, "Звонки заявителю не входят в занятия ДДС")
+    dialogue = None
+    if required(attempt):
+        if direction != "outgoing" or transport != "manual":
+            raise HTTPException(422, "Руководителю бригады должен позвонить сам оператор")
+        if station.mode == "external":
+            raise HTTPException(
+                409,
+                "Для проверки речи нужен Asterisk; внешний адаптер пока передаёт только соединение",
+            )
+        binding = await selected_crew(session, attempt, cue.contact_key, crew_code)
+        dialogue = choose_dialogue() | binding
     asset = await session.get(SpeechAsset, cue.audio_id)
     if require_audio and (
         asset.status != "ready" or not asset.file_key or not audio_path(asset.file_key).is_file()
@@ -149,7 +174,8 @@ async def new_call(
         station_id=station.id,
         initiated_by_id=attempt.student_id,
         command_id=command_id,
-        request_fingerprint=request_key(cue.id, direction, transport),
+        request_fingerprint=request_key(cue.id, direction, transport, crew_code),
+        dialogue=dialogue,
         contact_id=contact.id if contact else None,
         response_id=response.id if response else None,
         target_service_id=contact.target_service_id if contact else None,
@@ -192,7 +218,7 @@ async def start(session, attempt_id, student_id, payload):
     )
     if existing:
         if existing.request_fingerprint != request_key(
-            payload.cue_id, payload.direction, payload.transport
+            payload.cue_id, payload.direction, payload.transport, payload.crew_code
         ):
             raise HTTPException(409, "Команда уже использована с другими параметрами")
         return existing
@@ -222,6 +248,7 @@ async def start(session, attempt_id, student_id, payload):
         direction=payload.direction,
         transport=payload.transport,
         require_audio=station.mode != "external",
+        crew_code=payload.crew_code,
     )
     await session.commit()
     return row

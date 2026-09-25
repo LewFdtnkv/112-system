@@ -42,6 +42,7 @@ class StationRead(StrictModel):
 class CallStart(StrictModel):
     command_id: UUID
     cue_id: UUID
+    crew_code: str | None = Field(default=None, pattern=r"^[A-Za-z0-9_-]{1,100}$")
     direction: Literal["incoming", "outgoing"] = "outgoing"
     transport: Literal["manual", "callback"] = "manual"
 
@@ -62,6 +63,7 @@ class CallRead(StrictModel):
     result: str | None
     cancel_requested: bool
     provider_confirmed: bool
+    dialogue: dict | None = None
 
 
 class AdapterEvent(StrictModel):

@@ -1,0 +1,107 @@
+{
+  "version": "crew-dialogue-v1",
+  "variants": [
+    {
+      "id": "denis-1",
+      "voice": "denis",
+      "model_sha256": "15fab56e11a097858ee115545d0f697fc2a316c41a291a5362349fb870411b0a",
+      "greeting": {
+        "text": "Здравствуйте. Слушаю вас.",
+        "stem": "denis-1-greeting",
+        "sha256": "3955af1ede56d0b2256a87550c527d180c85db9b27205e029caaa4d4dd565700",
+        "wideband_sha256": "bf28a804c15cbfd5e9de2732734fae1c30ff5a23879d7e0397d579fb90cdf290"
+      },
+      "acknowledgment": {
+        "text": "Принято.",
+        "stem": "denis-1-acknowledgment",
+        "sha256": "92e22e91eec49b4f56dd0086e5b2063e45d1b76234d2a02331c1d43d6efd3ce7",
+        "wideband_sha256": "d88dc2f0c2046c9ca875462f44f519614f0b151d2fe248ac13b2c4e4fa79aec9"
+      }
+    },
+    {
+      "id": "denis-2",
+      "voice": "denis",
+      "model_sha256": "15fab56e11a097858ee115545d0f697fc2a316c41a291a5362349fb870411b0a",
+      "greeting": {
+        "text": "Алло, здравствуйте. Говорите.",
+        "stem": "denis-2-greeting",
+        "sha256": "fd86377cfc634efb7e49cd39523eab31b5ef835ca657694ce159b60640ed40eb",
+        "wideband_sha256": "29173fc59375479f6a8f4d123ed7ea444317730cb4a46b0f76b91faffa1ed743"
+      },
+      "acknowledgment": {
+        "text": "Принято, спасибо.",
+        "stem": "denis-2-acknowledgment",
+        "sha256": "b1f13f14069968756cc47f392fd74c9fd38713c4eef9489f4c9a090471d17eeb",
+        "wideband_sha256": "eaed5cd360a6989d131eccee9710e66335728b3f825b9b61f2c43fdc6d9516f0"
+      }
+    },
+    {
+      "id": "denis-3",
+      "voice": "denis",
+      "model_sha256": "15fab56e11a097858ee115545d0f697fc2a316c41a291a5362349fb870411b0a",
+      "greeting": {
+        "text": "Здравствуйте, бригада на связи.",
+        "stem": "denis-3-greeting",
+        "sha256": "dbad70105ed9968d632804d117129c078111b5bf73c009f52dd9fb383eb5536e",
+        "wideband_sha256": "964b3d23d4414bf734c5f708248d859e3b63654fe7311d879f6ab25f34d9ea4c"
+      },
+      "acknowledgment": {
+        "text": "Информацию принял.",
+        "stem": "denis-3-acknowledgment",
+        "sha256": "9cbab3007328d27461e6b34cb9ba3ec9bbb7e5a8e7859103e85edcc2bee42791",
+        "wideband_sha256": "90bd0dd46109261ac8ecece6fb63fab7a93091cbee424844c8d3cfc7db6826bd"
+      }
+    },
+    {
+      "id": "dmitri-1",
+      "voice": "dmitri",
+      "model_sha256": "f073356ebc4bd0f80c5af58df2953a5988bd5bdab1eb38635ce960b071fbefcb",
+      "greeting": {
+        "text": "Здравствуйте. Слушаю вас.",
+        "stem": "dmitri-1-greeting",
+        "sha256": "25f7b0ca75e5fb201d36d2241df03927f57c5cf65d632669db5dc5e3919e6d4d",
+        "wideband_sha256": "83325e844716a91ffb304bad684da4629bf3042f1137f465533e33844f830d6d"
+      },
+      "acknowledgment": {
+        "text": "Принято.",
+        "stem": "dmitri-1-acknowledgment",
+        "sha256": "002a7e8a6a92cd1b95d5dd529463b4d3935c40c87a3a670f2a09fb252f9c1426",
+        "wideband_sha256": "90979866a19a3eb35b470a5c37bab83f3be5319eb476583ae370e00b46026bf3"
+      }
+    },
+    {
+      "id": "dmitri-2",
+      "voice": "dmitri",
+      "model_sha256": "f073356ebc4bd0f80c5af58df2953a5988bd5bdab1eb38635ce960b071fbefcb",
+      "greeting": {
+        "text": "Алло, здравствуйте. Говорите.",
+        "stem": "dmitri-2-greeting",
+        "sha256": "081f1759fa24d50a42fb6de77f5eb44a0f049b1603260fb813ded4decf207169",
+        "wideband_sha256": "cfee3841700c894f26ec3242357de22184904589a273493204432f853ae4b41f"
+      },
+      "acknowledgment": {
+        "text": "Принято, спасибо.",
+        "stem": "dmitri-2-acknowledgment",
+        "sha256": "dbf08bb2bc197a4402d5941705eedff4eeb2804c2db5089cbcc9c2135e548978",
+        "wideband_sha256": "8e0d69741a8f36fddb3336ae12cfc6493744c70915a7d6aa78c112ae2edc7791"
+      }
+    },
+    {
+      "id": "dmitri-3",
+      "voice": "dmitri",
+      "model_sha256": "f073356ebc4bd0f80c5af58df2953a5988bd5bdab1eb38635ce960b071fbefcb",
+      "greeting": {
+        "text": "Здравствуйте, бригада на связи.",
+        "stem": "dmitri-3-greeting",
+        "sha256": "0ccb5585981a15f7e503cbd65d177f4cb84f8d78c589b029787989aad93239bc",
+        "wideband_sha256": "cb1ee2126f6045c45b4664b168226beb4236f650f74cec1e7703abcca070f0c1"
+      },
+      "acknowledgment": {
+        "text": "Информацию принял.",
+        "stem": "dmitri-3-acknowledgment",
+        "sha256": "ce4bad717baec6c8881a03d426b913b9cb57f1573a54ce3b027f0d710a7334fe",
+        "wideband_sha256": "7b979f4b58ed908d58ef868c1d8b794577ba330ea0a398382f63a0699d5898e6"
+      }
+    }
+  ]
+}

@@ -121,6 +121,9 @@ async def assess_attempt(session, attempt, card_read):
                             "dds.status_changed",
                             "dds.crew_changed",
                             "dds.submitted",
+                            "call.dialogue.speech",
+                            "call.dialogue.acknowledged",
+                            "call.ended",
                         ]
                     ),
                 )

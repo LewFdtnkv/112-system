@@ -10,8 +10,10 @@ from app.api.dependencies import AdminDep, SessionDep, StudentDep, TeacherDep
 from app.core.config import settings
 from app.models import Assignment, Lesson, TelephonyStation, TrainingCall, User
 from app.schemas.telephony import CallRead, CallStart, StationCreate, StationRead, StationUpdate
+from app.services.dds.views import crew_context
 from app.services.student.access import owned_attempt
 from app.services.telephony import calls
+from app.services.telephony.crew_notifications import notifications, required
 
 router = APIRouter(prefix="/telephony", tags=["telephony"])
 
@@ -105,22 +107,39 @@ async def state(attempt_id: UUID, session: SessionDep, student: StudentDep):
             .limit(100)
         )
     )
+    crews = await crew_context(session, attempt) if required(attempt) else []
+    cue_rows = []
+    for c, a in await calls.available_cues(session, attempt):
+        matches = (
+            [
+                crew
+                for crew in crews
+                if crew["contact_code"] == c.contact_key and crew["status"] != "cancelled"
+            ]
+            if required(attempt)
+            else [None]
+        )
+        for crew in matches:
+            cue_rows.append(
+                {
+                    "id": c.id,
+                    "name": c.contact_name,
+                    "contact_key": c.contact_key,
+                    "status": a.status,
+                    "duration_seconds": a.duration_seconds,
+                    "crew_code": crew["crew_code"] if crew else None,
+                    "crew_name": crew["name"] if crew else None,
+                }
+            )
     return {
+        "crew_calls_required": required(attempt),
+        "crew_calls": await notifications(session, attempt, crews),
         "active_call": CallRead.model_validate(active, from_attributes=True)
         if station and (active := await calls.active_call(session, station.id))
         else None,
         "enabled": settings.telephony_enabled,
         "station": station_read(station) if station else None,
-        "cues": [
-            {
-                "id": c.id,
-                "name": c.contact_name,
-                "contact_key": c.contact_key,
-                "status": a.status,
-                "duration_seconds": a.duration_seconds,
-            }
-            for c, a in await calls.available_cues(session, attempt)
-        ],
+        "cues": cue_rows,
         "calls": [CallRead.model_validate(c, from_attributes=True) for c in history],
     }
 

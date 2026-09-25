@@ -56,6 +56,9 @@ def choose_step(source, read, goals, confirmed):
         )
     step = dds_task(read, goals) if read.dds else operator_task(source, read, confirmed)
     task, target, *_ = step
+    if read.dds and task.endswith(".call"):
+        step = (step[0], "telephone", *step[2:])
+        return step, "action", False, None
     if (
         not read.dds
         and target == "address"

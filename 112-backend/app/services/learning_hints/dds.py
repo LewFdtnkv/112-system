@@ -21,6 +21,19 @@ def dds_task(read, goals):
                 ),
                 f"Назначьте бригаду «{goal['name']}».",
             )
+        notification = next(
+            (n for n in read.dds.get("crew_calls", []) if n["crew_code"] == goal["crew_code"]), None
+        )
+        if notification and not notification["completed"] and goal["status"] != "cancelled":
+            return (
+                f"crew.{goal['crew_code']}.call",
+                "dds_crews",
+                "Передайте задачу руководителю назначенной бригады.",
+                "В учебном телефоне выберите руководителя бригады и позвоните. "
+                "После приветствия сообщите о задаче и дождитесь ответа «Принято».",
+                f"Позвоните руководителю «{goal['name']}», сообщите адрес и суть происшествия. "
+                "Дождитесь подтверждения и завершения звонка.",
+            )
         if not crew_goal_met(crew, goal["status"]):
             # Shortest valid route to the configured goal, no service-status side effects.
             queue = [(crew["status"], [])]

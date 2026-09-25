@@ -102,7 +102,7 @@ def credits_for(evaluation, criteria, semantic):
             path = field["field"]
             skill = (
                 "dds_crews"
-                if path.startswith("dds.assignment.")
+                if path.startswith(("dds.assignment.", "dds.notification."))
                 else "dds_response"
                 if path.startswith("dds.status.") or path.startswith("dds.crew.")
                 else field_skill(path)

@@ -108,6 +108,7 @@ def criteria_dds(check):
         ("dds_status", "dds.status.", 80, "Статусы ДДС по сообщениям задания"),
         ("dds_crew", "dds.crew.", 20, "Номер наряда"),
         ("dds_assignment", "dds.assignment.", 20, "Назначение и результат работы бригад"),
+        ("dds_notification", "dds.notification.", 20, "Оповещение руководителей бригад"),
     ]:
         fields = [f for f in check.fields if f.field.startswith(prefix)]
         if fields:
@@ -174,6 +175,23 @@ def check_crew_exercise(policy, read):
                         status="different",
                     )
                 )
+    if policy.get("crew_calls_required") and "dds_crews" in skills:
+        calls = {c["crew_code"]: c for c in read.dds.get("crew_calls", [])}
+        for goal in policy["required_crews"]:
+            if goal["status"] == "cancelled":
+                continue
+            code = goal["crew_code"]
+            completed = calls.get(code, {}).get("completed", False)
+            fields.append(
+                FieldCheck(
+                    field=f"dds.notification.{code}",
+                    label=f"Оповещение: {names[code]}",
+                    expected="Сообщение передано, получено «Принято»",
+                    actual="Подтверждено АТС" if completed else "Нет завершённого разговора",
+                    scored=True,
+                    status="matched" if completed else "missing",
+                )
+            )
     norm = read.dds.get("reaction_norm_seconds")
     if norm is not None:
         response_at = read.dds.get("first_decision_at")

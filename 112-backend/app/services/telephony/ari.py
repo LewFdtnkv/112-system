@@ -41,7 +41,7 @@ class ARI:
                 "aors": station.endpoint,
                 "context": "training-only",
                 "disallow": "all",
-                "allow": "ulaw,alaw",
+                "allow": "g722,ulaw,alaw",
                 "direct_media": "no",
                 "force_rport": "yes",
                 "rewrite_contact": "yes",

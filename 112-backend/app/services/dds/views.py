@@ -6,6 +6,7 @@ from app.models import (
     ResponseEvent,
 )
 from app.schemas.dds import CREW_TRANSITIONS, STATUS_LABELS, TRANSITIONS
+from app.services.telephony.crew_notifications import notifications
 
 
 async def context(session, attempt, responses):
@@ -44,7 +45,9 @@ async def context(session, attempt, responses):
     crews = await crew_context(session, attempt)
     requirements = attempt.settings_snapshot["dds_policy"].get("required_crews", [])
     crew_workflow = attempt.settings_snapshot["dds_policy"].get("workflow") == "crews-v1"
+    calls = await notifications(session, attempt, crews)
     return {
+        "crew_calls": calls,
         "workflow": "crews-v1" if crew_workflow else "service-v1",
         "crews": crews,
         "crew_goals": []

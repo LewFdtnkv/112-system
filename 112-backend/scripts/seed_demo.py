@@ -143,6 +143,7 @@ def run(
     admin_password: str,
     with_training=False,
     recommendation_cards=6,
+    with_crew_calls=False,
 ) -> dict:
     ensure(
         bool(re.fullmatch(r"[a-z0-9][a-z0-9_-]{0,19}", prefix)),
@@ -194,7 +195,12 @@ def run(
             from seed_training import HTTPGateway, populate_training
         result["training"] = asyncio.run(
             populate_training(
-                HTTPGateway(admin, API), state, classifier_id, document, recommendation_cards
+                HTTPGateway(admin, API),
+                state,
+                classifier_id,
+                document,
+                recommendation_cards,
+                with_crew_calls,
             )
         )
     return result
@@ -222,7 +228,14 @@ def main():
         help="С --with-training: 3–30 завершённых карточек для ИИ-рекомендаций; "
         "0 — отключить (по умолчанию 6)",
     )
+    parser.add_argument(
+        "--with-crew-calls",
+        action="store_true",
+        help="С --with-training: отдельное занятие ДДС с обязательным звонком бригаде",
+    )
     args = parser.parse_args()
+    if args.with_crew_calls and not args.with_training:
+        parser.error("--with-crew-calls требует --with-training")
     if args.recommendation_cards != 0 and not 3 <= args.recommendation_cards <= 30:
         parser.error("--recommendation-cards: 0 или число от 3 до 30")
     try:
@@ -262,6 +275,7 @@ def main():
                             result["classifier_id"],
                             load_catalog(),
                             args.recommendation_cards,
+                            args.with_crew_calls,
                         )
                     return result
 
@@ -274,6 +288,7 @@ def main():
                 os.environ.get("DEMO_ADMIN_PASSWORD", "admin"),
                 args.with_training,
                 args.recommendation_cards,
+                args.with_crew_calls,
             )
     except (APIError, URLError, OSError, ValueError, RuntimeError) as exc:
         hint = ""

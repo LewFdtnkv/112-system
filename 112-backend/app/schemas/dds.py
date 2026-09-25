@@ -43,11 +43,14 @@ class CrewRequirement(StrictModel):
 
 class DDSPolicy(StrictModel):
     workflow: Literal["service-v1", "crews-v1"] = "service-v1"
+    crew_calls_required: bool = False
     steps: list[DDSStep] = Field(min_length=1, max_length=7)
     required_crews: list[CrewRequirement] = Field(default_factory=list, max_length=100)
 
     @model_validator(mode="after")
     def valid_steps(self):
+        if self.crew_calls_required and self.workflow != "crews-v1":
+            raise ValueError("Crew calls require the crew workflow")
         if len({c.crew_code for c in self.required_crews}) != len(self.required_crews):
             raise ValueError("Required crews must not repeat")
         if self.workflow == "crews-v1":

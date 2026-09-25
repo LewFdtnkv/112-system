@@ -36,7 +36,9 @@ STEPS = [
 ]
 
 
-async def populate_dds(gateway, state, create, group_id, card_ids, service_id):
+async def populate_dds(
+    gateway, state, create, group_id, card_ids, service_id, with_crew_calls=False
+):
     prefix = state.data["prefix"]
     profile_id = await create(
         "dds-profile",
@@ -119,8 +121,73 @@ async def populate_dds(gateway, state, create, group_id, card_ids, service_id):
         elif all(a["status"] == "pending" for a in work["assignments"]):
             # Start only: leave real student progress untouched on subsequent seed runs.
             await gateway.start(work["assignments"][0]["id"])
+    if with_crew_calls:
+        lessons["phone"] = await populate_crew_call_lesson(
+            create, gateway.publish, prefix, group_id, card_ids, service_id
+        )
     await gateway.logout()
     return {"profile_id": profile_id, "scenario_id": scenario_id, "lessons": lessons}
+
+
+async def populate_crew_call_lesson(create, publish, prefix, group_id, card_ids, service_id):
+    """Additive plan shared by the unified seed and stand preparation; no fake PBX events."""
+    phone_profile = await create(
+        "dds-phone-profile",
+        "admin/service-profiles",
+        {
+            "service_id": service_id,
+            "name": f"{prefix}: ДДС — оповещение по телефону",
+            "responsibility": "Учебная пожарная служба",
+            "procedure": "Назначьте расчёт, сами позвоните его руководителю и сообщите "
+            "адрес и суть задачи. Дождитесь ответа «Принято».",
+            "contacts": [
+                {
+                    "code": "fire-chief",
+                    "name": "Руководитель пожарного расчёта",
+                    "target_service_id": service_id,
+                    "endpoint_key": "fire-chief",
+                }
+            ],
+            "crews": [
+                {
+                    "code": "fire-1",
+                    "name": "Учебный пожарный расчёт № 1",
+                    "contact_code": "fire-chief",
+                }
+            ],
+        },
+    )
+    await publish(phone_profile)
+    phone_scenario = await create(
+        "dds-phone-scenario",
+        "scenarios",
+        {
+            "title": f"{prefix}: ДДС — передать задачу руководителю",
+            "role": "dds",
+            "card_ids": card_ids[:1],
+            "service_profile_id": phone_profile,
+            "instructions": "Назначьте расчёт № 1, позвоните руководителю "
+            "и передайте сведения о пожаре "
+            "из карточки. После ответа «Принято» завершите упражнение.",
+            "dds_policy": {
+                "workflow": "crews-v1",
+                "crew_calls_required": True,
+                "steps": [STEPS[0]],
+                "required_crews": [{"crew_code": "fire-1", "status": "assigned"}],
+            },
+        },
+    )
+    return await create(
+        "dds-phone-lesson",
+        "lessons/start",
+        {
+            "request_id": str(uuid5(NAMESPACE_URL, f"source-demo/{prefix}/{phone_scenario}/phone")),
+            "group_id": group_id,
+            "scenario_version_id": phone_scenario,
+            "title": f"{prefix}: ДДС — звонок руководителю бригады",
+            "learning": {"kind": "practice"},
+        },
+    )
 
 
 async def complete_attempt(gateway, attempt):

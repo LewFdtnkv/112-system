@@ -78,6 +78,8 @@ class TrainingCall(UUIDPrimaryKey, Base):
     provider: Mapped[str] = mapped_column(String(64), default="local", server_default="local")
     dispatched_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     cancel_requested: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false")
+    # Frozen crew/voice binding and durable dialogue phase; never supplied by the student.
+    dialogue: Mapped[dict | None] = mapped_column(JSONB)
 
     @property
     def provider_confirmed(self) -> bool:

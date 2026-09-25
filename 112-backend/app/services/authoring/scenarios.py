@@ -25,6 +25,7 @@ from app.schemas.authoring import (
 )
 from app.services.assessment_policy import scenario_policy
 from app.services.authoring.catalog_access import published_classifier, published_profile
+from app.services.service_profiles import profile_read
 
 
 async def owned_scenario(
@@ -108,6 +109,20 @@ async def create_scenario(
             active_crews = {c["code"] for c in profile.rules.get("crews", []) if c["is_active"]}
             if any(c.crew_code not in active_crews for c in payload.dds_policy.required_crews):
                 raise HTTPException(422, "Required crews must be active in the selected profile")
+            if payload.dds_policy.crew_calls_required:
+                data = await profile_read(session, profile)
+                contacts = {c.code: c for c in data.contacts}
+                for goal in payload.dds_policy.required_crews:
+                    if goal.status == "cancelled":
+                        continue
+                    crew = next(c for c in data.crews if c.code == goal.crew_code)
+                    contact = contacts.get(crew.contact_code)
+                    if not contact or contact.target_service_id != profile.service_id:
+                        raise HTTPException(
+                            422,
+                            "Для каждой требуемой бригады задайте контакт "
+                            "руководителя своей службы",
+                        )
     recipients = (
         await session.execute(
             select(CardTemplateRecipient.card_template_id, Service)

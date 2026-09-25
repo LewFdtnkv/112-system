@@ -14,6 +14,7 @@ from websockets.asyncio.client import connect
 from app.core.config import settings
 from app.db.session import engine, session_factory
 from app.models import Attempt, SpeechAsset, TelephonyEvent, TelephonyStation, TrainingCall
+from app.services.telephony import dialogue
 from app.services.telephony.ari import ARI
 from app.services.telephony.calls import ACTIVE, active_call, binding_is_active, record_event
 
@@ -36,6 +37,9 @@ async def finish(ari, call_id, reason="failed"):
         if call.provider_call_id:
             await ari.hangup(call.provider_call_id)
         now = datetime.now(UTC)
+        if call.dialogue and call.dialogue["phase"] != "acknowledged":
+            dialogue.phase(call, "failed", reason="interrupted_or_timeout")
+            call.result = "Оповещение не подтверждено: разговор прерван или истекло время ожидания"
         await record_event(
             session, call, f"finish:{call.id}", reason, now, payload={"source": "controller"}
         )
@@ -63,9 +67,14 @@ async def connected(ari, call_id, channel_id):
         if connected_event:
             return
         await record_event(session, call, f"connected:{channel_id}", "connected", datetime.now(UTC))
+        if call.dialogue:
+            dialogue.phase(call, "greeting")
         asset = await session.get(SpeechAsset, call.audio_id)
         await session.commit()  # No replay of speech on reconnect / event redelivery.
         try:
+            if call.dialogue:
+                await dialogue.begin(ari, call)
+                return
             await ari.request(
                 "POST",
                 f"channels/{channel_id}/play/{call.id}",
@@ -79,6 +88,8 @@ async def connected(ari, call_id, channel_id):
 
 
 async def on_event(ari, event):
+    if await dialogue.handle(ari, event):
+        return
     kind = event.get("type")
     if kind in ("PlaybackStarted", "PlaybackFinished"):
         playback = event.get("playback", {})
@@ -169,6 +180,9 @@ async def on_event(ari, event):
                 if call.connected_at
                 else {17: "busy", 18: "no_answer", 19: "no_answer"}.get(cause, "no_answer")
             )
+            if call.dialogue and call.dialogue["phase"] != "acknowledged":
+                dialogue.phase(call, "failed", reason="interrupted")
+                call.result = "Оповещение не подтверждено: разговор завершён до ответа «Принято»"
             await record_event(session, call, f"end:{channel_id}", status, datetime.now(UTC))
             await session.commit()
 
@@ -214,6 +228,8 @@ async def poll(ari, ready=None):
                 age = (now - call.started_at).total_seconds()
                 if (
                     call.cancel_requested
+                    or dialogue.timed_out(call, now)
+                    or (call.dialogue and call.dialogue["phase"] in {"acknowledged", "failed"})
                     or not await binding_is_active(session, station, attempt)
                     or age > settings.telephony_max_call_seconds
                 ):
