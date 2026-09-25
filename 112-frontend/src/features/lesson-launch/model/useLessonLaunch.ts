@@ -1,6 +1,8 @@
 import {
   lessonApi,
   scenarioApi,
+  scenarioDifficultyLabel,
+  type ScenarioItem,
   defaultLearningPolicy,
   type LearningPolicy,
 } from "@/entities/training";
@@ -33,14 +35,22 @@ export function useLessonLaunch() {
         }
       : null,
   );
-  const metadataRole = (scenario?.metadata as { role?: string } | undefined)
-    ?.role;
+  const metadata = scenario?.metadata as
+    Partial<Pick<ScenarioItem, "role" | "difficulty">> | undefined;
+  const metadataRole = metadata?.role;
   const scenarioDetails = useQuery({
     queryKey: ["scenario", scenario?.id],
     queryFn: ({ signal }) => scenarioApi.get(scenario!.id, signal),
-    enabled: !!scenario && !metadataRole,
+    enabled: !!scenario && (!metadataRole || !metadata?.difficulty),
   });
   const scenarioRole = metadataRole ?? scenarioDetails.data?.role;
+  const difficulty = metadata?.difficulty ?? scenarioDetails.data?.difficulty;
+  const difficultyLabel =
+    !difficulty && scenarioDetails.isError
+      ? "Не удалось загрузить"
+      : !difficulty && scenarioDetails.isFetching
+        ? "Загрузка…"
+        : scenarioDifficultyLabel(difficulty);
   const [learning, updateLearning] = useState(defaultLearningPolicy);
   const [limit, setLimit] = useState("");
   const [title, setTitle] = useState("");
@@ -83,6 +93,7 @@ export function useLessonLaunch() {
     learning.target_skills.length > 0;
   return {
     scenarioRole,
+    difficultyLabel,
     group,
     setGroup,
     targets,

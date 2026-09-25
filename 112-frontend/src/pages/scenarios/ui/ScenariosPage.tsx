@@ -1,6 +1,7 @@
 import {
   activityApi,
   scenarioApi,
+  scenarioDifficultyLabel,
   type ScenarioItem,
 } from "@/entities/training";
 import { getApiError } from "@/shared/api";
@@ -19,6 +20,7 @@ import {
   Stack,
   Table,
   TableBody,
+  TableContainer,
   TableCell,
   TableHead,
   TableRow,
@@ -114,64 +116,70 @@ export const ScenariosPage = () => {
       >
         {query.data && (
           <>
-            <Table aria-label="Сценарии">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Сценарий</TableCell>
-                  <TableCell>Категория</TableCell>
-                  <TableCell>Роль</TableCell>
-                  <TableCell>Карточек</TableCell>
-                  <TableCell>Статус</TableCell>
-                  <TableCell>Действия</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {query.data.items.map((s) => (
-                  <TableRow
-                    key={s.id}
-                    {...rowAction(() => navigate(getScenarioEditPath(s.id)))}
-                  >
-                    <TableCell>
-                      <Link
-                        className="table-block-link"
-                        to={getScenarioEditPath(s.id)}
-                      >
-                        {s.title}
-                        <small className="block-detail">
-                          Версия {s.version}
-                        </small>
-                      </Link>
-                    </TableCell>
-                    <TableCell>{s.category || "—"}</TableCell>
-                    <TableCell>
-                      {s.role === "operator_112" ? "Оператор 112" : "ДДС"}
-                    </TableCell>
-                    <TableCell>{s.card_count}</TableCell>
-                    <TableCell>
-                      {s.status === "published" ? "Опубликован" : "Черновик"}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        component={Link}
-                        to={`/training?scenario=${s.id}&title=${encodeURIComponent(s.title)}`}
-                        disabled={s.status !== "published"}
-                      >
-                        Назначить задание
-                      </Button>
-                      <Button
-                        color="error"
-                        onClick={() => {
-                          setRemove(s);
-                          deletion.reset();
-                        }}
-                      >
-                        Удалить
-                      </Button>
-                    </TableCell>
+            <TableContainer>
+              <Table aria-label="Сценарии">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Сценарий</TableCell>
+                    <TableCell>Категория</TableCell>
+                    <TableCell>Роль</TableCell>
+                    <TableCell>Сложность</TableCell>
+                    <TableCell>Карточек</TableCell>
+                    <TableCell>Статус</TableCell>
+                    <TableCell>Действия</TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHead>
+                <TableBody>
+                  {query.data.items.map((s) => (
+                    <TableRow
+                      key={s.id}
+                      {...rowAction(() => navigate(getScenarioEditPath(s.id)))}
+                    >
+                      <TableCell>
+                        <Link
+                          className="table-block-link"
+                          to={getScenarioEditPath(s.id)}
+                        >
+                          {s.title}
+                          <small className="block-detail">
+                            Версия {s.version}
+                          </small>
+                        </Link>
+                      </TableCell>
+                      <TableCell>{s.category || "—"}</TableCell>
+                      <TableCell>
+                        {s.role === "operator_112" ? "Оператор 112" : "ДДС"}
+                      </TableCell>
+                      <TableCell>
+                        {scenarioDifficultyLabel(s.difficulty)}
+                      </TableCell>
+                      <TableCell>{s.card_count}</TableCell>
+                      <TableCell>
+                        {s.status === "published" ? "Опубликован" : "Черновик"}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          component={Link}
+                          to={`/training?scenario=${s.id}&title=${encodeURIComponent(s.title)}`}
+                          disabled={s.status !== "published"}
+                        >
+                          Назначить задание
+                        </Button>
+                        <Button
+                          color="error"
+                          onClick={() => {
+                            setRemove(s);
+                            deletion.reset();
+                          }}
+                        >
+                          Удалить
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
             <PageControls
               total={query.data.total}
               page={page}

@@ -50,3 +50,8 @@ export * from "./types/assessmentMemory";
 export { assessmentMemoryApi } from "./api/assessmentMemoryApi";
 
 export type { Message, RecommendationDetails } from "./types/activityApi";
+
+export {
+  scenarioDifficultyLabels,
+  scenarioDifficultyLabel,
+} from "./model/scenarioDifficulty";

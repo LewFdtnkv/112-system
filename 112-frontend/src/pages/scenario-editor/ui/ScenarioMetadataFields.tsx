@@ -1,5 +1,8 @@
 import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
-import type { ScenarioInput } from "@/entities/training";
+import {
+  scenarioDifficultyLabels,
+  type ScenarioInput,
+} from "@/entities/training";
 import { MenuItem, Stack } from "@mui/material";
 import { styles } from "../styles/ScenarioEditorPage";
 import type { ScenarioMetadataFieldsProps } from "../types/ScenarioEditorPage";
@@ -37,9 +40,11 @@ export function ScenarioMetadataFields({
             })
           }
         >
-          <MenuItem value="basic">Базовый</MenuItem>
-          <MenuItem value="intermediate">Средний</MenuItem>
-          <MenuItem value="advanced">Сложный</MenuItem>
+          {Object.entries(scenarioDifficultyLabels).map(([value, label]) => (
+            <MenuItem key={value} value={value}>
+              {label}
+            </MenuItem>
+          ))}
         </TextField>
         <TextField
           name="duration_minutes"

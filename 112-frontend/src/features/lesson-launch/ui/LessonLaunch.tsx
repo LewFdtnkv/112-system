@@ -1,6 +1,11 @@
 import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
 import { ValidatedForm, ValidationField } from "@/shared/ui/form-validation";
-import { scenarioApi, userApi, userName } from "@/entities/training";
+import {
+  scenarioApi,
+  scenarioDifficultyLabel,
+  userApi,
+  userName,
+} from "@/entities/training";
 import { getApiError } from "@/shared/api";
 import { randomUUID } from "@/shared/lib/uuid";
 import { DateTimeField } from "@/shared/ui/DateTimeField";
@@ -22,6 +27,7 @@ import { LearningSummary } from "@/entities/training";
 export function LessonLaunch() {
   const {
     scenarioRole,
+    difficultyLabel,
     group,
     setGroup,
     targets,
@@ -142,11 +148,17 @@ export function LessonLaunch() {
             await scenarioApi.list({ q, status: "published" }, signal)
           ).items.map((item) => ({
             id: item.id,
-            metadata: { role: item.role },
-            label: `${item.title} · версия ${item.version}${item.role === "dds" ? " · ДДС" : ""}`,
+            metadata: { role: item.role, difficulty: item.difficulty },
+            label: `${item.title} · версия ${item.version}${item.role === "dds" ? " · ДДС" : ""} · сложность: ${scenarioDifficultyLabel(item.difficulty)}`,
           }))
         }
       />
+      {scenario && (
+        <Chip
+          label={`Уровень сложности: ${difficultyLabel}`}
+          sx={styles.difficulty}
+        />
+      )}
       <TextField
         name="title"
         label="Название задания (необязательно)"
@@ -205,6 +217,10 @@ export function LessonLaunch() {
         <DialogContent>
           <Stack spacing={2}>
             <LearningSummary policy={learning} />
+            <Chip
+              label={`Уровень сложности: ${difficultyLabel}`}
+              sx={styles.difficulty}
+            />
             <p>
               {scenario?.label} →{" "}
               {targets.length
