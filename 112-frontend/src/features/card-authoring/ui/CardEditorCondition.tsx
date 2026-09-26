@@ -6,17 +6,17 @@ export function CardEditorCondition({
   initial,
 }: Pick<CardEditorPanelProps, "editor" | "initial">) {
   return (
-    <aside className="template-condition">
-      <h3>Условие для ученика</h3>
+    <>
       <CardEditorTextFields
         editor={editor}
         initial={initial}
-        fields={["title", "caller_message", "instructions"]}
+        fields={["caller_message"]}
       />
       <p className="template-explanation">
-        Укажите здесь все факты, необходимые для решения. Ученик не видит
-        эталонное решение.
+        Укажите факты, по которым оператор 112 сможет заполнить общие поля.
+        Эталонное решение ему не показывается. Если карточка нужна только для
+        ДДС, сообщение заявителя можно оставить пустым.
       </p>
-    </aside>
+    </>
   );
 }

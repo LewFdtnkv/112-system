@@ -1,11 +1,9 @@
 import {
-  CardDataFields,
   cardGenerationQueryOptions,
   cardListQueryOptions,
   cardQueryOptions,
-  type FeatureDefinition,
 } from "@/entities/training";
-import { CardEditor } from "@/features/card-authoring";
+import { CardDetails, CardEditor } from "@/features/card-authoring";
 import {
   CardGenerationDialog,
   GenerationExample,
@@ -173,64 +171,10 @@ export const CardsPage = () => {
               </Alert>
             )}
             {detail.data && (!editing || !detail.data.can_edit) && (
-              <div className="template-detail">
-                <aside className="template-condition">
-                  <h3>Условие для ученика</h3>
-                  <p className="template-message">
-                    {detail.data.caller_message}
-                  </p>
-                  <h4>Инструкция</h4>
-                  <p>
-                    {detail.data.instructions || "Дополнительных указаний нет"}
-                  </p>
-                  <small>Эти сведения доступны ученику во время задания.</small>
-                </aside>
-                <section
-                  className="template-solution"
-                  aria-label="Эталонное решение"
-                >
-                  <div className="template-solution-heading">
-                    <h3>Эталонное решение</h3>
-                    <Button onClick={() => setPreview(detail.data!)}>
-                      Открыть в АРМ
-                    </Button>
-                  </div>
-                  <p className="template-explanation">
-                    Образец для сравнения. Другая формулировка может быть
-                    корректной; смысловые поля проверяются отдельно.
-                  </p>
-                  <div className="template-routing">
-                    <b>Тип происшествия</b>
-                    <p>
-                      {detail.data.classifier_entry?.display_name ||
-                        detail.data.classifier_entry?.name ||
-                        "Тип не установлен"}
-                    </p>
-                    <b>Службы</b>
-                    <ul>
-                      {detail.data.recipients?.length ? (
-                        detail.data.recipients.map((service) => (
-                          <li key={service.service_id}>
-                            {service.short_name && (
-                              <strong>{service.short_name} · </strong>
-                            )}
-                            {service.name}
-                          </li>
-                        ))
-                      ) : (
-                        <li>Без оповещения служб</li>
-                      )}
-                    </ul>
-                  </div>
-                  <CardDataFields
-                    data={detail.data.data}
-                    features={
-                      detail.data.classifier_entry?.conditions.features as
-                        FeatureDefinition[] | undefined
-                    }
-                  />
-                </section>
-              </div>
+              <CardDetails
+                card={detail.data}
+                onPreview={() => setPreview(detail.data!)}
+              />
             )}
           </QueryState>
           {(!editing || !detail.data?.can_edit) && detail.data && (

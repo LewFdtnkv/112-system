@@ -187,6 +187,7 @@ for (const width of [1440, 390]) {
 test("teacher edits card-local history and a separate incoming report", async ({
   page,
 }) => {
+  test.setTimeout(60000);
   const exercise = {
     service_profile_id: "profile",
     crew_calls_required: false,
@@ -250,6 +251,12 @@ test("teacher edits card-local history and a separate incoming report", async ({
     }
     if (path === "services")
       return r.fulfill({ json: [{ id: "service", name: "Служба 101" }] });
+    if (path === "classifiers")
+      return r.fulfill({
+        json: [{ id: "version", label: "Учебный ЕКП", status: "published" }],
+      });
+    if (path === "classifiers/version/entries")
+      return r.fulfill({ json: [card.classifier_entry] });
     if (path === "service-profiles/profile")
       return r.fulfill({ json: profile });
     if (path === "service-profiles") return r.fulfill({ json: [profile] });
@@ -264,11 +271,57 @@ test("teacher edits card-local history and a separate incoming report", async ({
   await page.setViewportSize({ width: 1440, height: 1000 });
   await login(page, "teacher");
   await page.goto("/cards");
+  await page.getByRole("button", { name: card.title, exact: true }).click();
+  const jump = (name: string) =>
+    page
+      .getByRole("navigation", { name: "Разделы карточки" })
+      .getByRole("button", { name, exact: true })
+      .click();
+  const shot = (name: string) =>
+    page.screenshot({
+      path: `docs/screenshots/card-roles/${name}.png`,
+      animations: "disabled",
+    });
+  await expect(
+    page.getByRole("region", { name: "Общие данные карточки", exact: true }),
+  ).toContainText("уже заполненная входящая карточка");
+  await shot("view-common");
+  await jump("Оператор 112 — условие");
+  const condition = page.getByRole("region", {
+    name: "Оператор 112 — условие",
+    exact: true,
+  });
+  await expect(condition).toContainText("Дым из окна");
+  await expect(condition).not.toContainText("Расчёт прибыл");
+  await jump("Оператор ДДС — работа бригад");
+  const ddsSection = page.getByRole("region", {
+    name: "Оператор ДДС — работа бригад",
+    exact: true,
+  });
+  await expect(ddsSection).toContainText("Пожарный расчёт № 1");
+  await expect(ddsSection).toContainText("Подготовлено предыдущей сменой");
+  await expect(ddsSection).toContainText("Расчёт прибыл по адресу.");
+  await expect(ddsSection).toContainText("Учебная цель: Прибытие");
+  await shot("view-dds");
+  await page.setViewportSize({ width: 390, height: 1000 });
+  await jump("Оператор ДДС — работа бригад");
+  await shot("view-mobile");
+  expect(
+    await ddsSection.evaluate(
+      (node) => node.scrollWidth <= node.clientWidth + 1,
+    ),
+  ).toBe(true);
+  await page.setViewportSize({ width: 1440, height: 1000 });
   await page
-    .getByRole("button", {
-      name: /Редактировать карточку «ДДС: передача смены»/,
-    })
+    .getByRole("button", { name: "Редактировать карточку", exact: true })
     .click();
+  await shot("edit-common");
+  await jump("Оператор 112 — условие");
+  await expect(condition.getByLabel("Сообщение заявителя")).toHaveValue(
+    "Дым из окна",
+  );
+  await shot("edit-112");
+  await jump("Оператор ДДС — работа бригад");
   await expect(page.getByLabel("Новое сообщение для ученика")).toHaveValue(
     "Расчёт прибыл по адресу.\n\nТребуется зафиксировать прибытие.",
   );
@@ -302,4 +355,21 @@ test("teacher edits card-local history and a separate incoming report", async ({
     "Бригада сообщает о прибытии на место.",
   );
   expect(saved?.messages).toHaveLength(1);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page
+    .getByRole("button", { name: "Создать карточку", exact: true })
+    .click();
+  await shot("create-common");
+  await jump("Оператор 112 — условие");
+  const caller = page.getByLabel("Сообщение заявителя");
+  await expect(caller).toHaveAttribute("required", "");
+  await jump("Оператор ДДС — работа бригад");
+  await page.getByLabel("Подготовить карточку для оператора ДДС").check();
+  await expect(caller).not.toHaveAttribute("required", "");
+  await page.setViewportSize({ width: 390, height: 1000 });
+  await jump("Оператор 112 — условие");
+  await shot("create-mobile");
+  await expect(
+    page.getByRole("region", { name: "Оператор 112 — условие", exact: true }),
+  ).toContainText("только для ДДС");
 });

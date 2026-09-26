@@ -279,7 +279,7 @@ test("card library columns, unused card editing and stale-write protection", asy
     editor.getByRole("textbox", { name: "Название карточки", exact: true }),
   ).toHaveValue("Изменено в другом окне");
   await expect(
-    editor.getByLabel("Сообщение заявителя для ученика"),
+    editor.getByLabel("Сообщение заявителя"),
   ).toHaveValue("");
   await editor
     .getByRole("button", { name: "Сохранить изменения", exact: true })

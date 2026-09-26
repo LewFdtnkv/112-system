@@ -165,7 +165,7 @@ test("scenario submit explains missing title and cards", async ({
   });
 });
 
-test("teacher card form retains its two columns and explains required values", async ({
+test("teacher card form separates roles and explains required values", async ({
   page,
 }, info) => {
   await page.setViewportSize({ width: 1600, height: 1100 });
@@ -194,9 +194,17 @@ test("teacher card form retains its two columns and explains required values", a
   await expect(dialog.locator(".form-validation-summary")).toContainText(
     "Опубликованная версия ЕКП",
   );
-  const condition = await dialog.locator(".template-condition").boundingBox();
-  const solution = await dialog.locator(".template-solution").boundingBox();
-  expect(condition!.y).toBeCloseTo(solution!.y, 0);
+  await expect(
+    dialog.getByRole("navigation", { name: "Разделы карточки" }),
+  ).toBeVisible();
+  await expect(
+    dialog.getByRole("region", { name: "Оператор 112 — условие", exact: true }),
+  ).toContainText("Оператору ДДС это условие не показывается");
+  await expect(
+    dialog
+      .getByRole("region", { name: "Общие данные карточки", exact: true })
+      .getByLabel("Название карточки"),
+  ).toBeFocused();
   await page.screenshot({
     path: info.outputPath("teacher-card-required.png"),
     animations: "disabled",

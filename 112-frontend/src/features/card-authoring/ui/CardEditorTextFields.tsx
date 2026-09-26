@@ -29,7 +29,7 @@ export function CardEditorTextFields({
         disabled={silent && ["caller_name", "address_text"].includes(key)}
         required={
           !(key === "address_text" && (!notificationRequired || silent)) &&
-          !(key === "caller_message" && initial) &&
+          !(key === "caller_message" && (initial || editor.ddsExercise)) &&
           ["title", "caller_message", "address_text", "description"].includes(
             key,
           )

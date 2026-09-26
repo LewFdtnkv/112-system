@@ -8,18 +8,13 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
+import { useDDSProfile } from "../model/useDDSProfile";
 import type { CardDDSSettingsProps } from "../types/CardDDSSettings";
 import { ddsEditorStyles } from "../styles/CardDDSSettings";
 import { DDSCrewExerciseFields } from "./DDSCrewExerciseFields";
 
 export function CardDDSSettings({ value, onChange }: CardDDSSettingsProps) {
-  const profile = useQuery({
-    queryKey: ["profile", value?.service_profile_id],
-    enabled: !!value?.service_profile_id,
-    queryFn: ({ signal }) =>
-      serviceProfileApi.get(value!.service_profile_id, signal),
-  });
+  const profile = useDDSProfile(value?.service_profile_id);
   return (
     <Stack spacing={2} sx={ddsEditorStyles.section}>
       <FormControlLabel

@@ -198,8 +198,8 @@ export function useCardEditor({ onClose, initial }: CardEditorProps) {
   });
   const labels = {
     title: "Название карточки",
-    caller_message: "Сообщение заявителя для ученика",
-    instructions: "Инструкция ученику",
+    caller_message: "Сообщение заявителя",
+    instructions: "Общая инструкция ученику",
     address_text: "Адрес целиком",
     description: "Сообщение в карточке",
     caller_name: "ФИО заявителя",

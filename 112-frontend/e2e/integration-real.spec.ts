@@ -180,7 +180,7 @@ test("real API: authoring, operator drafts, revision conflict, notification and 
     .click();
   await page.getByLabel("Название карточки").fill(`Пожар ${suffix}`);
   await page
-    .getByLabel("Сообщение заявителя для ученика")
+    .getByLabel("Сообщение заявителя")
     .fill("На Учебной улице, дом 7, дым из окна. Сообщает Иван Петров.");
   await page.getByLabel("Адрес целиком").fill("Учебная улица, д. 7");
   await page.getByLabel("Улица", { exact: true }).fill("Учебная улица");
@@ -205,7 +205,10 @@ test("real API: authoring, operator drafts, revision conflict, notification and 
     .getByRole("button", { name: `Пожар ${suffix}`, exact: true })
     .click();
   await expect(
-    page.getByRole("heading", { name: "Эталонное решение", exact: true }),
+    page.getByRole("heading", {
+      name: "Эталонное решение 112 / входящая карточка ДДС",
+      exact: true,
+    }),
   ).toBeVisible();
   await expect(page.getByRole("dialog").locator("dl")).toContainText(
     "Сведения об адресе / Улица",

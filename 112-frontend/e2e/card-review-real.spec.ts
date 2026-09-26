@@ -340,9 +340,9 @@ test("compare four card review layouts and inspect immutable ARM answers", async
     .getByRole("textbox", { name: "Название карточки", exact: true })
     .fill("Учебный пожар");
   await page
-    .getByLabel("Сообщение заявителя для ученика")
+    .getByLabel("Сообщение заявителя")
     .fill(card.caller_message);
-  await page.getByLabel("Инструкция ученику").fill(card.instructions);
+  await page.getByLabel("Общая инструкция ученику").fill(card.instructions);
   await page
     .getByLabel("ФИО заявителя", { exact: true })
     .fill(expected.caller_name);
