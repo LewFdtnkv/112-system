@@ -224,6 +224,7 @@
   grid-template-columns: minmax(0, 45.3fr) minmax(0, 54.7fr);
   flex: 1;
   min-height: 0;
+  overflow: auto;
   gap: 8px;
   padding: 0 8px 8px;
 }
