@@ -55,6 +55,7 @@ class CardSubmit(BaseModel):
 class StudentCardRead(BaseModel):
     recipient_service_ids: list[UUID] | None = None
     id: UUID
+    display_number: int
     revision: int
     status: CardStatus
     classifier_version_id: UUID
@@ -94,6 +95,7 @@ class StudentAttemptRead(BaseModel):
 
 class JournalCardRead(BaseModel):
     id: UUID
+    display_number: int
     started_at: datetime
     status: CardStatus
     address_text: str | None

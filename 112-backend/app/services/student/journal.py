@@ -98,6 +98,7 @@ async def lesson_work(session: AsyncSession, lesson: Lesson, student_id: UUID) -
                 attempt_id=attempt.id if attempt else None,
                 card=JournalCardRead(
                     id=card.id,
+                    display_number=card.display_number,
                     started_at=attempt.started_at,
                     status=card.status,
                     address_text=card.address_text,

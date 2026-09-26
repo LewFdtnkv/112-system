@@ -536,7 +536,7 @@ PK — первичный ключ; `NULL` — допустимое отсутс
 | `origin` | `VARCHAR(8)` | нет | — | `—` |
 | `source_card_id` | `UUID` | да | — | `—` |
 | `created_by_id` | `UUID` | да | — | `—` |
-| `display_number` | `VARCHAR(50)` | да | — | `—` |
+| `display_number` | `INTEGER` | нет | UNIQUE | GENERATED ALWAYS AS IDENTITY; номер происшествия для интерфейса |
 | `status` | `VARCHAR(10)` | нет | — | `—` |
 | `classifier_version_id` | `UUID` | нет | — | `—` |
 | `classifier_entry_id` | `UUID` | да | — | `—` |

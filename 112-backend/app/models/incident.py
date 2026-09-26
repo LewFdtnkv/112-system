@@ -7,6 +7,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     ForeignKeyConstraint,
+    Identity,
     Integer,
     String,
     Text,
@@ -53,7 +54,7 @@ class IncidentCard(UUIDPrimaryKey, CreatedAt, Base):
         ForeignKey("incident_cards.id", ondelete="RESTRICT"), index=True
     )
     created_by_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
-    display_number: Mapped[str | None] = mapped_column(String(50))
+    display_number: Mapped[int] = mapped_column(Integer, Identity(always=True), unique=True)
     status: Mapped[CardStatus] = mapped_column(
         enum_column(CardStatus, "card_status"), default=CardStatus.DRAFT
     )

@@ -91,6 +91,7 @@ async def attempt_read(
         time_limit_seconds=attempt.settings_snapshot.get("time_limit_seconds"),
         card=StudentCardRead(
             id=card.id,
+            display_number=card.display_number,
             revision=card.revision,
             status=card.status,
             classifier_version_id=card.classifier_version_id,
