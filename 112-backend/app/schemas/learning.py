@@ -66,6 +66,7 @@ class HintRequest(BaseModel):
     trigger: Literal["request", "automatic", "guided"] = "request"
     level: Literal["goal", "explanation", "solution"] = "goal"
     confirm_hint_id: UUID | None = None
+    check_task: str | None = Field(default=None, max_length=200)
 
 
 class LearningHint(BaseModel):
@@ -77,6 +78,7 @@ class LearningHint(BaseModel):
     presentation: Literal["text", "highlight"] = "text"
     advance: Literal["action", "confirm"] = "action"
     continue_allowed: bool = False
+    correction: str | None = None
 
 
 class HintRead(BaseModel):

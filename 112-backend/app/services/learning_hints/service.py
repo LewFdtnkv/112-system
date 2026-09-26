@@ -7,7 +7,7 @@ from app.models import Assignment, Attempt, AttemptEvent, ScenarioCard
 from app.schemas.learning import HintRead, LearningHint
 from app.services.audit import append_event
 from app.services.dds_delivery import execution_for
-from app.services.interface_guide import guide_text, next_step
+from app.services.interface_guide import GUIDE_VERSION, guide_correction, guide_text, next_step
 from app.services.learning_hints.dds import dds_task
 from app.services.learning_hints.operator import operator_task
 from app.services.learning_hints.policy import AUTO_HINT_DELAY_SECONDS, LEVELS
@@ -40,6 +40,8 @@ async def issue_hint(session, attempt_id, student_id, command):
         raise HTTPException(422, "Guided steps require an introduction lesson and solution level")
     if command.confirm_hint_id and command.trigger != "guided":
         raise HTTPException(422, "Подтверждение шага доступно только в сопровождении.")
+    if command.check_task and command.trigger != "guided":
+        raise HTTPException(422, "Проверка ответа доступна только в сопровождении.")
     request = command.model_dump(mode="json", exclude={"request_id"}, exclude_none=True)
     existing = await session.scalar(
         select(AttemptEvent).where(
@@ -141,7 +143,12 @@ async def issue_hint(session, attempt_id, student_id, command):
             AttemptEvent.payload["level"].astext == command.level,
             AttemptEvent.payload["revision"].as_integer() == revision,
             *(
-                [AttemptEvent.payload["guide_version"].as_integer() == 2]
+                [
+                    AttemptEvent.payload["guide_version"].as_integer() == GUIDE_VERSION,
+                    AttemptEvent.payload["request"]["check_task"].astext.is_not_distinct_from(
+                        command.check_task
+                    ),
+                ]
                 if read.learning.kind == "introduction"
                 else []
             ),
@@ -157,7 +164,7 @@ async def issue_hint(session, attempt_id, student_id, command):
             else HintRead.model_validate(previous.payload["response"])
         )
     if read.learning.kind == "introduction":
-        solution = guide_text(task, target, goal, explanation, solution)
+        solution = guide_text(task, target, explanation)
     hint = LearningHint(
         id=str(command.request_id),
         task=task,
@@ -169,6 +176,11 @@ async def issue_hint(session, attempt_id, student_id, command):
         presentation="text" if command.level == "goal" else "highlight",
         advance=advance,
         continue_allowed=continue_allowed,
+        correction=guide_correction(
+            None if read.dds else source_data, read, step, command.check_task
+        )
+        if read.learning.kind == "introduction"
+        else None,
     )
     result = HintRead(status="ready", revision=revision, hint=hint)
     await append_event(
@@ -182,7 +194,7 @@ async def issue_hint(session, attempt_id, student_id, command):
             "level": command.level,
             "revision": revision,
             "trigger": command.trigger,
-            "guide_version": 2 if read.learning.kind == "introduction" else None,
+            "guide_version": GUIDE_VERSION if read.learning.kind == "introduction" else None,
         },
         command_id=command.request_id,
     )

@@ -23,17 +23,43 @@ INSTRUCTIONS = {
 }
 
 
-def guide_text(task, target, goal, explanation, solution):
+GUIDE_VERSION = 3
+
+
+def guide_text(task, target, explanation):
     if task in {"guide.source", "guide.services", "guide.address"} or task.endswith(".finished"):
         return explanation
-    instruction = INSTRUCTIONS.get(target, explanation)
     if task.startswith("features."):
-        instruction = "Выберите ответ в подсвеченном вопросе. Повторный клик снимает выбор."
-    if target == "submit":
+        return "Выберите ответ в подсвеченном вопросе. Повторный клик снимает выбор."
+    if target in {"submit", "telephone", "dds_crews", "dds_response"}:
         return explanation
-    return f"{instruction}\n\n{solution}".replace(" (ЕКП)", "").replace(
-        "Для этой ситуации эталонный список:", "По условию задачи нужны службы:"
-    )
+    return INSTRUCTIONS.get(target, explanation)
+
+
+def guide_correction(source, read, step, checked_task):
+    """Reveal a reference only for an explicitly checked, nonempty exact mismatch."""
+    task = step[0]
+    if task != checked_task or read.dds:
+        return None
+    if task == "recipients" and read.recipient_services:
+        return "Попробуйте исправить список. " + step[4].replace(
+            "Для этой ситуации эталонный список:", "По условию задачи нужны службы:"
+        )
+    fields = check_fields(source, read).fields
+    wrong = [
+        f
+        for f in fields
+        if (f.field == task or task == "guide.address" and f.field.startswith("address_details."))
+        and f.scored
+        and f.status == "different"
+        and not is_free_text(source, f)
+    ]
+    if not wrong:
+        return None
+    if task == "classifier_entry_id":
+        return "Попробуйте другой ответ. " + step[4]
+    answers = "; ".join(f"{f.label} — {f.expected}" for f in wrong)
+    return f"Попробуйте исправить ответ. По условию задачи: {answers}."
 
 
 def choose_step(source, read, goals, confirmed):
@@ -72,11 +98,11 @@ def choose_step(source, read, goals, confirmed):
             for f in check_fields(source, read).fields
             if f.field.startswith("address_details.") and f.scored
         ]
-        answers = "; ".join(f"{f.label} — {f.expected}" for f in fields)
+        labels = ", ".join(f.label.lower() for f in fields)
         text = (
             "Заполните адрес по условию задачи в отдельных полях. "
             "Неизвестные сведения оставьте пустыми. Описательный адрес здесь не нужен.\n\n"
-            f"{answers}."
+            f"Заполните поля: {labels}."
         )
         return (("guide.address", "address", "", text, ""), "action", False, None)
     if not read.dds and target in {"notification", "submit"} and "guide.services" not in confirmed:
@@ -129,7 +155,7 @@ async def next_step(session, attempt, read, source, goals, confirm_hint_id):
                 AttemptEvent.command_id == confirm_hint_id,
             )
         )
-        if not issued or issued.payload.get("guide_version") != 2:
+        if not issued or issued.payload.get("guide_version") != GUIDE_VERSION:
             raise HTTPException(422, "Этот шаг не был показан в текущей карточке.")
         if issued.payload["task"] != step[0] or advance != "confirm":
             # Network retries with a new request ID must not confirm the NEXT step.

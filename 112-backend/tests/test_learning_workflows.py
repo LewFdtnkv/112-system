@@ -361,7 +361,8 @@ async def test_interface_guide_follows_saved_work_and_records_help(exercise, db_
     first = await hint(source["hint"]["id"])
     assert first["hint"]["task"] == "classifier_entry_id"
     assert "два символа" in first["hint"]["text"]
-    assert "По условию задачи правильный ответ" in first["hint"]["text"]
+    assert "правильный ответ" not in first["hint"]["text"]
+    assert first["hint"]["correction"] is None
     # An action step cannot be skipped with a forged Continue command.
     await hint(first["hint"]["id"], status=409)
     await e.request(
@@ -435,7 +436,7 @@ async def test_interface_guide_follows_saved_work_and_records_help(exercise, db_
 
 async def test_guide_exact_address_waits_for_full_match(exercise):
     from app.schemas.student import StudentAttemptRead
-    from app.services.interface_guide import choose_step
+    from app.services.interface_guide import choose_step, guide_correction
 
     e = exercise
     a = await e.fill(await launch(e, "introduction"))
@@ -457,15 +458,25 @@ async def test_guide_exact_address_waits_for_full_match(exercise):
 
     current, advance, allowed, _ = step()
     assert current[:2] == ("guide.address", "address")
-    assert "Улица — Лесная улица" in current[3]
-    assert "Дом — 12" in current[3]
-    assert "Квартира — 5" in current[3]
+    assert "Лесная улица" not in current[3]
+    assert "улица, дом, квартира" in current[3]
+    read = StudentAttemptRead.model_validate(a)
+    assert guide_correction(source, read, current, None) is None
+    assert guide_correction(source, read, current, "classifier_entry_id") is None
+    correction = guide_correction(source, read, current, "guide.address")
+    assert "Улица — Лесная улица" in correction
+    assert "Дом — 12" in correction
+    assert "Квартира" not in correction  # Untouched empty fields are not mistakes.
     assert "Описательный адрес здесь не нужен" in current[3]
     assert advance == "action" and not allowed
     address["street"] = "Лесная улица"
     assert step()[0][0] == "guide.address"
     address["house"] = "12"
     assert step()[0][0] == "guide.address"
+    assert (
+        guide_correction(source, StudentAttemptRead.model_validate(a), step()[0], "guide.address")
+        is None
+    )
     address["apartment"] = "5"
     assert step()[0][0] == "guide.services"
     address["house"] = "1"
@@ -478,3 +489,60 @@ async def test_guide_exact_address_waits_for_full_match(exercise):
     current, advance, allowed, _ = step()
     assert current[0] == "address_details.description"
     assert advance == "confirm" and allowed
+
+
+async def test_guide_correction_requires_checked_nonempty_wrong_answer(exercise):
+    e = exercise
+    e.t.card_payload["data"]["address_details"] = {"street": "Лесная улица", "house": "12"}
+    e.d = await e.t.prepare()
+    a = await launch(e, "introduction")
+    path = f"student/attempts/{a['id']}"
+
+    async def hint(**kwargs):
+        return await e.request(
+            "POST",
+            path + "/hints",
+            {"request_id": str(uuid4()), "trigger": "guided", "level": "solution", **kwargs},
+        )
+
+    first = await hint()
+    choice = await hint(confirm_hint_id=first["hint"]["id"])
+    assert choice["hint"]["correction"] is None
+    assert (await hint(check_task="classifier_entry_id"))["hint"]["correction"] is None
+    a = await e.fill(a)
+    empty = await hint(check_task="guide.address")
+    assert empty["hint"]["task"] == "guide.address"
+    assert empty["hint"]["correction"] is None
+    a = await e.request(
+        "PUT",
+        path + "/card",
+        {
+            "revision": a["card"]["revision"],
+            "classifier_entry_id": str(e.t.entry.id),
+            "data": {"address_details": {"street": "Неверная улица"}},
+        },
+    )
+    assert (await hint())["hint"]["correction"] is None
+    checked = await hint(check_task="guide.address")
+    assert "Улица — Лесная улица" in checked["hint"]["correction"]
+    assert "Дом" not in checked["hint"]["correction"]
+    assert "Лесная" not in checked["hint"]["text"]
+    assert (await hint())["hint"]["correction"] is None  # Separate cache entries.
+    assert (await hint(check_task="description"))["hint"]["correction"] is None
+    a = await e.request(
+        "PUT",
+        path + "/card",
+        {
+            "revision": a["card"]["revision"],
+            "classifier_entry_id": str(e.t.entry.id),
+            "data": {
+                "address_details": {"street": "Лесная улица", "house": "12"},
+                "description": "Своими словами",
+            },
+        },
+    )
+    next_hint = await hint(check_task="guide.address")
+    assert next_hint["hint"]["task"] == "description"
+    assert next_hint["hint"]["advance"] == "confirm"
+    assert next_hint["hint"]["correction"] is None
+    assert "HIDDEN_TEACHER_ANSWER" not in str(next_hint)
