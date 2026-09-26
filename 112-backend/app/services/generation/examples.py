@@ -59,6 +59,7 @@ def builtins(data):
 
 def anonymize(card):
     message = card.caller_message.split("\n\nСведения, доступные оператору:", 1)[0]
+    message = message.split("\n\nВ ходе уточнения выяснено:", 1)[0]
     for key, marker in (
         ("address_text", "[АДРЕС]"),
         ("caller_name", "[ИМЯ]"),

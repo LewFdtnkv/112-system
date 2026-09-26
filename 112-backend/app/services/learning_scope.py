@@ -40,6 +40,8 @@ def skills_for(policy, role="operator_112"):
 
 
 def field_skill(path):
+    if path.removeprefix("additional_fields.details.") in DETAIL_KEYS["caller"]:
+        return "caller"
     if (
         path == "classifier_entry_id"
         or path.startswith("features.")

@@ -26,7 +26,7 @@ def test_identifiers_are_slots_and_operator_observations_do_not_become_speech():
     data = sample("fire-rubbish")
     prompt = generation_prompt(data)
     assert "Анна Иванова" not in prompt and "Лесная" not in prompt
-    assert data["card"]["data"]["caller_phone"] not in prompt
+    assert data["card"]["data"]["caller_details"]["callerId"] not in prompt
     assert "[ИМЯ]" in prompt and "[АДРЕС]" in prompt
     with pytest.raises(ValueError):
         validate_message(data, "На улице горит мусор. [АДРЕС]. Меня зовут другая женщина.")
@@ -109,7 +109,7 @@ def test_sms_gender_is_not_a_separate_utterance():
     )
     text = fallback(data)
     assert "Я женщина" not in text.caller_message
-    assert "Заявитель: женщина" in text.caller_message
+    assert "Заявитель: женщина" not in text.caller_message
     assert "Заявитель: женщина" not in generation_prompt(data)
 
 

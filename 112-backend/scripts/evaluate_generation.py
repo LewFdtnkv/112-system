@@ -71,7 +71,6 @@ def sample(template_id, *, seed=20260923, parameters=None, facts_override=None):
                 "Пол": gender,
                 "Возраст": age,
                 "Состояние заявителя": "Взволнован",
-                "Время суток": "Вечер",
                 "Тип происшествия": row["name"],
                 "Объект": plan["object"],
                 "Признаки": plan["answers"],
@@ -84,7 +83,8 @@ def sample(template_id, *, seed=20260923, parameters=None, facts_override=None):
                 "seed": seed,
                 "card": {
                     "data": {
-                        "caller_phone": phone,
+                        "caller_phone": None,
+                        "caller_details": {"callerId": phone or "", "provided": ""},
                         "address_details": address,
                     }
                 },

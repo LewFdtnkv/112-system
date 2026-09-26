@@ -43,12 +43,19 @@ async def create_attempt(session, assignment, scenario, student_id, now):
         await initialize(session, attempt, scenario, source, now)
     else:
         initial = {}
+        source = await session.get(ScenarioCard, assignment.scenario_card_id)
         policy = attempt.settings_snapshot["learning"]
         if attempt.settings_snapshot.get("learning_engine") and focused(policy):
-            source = await session.get(ScenarioCard, assignment.scenario_card_id)
             initial = prepared_card(source.snapshot, policy)
             attempt.settings_snapshot = attempt.settings_snapshot | {
                 "exercise_scope": sorted(skills_for(policy))
+            }
+        # AON is incoming call metadata, not a field the learner must infer or copy.
+        caller_id = (source.snapshot.get("data", {}).get("caller_details") or {}).get("callerId")
+        if caller_id:
+            initial["caller_details"] = {
+                **(initial.get("caller_details") or {}),
+                "callerId": caller_id,
             }
         session.add(
             IncidentCard(

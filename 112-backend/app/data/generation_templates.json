@@ -1,5 +1,5 @@
 {
-  "version": "situations-v2",
+  "version": "situations-v3",
   "templates": [
     {
       "id": "fire-rubbish",
@@ -852,6 +852,32 @@
       "blocked": false,
       "service_call": true,
       "victims_limit": 3
+    },
+    {
+      "id": "medical-self-fall",
+      "types": [
+        "103"
+      ],
+      "title": "Падение заявителя",
+      "objects": [
+        "двор",
+        "парк",
+        "жилой дом"
+      ],
+      "answers": {
+        "reason": "Травма",
+        "conscious": true,
+        "breathing": true
+      },
+      "phrases": [
+        "Я упал и не могу подняться, мне больно. Помогите, пожалуйста.",
+        "Помогите мне, пожалуйста, я упал. Больно, самому подняться не получается."
+      ],
+      "has_victims": true,
+      "blocked": false,
+      "service_call": false,
+      "victims_limit": 1,
+      "caller_is_victim": true
     }
   ]
 }

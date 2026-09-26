@@ -17,6 +17,7 @@ class Situation(BaseModel):
     blocked: bool | None
     victims_limit: int
     service_call: bool
+    caller_is_victim: bool = False
 
 
 @lru_cache

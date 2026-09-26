@@ -10,10 +10,10 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.schemas.generation import GeneratedText
 from app.services.generation.guards import reject_meta_speech, reject_unreported_negatives
-from app.services.generation.narration import fallback
+from app.services.generation.narration import CLARIFICATIONS, fallback
 
-VERSION = "grounded-prose-v1"
-OBSERVATIONS = "\n\nСведения, доступные оператору:\n"
+VERSION = "grounded-prose-v2"
+OBSERVATIONS = CLARIFICATIONS
 STYLES = (
     "Сначала скажи, что случилось. Говори короткими фразами.",
     "Сначала назови место, затем расскажи, что происходит.",
@@ -54,7 +54,7 @@ def source(data):
         if s
         not in (
             "Здравствуйте.",
-            "Добрый день.",
+            "Алло.",
             "Здравствуйте, нужна помощь.",
             "Помогите, пожалуйста.",
         )
@@ -72,6 +72,11 @@ def generation_prompt(data, examples=(), feedback=None):
         "Не копируй исходник предложение за предложением; объединяй связанные наблюдения. "
         "Сохрани ВСЕ исходные факты, включая отрицательные, но перефразируй свободно. "
         "Не добавляй новых действий, причин, травм, опасностей, времени ожидания и обстоятельств. "
+        "Не называй время суток, не пиши утро/день/вечер/ночь даже в приветствии. "
+        "Уточнения уже будут добавлены отдельным абзацем: не включай их в речь заявителя. "
+        "Можно выражать факты косвенно, если смысл однозначен: «я упал, не могу встать, "
+        "помогите» означает травму одного заявителя и необходимость помощи. "
+        "Не дублируй это анкетой «один пострадавший, нужна медицинская помощь». "
         "Не путай заявителя с пострадавшим. Отсутствие отказа НЕ означает согласие человека "
         "без сознания. Перекрытый подъезд НЕ означает, что человек зажат. "
         "Нельзя произносить «я женщина»/«я мужчина», давать ответы ученику, названия полей, "
@@ -92,7 +97,7 @@ def generation_prompt(data, examples=(), feedback=None):
                 "подача": STYLES[data["seed"] % len(STYLES)],
                 "состояние": data["facts"].get("Состояние заявителя"),
                 "подробность": data["facts"].get("Подробность сообщения"),
-                "пол_заявителя": data["facts"].get("Пол"),
+                "пол_для_согласования_речи": data["narrative"].get("speaker_gender"),
                 "допустимый_контекст": context(data),
                 "факты": facts,
                 "маркеры": list(slots),
@@ -110,7 +115,10 @@ def review_prompt(data, message):
         "Ты независимый проверяющий учебного сообщения. Сравни текст с исходными фактами. "
         "Верни JSON covered, unsupported, contradictions. Для КАЖДОГО факта проверь его "
         "сохранность. В covered перечисли индексы (с 0) только полностью сохранённых фактов. "
-        "Перефразирование допустимо, но не догадки. Если факт пропущен, его индекс не включай. "
+        "Допустимы перефразирование и однозначное следствие слов: «я упал, не могу встать, "
+        "помогите» подтверждает травму заявителя и потребность в помощи. Это не означает "
+        "перелом или отсутствие других пострадавших. Неясные догадки не засчитывай. "
+        "Если факт пропущен, его индекс не включай. "
         "unsupported — конкретные новые обстоятельства, которых нет в фактах; "
         "contradictions — противоречия фактам или внутри сообщения. "
         "Приветствия, просьба помочь, разговорные связки и эмоциональные междометия не являются "
@@ -132,9 +140,7 @@ def review_prompt(data, message):
 
 
 def context(data):
-    return {
-        key: data["facts"].get(key) for key in ("Объект", "Время суток") if data["facts"].get(key)
-    }
+    return {key: data["facts"].get(key) for key in ("Объект",) if data["facts"].get(key)}
 
 
 def validate_message(data, message):
@@ -142,6 +148,17 @@ def validate_message(data, message):
     Narration(message=message)
     reject_unreported_negatives(data, message)
     reject_meta_speech(message)
+    if re.search(
+        r"\b(?:утром|днём|днем|вечером|ночью|сегодня\s+(?:утро|день|вечер|ночь)"
+        r"|доброе\s+утро|добрый\s+(?:день|вечер))\b|время суток",
+        message,
+        re.I,
+    ):
+        raise ValueError("Не добавляйте время суток в сообщение")
+    if re.search(
+        r"в ходе уточнения|при уточнении|заявитель отвечает|заявитель сообщает", message, re.I
+    ):
+        raise ValueError("Уточнения должны оставаться отдельным абзацем")
     found = re.findall(r"\[[^\]\n]+\]", message)
     if Counter(found) != Counter(slots.keys()):
         raise ValueError("Не сохранены маркеры имени или адреса")

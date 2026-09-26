@@ -66,6 +66,7 @@ def resolve_caller(p, plan, rng):
         name, gender = p.caller_name, p.gender
     else:
         name, gender = random_caller(rng, p.gender, name_only=info == "name_only")
+    plan["speaker_gender"] = gender
     plan["caller_name_source"] = (
         None if info == "anonymous" else "teacher" if p.caller_name else CALLER_NAME_SOURCE
     )

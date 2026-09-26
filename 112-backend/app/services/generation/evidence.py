@@ -41,7 +41,7 @@ def extra_evidence(definitions, answers, plan):
                     (
                         f"В сообщении указано «{f.label}»: "
                         if plan.get("message_format") == "sms"
-                        else f"На уточняющий вопрос «{f.label}» заявитель отвечает: "
+                        else f"{f.label}: "
                     )
                     + f"{readable(answers[f.key])}."
                 )

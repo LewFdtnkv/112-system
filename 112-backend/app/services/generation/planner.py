@@ -13,6 +13,13 @@ def build(entry, template, p, rng):
     definitions = feature_definitions(entry)
     by_key = {f.key: f for f in definitions}
     explicit = p.feature_answers
+    if template.caller_is_victim and "child" in explicit:
+        if p.age is None or explicit["child"] != (p.age < 18):
+            raise ParameterConflict(
+                "Для пострадавшего заявителя признак ребёнка должен соответствовать его возрасту.",
+                "age",
+                "feature_answers.child",
+            )
     # Validate types here; visibility is checked with the completed parent answers below.
     if any(k not in by_key or not by_key[k].accepts(v) for k, v in explicit.items()):
         raise ParameterConflict(
@@ -150,6 +157,7 @@ def build(entry, template, p, rng):
         "victims_count": count,
         "object": p.object or (rng.choice(template.objects) if template.objects else None),
         "service_call": template.service_call,
+        "caller_is_victim": template.caller_is_victim,
     }
 
 

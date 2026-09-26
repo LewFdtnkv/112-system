@@ -38,7 +38,6 @@ class GenerationParameters(BaseModel):
     structure: ShortText | None = None
     location: MapPoint | None = None
     object: ShortText | None = None
-    time_of_day: Literal["morning", "day", "evening", "night"] | None = None
     caller_state: Literal["calm", "worried", "panicked"] | None = None
     detail_level: Literal["brief", "normal", "detailed"] | None = None
     feature_answers: dict[str, FeatureAnswer] = Field(default_factory=dict, max_length=30)

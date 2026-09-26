@@ -22,7 +22,7 @@ from app.services.generation import planner
 from app.services.generation.evidence import extra_evidence
 from app.services.generation.presentation import prepare_message, resolve_address, resolve_caller
 
-PROMPT_VERSION = "card-generation-v5"
+PROMPT_VERSION = "card-generation-v6"
 CHOICES = {
     "message_format": [
         {"value": "call", "label": "Телефонное сообщение"},
@@ -39,12 +39,6 @@ CHOICES = {
     ],
     "object": ["жилой дом", "двор", "магазин", "дорога", "парк", "школа"],
     "gender": [{"value": "male", "label": "Мужской"}, {"value": "female", "label": "Женский"}],
-    "time_of_day": [
-        {"value": "morning", "label": "Утро"},
-        {"value": "day", "label": "День"},
-        {"value": "evening", "label": "Вечер"},
-        {"value": "night", "label": "Ночь"},
-    ],
     "caller_state": [
         {"value": "calm", "label": "Спокоен"},
         {"value": "worried", "label": "Взволнован"},
@@ -204,7 +198,6 @@ async def enqueue(session, teacher_id: UUID, request: GenerationCreate):
             **{
                 title: label(field, pick(rng, field, getattr(p, field)))
                 for field, title in (
-                    ("time_of_day", "Время суток"),
                     ("caller_state", "Состояние заявителя"),
                     ("detail_level", "Подробность сообщения"),
                 )
@@ -220,11 +213,20 @@ async def enqueue(session, teacher_id: UUID, request: GenerationCreate):
                 "address_text": address_text,
                 "address_details": address,
                 "caller_name": name,
-                "caller_phone": phone,
-                "caller_details": {"gender": facts["Пол"], "age": facts["Возраст"]},
+                "caller_phone": None,
+                "caller_details": {
+                    "gender": facts["Пол"],
+                    "age": facts["Возраст"],
+                    "callerId": phone or "",
+                    "provided": "",
+                },
                 "features": {"ekp": answers, "victimsCount": victims_count},
                 "additional_fields": {
-                    "details": flags,
+                    "details": {
+                        **flags,
+                        "callerGender": gender_label,
+                        "callerAge": str(age) if age is not None else None,
+                    },
                     "messageChannel": plan["message_format"],
                     **({"location": p.location.model_dump()} if p.location else {}),
                 },

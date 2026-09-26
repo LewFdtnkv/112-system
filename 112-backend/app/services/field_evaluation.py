@@ -146,6 +146,13 @@ def check_fields(
             answer_text=", ".join(r.name for r in notified),
         )
     add("caller_name", "ФИО заявителя", expected.get("caller_name"), actual.get("caller_name"))
+    for key, label in (("callerGender", "Пол заявителя"), ("callerAge", "Возраст заявителя")):
+        add(
+            f"additional_fields.details.{key}",
+            label,
+            flags(expected).get(key),
+            flags(actual).get(key),
+        )
     add(
         "caller_phone",
         "Телефон заявителя",
