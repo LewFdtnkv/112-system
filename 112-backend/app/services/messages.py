@@ -36,7 +36,18 @@ async def send_message(session, teacher_id, payload):
     return {"id": message.id, "recipient_count": len(recipients)}
 
 
-async def list_messages(session, student_id, limit=20, offset=0, include_advice=True):
+async def unread_summary(session, student_id):
+    count = await session.scalar(
+        select(func.count())
+        .select_from(MessageRecipient)
+        .where(MessageRecipient.student_id == student_id, MessageRecipient.read_at.is_(None))
+    )
+    return {"unread_count": count}
+
+
+async def list_messages(
+    session, student_id, limit=20, offset=0, include_advice=True, unread_only=False
+):
     query = (
         select(
             TeachingMessage.id,
@@ -54,6 +65,8 @@ async def list_messages(session, student_id, limit=20, offset=0, include_advice=
         .outerjoin(TrainingGroup, TrainingGroup.id == TeachingMessage.group_id)
         .where(MessageRecipient.student_id == student_id)
     )
+    if unread_only:
+        query = query.where(MessageRecipient.read_at.is_(None))
     if not include_advice:
         query = query.where(TeachingMessage.source == "teacher")
     total = await session.scalar(select(func.count()).select_from(query.subquery()))

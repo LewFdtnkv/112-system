@@ -4,6 +4,10 @@ from uuid import UUID
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 
 
+class MessageSummary(BaseModel):
+    unread_count: int = Field(ge=0)
+
+
 class MessageCreate(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
     text: str = Field(min_length=1, max_length=4000)

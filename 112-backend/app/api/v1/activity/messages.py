@@ -4,7 +4,7 @@ from fastapi import APIRouter
 
 from app.api.dependencies import SessionDep, StudentDep, TeacherDep
 from app.api.pagination import Limit, Offset
-from app.schemas.activity import MessageCreate
+from app.schemas.activity import MessageCreate, MessageSummary
 from app.services import messages as message_service
 
 router = APIRouter(tags=["activity"])
@@ -22,8 +22,16 @@ async def messages(
     limit: Limit = 20,
     offset: Offset = 0,
     include_advice: bool = True,
+    unread_only: bool = False,
 ):
-    return await message_service.list_messages(session, student.id, limit, offset, include_advice)
+    return await message_service.list_messages(
+        session, student.id, limit, offset, include_advice, unread_only
+    )
+
+
+@router.get("/student/messages/summary", response_model=MessageSummary)
+async def unread_summary(session: SessionDep, student: StudentDep):
+    return await message_service.unread_summary(session, student.id)
 
 
 @router.post("/student/messages/{message_id}/read", status_code=204)
