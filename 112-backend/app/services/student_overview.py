@@ -3,7 +3,7 @@
 from datetime import UTC, datetime
 from uuid import UUID
 
-from sqlalchemy import case, func, or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import GroupMembership, TrainingGroup, User
@@ -19,6 +19,7 @@ async def student_overview(
     *,
     teacher_id: UUID | None = None,
     active_offset: int = 0,
+    available_offset: int = 0,
 ) -> StudentOverview:
     rows = lesson_rows_query(student_id=user.id, teacher_id=teacher_id).subquery()
     now = datetime.now(UTC)
@@ -95,25 +96,39 @@ async def student_overview(
                 recent_lessons=[LessonRow.model_validate(r) for r in latest],
             )
         )
-    active_total = await session.scalar(select(func.count()).select_from(active))
-    # A lesson can finish between polling requests; keep the current page valid.
-    active_offset = min(active_offset, max(0, (active_total - 1) // 6) * 6)
-    active_items = (
-        (
-            await session.execute(
-                select(active)
-                .order_by(
-                    case((active.c.work_status == "in_progress", 0), else_=1),
-                    active.c.available_until.asc().nulls_last(),
-                    active.c.started_at.desc().nulls_last(),
-                    active.c.lesson_id,
+
+    async def lesson_section(condition, offset):
+        filtered = select(active).where(condition).subquery()
+        total = await session.scalar(select(func.count()).select_from(filtered))
+        offset = min(offset, max(0, (total - 1) // 6) * 6)
+        records = (
+            (
+                await session.execute(
+                    select(filtered)
+                    .order_by(
+                        filtered.c.available_until.asc().nulls_last(),
+                        filtered.c.started_at.desc().nulls_last(),
+                        filtered.c.lesson_id,
+                    )
+                    .limit(6)
+                    .offset(offset)
                 )
-                .limit(6)
-                .offset(active_offset)
             )
+            .mappings()
+            .all()
         )
-        .mappings()
-        .all()
+        return Page[LessonRow](
+            items=[LessonRow.model_validate(r) for r in records],
+            total=total,
+            limit=6,
+            offset=offset,
+        )
+
+    active_page = await lesson_section(
+        (active.c.work_status == "in_progress") & active.c.paused_at.is_(None), active_offset
+    )
+    available_page = await lesson_section(
+        (active.c.work_status == "assigned") | active.c.paused_at.is_not(None), available_offset
     )
     groups = (
         select(TrainingGroup.name).join(GroupMembership).where(GroupMembership.user_id == user.id)
@@ -123,12 +138,8 @@ async def student_overview(
     return StudentOverview(
         user=UserRead.model_validate(user),
         groups=list(await session.scalars(groups.order_by(TrainingGroup.name, TrainingGroup.id))),
-        active_lessons=Page[LessonRow](
-            items=[LessonRow.model_validate(r) for r in active_items],
-            total=active_total,
-            limit=6,
-            offset=active_offset,
-        ),
+        active_lessons=active_page,
+        available_lessons=available_page,
         performance=PerformanceSummary(
             tracks=tracks,
             total_lessons=stats.total,

@@ -9,6 +9,7 @@ from app.models import (
     CriterionResult,
     Evaluation,
     LessonEvaluation,
+    LessonExecution,
 )
 from app.models.enums import AttemptStatus, EvaluationMethod, EvaluationStatus, LessonStatus
 from app.services.automatic_assessment.attempts import assess_attempt
@@ -33,7 +34,8 @@ async def publish_lesson_result(session, lesson, student_id):
             .where(Assignment.lesson_id == lesson.id, Assignment.student_id == student_id)
         )
     ).all()
-    closed = lesson.status == LessonStatus.FINISHED
+    execution = await session.get(LessonExecution, (lesson.id, student_id))
+    closed = lesson.status == LessonStatus.FINISHED or bool(execution and execution.ended_at)
     if not attempts or (
         not closed
         and any(

@@ -63,6 +63,7 @@ async def lesson_reads(session: AsyncSession, lessons: list[Lesson]) -> list[Les
     }
     return [
         LessonRead(
+            time_limit_seconds=lesson.time_limit_seconds,
             learning=lesson.learning,
             id=lesson.id,
             title=lesson.title,
@@ -225,14 +226,12 @@ async def start_lesson(
         started_at=None if scheduled else now,
         available_from=payload.available_from or now,
         available_until=payload.available_until,
+        time_limit_seconds=payload.time_limit_seconds,
     )
     try:
         session.add(lesson)
         await session.flush()
-        if scenario.role == "dds":
-            session.add_all(
-                [LessonExecution(lesson_id=lesson.id, student_id=s.id) for s in students]
-            )
+        session.add_all([LessonExecution(lesson_id=lesson.id, student_id=s.id) for s in students])
         session.add_all(
             [
                 Assignment(
@@ -256,7 +255,7 @@ async def start_lesson(
                             else {}
                         ),
                     },
-                    time_limit_seconds=payload.time_limit_seconds,
+                    time_limit_seconds=None,
                     hint_delay_seconds=None,
                 )
                 for student in students

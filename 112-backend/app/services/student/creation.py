@@ -28,8 +28,7 @@ async def create_attempt(session, assignment, scenario, student_id, now):
             "semantic_assessment": settings.semantic_assessment_enabled,
             "learning": assignment.settings.get("learning", {}),
             "learning_engine": assignment.settings.get("learning_engine"),
-            "deadline_policy": "bpmn-v1",
-            "time_limit_seconds": assignment.time_limit_seconds,
+            "deadline_policy": "lesson-v2",
             "hint_delay_seconds": assignment.hint_delay_seconds,
             "settings": assignment.settings,
             "assessment_policy": (await scenario_policy(session, scenario.id)).model_dump(

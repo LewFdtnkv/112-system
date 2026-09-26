@@ -4,7 +4,15 @@ from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Assignment, Attempt, ClassifierEntry, Lesson, LessonEvaluation, ScenarioCard
+from app.models import (
+    Assignment,
+    Attempt,
+    ClassifierEntry,
+    Lesson,
+    LessonEvaluation,
+    LessonExecution,
+    ScenarioCard,
+)
 from app.models.enums import AttemptStatus, EventActor, LessonStatus
 from app.schemas.catalog import ClassifierEntryRead
 from app.schemas.lesson_evaluation import AssignmentReview, LessonGradeCreate, LessonWorkReview
@@ -120,6 +128,7 @@ async def review_work(session: AsyncSession, lesson_id: UUID, student_id: UUID, 
             .order_by(LessonEvaluation.revision)
         )
     )
+    execution = await session.get(LessonExecution, (lesson_id, student_id))
     return LessonWorkReview(
         learning=lesson.learning,
         learning_result=learning_result(
@@ -127,7 +136,8 @@ async def review_work(session: AsyncSession, lesson_id: UUID, student_id: UUID, 
         ),
         lesson_id=lesson_id,
         student_id=student_id,
-        submitted=lesson.status == LessonStatus.FINISHED
+        submitted=bool(execution and execution.ended_at)
+        or lesson.status == LessonStatus.FINISHED
         or all(
             attempt and attempt.status in (AttemptStatus.COMPLETED, AttemptStatus.INTERRUPTED)
             for _, attempt in rows
@@ -168,8 +178,10 @@ async def grade_lesson(
                 status_code=409, detail="Request ID was already used with different parameters"
             )
         return existing, False
+    execution = await session.get(LessonExecution, (lesson_id, student_id))
     if lesson.status == LessonStatus.CANCELLED or (
-        lesson.status != LessonStatus.FINISHED
+        not (execution and execution.ended_at)
+        and lesson.status != LessonStatus.FINISHED
         and any(
             attempt is None
             or attempt.status not in (AttemptStatus.COMPLETED, AttemptStatus.INTERRUPTED)
@@ -220,8 +232,10 @@ async def grade_lesson(
 
 async def ensure_automatic_grade(session, lesson_id, student_id, teacher_id):
     lesson, rows = await review_rows(session, lesson_id, student_id, teacher_id, lock=True)
+    execution = await session.get(LessonExecution, (lesson_id, student_id))
     if lesson.status == LessonStatus.CANCELLED or (
-        lesson.status != LessonStatus.FINISHED
+        not (execution and execution.ended_at)
+        and lesson.status != LessonStatus.FINISHED
         and any(
             a is None or a.status not in (AttemptStatus.COMPLETED, AttemptStatus.INTERRUPTED)
             for _, a in rows

@@ -13,6 +13,7 @@ from app.models import (
     AttemptEvent,
     Lesson,
     LessonEvaluation,
+    LessonExecution,
     ProctoringEvent,
     Scenario,
     ServiceResponse,
@@ -93,16 +94,19 @@ async def test_future_start_and_entirely_missed_assignment(teaching, db_client, 
     assert not await db_session.scalar(select(func.count()).select_from(Attempt))
 
 
-async def test_card_timeout_unlocks_next_and_keeps_lesson_open(exercise, db_session):
+async def test_lesson_timeout_closes_remaining_cards(exercise, db_session):
     e = exercise
     first = await e.start()
     row = await db_session.get(Attempt, UUID(first["id"]))
-    row.started_at = datetime.now(UTC) - timedelta(minutes=4)
+    execution = await db_session.get(LessonExecution, (UUID(e.lesson["id"]), row.student_id))
+    row.started_at = execution.started_at = datetime.now(UTC) - timedelta(minutes=4)
     await db_session.commit()
     work = await e.request("GET", f"student/lessons/{e.lesson['id']}")
-    assert work["status"] == "active"
+    assert work["status"] == "finished"
     assert work["assignments"][0]["status"] == "interrupted"
-    assert work["assignments"][1]["available"]
+    assert not any(a["available"] for a in work["assignments"])
+    result = await e.request("GET", f"student/lessons/{e.lesson['id']}/evaluation")
+    assert result["assessment_details"]["missed_cards"] == 2
 
 
 async def test_proctoring_is_separate_scoped_and_idempotent(exercise, db_session):

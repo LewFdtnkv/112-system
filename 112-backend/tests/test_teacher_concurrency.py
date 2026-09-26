@@ -25,6 +25,7 @@ from app.models import (
     IncidentCard,
     Lesson,
     LessonEvaluation,
+    LessonExecution,
     Scenario,
     ScenarioCard,
     ScenarioVersion,
@@ -149,6 +150,9 @@ async def concurrent_teaching():
             lesson_ids = select(Lesson.id).where(Lesson.group_id.in_(group_ids))
             await session.execute(
                 delete(LessonEvaluation).where(LessonEvaluation.lesson_id.in_(lesson_ids))
+            )
+            await session.execute(
+                delete(LessonExecution).where(LessonExecution.lesson_id.in_(lesson_ids))
             )
             assignment_ids = select(Assignment.id).where(Assignment.lesson_id.in_(lesson_ids))
             attempt_ids = select(Attempt.id).where(Attempt.assignment_id.in_(assignment_ids))

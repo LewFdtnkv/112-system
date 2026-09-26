@@ -234,6 +234,7 @@ class LessonStart(BaseModel):
 
 
 class LessonRead(BaseModel):
+    time_limit_seconds: int | None = None
     learning: LearningPolicy = Field(default_factory=LearningPolicy)
     id: UUID
     title: str

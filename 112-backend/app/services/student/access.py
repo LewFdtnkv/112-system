@@ -54,4 +54,15 @@ async def owned_attempt(
     if lock:
         # The row may have changed while waiting for another command on this lesson.
         await session.refresh(attempt)
+        from app.services.lesson_presence import execution_for
+
+        execution = await execution_for(session, lesson.id, student_id)
+        if (
+            attempt.status == "in_progress"
+            and execution
+            and (execution.paused_at or execution.ended_at)
+        ):
+            raise HTTPException(
+                409, "Занятие приостановлено или завершено. Вернитесь к списку занятий."
+            )
     return attempt, lesson

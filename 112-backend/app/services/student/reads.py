@@ -69,6 +69,7 @@ async def attempt_read(
             recipient_error = str(exc.detail)
 
     return StudentAttemptRead(
+        pauses=attempt.pauses or [],
         learning=attempt.settings_snapshot.get("learning", {}),
         exercise_scope=attempt.settings_snapshot.get("exercise_scope"),
         role=scenario.role,
@@ -88,7 +89,7 @@ async def attempt_read(
             filter(None, [scenario.instructions, source.snapshot["instructions"]])
         ),
         caller_message=source.snapshot["caller_message"],
-        time_limit_seconds=attempt.settings_snapshot.get("time_limit_seconds"),
+        time_limit_seconds=None,
         card=StudentCardRead(
             id=card.id,
             display_number=card.display_number,

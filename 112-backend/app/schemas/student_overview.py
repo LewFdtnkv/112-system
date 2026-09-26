@@ -32,3 +32,4 @@ class StudentOverview(BaseModel):
     groups: list[str]
     performance: PerformanceSummary
     active_lessons: Page[LessonRow]
+    available_lessons: Page[LessonRow]

@@ -1,11 +1,12 @@
 """Read-only learning projections. No hint engine, mastery inference or hidden penalties."""
 
 from app.schemas.learning import LearningMeasure, LearningResult
+from app.services.lesson_clock import active_intervals
 
 
 def learning_result(attempts, grade=None):
     completed = [a for a in attempts if a.ended_at is not None]
-    intervals = sorted((a.started_at, a.ended_at) for a in completed)
+    intervals = sorted(interval for a in completed for interval in active_intervals(a))
     merged = []
     for start, end in intervals:
         if merged and start <= merged[-1][1]:
@@ -47,7 +48,7 @@ def learning_result(attempts, grade=None):
             unit="seconds",
             explanation=(
                 "Время завершённых попыток без двойного учёта пересечений, "
-                "включая ожидание. Не влияет на балл."
+                "включая ожидание, без пауз вне занятия. Не влияет на балл."
             ),
         ),
     )

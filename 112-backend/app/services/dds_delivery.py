@@ -1,53 +1,17 @@
 """DDS arrivals run under the lesson lock, independently of browser navigation or LLM work."""
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 
 from fastapi import HTTPException
 from sqlalchemy import select
 
-from app.models import Assignment, Attempt, LessonExecution, ScenarioVersion
+from app.models import Assignment, Attempt, ScenarioVersion
 from app.services.audit import append_event
+from app.services.lesson_presence import begin, execution_for
 from app.services.student.creation import create_attempt
 from app.services.student.reads import attempt_read
 
 DELIVERY = "dds-stream-v1"
-
-
-async def execution_for(session, lesson_id, student_id):
-    return await session.get(LessonExecution, (lesson_id, student_id))
-
-
-async def begin(session, lesson, student_id):
-    execution = await execution_for(session, lesson.id, student_id)
-    if execution is None:
-        raise HTTPException(409, "This lesson does not use scheduled DDS arrivals")
-    if execution.started_at is not None:
-        return execution
-    if lesson.status != "active":
-        raise HTTPException(409, "Lesson is not active")
-    rows = list(
-        await session.scalars(
-            select(Assignment).where(
-                Assignment.lesson_id == lesson.id, Assignment.student_id == student_id
-            )
-        )
-    )
-    now = datetime.now(UTC)
-    last = max(a.settings["arrival_offset_seconds"] for a in rows)
-    if lesson.available_until and now + timedelta(seconds=last) >= lesson.available_until:
-        raise HTTPException(
-            409,
-            "До окончания занятия недостаточно времени для поступления всех карточек. "
-            "Обратитесь к преподавателю.",
-        )
-    execution.started_at = now
-    for assignment in rows:
-        assignment.scheduled_at = now + timedelta(
-            seconds=assignment.settings["arrival_offset_seconds"]
-        )
-    await session.flush()
-    await release_due(session, lesson, now)
-    return execution
 
 
 async def release_due(session, lesson, now):
@@ -62,7 +26,13 @@ async def release_due(session, lesson, now):
             .order_by(Assignment.student_id, Assignment.position)
         )
     )
+    released = False
     for assignment in rows:
+        execution = await execution_for(session, lesson.id, assignment.student_id)
+        if execution and (
+            execution.ended_at or (execution.paused_at and not lesson.time_limit_seconds)
+        ):
+            continue
         if lesson.available_until and assignment.scheduled_at >= lesson.available_until:
             continue
         # Measure reaction from server delivery, not from a delayed scheduler's planned time.
@@ -70,17 +40,21 @@ async def release_due(session, lesson, now):
         scenario = await session.get(ScenarioVersion, assignment.scenario_version_id)
         await create_attempt(session, assignment, scenario, assignment.student_id, received_at)
         assignment.released_at = received_at
+        released = True
     await session.flush()
-    return bool(rows)
+    return released
 
 
 async def open_assignment(session, lesson, assignment, student_id):
     execution = await execution_for(session, lesson.id, student_id)
-    created = execution.started_at is None
+    created = execution is None or execution.started_at is None
     if created:
         if assignment.position != 1:
             raise HTTPException(409, "Сначала начните занятие")
-        await begin(session, lesson, student_id)
+        execution = await begin(session, lesson, student_id)
+        await release_due(session, lesson, datetime.now(UTC))
+    if execution.ended_at or execution.paused_at or lesson.status != "active":
+        raise HTTPException(409, "Сначала возобновите доступное занятие")
     attempt = await session.scalar(select(Attempt).where(Attempt.assignment_id == assignment.id))
     if attempt is None:
         raise HTTPException(409, "Карточка ещё не поступила")

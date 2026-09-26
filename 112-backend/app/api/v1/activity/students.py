@@ -14,16 +14,33 @@ router = APIRouter(tags=["activity"])
 
 
 @router.get("/student/overview", response_model=StudentOverview)
-async def my_overview(session: SessionDep, student: StudentDep, active_offset: Offset = 0):
-    return await student_overview(session, student, active_offset=active_offset)
+async def my_overview(
+    session: SessionDep,
+    student: StudentDep,
+    active_offset: Offset = 0,
+    available_offset: Offset = 0,
+):
+    return await student_overview(
+        session, student, active_offset=active_offset, available_offset=available_offset
+    )
 
 
 @router.get("/teaching/students/{student_id}/overview", response_model=StudentOverview)
 async def teaching_overview(
-    student_id: UUID, session: SessionDep, teacher: TeacherDep, active_offset: Offset = 0
+    student_id: UUID,
+    session: SessionDep,
+    teacher: TeacherDep,
+    active_offset: Offset = 0,
+    available_offset: Offset = 0,
 ):
     user = await owned_student(session, student_id, teacher.id)
-    return await student_overview(session, user, teacher_id=teacher.id, active_offset=active_offset)
+    return await student_overview(
+        session,
+        user,
+        teacher_id=teacher.id,
+        active_offset=active_offset,
+        available_offset=available_offset,
+    )
 
 
 @router.get("/teaching/students/{student_id}")

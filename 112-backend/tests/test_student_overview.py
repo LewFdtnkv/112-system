@@ -42,13 +42,15 @@ async def test_overview_active_priority_windows_and_pagination(exercise, db_sess
     await db_session.commit()
     data = await e.request("GET", "student/overview")
     active = data["active_lessons"]
-    assert active["total"] == 9 and len(active["items"]) == 6
+    assert active["total"] == 1 and len(active["items"]) == 1
     assert active["items"][0]["lesson_id"] == e.lesson["id"]
     assert active["items"][0]["completed_at"] is None
-    rest = (await e.request("GET", "student/overview?active_offset=6"))["active_lessons"]
-    ids = [r["lesson_id"] for r in active["items"] + rest["items"]]
+    available = data["available_lessons"]
+    assert available["total"] == 8 and len(available["items"]) == 6
+    rest = (await e.request("GET", "student/overview?available_offset=6"))["available_lessons"]
+    ids = [r["lesson_id"] for r in active["items"] + available["items"] + rest["items"]]
     assert len(set(ids)) == 9 and expired["id"] not in ids and future["id"] not in ids
-    clamped = (await e.request("GET", "student/overview?active_offset=60"))["active_lessons"]
+    clamped = (await e.request("GET", "student/overview?available_offset=60"))["available_lessons"]
     assert clamped["offset"] == 6 and clamped["items"] == rest["items"]
     assert data["performance"]["overall_percent"] is None
     assert data["performance"]["recent_percent"] is None

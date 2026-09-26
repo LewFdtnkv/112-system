@@ -73,6 +73,7 @@ class RecipientRead(BaseModel):
 
 
 class StudentAttemptRead(BaseModel):
+    pauses: list[dict[str, datetime | None]] = Field(default_factory=list)
     exercise_scope: list[str] | None = None
     learning: LearningPolicy = Field(default_factory=LearningPolicy)
     role: TrainingRole = TrainingRole.OPERATOR_112
@@ -96,6 +97,7 @@ class StudentAttemptRead(BaseModel):
 class JournalCardRead(BaseModel):
     id: UUID
     display_number: int
+    pauses: list[dict[str, datetime | None]] = Field(default_factory=list)
     started_at: datetime
     status: CardStatus
     address_text: str | None
@@ -126,6 +128,11 @@ class StudentAssignmentRead(BaseModel):
 class StudentLessonRead(BaseModel):
     delivery: Literal["sequential", "dds-stream-v1"] = "sequential"
     execution_started_at: datetime | None = None
+    execution_ended_at: datetime | None = None
+    paused_at: datetime | None = None
+    presence_session_id: UUID | None = None
+    deadline_at: datetime | None = None
+    time_limit_seconds: int | None = None
     server_time: datetime | None = None
     learning: LearningPolicy = Field(default_factory=LearningPolicy)
     learning_result: LearningResult | None = None
@@ -138,3 +145,8 @@ class StudentLessonRead(BaseModel):
     available_from: datetime | None = None
     available_until: datetime | None = None
     assignments: list[StudentAssignmentRead]
+
+
+class LessonPresence(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    session_id: UUID

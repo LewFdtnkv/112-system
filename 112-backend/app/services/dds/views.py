@@ -6,6 +6,7 @@ from app.models import (
     ResponseEvent,
 )
 from app.schemas.dds import CREW_TRANSITIONS, STATUS_LABELS, TRANSITIONS
+from app.services.lesson_clock import elapsed_seconds
 from app.services.telephony.crew_notifications import notifications
 
 
@@ -77,6 +78,9 @@ async def context(session, attempt, responses):
         "reaction_norm_seconds": attempt.settings_snapshot.get("response_norm_seconds")
         if attempt.settings_snapshot.get("delivery") == "dds-stream-v1"
         else None,
+        "reaction_seconds": elapsed_seconds(
+            attempt, attempt.first_response_at or attempt.ended_at, start=own.sent_at
+        ),
         "reaction_end_at": (attempt.first_response_at or attempt.ended_at).isoformat()
         if (attempt.first_response_at or attempt.ended_at)
         else None,

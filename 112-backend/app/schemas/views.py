@@ -1,10 +1,10 @@
 """Bounded page contracts; no hidden scenario answers in student projections."""
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator
 
 from app.schemas.authoring import CardListItem
 from app.schemas.learning import LearningPolicy
@@ -50,6 +50,11 @@ class GroupItem(BaseModel):
 
 
 class LessonRow(BaseModel):
+    time_limit_seconds: int | None = None
+    execution_started_at: datetime | None = None
+    execution_ended_at: datetime | None = None
+    paused_at: datetime | None = None
+    deadline_at: datetime | None = None
     learning: LearningPolicy
     lesson_id: UUID
     title: str
@@ -72,6 +77,14 @@ class LessonRow(BaseModel):
     max_score: Decimal | None
     evaluation_revision: int | None
     evaluation_method: str | None
+
+    @model_validator(mode="after")
+    def deadline(self):
+        limits = [self.available_until] if self.available_until else []
+        if self.time_limit_seconds and self.execution_started_at:
+            limits.append(self.execution_started_at + timedelta(seconds=self.time_limit_seconds))
+        self.deadline_at = min(limits) if limits else None
+        return self
 
 
 class LessonPage(Page[LessonRow]):

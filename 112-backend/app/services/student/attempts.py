@@ -15,6 +15,7 @@ from app.models.enums import (
     LessonStatus,
 )
 from app.services.dds_delivery import open_assignment
+from app.services.lesson_presence import begin, execution_for
 from app.services.student.access import student_lesson
 from app.services.student.creation import create_attempt
 from app.services.student.reads import attempt_read
@@ -37,6 +38,9 @@ async def start_attempt(session: AsyncSession, assignment_id: UUID, student_id: 
         return await attempt_read(session, existing), False
     if lesson.status != LessonStatus.ACTIVE:
         raise HTTPException(status_code=409, detail="Lesson is not active")
+    execution = await execution_for(session, lesson.id, student_id)
+    if execution and (execution.ended_at or execution.paused_at):
+        raise HTTPException(409, "Сначала возобновите доступное занятие")
     scenario = await session.get(ScenarioVersion, assignment.scenario_version_id)
     if assignment.scenario_card_id is None:
         raise HTTPException(status_code=409, detail="Only composed scenarios can be started")
@@ -57,6 +61,8 @@ async def start_attempt(session: AsyncSession, assignment_id: UUID, student_id: 
     )
     if previous:
         raise HTTPException(status_code=409, detail="Complete the previous card first")
+    if not execution or not execution.started_at:
+        await begin(session, lesson, student_id)
     attempt = await create_attempt(session, assignment, scenario, student_id, datetime.now(UTC))
     await session.commit()
     return await attempt_read(session, attempt), True

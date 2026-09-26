@@ -2,11 +2,11 @@
 
 import asyncio
 import logging
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 
-from app.models import Assignment, Attempt, Lesson
+from app.models import Assignment, Attempt, Lesson, LessonExecution
 from app.models.enums import AttemptStatus, LessonStatus
 from app.services.audit import append_event
 from app.services.automatic_assessment.results import publish_lesson_result
@@ -17,16 +17,10 @@ from app.services.student.reads import attempt_read
 TERMINAL = (AttemptStatus.COMPLETED, AttemptStatus.INTERRUPTED)
 
 
-def attempt_deadline(attempt, lesson):
-    limits = [lesson.available_until] if lesson.available_until else []
-    seconds = attempt.settings_snapshot.get("time_limit_seconds")
-    if seconds and attempt.settings_snapshot.get("deadline_policy") == "bpmn-v1":
-        limits.append(attempt.started_at + timedelta(seconds=seconds))
-    return min(limits) if limits else None
-
-
 async def enforce_deadlines(session, lesson, now=None):
-    """Caller locks the lesson. Persists expiry before a rejected mutation can roll back."""
+    """Caller locks the lesson. Each student's deadline closes only their work."""
+    from app.services.lesson_clock import execution_deadline
+    from app.services.lesson_presence import expire_presence
 
     now = now or datetime.now(UTC)
     if lesson.status not in (LessonStatus.ACTIVE, LessonStatus.PLANNED):
@@ -34,29 +28,49 @@ async def enforce_deadlines(session, lesson, now=None):
     changed = False
     if (
         lesson.status == LessonStatus.PLANNED
-        and lesson.available_from is not None
+        and lesson.available_from
         and lesson.available_from <= now
     ):
         lesson.status = LessonStatus.ACTIVE
         lesson.started_at = lesson.available_from
         changed = True
-
+    executions = list(
+        await session.scalars(
+            select(LessonExecution).where(
+                LessonExecution.lesson_id == lesson.id,
+            )
+        )
+    )
+    changed = await expire_presence(session, lesson, executions, now) or changed
+    # Expire before delivery: no new cards may arrive after a personal deadline.
+    for execution in executions:
+        deadline = execution_deadline(lesson, execution)
+        if not execution.ended_at and deadline and now >= deadline:
+            execution.ended_at = deadline
+            changed = True
     if lesson.status == LessonStatus.ACTIVE:
         changed = await release_due(session, lesson, now) or changed
-    expired = lesson.available_until is not None and now >= lesson.available_until
+    assignments = list(
+        await session.scalars(select(Assignment).where(Assignment.lesson_id == lesson.id))
+    )
     attempts = list(
         await session.scalars(
             select(Attempt)
-            .join(Assignment, Assignment.id == Attempt.assignment_id)
-            .where(Assignment.lesson_id == lesson.id)
+            .join(Assignment)
+            .where(
+                Assignment.lesson_id == lesson.id,
+            )
             .order_by(Attempt.id)
         )
     )
+    by_student = {e.student_id: e for e in executions}
+    expired = lesson.available_until is not None and now >= lesson.available_until
     for attempt in attempts:
-        deadline = attempt_deadline(attempt, lesson)
+        execution = by_student.get(attempt.student_id)
+        deadline = execution_deadline(lesson, execution)
         if attempt.status == AttemptStatus.IN_PROGRESS and deadline and now >= deadline:
             attempt.status = AttemptStatus.INTERRUPTED
-            attempt.ended_at = deadline
+            attempt.ended_at = max(attempt.started_at, deadline)
             attempt.end_reason = "deadline_expired"
             await append_event(
                 session, attempt.id, "attempt.deadline_expired", {"deadline": deadline.isoformat()}
@@ -70,13 +84,25 @@ async def enforce_deadlines(session, lesson, now=None):
                 publish=False,
             )
             changed = True
-    assignments = list(
-        await session.scalars(select(Assignment).where(Assignment.lesson_id == lesson.id))
-    )
-    if expired or (
-        assignments
-        and len(attempts) == len(assignments)
-        and all(a.status in TERMINAL for a in attempts)
+    for execution in executions:
+        student_attempts = [a for a in attempts if a.student_id == execution.student_id]
+        count = sum(a.student_id == execution.student_id for a in assignments)
+        if (
+            not execution.ended_at
+            and count
+            and len(student_attempts) == count
+            and all(a.status in TERMINAL for a in student_attempts)
+        ):
+            execution.ended_at = max(a.ended_at for a in student_attempts)
+            changed = True
+    if (
+        expired
+        or (executions and all(e.ended_at for e in executions))
+        or (
+            assignments
+            and len(attempts) == len(assignments)
+            and all(a.status in TERMINAL for a in attempts)
+        )
     ):
         lesson.status = LessonStatus.FINISHED
         lesson.started_at = lesson.started_at or lesson.available_from or now

@@ -25,8 +25,8 @@ from app.schemas.student import (
     StudentLessonRead,
 )
 from app.services.dds_delivery import execution_for
-from app.services.deadlines import attempt_deadline
 from app.services.learning import learning_result
+from app.services.lesson_clock import execution_deadline
 
 
 async def lesson_work(session: AsyncSession, lesson: Lesson, student_id: UUID) -> StudentLessonRead:
@@ -83,6 +83,7 @@ async def lesson_work(session: AsyncSession, lesson: Lesson, student_id: UUID) -
                 and not complete
                 and (attempt is None or attempt.status == AttemptStatus.IN_PROGRESS)
                 and lesson.status == LessonStatus.ACTIVE
+                and not (execution and execution.ended_at)
                 and (
                     scenario.role == TrainingRole.OPERATOR_112
                     or bool(scenario.completion_rules.get("dds"))
@@ -94,12 +95,13 @@ async def lesson_work(session: AsyncSession, lesson: Lesson, student_id: UUID) -
                 response_norm_seconds=attempt.settings_snapshot.get("response_norm_seconds")
                 if stream and attempt
                 else None,
-                deadline_at=attempt_deadline(attempt, lesson) if attempt else None,
+                deadline_at=execution_deadline(lesson, execution),
                 attempt_id=attempt.id if attempt else None,
                 card=JournalCardRead(
                     id=card.id,
                     display_number=card.display_number,
                     started_at=attempt.started_at,
+                    pauses=attempt.pauses or [],
                     status=card.status,
                     address_text=card.address_text,
                     description=card.description,
@@ -116,8 +118,14 @@ async def lesson_work(session: AsyncSession, lesson: Lesson, student_id: UUID) -
         previous_complete = previous_complete and complete
     state = (
         "submitted"
-        if lesson.status == LessonStatus.FINISHED or (assignments and previous_complete)
-        else ("in_progress" if any(item.attempt_id for item in assignments) else "assigned")
+        if lesson.status == LessonStatus.FINISHED
+        or (execution and execution.ended_at)
+        or (assignments and previous_complete)
+        else (
+            "in_progress"
+            if (execution and execution.started_at) or any(item.attempt_id for item in assignments)
+            else "assigned"
+        )
     )
     grade = await session.scalar(
         select(LessonEvaluation)
@@ -128,6 +136,11 @@ async def lesson_work(session: AsyncSession, lesson: Lesson, student_id: UUID) -
     return StudentLessonRead(
         delivery="dds-stream-v1" if stream else "sequential",
         execution_started_at=execution.started_at if execution else None,
+        execution_ended_at=execution.ended_at if execution else None,
+        paused_at=execution.paused_at if execution else None,
+        presence_session_id=execution.session_id if execution else None,
+        deadline_at=execution_deadline(lesson, execution),
+        time_limit_seconds=lesson.time_limit_seconds,
         server_time=datetime.now(UTC),
         learning=lesson.learning,
         learning_result=learning_result([row[3] for row in rows if row[3]], grade),

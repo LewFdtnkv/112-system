@@ -21,7 +21,8 @@ from app.models import (
 )
 from app.models.enums import AttemptStatus, CallStatus
 from app.services.audit import append_event
-from app.services.deadlines import attempt_deadline
+from app.services.lesson_clock import execution_deadline
+from app.services.lesson_presence import execution_for
 from app.services.student.access import owned_attempt
 from app.services.telephony.crew_notifications import required, selected_crew
 from app.services.telephony.media import audio_path
@@ -47,7 +48,10 @@ async def binding_is_active(session, station, attempt):
     assignment = await session.get(Assignment, attempt.assignment_id)
     lesson = await session.get(Lesson, assignment.lesson_id)
 
-    deadline = attempt_deadline(attempt, lesson)
+    execution = await execution_for(session, lesson.id, attempt.student_id)
+    if execution and (execution.paused_at or execution.ended_at):
+        return False
+    deadline = execution_deadline(lesson, execution)
     return lesson.status == "active" and (deadline is None or datetime.now(UTC) < deadline)
 
 

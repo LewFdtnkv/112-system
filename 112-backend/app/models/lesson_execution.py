@@ -1,4 +1,4 @@
-"""Personal execution clock for independently arriving DDS cards."""
+"""Personal lesson lifecycle, shared by operator 112 and DDS."""
 
 from datetime import datetime
 from uuid import UUID
@@ -22,3 +22,7 @@ class LessonExecution(Base):
     active_attempt_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("attempts.id", ondelete="RESTRICT")
     )
+    ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    paused_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    session_id: Mapped[UUID | None] = mapped_column()

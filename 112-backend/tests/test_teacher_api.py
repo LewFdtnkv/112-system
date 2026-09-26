@@ -381,7 +381,8 @@ async def test_group_lesson_workflow_and_replay(teaching, db_client, db_session,
         own = [a for a in assignments if a["student_id"] == str(t.accounts[name].id)]
         assert [a["position"] for a in own] == [1, 2, 3]
         assert [a["scenario_card_id"] for a in own] == [item["id"] for item in items]
-        assert all(a["time_limit_seconds"] == 180 for a in own)
+        assert lesson["time_limit_seconds"] == 180
+        assert all(a["time_limit_seconds"] is None for a in own)
     assert await db_session.scalar(select(func.count()).select_from(Attempt)) == 0
     replay = await t.post("lessons/start", d.payload, expected=200)
     assert replay == lesson

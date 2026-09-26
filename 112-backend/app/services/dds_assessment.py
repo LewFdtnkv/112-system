@@ -1,4 +1,3 @@
-from datetime import datetime
 from decimal import ROUND_HALF_UP, Decimal
 
 from app.schemas.dds import CREW_LABELS, STATUS_LABELS
@@ -195,13 +194,7 @@ def check_crew_exercise(policy, read):
     norm = read.dds.get("reaction_norm_seconds")
     if norm is not None:
         response_at = read.dds.get("first_decision_at")
-        seconds = (
-            (
-                datetime.fromisoformat(response_at) - datetime.fromisoformat(read.dds["sent_at"])
-            ).total_seconds()
-            if response_at
-            else None
-        )
+        seconds = read.dds.get("reaction_seconds") if response_at else None
         fields.append(
             FieldCheck(
                 field="dds.reaction",

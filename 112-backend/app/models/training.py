@@ -47,6 +47,7 @@ class GroupMembership(CreatedAt, Base):
 class Lesson(UUIDPrimaryKey, CreatedAt, Base):
     __tablename__ = "lessons"
     __table_args__ = (
+        CheckConstraint("time_limit_seconds IS NULL OR time_limit_seconds > 0", name="time_limit"),
         UniqueConstraint("teacher_id", "start_request_id"),
         CheckConstraint(
             "available_until IS NULL OR available_from IS NULL OR available_until > available_from",
@@ -75,6 +76,7 @@ class Lesson(UUIDPrimaryKey, CreatedAt, Base):
     )
     available_from: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     available_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    time_limit_seconds: Mapped[int | None] = mapped_column(Integer)
     learning: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict, server_default="{}")
     start_request_id: Mapped[UUID | None] = mapped_column()
     start_fingerprint: Mapped[str | None] = mapped_column(String(64))
@@ -151,6 +153,7 @@ class Attempt(UUIDPrimaryKey, Base):
     first_response_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     end_reason: Mapped[str | None] = mapped_column(Text)
+    pauses: Mapped[list] = mapped_column(JSONB, default=list, server_default="[]")
 
 
 class AttemptEvent(UUIDPrimaryKey, Base):

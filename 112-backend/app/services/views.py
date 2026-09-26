@@ -8,6 +8,7 @@ from app.models import (
     Attempt,
     Lesson,
     LessonEvaluation,
+    LessonExecution,
     ScenarioVersion,
     TrainingGroup,
     User,
@@ -78,13 +79,19 @@ def lesson_rows_query(*, teacher_id: UUID | None = None, student_id: UUID | None
             ScenarioVersion.title.label("scenario_title"),
             ScenarioVersion.role,
             TrainingGroup.name.label("group_name"),
+            Lesson.time_limit_seconds,
+            LessonExecution.started_at.label("execution_started_at"),
+            LessonExecution.paused_at,
+            LessonExecution.ended_at.label("execution_ended_at"),
             Lesson.started_at,
             Lesson.ended_at,
             case(
                 (
                     (Lesson.status == "finished")
+                    | LessonExecution.ended_at.is_not(None)
                     | (counts.c.terminal_count == counts.c.card_count),
                     func.coalesce(
+                        LessonExecution.ended_at,
                         counts.c.last_finished_at,
                         Lesson.ended_at,
                         Lesson.started_at,
@@ -98,8 +105,12 @@ def lesson_rows_query(*, teacher_id: UUID | None = None, student_id: UUID | None
             Lesson.status,
             case(
                 (Lesson.status == "finished", "submitted"),
+                (LessonExecution.ended_at.is_not(None), "submitted"),
                 (counts.c.terminal_count == counts.c.card_count, "submitted"),
-                (counts.c.started_count > 0, "in_progress"),
+                (
+                    LessonExecution.started_at.is_not(None) | (counts.c.started_count > 0),
+                    "in_progress",
+                ),
                 else_="assigned",
             ).label("work_status"),
             counts.c.card_count,
@@ -111,6 +122,11 @@ def lesson_rows_query(*, teacher_id: UUID | None = None, student_id: UUID | None
         )
         .select_from(counts)
         .join(Lesson, Lesson.id == counts.c.lesson_id)
+        .outerjoin(
+            LessonExecution,
+            (LessonExecution.lesson_id == Lesson.id)
+            & (LessonExecution.student_id == counts.c.student_id),
+        )
         .join(User, User.id == counts.c.student_id)
         .join(ScenarioVersion, ScenarioVersion.id == Lesson.scenario_version_id)
         .outerjoin(TrainingGroup, TrainingGroup.id == Lesson.group_id)
