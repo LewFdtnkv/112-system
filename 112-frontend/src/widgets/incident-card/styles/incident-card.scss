@@ -220,13 +220,20 @@
 }
 
 .arm-card-body {
-  display: grid;
-  grid-template-columns: minmax(0, 45.3fr) minmax(0, 54.7fr);
+  display: flex;
+  flex-direction: column;
   flex: 1;
   min-height: 0;
   overflow: auto;
   gap: 8px;
   padding: 0 8px 8px;
+}
+
+.arm-card-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 45.3fr) minmax(0, 54.7fr);
+  flex: 1 0 auto;
+  gap: 8px;
 }
 
 .arm-card-left {
@@ -654,8 +661,6 @@
 }
 
 .arm-category-choices {
-  max-height: 170px;
-  overflow-y: auto;
   display: flex;
   flex-wrap: wrap;
   gap: 13px 22px;
@@ -701,12 +706,9 @@
 }
 
 .arm-questionnaire {
-  flex: 1;
-  min-height: 0;
-  overflow: auto;
+  flex: 1 0 auto;
+  overflow: visible;
   background: #fff;
-  scrollbar-color: #36424a #c6ced2;
-  scrollbar-width: thin;
 }
 
 .arm-questionnaire h3,
@@ -1172,10 +1174,9 @@
     font-size: 28px;
   }
 
-  .arm-card-body {
+  .arm-card-fields {
     display: flex;
     flex-direction: column;
-    overflow: auto;
   }
 
   .arm-card-left {
@@ -1206,10 +1207,6 @@
   .arm-classification {
     min-height: 520px;
     flex: 0 0 auto;
-  }
-
-  .arm-questionnaire {
-    overflow: visible;
   }
 
   .arm-question {

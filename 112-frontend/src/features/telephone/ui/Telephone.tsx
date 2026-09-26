@@ -1,8 +1,5 @@
-import {
-  audioStatusLabels,
-  callStatusLabels,
-  stationModeLabels,
-} from "@/entities/telephony";
+import { TelephoneContacts } from "./TelephoneContacts";
+import { callStatusLabels } from "@/entities/telephony";
 import { getApiError } from "@/shared/api";
 import { CrewCallProgress } from "./CrewCallProgress";
 import { DialogueStatus } from "./DialogueStatus";
@@ -45,16 +42,7 @@ export function Telephone(props: TelephoneProps) {
     >
       <div className="training-telephone__heading">
         <b>Учебный телефон</b>
-        <span>
-          {station
-            ? `${station.name} · ${stationModeLabels[station.mode]}`
-            : "Рабочее место не назначено"}
-        </span>
       </div>
-      <CrewCallProgress
-        calls={data.crew_calls ?? []}
-        enabled={!!data.crew_calls_required}
-      />
       {!props.completed &&
         station?.enabled &&
         (!bound ||
@@ -74,14 +62,16 @@ export function Telephone(props: TelephoneProps) {
           </button>
         )}
       {station?.mode !== "external" && station && !station.provisioned && (
-        <p>Рабочее место настраивается на АТС. {station.error}</p>
+        <p role="status">Телефон ещё не готов. Обратитесь к преподавателю.</p>
       )}
       {!station && !props.completed && (
         <p>
           Обратитесь к администратору для назначения телефона или гарнитуры.
         </p>
       )}
-      {phone.state === "connecting" && <p role="status">Подключение к АТС…</p>}
+      {phone.state === "connecting" && (
+        <p role="status">Подключаем гарнитуру…</p>
+      )}
       {phone.state === "incoming" && (
         <div className="training-telephone__incoming" role="alert">
           <b>Входящий учебный звонок</b>
@@ -117,10 +107,7 @@ export function Telephone(props: TelephoneProps) {
             )}
           {station?.mode === "external" ? (
             <>
-              <span>
-                Наберите учебный контакт на телефоне. Состояние поступает от
-                адаптера АТС.
-              </span>
+              <span>Наберите учебный контакт на телефоне.</span>
               {!active.provider_confirmed && (
                 <button
                   className="arm-small-button"
@@ -151,50 +138,14 @@ export function Telephone(props: TelephoneProps) {
         </button>
       )}
       {!props.completed && !active && (
-        <ul className="training-telephone__contacts">
-          {data.cues.map((cue) => (
-            <li key={`${cue.id}:${cue.crew_code ?? ""}`}>
-              <span>
-                {cue.crew_name ? `${cue.crew_name} · ${cue.name}` : cue.name}
-                <small>{audioStatusLabels[cue.status]}</small>
-              </span>
-              <button
-                className="arm-small-button"
-                disabled={
-                  !ready ||
-                  busy ||
-                  (station?.mode !== "external" && cue.status !== "ready")
-                }
-                onClick={() =>
-                  start.mutate({
-                    cue_id: cue.id,
-                    crew_code: cue.crew_code,
-                    direction: "outgoing",
-                    transport: "manual",
-                  })
-                }
-              >
-                {station?.mode === "browser" ? "Позвонить" : "Выбрать контакт"}
-              </button>
-              {station?.mode !== "external" && !data.crew_calls_required && (
-                <button
-                  className="arm-small-button"
-                  disabled={!ready || busy || cue.status !== "ready"}
-                  onClick={() =>
-                    start.mutate({
-                      cue_id: cue.id,
-                      crew_code: cue.crew_code,
-                      direction: "incoming",
-                      transport: "callback",
-                    })
-                  }
-                >
-                  Вызвать меня
-                </button>
-              )}
-            </li>
-          ))}
-        </ul>
+        <TelephoneContacts
+          cues={data.cues}
+          mode={station?.mode}
+          crewCallsRequired={!!data.crew_calls_required}
+          ready={!!ready}
+          busy={busy}
+          onStart={(command) => start.mutate(command)}
+        />
       )}
       {!props.completed && data.cues.length === 0 && (
         <p>
@@ -203,6 +154,10 @@ export function Telephone(props: TelephoneProps) {
             : "Для карточки ещё нет телефонных сообщений. Их подготовит преподаватель."}
         </p>
       )}
+      <CrewCallProgress
+        calls={data.crew_calls ?? []}
+        enabled={!!data.crew_calls_required}
+      />
       {data.calls.length > 0 && (
         <details>
           <summary>Журнал звонков ({data.calls.length})</summary>

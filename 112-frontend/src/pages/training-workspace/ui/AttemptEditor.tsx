@@ -1,3 +1,4 @@
+import { TrainingPanel } from "./TrainingPanel";
 import { Telephone } from "@/features/telephone";
 import { LearningHelp } from "@/features/learning-assistance";
 import { attemptCard } from "@/features/incident-editing";
@@ -51,7 +52,10 @@ export function AttemptEditor(props: AttemptEditorProps) {
         normSeconds={attempt.norm_seconds}
         remote={remote}
         trainingNotice={
-          <>
+          <TrainingPanel
+            condition={attempt.caller_message}
+            instruction={attempt.instructions}
+          >
             <Telephone attemptId={attempt.id} completed={completed} />
             <LearningHelp
               attempt={attempt}
@@ -60,7 +64,7 @@ export function AttemptEditor(props: AttemptEditorProps) {
               beforeRequest={beforeHint}
               onHighlight={setHighlight}
             />
-          </>
+          </TrainingPanel>
         }
       />
     </>

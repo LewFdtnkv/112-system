@@ -103,19 +103,21 @@ function IncidentCardForm(props: IncidentCardFormProps) {
           onViewChange={() => setPreview(!preview)}
           onHistory={setModal}
         />
-        {props.remote.message && (
-          <div className="arm-source-message" data-learning-target="source">
-            <b>Сообщение заявителя:</b> {props.remote.message}
-          </div>
-        )}
-        {props.trainingNotice}
         <div className="arm-card-body" key={viewing ? "view" : "edit"}>
-          <CardAddressPanel
-            viewing={summaryLayout}
-            onMap={() => setModal("map")}
-            onTranslate={() => setModal("translate")}
-          />
-          <CardClassification viewing={summaryLayout} />
+          {props.remote.message && (
+            <div className="arm-source-message" data-learning-target="source">
+              <b>Сообщение заявителя:</b> {props.remote.message}
+            </div>
+          )}
+          {props.trainingNotice}
+          <div className="arm-card-fields">
+            <CardAddressPanel
+              viewing={summaryLayout}
+              onMap={() => setModal("map")}
+              onTranslate={() => setModal("translate")}
+            />
+            <CardClassification viewing={summaryLayout} />
+          </div>
         </div>
         {editor.saved && (
           <p className="arm-card-notice" role="status">

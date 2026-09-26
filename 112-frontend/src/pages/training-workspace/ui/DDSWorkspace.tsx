@@ -1,3 +1,4 @@
+import { TrainingPanel } from "./TrainingPanel";
 import { DDSArrivalStatus } from "./DDSArrivalStatus";
 import { Telephone } from "@/features/telephone";
 import { LearningHelp } from "@/features/learning-assistance";
@@ -48,43 +49,88 @@ export function DDSWorkspace(props: DDSWorkspaceProps) {
           searching: false,
         }}
         trainingNotice={
-          <section className="dds-training-notice">
-            {props.lesson?.delivery === "dds-stream-v1" && (
-              <>
-                <DDSArrivalStatus lesson={props.lesson} />
-                <nav
-                  className="dds-card-navigation"
-                  aria-label="Поступившие карточки"
-                >
-                  {props.lesson.assignments
-                    .filter((a) => a.attempt_id)
-                    .map((a) => (
-                      <button
-                        key={a.id}
-                        type="button"
-                        className="arm-small-button"
-                        aria-current={
-                          a.attempt_id === attempt.id ? "page" : undefined
-                        }
-                        disabled={busy || a.attempt_id === attempt.id}
-                        onClick={() => {
-                          if (
-                            !workspace.editing ||
-                            window.confirm(
-                              "Перейти к другой карточке? Несохранённая запись статуса будет потеряна.",
+          <TrainingPanel
+            navigation={
+              props.lesson?.delivery === "dds-stream-v1" && (
+                <>
+                  <DDSArrivalStatus lesson={props.lesson} />
+                  <nav
+                    className="dds-card-navigation"
+                    aria-label="Поступившие карточки"
+                  >
+                    {props.lesson.assignments
+                      .filter((a) => a.attempt_id)
+                      .map((a) => (
+                        <button
+                          key={a.id}
+                          type="button"
+                          className="arm-small-button"
+                          aria-current={
+                            a.attempt_id === attempt.id ? "page" : undefined
+                          }
+                          disabled={busy || a.attempt_id === attempt.id}
+                          onClick={() => {
+                            if (
+                              !workspace.editing ||
+                              window.confirm(
+                                "Перейти к другой карточке? Несохранённая запись статуса будет потеряна.",
+                              )
                             )
-                          )
-                            props.onSelectAssignment?.(a);
-                        }}
-                      >
-                        Карточка {a.position} ·{" "}
-                        {a.status === "in_progress" ? "в работе" : "завершена"}
-                      </button>
-                    ))}
-                </nav>
+                              props.onSelectAssignment?.(a);
+                          }}
+                        >
+                          Карточка {a.position} ·{" "}
+                          {a.status === "in_progress"
+                            ? "в работе"
+                            : "завершена"}
+                        </button>
+                      ))}
+                  </nav>
+                </>
+              )
+            }
+            condition={
+              <>
+                {dds.profile.name} · {dds.goal}
+                {!completed && dds.information && (
+                  <p>{dds.information.message}</p>
+                )}
               </>
-            )}
-
+            }
+            instruction={attempt.instructions}
+            reference={
+              <details>
+                <summary>
+                  Памятка службы ·{" "}
+                  {dds.reaction_norm_seconds != null
+                    ? `первая реакция: ${elapsed} с / норматив ${dds.reaction_norm_seconds} с`
+                    : `первичное решение: ${elapsed} с от направления`}
+                </summary>
+                <p>{dds.profile.responsibility}</p>
+                <p>{dds.profile.procedure}</p>
+                {dds.profile.territories.map((t) => (
+                  <p key={t.code}>
+                    {t.name}: {t.description}
+                  </p>
+                ))}
+                {dds.profile.objects.map((o) => (
+                  <p key={o.code}>
+                    {o.name}, {o.address}: {o.responsibility}
+                  </p>
+                ))}
+                {(dds.crew_goals ?? []).map((g) => (
+                  <p key={g.crew_code}>
+                    Бригада {g.name}: {crewStatusLabels[g.status]}
+                  </p>
+                ))}
+                {dds.profile.contacts.map((c) => (
+                  <p key={c.code}>
+                    {c.name} {c.position}: {c.description}
+                  </p>
+                ))}
+              </details>
+            }
+          >
             <Telephone attemptId={attempt.id} completed={completed} />
             <LearningHelp
               attempt={attempt}
@@ -92,42 +138,6 @@ export function DDSWorkspace(props: DDSWorkspaceProps) {
               activity={workspace.activity}
               onHighlight={workspace.setHighlight}
             />
-            <details data-learning-target="source" open={attempt.learning.kind === "introduction" ? true : undefined}>
-              <summary>
-                Учебное задание ДДС · {dds.profile.name} · цель: {dds.goal} ·
-                {dds.reaction_norm_seconds != null
-                  ? `первая реакция: ${elapsed} с / норматив ${dds.reaction_norm_seconds} с`
-                  : `первичное решение: ${elapsed} с от направления`}
-              </summary>
-              <p>{attempt.instructions}</p>
-              <p>{dds.profile.responsibility}</p>
-              <p>{dds.profile.procedure}</p>
-              {dds.profile.territories.map((t) => (
-                <p key={t.code}>
-                  {t.name}: {t.description}
-                </p>
-              ))}
-              {dds.profile.objects.map((o) => (
-                <p key={o.code}>
-                  {o.name}, {o.address}: {o.responsibility}
-                </p>
-              ))}
-              {(dds.crew_goals ?? []).map((g) => (
-                <p key={g.crew_code}>
-                  Бригада {g.name}: {crewStatusLabels[g.status]}
-                </p>
-              ))}
-              {dds.profile.contacts.map((c) => (
-                <p key={c.code}>
-                  {c.name} {c.position}: {c.description}
-                </p>
-              ))}
-            </details>
-            {!completed && dds.information && (
-              <p>
-                <b>Сообщение по сценарию:</b> {dds.information.message}
-              </p>
-            )}
             {completed && (
               <p role="status">
                 Упражнение завершено. Автоматическая оценка сохранена.
@@ -145,7 +155,7 @@ export function DDSWorkspace(props: DDSWorkspaceProps) {
                 </button>
               </p>
             )}
-          </section>
+          </TrainingPanel>
         }
         responseFooter={<DDSFooter />}
       />

@@ -1,9 +1,17 @@
 .training-telephone {
-  padding: 8px 12px;
-  margin: 6px 0;
-  border: 1px solid #b6c6cf;
-  background: #f6f9fb;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  padding: 6px 10px;
+  border-top: 1px solid #d5e2e9;
   font-size: 13px;
+  p {
+    margin: 0;
+  }
+  > details {
+    flex-basis: 100%;
+  }
   &__heading,
   &__active,
   &__incoming {
@@ -11,7 +19,7 @@
     align-items: center;
     flex-wrap: wrap;
     gap: 10px;
-    margin-bottom: 6px;
+    margin: 0;
   }
   &__heading > span,
   small {
@@ -29,16 +37,30 @@
   }
   &__contacts {
     display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  &__contacts li {
-    display: flex;
+    flex: 1 1 400px;
     align-items: center;
-    gap: 8px;
-    padding: 5px 8px;
-    border: 1px solid #cbd6dc;
-    background: white;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-width: 0;
+    max-width: 100%;
+    select {
+      max-width: 100%;
+      width: 280px;
+      min-height: 28px;
+      border: 1px solid #b6c6cf;
+      background: white;
+      color: inherit;
+      font: inherit;
+    }
+    button {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    svg {
+      width: 14px;
+      height: 14px;
+    }
   }
   small {
     display: block;
@@ -67,11 +89,15 @@
 }
 
 .training-telephone__progress {
-  margin: 6px 0 10px;
-  padding: 8px 10px;
-  border-left: 3px solid #418ac3;
-  background: #edf4f9;
+  flex-basis: 100%;
+  font-size: 12px;
+  color: #536977;
+  ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+  }
   p {
-    margin: 0 0 5px;
+    margin: 0 0 3px;
   }
 }

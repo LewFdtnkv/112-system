@@ -174,9 +174,6 @@ export function useAttemptEditor({ initial, onSaved }: AttemptEditorProps) {
     onSave: async (fields) => {
       await save(fields);
     },
-    message: [attempt.caller_message, attempt.instructions]
-      .filter(Boolean)
-      .join("\n\n"),
     searching:
       entries.isFetching ||
       popular.isFetching ||
