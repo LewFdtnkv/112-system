@@ -92,6 +92,7 @@ async def monitoring(session, teacher_id, limit=20, offset=0):
     query = (
         select(
             Attempt.id.label("attempt_id"),
+            Attempt.student_id,
             Lesson.title,
             func.coalesce(
                 func.nullif(func.trim(func.concat_ws(" ", User.last_name, User.first_name)), ""),

@@ -126,6 +126,7 @@ async def test_proctoring_is_separate_scoped_and_idempotent(exercise, db_session
     )
     assert history["total"] == 1 and history["trusted"] is False
     monitor = await e.request("GET", "teaching/monitoring", actor="teacher")
+    assert monitor["items"][0]["student_id"] == str(e.t.accounts["student"].id)
     assert monitor["items"][0]["visibility"] == "tab.hidden"
     assert monitor["items"][0]["hidden_count"] == 1
     assert await db_session.scalar(select(func.count()).select_from(ProctoringEvent)) == 1
