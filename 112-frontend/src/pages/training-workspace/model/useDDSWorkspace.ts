@@ -18,7 +18,9 @@ export function useDDSWorkspace({
   const attempt = snapshot.data;
   const [highlight, setHighlight] = useState<string | null>(null);
   const [activity, setActivity] = useState(0);
-  const [activeService, setActiveService] = useState("");
+  const [activeService, setActiveService] = useState(
+    initial.dds?.card_exercise ? initial.dds.profile.service_id : "",
+  );
   const [activeCrew, setActiveCrew] = useState("");
   const [expanded, setExpanded] = useState(false);
   const [editing, setEditing] = useState(false);

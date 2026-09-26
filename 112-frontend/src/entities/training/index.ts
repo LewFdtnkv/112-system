@@ -58,3 +58,5 @@ export {
 } from "./model/scenarioDifficulty";
 
 export { cardElapsedSeconds } from "./model/cardClock";
+
+export type { DDSCardExercise, PreparedCrewEvent } from "./types/ddsExercise";

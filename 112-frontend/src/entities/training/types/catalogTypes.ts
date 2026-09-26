@@ -83,6 +83,7 @@ export interface CrewCommand {
 }
 
 export interface DDSHistoryEntry {
+  prepared?: boolean;
   id: string;
   at: string;
   status: string;
@@ -106,6 +107,8 @@ export interface CrewAssignment {
 }
 
 export interface DDSContext {
+  card_exercise?: boolean;
+  crew_messages?: { crew_code: string; message: string }[];
   workflow?: "crews-v1" | "service-v1";
   crews?: CrewAssignment[];
   crew_goals?: { crew_code: string; name: string; status: string }[];

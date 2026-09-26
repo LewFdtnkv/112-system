@@ -1,6 +1,7 @@
 import { crewStatusLabels } from "@/entities/training";
 import { ArmIconButton } from "@/shared/ui/arm";
 import { useDDSWorkspaceStore } from "../model/DDSWorkspaceContext";
+import { DDSCrewMessages } from "./DDSCrewMessages";
 import { DDSResponseHistory } from "./DDSResponseHistory";
 import { DDSTile } from "./DDSTile";
 
@@ -143,6 +144,7 @@ export function DDSFooter() {
           )}
         </div>
       )}
+      {own && !crew && <DDSCrewMessages unassignedOnly />}
       {crew && <DDSResponseHistory />}
     </footer>
   );

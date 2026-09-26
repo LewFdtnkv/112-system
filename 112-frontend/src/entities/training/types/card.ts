@@ -1,3 +1,4 @@
+import type { DDSCardExercise } from "./ddsExercise";
 import type { ClassifierEntry, Recipient } from "./catalog";
 
 export interface CardData {
@@ -13,6 +14,7 @@ export interface CardData {
 }
 
 export interface CardTemplate {
+  dds_exercise?: DDSCardExercise | null;
   generation_example?: boolean;
   generated_by_ai?: boolean;
   generation_method?: string | null;
@@ -52,6 +54,7 @@ export type CardListItem = Pick<
 
 export type CardTemplateInput = Pick<
   CardTemplate,
+  | "dds_exercise"
   | "title"
   | "classifier_version_id"
   | "classifier_entry_id"

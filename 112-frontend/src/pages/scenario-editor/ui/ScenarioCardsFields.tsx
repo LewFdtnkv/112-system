@@ -7,6 +7,7 @@ import type { ScenarioCardsFieldsProps } from "../types/ScenarioEditorPage";
 
 export function ScenarioCardsFields({
   role,
+  profileId,
   cards,
   choice,
   delays,
@@ -26,11 +27,21 @@ export function ScenarioCardsFields({
       </Typography>
       <ServerSelect
         label="Карточка из библиотеки"
-        queryKey={["card-options"]}
+        queryKey={["card-options", role, profileId]}
         value={choice}
         onChange={onChoiceChange}
         load={async (query, signal) =>
-          (await cardApi.cards({ q: query }, signal)).items.map((card) => ({
+          (
+            await cardApi.cards(
+              {
+                q: query,
+                ...(role === "dds" && profileId
+                  ? { dds_profile_id: profileId }
+                  : {}),
+              },
+              signal,
+            )
+          ).items.map((card) => ({
             id: card.id,
             label: card.title,
           }))

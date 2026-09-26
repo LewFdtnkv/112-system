@@ -3,6 +3,7 @@ import { Button, Stack } from "@mui/material";
 import { useCardEditor } from "../model/useCardEditor";
 import type { CardEditorProps } from "../types/CardEditor";
 import { CardEditorCondition } from "./CardEditorCondition";
+import { CardDDSSettings } from "./CardDDSSettings";
 import { CardEditorSolution } from "./CardEditorSolution";
 
 export function CardEditor({ onClose, initial, onReload }: CardEditorProps) {
@@ -11,7 +12,7 @@ export function CardEditor({ onClose, initial, onReload }: CardEditorProps) {
   return (
     <ValidatedForm
       error={save.error}
-      className="template-editor"
+      className={`template-editor ${editor.ddsExercise ? "template-editor--dds" : ""}`}
       onSubmit={(event) => {
         event.preventDefault();
         if (callerPhone.invalid) {
@@ -27,6 +28,10 @@ export function CardEditor({ onClose, initial, onReload }: CardEditorProps) {
         editor={editor}
         initial={initial}
         onReload={onReload}
+      />
+      <CardDDSSettings
+        value={editor.ddsExercise}
+        onChange={editor.setDDSExercise}
       />
       <Stack className="template-editor-actions" direction="row" spacing={2}>
         <Button

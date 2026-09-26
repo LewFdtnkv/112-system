@@ -8,6 +8,7 @@ export type ScenarioMetadataFieldsProps = {
 };
 
 export type ScenarioCardsFieldsProps = {
+  profileId?: string;
   role: ScenarioInput["role"];
   cards: SelectOption[];
   choice: SelectOption | null;

@@ -1,6 +1,7 @@
 import { crewStatusLabels } from "@/entities/training";
 import { ArmIconButton } from "@/shared/ui/arm";
 import { useDDSWorkspaceStore } from "../model/DDSWorkspaceContext";
+import { DDSCrewMessages } from "./DDSCrewMessages";
 import { DDSHistoryRow } from "./DDSHistoryRow";
 
 export function DDSResponseHistory() {
@@ -17,6 +18,7 @@ export function DDSResponseHistory() {
           onClick={() => w.setActiveCrew("")}
         />
       </header>
+      <DDSCrewMessages crewCode={crew.crew_code} />
       <div className="dds-history">
         {crew.history.map((e) => (
           <DDSHistoryRow

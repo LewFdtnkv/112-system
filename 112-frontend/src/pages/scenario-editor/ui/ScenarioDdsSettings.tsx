@@ -2,7 +2,6 @@ import { serviceProfileApi } from "@/entities/training";
 import { ServerSelect } from "@/shared/ui/ServerSelect";
 import { Alert } from "@mui/material";
 import type { ScenarioDdsSettingsProps } from "../types/ScenarioEditorPage";
-import { DDSPolicyFields } from "./DDSPolicyFields";
 
 export function ScenarioDdsSettings({
   form,
@@ -12,15 +11,11 @@ export function ScenarioDdsSettings({
 }: ScenarioDdsSettingsProps) {
   return (
     <>
-      <Alert severity="warning">
-        Выберите опубликованный профиль и задайте сообщения и ожидаемые действия
-        ДДС. Для оповещения бригад используются готовые голосовые реплики.
+      <Alert severity="info">
+        История, сообщения и учебные цели бригад задаются в каждой карточке
+        библиотеки. Выберите карточки для одного профиля службы; здесь задаётся
+        только их поступление.
       </Alert>
-      <DDSPolicyFields
-        profileId={profile?.id}
-        value={form.dds_policy!}
-        onChange={(dds_policy) => onChange({ ...form, dds_policy })}
-      />
       <ServerSelect
         name="service_profile_id"
         required
@@ -31,7 +26,7 @@ export function ScenarioDdsSettings({
           onProfileChange(next);
           onChange({
             ...form,
-            dds_policy: { ...form.dds_policy!, required_crews: [] },
+            dds_policy: null,
           });
         }}
         load={async (query, signal) =>

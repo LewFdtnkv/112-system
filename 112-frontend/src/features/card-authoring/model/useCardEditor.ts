@@ -3,7 +3,12 @@ import {
   emptyIncidentAddress,
   formatAddress,
 } from "@/entities/incident-card";
-import { cardApi, cardKeys, type FeatureDefinition } from "@/entities/training";
+import {
+  cardApi,
+  cardKeys,
+  type FeatureDefinition,
+  type DDSCardExercise,
+} from "@/entities/training";
 import { matchesFeature, type FeatureValue } from "@/shared/lib/featureValues";
 import { type SelectOption } from "@/shared/ui/ServerSelect";
 import type { MapPoint } from "@/shared/lib/geo";
@@ -26,6 +31,9 @@ const mapPoint = (value: unknown): MapPoint | null => {
 };
 
 export function useCardEditor({ onClose, initial }: CardEditorProps) {
+  const [ddsExercise, setDDSExercise] = useState<DDSCardExercise | null>(
+    initial?.dds_exercise ?? null,
+  );
   const [location, setLocation] = useState<MapPoint | null>(() =>
     mapPoint(initial?.data.additional_fields?.location),
   );
@@ -173,6 +181,7 @@ export function useCardEditor({ onClose, initial }: CardEditorProps) {
         flags,
         location,
       });
+      body.dds_exercise = ddsExercise;
       return initial
         ? cardApi.update(initial.id, {
             ...body,
@@ -197,6 +206,8 @@ export function useCardEditor({ onClose, initial }: CardEditorProps) {
     caller_phone: "Телефон заявителя",
   };
   return {
+    ddsExercise,
+    setDDSExercise,
     flags,
     setFlag,
     silent,

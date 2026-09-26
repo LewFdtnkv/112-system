@@ -395,3 +395,34 @@
     transition: none;
   }
 }
+
+.dds-crew-messages {
+  grid-column: 1 / -1;
+  padding: 8px 12px;
+  background: #fff8e8;
+  border: 1px solid #d9bc79;
+  color: #202020;
+  max-height: 180px;
+  overflow: auto;
+  text-align: left;
+  white-space: normal;
+
+  p {
+    margin: 4px 0 8px;
+    white-space: pre-wrap;
+  }
+  small {
+    color: #5c5140;
+  }
+}
+
+.dds-crew-messages--unassigned {
+  position: absolute;
+  bottom: calc(100% + 64px);
+  left: 72px;
+  z-index: 3;
+  width: min(600px, calc(100vw - 96px));
+}
+.dds-footer--expanded .dds-crew-messages--unassigned {
+  bottom: calc(100% + 128px);
+}

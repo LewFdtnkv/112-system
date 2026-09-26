@@ -67,11 +67,7 @@ function Editor({ initial }: EditorProps) {
     role: initial?.role ?? "operator_112",
     card_ids: [],
     service_profile_id: initial?.service_profile_id ?? null,
-    dds_policy: initial?.dds_policy ?? {
-      workflow: "crews-v1",
-      crew_calls_required: true,
-      steps: [{ status: "accepted", message: "", crew_number: null }],
-    },
+    dds_policy: null,
   }));
   const schedule = useScenarioCards(initial);
   const [profile, setProfile] = useState<SelectOption | null>(() =>
@@ -89,7 +85,7 @@ function Editor({ initial }: EditorProps) {
             form.role === "dds"
               ? schedule.offsets
               : schedule.cards.map(() => 0),
-          dds_policy: form.role === "dds" ? form.dds_policy : null,
+          dds_policy: null,
           service_profile_id:
             form.role === "dds" ? (profile?.id ?? null) : null,
         },
@@ -152,6 +148,7 @@ function Editor({ initial }: EditorProps) {
       >
         <ScenarioCardsFields
           role={form.role}
+          profileId={profile?.id}
           cards={schedule.cards}
           choice={schedule.choice}
           delays={schedule.delays}
