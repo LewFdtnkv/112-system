@@ -124,4 +124,9 @@ def resolve_address(p, plan, rng):
         address["description"] = description
         return address, f"{address['locality']}, {address['street']}, {description}"
     address["house"] = p.house or selected["house"]
-    return address, f"{address['locality']}, {address['street']}, д. {address['house']}"
+    text = f"{address['locality']}, {address['street']}, д. {address['house']}"
+    for key, label in (("building", "корп."), ("structure", "стр.")):
+        if value := getattr(p, key):
+            address[key] = value
+            text += f", {label} {value}"
+    return address, text

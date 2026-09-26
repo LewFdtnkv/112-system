@@ -9,7 +9,7 @@ from starlette.concurrency import run_in_threadpool
 
 from app.core.security import hash_password
 from app.models import AuthSession, User, UserActivity
-from app.schemas.user import UserCreate, UserPasswordReset, UserUpdate
+from app.schemas.user import ProfileUpdate, UserCreate, UserPasswordReset, UserUpdate
 from app.services.auth import lock_user
 
 
@@ -127,5 +127,25 @@ async def reset_password(
         .values(revoked_at=now)
     )
     session.add(UserActivity(user_id=user.id, actor_id=admin_id, kind="account.password_reset"))
+    await session.commit()
+    return user
+
+
+async def update_profile(session: AsyncSession, user_id: UUID, payload: ProfileUpdate) -> User:
+    user = await lock_user(session, user_id)
+    if user is None or not user.is_active or user.must_change_password:
+        raise HTTPException(403, "Account unavailable")
+    changes = payload.model_dump(exclude_unset=True)
+    before = {key: getattr(user, key) for key in changes}
+    for key, value in changes.items():
+        setattr(user, key, value)
+    session.add(
+        UserActivity(
+            user_id=user_id,
+            actor_id=user_id,
+            kind="account.updated",
+            details={"before": before, "after": changes},
+        )
+    )
     await session.commit()
     return user

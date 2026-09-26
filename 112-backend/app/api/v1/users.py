@@ -1,13 +1,14 @@
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from sqlalchemy import select
 
 from app.api.dependencies import AdminDep, CurrentUserDep, SessionDep, StaffDep
 from app.api.pagination import Limit, Offset
 from app.models import User
-from app.schemas.user import UserCreate, UserPasswordReset, UserRead, UserUpdate
-from app.services.users import create_user, reset_password, update_user
+from app.schemas.user import ProfileUpdate, UserCreate, UserPasswordReset, UserRead, UserUpdate
+from app.services.user_photos import save_photo
+from app.services.users import create_user, reset_password, update_profile, update_user
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -20,6 +21,16 @@ async def add_user(payload: UserCreate, session: SessionDep, admin: AdminDep) ->
 @router.get("/me", response_model=UserRead)
 async def me(user: CurrentUserDep) -> User:
     return user
+
+
+@router.patch("/me", response_model=UserRead)
+async def edit_profile(payload: ProfileUpdate, session: SessionDep, user: CurrentUserDep) -> User:
+    return await update_profile(session, user.id, payload)
+
+
+@router.put("/me/photo", status_code=204)
+async def upload_own_photo(request: Request, session: SessionDep, user: CurrentUserDep):
+    await save_photo(session, user.id, user.id, request.stream())
 
 
 @router.get("", response_model=list[UserRead])

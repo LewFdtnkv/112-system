@@ -160,3 +160,46 @@ async def test_random_name_and_fixed_address_survive_enqueue_and_worker(teaching
     assert card.data["caller_details"]["gender"] == "Женский"
     assert name in card.caller_message
     assert a["street"] in card.caller_message
+
+
+async def test_map_address_parts_and_point_survive_generation(teaching, db_session):
+    point = {"latitude": 55.757, "longitude": 37.611}
+    request = payload(
+        teaching,
+        mode="template",
+        locality="Москва",
+        street="Тверская улица",
+        house="10",
+        building="2",
+        structure="1",
+        address_format="structured",
+        location=point,
+    ) | {"count": 1}
+    jobs = await teaching.post("card-generations", request, expected=202)
+    assert "корп. 2, стр. 1" in jobs[0]["address_text"]
+    job = await claim(db_session)
+    assert job.input["card"]["data"]["additional_fields"]["location"] == point
+    text, metadata = compose(job)
+    assert await finish(db_session, job.id, job.worker_id, text, metadata)
+    card = await db_session.get(CardTemplate, job.card_template_id)
+    assert card.data["additional_fields"]["location"] == point
+    assert card.data["address_details"]["building"] == "2"
+    assert card.data["address_details"]["structure"] == "1"
+    assert "корп. 2, стр. 1" in card.caller_message
+
+
+def test_map_point_requires_a_fixed_address():
+    from pydantic import ValidationError
+
+    for parameters in (
+        {"location": {"latitude": 55.7, "longitude": 37.6}},
+        {"building": "2"},
+        {
+            "location": {"latitude": 91.0, "longitude": 37.6},
+            "locality": "Москва",
+            "street": "Тверская",
+            "house": "1",
+        },
+    ):
+        with pytest.raises(ValidationError):
+            GenerationParameters(**parameters)

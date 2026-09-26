@@ -223,7 +223,11 @@ async def enqueue(session, teacher_id: UUID, request: GenerationCreate):
                 "caller_phone": phone,
                 "caller_details": {"gender": facts["Пол"], "age": facts["Возраст"]},
                 "features": {"ekp": answers, "victimsCount": victims_count},
-                "additional_fields": {"details": flags, "messageChannel": plan["message_format"]},
+                "additional_fields": {
+                    "details": flags,
+                    "messageChannel": plan["message_format"],
+                    **({"location": p.location.model_dump()} if p.location else {}),
+                },
             },
             recipient_service_ids=service_ids,
             use_recommended_recipients=p.service_ids is None,

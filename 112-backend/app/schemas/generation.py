@@ -6,6 +6,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, StrictBool, StringConstraints, model_validator
 
 from app.schemas.catalog_document import FeatureAnswer
+from app.schemas.location import MapPoint
 
 ShortText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
 
@@ -33,6 +34,9 @@ class GenerationParameters(BaseModel):
     locality: ShortText | None = None
     street: ShortText | None = None
     house: ShortText | None = None
+    building: ShortText | None = None
+    structure: ShortText | None = None
+    location: MapPoint | None = None
     object: ShortText | None = None
     time_of_day: Literal["morning", "day", "evening", "night"] | None = None
     caller_state: Literal["calm", "worried", "panicked"] | None = None
@@ -57,6 +61,14 @@ class GenerationParameters(BaseModel):
             raise ValueError("Для сообщения только с именем пол и возраст не задаются")
         if self.address_format == "descriptive" and self.house:
             raise ValueError("Для описательного адреса номер дома не задаётся")
+        if (self.building or self.structure) and not self.house:
+            raise ValueError("Для корпуса или строения укажите дом")
+        if self.location and not (
+            self.locality and self.street and (self.house or self.address_description)
+        ):
+            raise ValueError(
+                "Для точки на карте укажите населённый пункт, улицу и дом или ориентир"
+            )
         if self.address_description and (self.address_format == "structured" or self.house):
             raise ValueError("Ориентир требует описательного адреса без номера дома")
         return self

@@ -1,52 +1,21 @@
-from io import BytesIO
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Request, Response
-from PIL import Image, UnidentifiedImageError
 from sqlalchemy import case, func, select
 from starlette.concurrency import run_in_threadpool
 
 from app.api.dependencies import AdminDep, CurrentUserDep, SessionDep
 from app.core.request_log import LOG_DIRECTORY
-from app.models import AuthSession, User, UserActivity, UserPhoto
+from app.models import AuthSession, User, UserPhoto
 from app.services.activity import owned_student
+from app.services.user_photos import save_photo
 
 router = APIRouter(tags=["administration"])
 
 
-def normalize_photo(content):
-    try:
-        with Image.open(BytesIO(content)) as image:
-            if image.format not in ("JPEG", "PNG") or image.width * image.height > 16_000_000:
-                raise ValueError()
-            image.load()
-            image.thumbnail((512, 512))
-            output = BytesIO()
-            image.convert("RGB").save(output, format="JPEG", quality=85)
-            return output.getvalue()
-    except (UnidentifiedImageError, OSError, ValueError, Image.DecompressionBombError):
-        raise HTTPException(422, "Choose a valid PNG or JPEG photo up to 16 megapixels") from None
-
-
 @router.put("/admin/users/{user_id}/photo", status_code=204)
 async def upload_photo(user_id: UUID, request: Request, session: SessionDep, admin: AdminDep):
-    if await session.get(User, user_id) is None:
-        raise HTTPException(404, "User not found")
-    content = bytearray()
-    async for chunk in request.stream():
-        content.extend(chunk)
-        if len(content) > 2_000_000:
-            raise HTTPException(413, "Photo must be smaller than 2 MB")
-    normalized = await run_in_threadpool(normalize_photo, bytes(content))
-    from sqlalchemy.dialects.postgresql import insert
-
-    await session.execute(
-        insert(UserPhoto)
-        .values(user_id=user_id, content=normalized)
-        .on_conflict_do_update(index_elements=["user_id"], set_={"content": normalized})
-    )
-    session.add(UserActivity(user_id=user_id, actor_id=admin.id, kind="account.photo_changed"))
-    await session.commit()
+    await save_photo(session, user_id, admin.id, request.stream())
 
 
 @router.get("/users/{user_id}/photo")

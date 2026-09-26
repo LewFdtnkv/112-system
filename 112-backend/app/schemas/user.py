@@ -68,13 +68,16 @@ class UserRead(BaseModel):
     password_changed_at: datetime | None
 
 
-class UserUpdate(BaseModel):
+class ProfileUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     first_name: str = Field(default="", max_length=100)
     last_name: str = Field(default="", max_length=100)
     middle_name: str | None = Field(default=None, max_length=100)
     email: str | None = Field(default=None, max_length=254, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+class UserUpdate(ProfileUpdate):
     reason: str | None = Field(default=None, min_length=1, max_length=2000)
     is_active: bool = True
 

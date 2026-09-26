@@ -73,6 +73,8 @@ Swagger: <http://localhost:8000/docs>. PostgreSQL на хосте: `localhost:15
 | `POST /auth/change-password` | Access-токен + JSON `current_password`, `new_password` |
 | `POST /auth/logout` | Access-токен; отзыв текущей сессии, ответ `204` |
 | `GET /users/me` | Собственный профиль после обязательной смены пароля |
+| `PATCH /users/me` | Собственный профиль без изменения роли, логина или доступа; аудит изменений |
+| `PUT /users/me/photo` | Собственное фото PNG/JPEG до 2 МБ, нормализация и аудит |
 | `GET /users?limit=20&offset=0` | Преподаватель или администратор; `limit` от 1 до 100 |
 | `GET /users/{user_id}` | Преподаватель или администратор; `404`, если пользователя нет |
 | `POST /users` | Только администратор; новый аккаунт с обязательной сменой стартового пароля |
