@@ -123,9 +123,9 @@ async function setup(page: Page, timed = false) {
       "operator_112",
       started ? "in_progress" : "assigned",
     );
-    const active = started && !paused ? [own] : [];
+    const active = started ? [own] : [];
     const available = [
-      ...(!started || paused ? [own] : []),
+      ...(!started ? [own] : []),
       row("dds", "dds", "assigned"),
     ];
     return r.fulfill({
@@ -202,6 +202,8 @@ for (const timed of [false, true])
     ).toBeVisible();
     await expect(available).not.toContainText("Можно начать");
     await expect(available).not.toContainText("В процессе");
+    await expect(available).not.toContainText("Карточки:");
+    await expect(available.getByRole("progressbar")).toHaveCount(0);
     await page.screenshot({
       path: info.outputPath("dashboard.png"),
       fullPage: true,
@@ -220,7 +222,9 @@ for (const timed of [false, true])
     });
     await page.getByRole("button", { name: "Приступить к заданию" }).click();
     await page.getByRole("button", { name: "Подтвердить начало" }).click();
-    await page.getByRole("button", { name: "Начать следующую карточку" }).click();
+    await page
+      .getByRole("button", { name: "Начать следующую карточку" })
+      .click();
     await page
       .getByLabel("Сообщение со слов заявителя", { exact: true })
       .fill("Черновик сохранён перед выходом");
@@ -237,10 +241,18 @@ for (const timed of [false, true])
       fixture.calls.indexOf("leave"),
     );
     await expect(
-      page.getByRole("region", { name: "Активные занятия 0" }),
+      page.getByRole("region", { name: "Активные занятия 1" }),
     ).toBeVisible();
+    await expect(
+      page.getByRole("region", { name: "Доступные занятия 1" }),
+    ).not.toContainText("Карточки:");
+    await page.screenshot({
+      path: info.outputPath("dashboard-paused.png"),
+      fullPage: true,
+      animations: "disabled",
+    });
     await page
-      .getByRole("region", { name: "Доступные занятия 2" })
+      .getByRole("region", { name: "Активные занятия 1" })
       .getByRole("link")
       .first()
       .click();
@@ -269,6 +281,40 @@ for (const timed of [false, true])
       animations: "disabled",
     });
   });
+
+test("started lesson remains active after direct navigation to dashboard", async ({
+  page,
+}, info) => {
+  await setup(page);
+  await login(page);
+  await page
+    .getByRole("region", { name: "Доступные занятия 2" })
+    .getByRole("link")
+    .first()
+    .click();
+  await page.getByRole("button", { name: "Приступить к заданию" }).click();
+  await page.getByRole("button", { name: "Подтвердить начало" }).click();
+  await page.getByRole("button", { name: "Начать следующую карточку" }).click();
+  await expect(page.locator(".arm-card-dialog")).toBeVisible();
+  await page.goto("/student");
+  const active = page.getByRole("region", { name: "Активные занятия 1" });
+  await expect(
+    active.getByRole("link", { name: /Продолжить урок/ }),
+  ).toBeVisible();
+  await expect(active.getByRole("progressbar")).toHaveCount(1);
+  await expect(
+    page.getByRole("region", { name: "Доступные занятия 1" }),
+  ).not.toContainText("Карточки:");
+  await page.reload();
+  await expect(
+    active.getByRole("link", { name: /Продолжить урок/ }),
+  ).toBeVisible();
+  await page.screenshot({
+    path: info.outputPath("dashboard-after-navigation.png"),
+    fullPage: true,
+    animations: "disabled",
+  });
+});
 
 test("dashboard shows current work separately from available DDS lessons", async ({
   page,

@@ -40,8 +40,8 @@ export function StudentActiveLessons({
           </h2>
           <p>
             {section === "active"
-              ? "Занятия, которые выполняются сейчас."
-              : "Начните новое занятие или продолжите после паузы."}
+              ? "Начатые занятия, которые можно продолжить."
+              : "Занятия, к которым вы ещё не приступали."}
           </p>
         </div>
       </div>
@@ -67,16 +67,18 @@ export function StudentActiveLessons({
                 </span>
                 <h3>{row.scenario_title}</h3>
                 <p>{row.title}</p>
-                <div className="student-lesson-progress">
-                  <span>
-                    Карточки: {row.completed_count} / {row.card_count}
-                  </span>
-                  <progress
-                    aria-label={`Выполнение: ${row.scenario_title}`}
-                    max={row.card_count || 1}
-                    value={row.completed_count}
-                  />
-                </div>
+                {section === "active" && (
+                  <div className="student-lesson-progress">
+                    <span>
+                      Карточки: {row.completed_count} / {row.card_count}
+                    </span>
+                    <progress
+                      aria-label={`Выполнение: ${row.scenario_title}`}
+                      max={row.card_count || 1}
+                      value={row.completed_count}
+                    />
+                  </div>
+                )}
                 <small>
                   До: {dateText(row.deadline_at ?? row.available_until)}
                   {row.deadline_at || row.available_until ? " МСК" : ""}
@@ -100,7 +102,7 @@ export function StudentActiveLessons({
       ) : (
         <p className="student-empty">
           {section === "active"
-            ? "Сейчас нет выполняемых занятий."
+            ? "Нет начатых незавершённых занятий."
             : "Сейчас нет доступных занятий."}
           {own ? " Будущие и завершённые занятия доступны в истории ниже." : ""}
         </p>
