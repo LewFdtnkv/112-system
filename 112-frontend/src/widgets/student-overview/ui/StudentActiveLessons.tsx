@@ -18,21 +18,30 @@ export function StudentActiveLessons({
   data,
   own,
   onPage,
+  section,
 }: StudentActiveLessonsProps) {
-  const { user, active_lessons: active } = data;
+  const { user } = data;
+  const active =
+    section === "active" ? data.active_lessons : data.available_lessons;
+  const heading =
+    section === "active" ? "Активные занятия" : "Доступные занятия";
+  if (!active) return null;
   const resultPath = (lessonId: string) =>
     `${getTrainingResultPath(lessonId)}${own ? "" : `?student=${encodeURIComponent(user.id)}`}`;
   return (
-    <section className="student-active" aria-labelledby="student-active-title">
+    <section
+      className="student-active"
+      aria-labelledby={`student-${section}-title`}
+    >
       <div className="student-section-heading">
         <div>
-          <h2 id="student-active-title">
-            Активные уроки <span>{active.total}</span>
+          <h2 id={`student-${section}-title`}>
+            {heading} <span>{active.total}</span>
           </h2>
           <p>
-            {own
-              ? "Продолжите начатое занятие или приступите к новому."
-              : "Доступные и незаконченные занятия ученика."}
+            {section === "active"
+              ? "Занятия, которые выполняются сейчас."
+              : "Начните новое занятие или продолжите после паузы."}
           </p>
         </div>
       </div>
@@ -48,11 +57,12 @@ export function StudentActiveLessons({
                 }
                 className="student-active-card"
               >
+                <strong
+                  className={`student-operator-badge student-operator-badge--${row.role}`}
+                >
+                  {row.role === "dds" ? "Оператор ДДС" : "Оператор 112"}
+                </strong>
                 <span className="student-lesson-state">
-                  {row.work_status === "in_progress"
-                    ? "В процессе"
-                    : "Можно начать"}{" "}
-                  · {row.role === "dds" ? "ДДС" : "Оператор 112"} ·{" "}
                   {lessonKindLabels[row.learning.kind]}
                 </span>
                 <h3>{row.scenario_title}</h3>
@@ -68,8 +78,13 @@ export function StudentActiveLessons({
                   />
                 </div>
                 <small>
-                  Срок: {dateText(row.available_until)}
-                  {row.available_until ? " МСК" : ""}
+                  До: {dateText(row.deadline_at ?? row.available_until)}
+                  {row.deadline_at || row.available_until ? " МСК" : ""}
+                </small>
+                <small>
+                  {row.time_limit_seconds
+                    ? `На занятие: ${row.time_limit_seconds / 60} мин с начала`
+                    : "Без лимита минут · можно делать паузы"}
                 </small>
                 <strong className="student-lesson-action">
                   {own
@@ -84,7 +99,9 @@ export function StudentActiveLessons({
         </ul>
       ) : (
         <p className="student-empty">
-          Сейчас нет активных уроков.
+          {section === "active"
+            ? "Сейчас нет выполняемых занятий."
+            : "Сейчас нет доступных занятий."}
           {own ? " Будущие и завершённые занятия доступны в истории ниже." : ""}
         </p>
       )}

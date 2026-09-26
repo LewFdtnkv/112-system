@@ -59,7 +59,11 @@ export function StudentProfileDialog({
               </div>
               <Typography>
                 Активных уроков:{" "}
-                <strong>{query.data.active_lessons.total}</strong> · Завершено:{" "}
+                <strong>
+                  {query.data.active_lessons.total +
+                    (query.data.available_lessons?.total ?? 0)}
+                </strong>{" "}
+                · Завершено:{" "}
                 <strong>{query.data.performance.completed_lessons}</strong>
               </Typography>
               {query.data.performance.tracks.map((track) => (

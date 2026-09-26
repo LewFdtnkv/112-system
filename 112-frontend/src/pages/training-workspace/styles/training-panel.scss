@@ -50,3 +50,14 @@
     gap: 2px;
   }
 }
+
+.lesson-session-tools {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  padding: 4px 10px 8px;
+  strong {
+    font-variant-numeric: tabular-nums;
+  }
+}

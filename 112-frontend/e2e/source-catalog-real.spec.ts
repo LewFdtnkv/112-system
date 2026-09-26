@@ -137,6 +137,7 @@ test("source catalog: conditional 101 branches and stored student answers", asyn
     .getByRole("button", { name: "Приступить к заданию", exact: true })
     .click();
   await page.getByRole("button", { name: "Подтвердить начало" }).click();
+  await page.getByRole("button", { name: "Начать следующую карточку" }).click();
   const editor = page.getByRole("dialog");
   const input = editor.getByLabel("Тип происшествия", { exact: true });
   await input.fill("101");

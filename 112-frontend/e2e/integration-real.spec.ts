@@ -255,6 +255,7 @@ test("real API: authoring, operator drafts, revision conflict, notification and 
   await page.goto(`/student/sessions/${lessonId}`);
   await page.getByRole("button", { name: "Приступить к заданию" }).click();
   await page.getByRole("button", { name: "Подтвердить начало" }).click();
+  await page.getByRole("button", { name: "Начать следующую карточку" }).click();
   const card = page.getByRole("dialog");
   await expect(card).toBeVisible();
   await expect(

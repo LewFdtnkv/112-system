@@ -621,6 +621,7 @@ test("real API: EKP file roundtrip, rule editing, profile publication and DDS ex
     .getByRole("button", { name: "Приступить к заданию", exact: true })
     .click();
   await page.getByRole("button", { name: "Подтвердить начало" }).click();
+  await page.getByRole("button", { name: "Начать следующую карточку" }).click();
   const editor = page.getByRole("dialog");
   await editor.getByLabel("Тип происшествия", { exact: true }).fill("101");
   await editor

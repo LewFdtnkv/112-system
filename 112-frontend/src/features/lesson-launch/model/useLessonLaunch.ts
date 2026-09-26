@@ -77,7 +77,7 @@ export function useLessonLaunch() {
         learning,
         ...(!targets.length && student ? { student_id: student.id } : {}),
         ...(title.trim() ? { title } : {}),
-        ...(limit ? { time_limit_seconds: Number(limit) } : {}),
+        ...(limit ? { time_limit_seconds: Number(limit) * 60 } : {}),
       }),
     onSuccess: (lesson) => {
       void client.invalidateQueries({ queryKey: ["lessons"] });

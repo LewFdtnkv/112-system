@@ -8,11 +8,17 @@ import { Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 export const StudentDashboardPage = () => {
+  const [availablePage, setAvailablePage] = useState(0);
   const [activePage, setActivePage] = useState(0);
   const profile = useQuery({
-    queryKey: ["student-overview", "me", activePage],
+    queryKey: ["student-overview", "me", activePage, availablePage],
     queryFn: ({ signal }) =>
-      activityApi.overview(undefined, activePage * 6, signal),
+      activityApi.overview(
+        undefined,
+        activePage * 6,
+        signal,
+        availablePage * 6,
+      ),
     refetchInterval: 15000,
   });
   return (
@@ -28,6 +34,7 @@ export const StudentDashboardPage = () => {
             data={profile.data}
             own
             onActivePage={setActivePage}
+            onAvailablePage={setAvailablePage}
           />
         )}
       </QueryState>

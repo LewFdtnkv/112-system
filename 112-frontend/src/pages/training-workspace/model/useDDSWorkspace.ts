@@ -1,4 +1,9 @@
-import { ddsApi, useAttemptSnapshot, type Attempt } from "@/entities/training";
+import {
+  cardElapsedSeconds,
+  ddsApi,
+  useAttemptSnapshot,
+  type Attempt,
+} from "@/entities/training";
 import { randomUUID } from "@/shared/lib/uuid";
 import { useMutation } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -95,17 +100,13 @@ export function useDDSWorkspace({
     setRequestId(randomUUID());
     setActivity(Date.now());
   };
-  const elapsed = Math.max(
-    0,
-    Math.floor(
-      ((dds.reaction_end_at
-        ? Date.parse(dds.reaction_end_at)
-        : dds.first_decision_at
-          ? Date.parse(dds.first_decision_at)
-          : now) -
-        Date.parse(dds.sent_at)) /
-        1000,
-    ),
+  const elapsed = cardElapsedSeconds(
+    { ...attempt, started_at: dds.sent_at },
+    dds.reaction_end_at
+      ? Date.parse(dds.reaction_end_at)
+      : dds.first_decision_at
+        ? Date.parse(dds.first_decision_at)
+        : now,
   );
   return {
     highlight,

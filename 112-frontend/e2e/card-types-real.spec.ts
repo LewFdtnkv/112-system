@@ -185,6 +185,7 @@ test("112 popular types, two-character search and registration without notificat
     .getByRole("button", { name: "Приступить к заданию", exact: true })
     .click();
   await page.getByRole("button", { name: "Подтвердить начало" }).click();
+  await page.getByRole("button", { name: "Начать следующую карточку" }).click();
   const editor = page.getByRole("dialog");
   const shortcuts = editor.locator(".arm-category-choices");
   await expect(shortcuts.getByRole("button")).toHaveCount(11);

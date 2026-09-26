@@ -9,6 +9,7 @@ export type StudentOverviewPanelProps = {
   data: StudentOverview;
   own?: boolean;
   onActivePage: (page: number) => void;
+  onAvailablePage: (page: number) => void;
 };
 
 export type StudentIdentityProps = {
@@ -17,6 +18,7 @@ export type StudentIdentityProps = {
 };
 export type StudentActiveLessonsProps = {
   data: StudentOverview;
+  section: "active" | "available";
   own: boolean;
   onPage: (page: number) => void;
 };

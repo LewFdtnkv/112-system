@@ -1,6 +1,7 @@
 import type { LearningPolicy, LearningResult } from "./learning";
 
 export interface JournalCard {
+  pauses?: { start: string; end: string | null }[];
   id: string;
   display_number: number;
   started_at: string;
@@ -33,6 +34,11 @@ export interface Assignment {
 export interface StudentLesson {
   delivery?: "sequential" | "dds-stream-v1";
   execution_started_at?: string | null;
+  execution_ended_at?: string | null;
+  paused_at?: string | null;
+  presence_session_id?: string | null;
+  deadline_at?: string | null;
+  time_limit_seconds?: number | null;
   server_time?: string | null;
   learning: LearningPolicy;
   learning_result?: LearningResult | null;

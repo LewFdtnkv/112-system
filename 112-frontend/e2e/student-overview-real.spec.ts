@@ -170,8 +170,8 @@ test("student dashboard and teacher profile share real progress and performance"
   };
   await login(student.username);
   await expect(page).toHaveURL(/student$/);
-  const activeRegion = page.getByRole("region", { name: "Активные уроки 2" });
-  await expect(activeRegion.getByRole("link")).toHaveCount(2);
+  const activeRegion = page.getByRole("region", { name: "Активные занятия 1" });
+  await expect(activeRegion.getByRole("link")).toHaveCount(1);
   await expect(activeRegion.getByRole("link").first()).toContainText(
     "Незаконченный урок",
   );
@@ -230,7 +230,9 @@ test("student dashboard and teacher profile share real progress and performance"
     profilePage.getByRole("img", { name: "Общая успеваемость: 50%" }),
   ).toBeVisible();
   await expect(
-    profilePage.getByRole("table", { name: "Учебные занятия" }).getByRole("row"),
+    profilePage
+      .getByRole("table", { name: "Учебные занятия" })
+      .getByRole("row"),
   ).toHaveCount(10);
   await expect(
     profilePage.getByRole("link", { name: /Продолжить урок/ }),

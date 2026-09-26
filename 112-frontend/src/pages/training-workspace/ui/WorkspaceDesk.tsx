@@ -2,7 +2,7 @@ import { JournalGuide } from "@/features/learning-assistance";
 import { lessonKindLabels } from "@/entities/training";
 import { StudentMessages } from "@/features/teaching-messages";
 import { getApiError } from "@/shared/api";
-import { getTrainingResultPath, routePaths } from "@/shared/config/routes";
+import { getTrainingResultPath } from "@/shared/config/routes";
 import { ArmIconButton } from "@/shared/ui/arm";
 import { IncidentFeed } from "@/widgets/incident-feed";
 import { Alert, Button } from "@mui/material";
@@ -160,7 +160,12 @@ export function WorkspaceDesk({ lesson, workspace }: WorkspaceStageProps) {
                   }}
                 />
               )}
-              <Link to={routePaths.studentDashboard}>Мои занятия</Link>
+              <Button
+                disabled={workspace.leaving}
+                onClick={() => void workspace.leave().catch(() => undefined)}
+              >
+                Выйти из занятия
+              </Button>
               <Button onClick={refresh}>Обновить журнал</Button>
             </div>
           }

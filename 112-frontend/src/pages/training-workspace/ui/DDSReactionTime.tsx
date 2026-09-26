@@ -1,3 +1,4 @@
+import { cardElapsedSeconds } from "@/entities/training";
 import { useEffect, useState } from "react";
 import type { DDSReactionTimeProps } from "../types/TrainingWorkspacePage";
 import "../styles/dds-stream.scss";
@@ -10,13 +11,9 @@ export function DDSReactionTime({ assignment: a }: DDSReactionTimeProps) {
     return () => clearInterval(timer);
   }, [a.first_response_at, a.status]);
   if (!a.received_at) return null;
-  const seconds = Math.max(
-    0,
-    Math.floor(
-      ((a.first_response_at ? Date.parse(a.first_response_at) : now) -
-        Date.parse(a.received_at)) /
-        1000,
-    ),
+  const seconds = cardElapsedSeconds(
+    { started_at: a.received_at, pauses: a.card?.pauses },
+    a.first_response_at ? Date.parse(a.first_response_at) : now,
   );
   const missing = !a.first_response_at && a.status !== "in_progress";
   const late = missing || seconds > (a.response_norm_seconds ?? 30);

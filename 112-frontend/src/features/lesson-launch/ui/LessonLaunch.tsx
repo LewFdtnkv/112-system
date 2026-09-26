@@ -203,11 +203,15 @@ export function LessonLaunch() {
       </ValidationField>
       <TextField
         name="time_limit_seconds"
-        label="Лимит времени на карточку, с (необязательно)"
+        label="Время на занятие, минут (необязательно)"
         type="number"
+        helperText="Пусто — можно делать паузы. С лимитом время идёт с начала занятия, в том числе после выхода."
         value={limit}
-        onChange={(e) => setLimit(e.target.value)}
-        slotProps={{ htmlInput: { min: 1, max: 86400 } }}
+        onChange={(e) => {
+          setLimit(e.target.value);
+          setRequestId(randomUUID());
+        }}
+        slotProps={{ htmlInput: { min: 1, max: 1440 } }}
       />
       <Button type="submit" variant="contained" disabled={mutation.isPending}>
         Назначить задание
@@ -230,6 +234,13 @@ export function LessonLaunch() {
             <p>
               Начало: {from || "Сразу"}. Окончание:{" "}
               {until || "Без общей даты окончания"}.
+            </p>
+            <p>
+              Время на занятие:{" "}
+              {limit
+                ? `${limit} мин с начала выполнения`
+                : "Без лимита, с паузами"}
+              .
             </p>
             {mutation.error && (
               <Alert severity="error">

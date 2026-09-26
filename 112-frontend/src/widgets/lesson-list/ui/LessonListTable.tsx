@@ -80,7 +80,9 @@ export function LessonListTable({
                   </TableCell>
                 )}
                 <TableCell sx={styles.tableCell}>
-                  {row.role === "dds" ? "ДДС" : "Оператор 112"}
+                  <strong>
+                    {row.role === "dds" ? "Оператор ДДС" : "Оператор 112"}
+                  </strong>
                 </TableCell>
                 <TableCell>
                   {lessonKindLabels[row.learning.kind]}
@@ -105,9 +107,18 @@ export function LessonListTable({
                         })
                       : "Без срока"}
                   </small>
+                  <small className="block-detail">
+                    {row.time_limit_seconds
+                      ? `${row.time_limit_seconds / 60} мин на занятие`
+                      : "Без лимита минут"}
+                  </small>
                 </TableCell>
                 {!resultsOnly && (
-                  <TableCell>{workStatusLabels[row.work_status]}</TableCell>
+                  <TableCell>
+                    {row.paused_at && row.work_status !== "submitted"
+                      ? "Приостановлено"
+                      : workStatusLabels[row.work_status]}
+                  </TableCell>
                 )}
                 <TableCell sx={styles.tableCell2}>
                   {row.completed_at ? (

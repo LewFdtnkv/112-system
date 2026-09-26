@@ -1,3 +1,4 @@
+import { LeaveLessonButton } from "./LeaveLessonButton";
 import { TrainingPanel } from "./TrainingPanel";
 import { DDSArrivalStatus } from "./DDSArrivalStatus";
 import { Telephone } from "@/features/telephone";
@@ -131,6 +132,7 @@ export function DDSWorkspace(props: DDSWorkspaceProps) {
               </details>
             }
           >
+            <LeaveLessonButton disabled={busy || workspace.editing} />
             <Telephone attemptId={attempt.id} completed={completed} />
             <LearningHelp
               attempt={attempt}

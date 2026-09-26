@@ -10,13 +10,24 @@ import type {
   ProctoringEvent,
 } from "../types/activityApi";
 export const activityApi = {
-  overview: (studentId?: string, activeOffset = 0, signal?: AbortSignal) =>
+  overview: (
+    studentId?: string,
+    activeOffset = 0,
+    signal?: AbortSignal,
+    availableOffset = 0,
+  ) =>
     backendApi
       .get(
         studentId
           ? `teaching/students/${encodeURIComponent(studentId)}/overview`
           : "student/overview",
-        { searchParams: { active_offset: activeOffset }, signal },
+        {
+          searchParams: {
+            active_offset: activeOffset,
+            available_offset: availableOffset,
+          },
+          signal,
+        },
       )
       .json<StudentOverview>(),
   monitoring: (offset = 0) =>

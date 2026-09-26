@@ -338,3 +338,25 @@
     outline-offset: 2px;
   }
 }
+
+.student-operator-badge {
+  align-self: flex-start;
+  padding: 6px 10px;
+  border: 1px solid #187bab;
+  background: #e5f3fc;
+  color: #12577b;
+  font-size: 15px;
+}
+.student-operator-badge--dds {
+  border-color: #91612b;
+  color: #754813;
+  background: #fff1dc;
+}
+.student-active-card {
+  transition:
+    background-color 150ms,
+    border-color 150ms;
+}
+.student-active-card:active {
+  background: #dceef8;
+}

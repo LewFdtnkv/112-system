@@ -2,6 +2,11 @@ import type { LearningPolicy } from "./learning";
 import type { Page } from "./pagination";
 
 export interface LessonRow {
+  time_limit_seconds?: number | null;
+  execution_started_at?: string | null;
+  execution_ended_at?: string | null;
+  paused_at?: string | null;
+  deadline_at?: string | null;
   learning: LearningPolicy;
   completed_at?: string | null;
   evaluation_method?: "rules" | "teacher" | "hybrid" | null;

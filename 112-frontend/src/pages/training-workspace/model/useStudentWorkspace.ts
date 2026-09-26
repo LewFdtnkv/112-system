@@ -3,6 +3,7 @@ import {
   trainingKeys,
   attemptQueryOptions,
 } from "@/entities/training";
+import { useLessonPresence } from "./useLessonPresence";
 import { journalCard } from "@/features/incident-editing";
 import { useProctoring } from "@/features/proctoring";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -13,6 +14,7 @@ import type {
 } from "../types/TrainingWorkspacePage";
 
 export function useStudentWorkspace({ lesson }: WorkspaceProps) {
+  const exit = useLessonPresence(lesson);
   const [confirmStart, setConfirmStart] = useState(false);
   const [now, setNow] = useState(Date.now);
   const client = useQueryClient();
@@ -32,25 +34,31 @@ export function useStudentWorkspace({ lesson }: WorkspaceProps) {
   );
   const proctoringFailed = useProctoring(
     activeAttempt?.attempt_id ?? undefined,
-    !!activeAttempt,
+    !!activeAttempt && !lesson.paused_at,
   );
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(timer);
   }, []);
-  const deadline = Math.min(
-    lesson.available_until ? Date.parse(lesson.available_until) : Infinity,
-    !stream && activeAttempt?.deadline_at
-      ? Date.parse(activeAttempt.deadline_at)
-      : Infinity,
-  );
+  const receivedAt = client.getQueryState(
+    trainingKeys.studentLesson(lesson.id),
+  )?.dataUpdatedAt;
+  const serverOffset =
+    lesson.server_time && receivedAt
+      ? Date.parse(lesson.server_time) - receivedAt
+      : 0;
+  const deadline = lesson.deadline_at
+    ? Date.parse(lesson.deadline_at)
+    : lesson.available_until
+      ? Date.parse(lesson.available_until)
+      : Infinity;
   const remaining = Number.isFinite(deadline)
-    ? Math.max(0, Math.ceil((deadline - now) / 1000))
+    ? Math.max(0, Math.ceil((deadline - now - serverOffset) / 1000))
     : null;
   const unopened =
-    (stream
-      ? !lesson.execution_started_at
-      : !lesson.assignments.some((a) => a.attempt_id)) &&
+    ((!lesson.execution_started_at &&
+      !lesson.assignments.some((a) => a.attempt_id)) ||
+      !!lesson.paused_at) &&
     lesson.work_status !== "submitted";
 
   const refresh = () => {
@@ -63,6 +71,8 @@ export function useStudentWorkspace({ lesson }: WorkspaceProps) {
     mutationFn: () => lessonApi.startExecution(lesson.id),
     onSuccess: (data) => {
       client.setQueryData(trainingKeys.studentLesson(lesson.id), data);
+      void client.invalidateQueries({ queryKey: ["attempt"] });
+      void client.invalidateQueries({ queryKey: ["student-overview"] });
       refresh();
     },
   });
@@ -97,7 +107,12 @@ export function useStudentWorkspace({ lesson }: WorkspaceProps) {
   return {
     stream,
     begin: () => begin.mutate(),
-    canBegin: stream ? lesson.status === "active" : !!next,
+    canBegin:
+      lesson.status === "active" &&
+      lesson.work_status !== "submitted" &&
+      (stream || !!next),
+    leave: exit.mutateAsync,
+    leaving: exit.isPending,
     confirmStart,
     setConfirmStart,
     attempt,
@@ -113,7 +128,7 @@ export function useStudentWorkspace({ lesson }: WorkspaceProps) {
       begin.isPending ||
       start.isPending ||
       (!!selectedAttemptId && attemptQuery.isFetching),
-    openError: begin.error || start.error || attemptQuery.error,
+    openError: exit.error || begin.error || start.error || attemptQuery.error,
     closeAttempt: () => setSelectedAttemptId(null),
   };
 }

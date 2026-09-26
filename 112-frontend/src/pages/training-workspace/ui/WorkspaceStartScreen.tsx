@@ -23,10 +23,8 @@ export function WorkspaceStartScreen({
     canBegin,
     confirmStart,
     setConfirmStart,
-    next,
     opening,
     openError,
-    openAttempt,
   } = workspace;
   return (
     <Stack spacing={2} sx={styles.stack}>
@@ -34,12 +32,13 @@ export function WorkspaceStartScreen({
       {lesson.learning.kind === "introduction" && canBegin && !confirmStart && (
         <JournalGuide mode="start" />
       )}
+      <strong>{workspace.isDDS ? "Оператор ДДС" : "Оператор 112"}</strong>
       <LearningSummary policy={lesson.learning} />
       <p>
         Карточек: {lesson.assignments.length}.{" "}
         {stream
           ? "Карточки поступают по расписанию после начала занятия, даже пока вы обрабатываете предыдущую. Норматив реакции каждой карточки начинается с её поступления."
-          : "Выполняйте их последовательно. Срок задания общий; лимит карточки начинается при её открытии."}
+          : "Выполняйте карточки последовательно."}
       </p>
       <p>
         Начало:{" "}
@@ -51,6 +50,11 @@ export function WorkspaceStartScreen({
           ? new Date(lesson.available_until).toLocaleString("ru-RU")
           : "Без общей даты окончания"}
         .
+      </p>
+      <p>
+        {lesson.time_limit_seconds
+          ? `На всё занятие — ${lesson.time_limit_seconds / 60} мин с момента начала. Выход не останавливает отсчёт.`
+          : "Без лимита минут. При выходе таймеры карточек останавливаются; заданный срок окончания сохраняется."}
       </p>
       <Alert severity="info">
         Во время выполнения сохраняются события видимости вкладки и фокуса окна
@@ -67,7 +71,9 @@ export function WorkspaceStartScreen({
         disabled={!canBegin || opening}
         onClick={() => setConfirmStart(true)}
       >
-        Приступить к заданию
+        {lesson.execution_started_at || lesson.paused_at
+          ? "Продолжить занятие"
+          : "Приступить к заданию"}
       </Button>
       {lesson.status === "planned" && (
         <p>Задание ещё не доступно. Оно откроется в указанное время.</p>
@@ -80,21 +86,18 @@ export function WorkspaceStartScreen({
         <DialogTitle>Начать выполнение?</DialogTitle>
         <DialogContent>
           <p>
-            {stream
-              ? "Начнётся расписание поступления карточек. "
-              : "Таймер первой карточки начнётся сразу. "}
-            Закрытие страницы не останавливает время.
+            {lesson.paused_at
+              ? "Продолжим с сохранённого места. "
+              : "Начнётся выполнение занятия. "}
+            {lesson.time_limit_seconds
+              ? "Лимит общий для всех карточек и продолжает идти после выхода."
+              : "Можно выйти и продолжить позже. Таймеры карточек на время выхода остановятся."}
           </p>
           <Button
             disabled={opening}
             onClick={() => {
-              if (stream) {
-                begin();
-                setConfirmStart(false);
-              } else if (next) {
-                openAttempt({ assignmentId: next.id, attemptId: null });
-                setConfirmStart(false);
-              }
+              begin();
+              setConfirmStart(false);
             }}
           >
             Подтвердить начало

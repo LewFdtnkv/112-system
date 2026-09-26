@@ -1,3 +1,5 @@
+import { cardElapsedSeconds } from "@/entities/training";
+import { LeaveLessonButton } from "./LeaveLessonButton";
 import { TrainingPanel } from "./TrainingPanel";
 import { Telephone } from "@/features/telephone";
 import { LearningHelp } from "@/features/learning-assistance";
@@ -39,15 +41,15 @@ export function AttemptEditor(props: AttemptEditorProps) {
         readOnly={attempt.status === "interrupted"}
         readOnlyLayout={completed ? "form" : undefined}
         isCallAccepted={attempt.status === "in_progress" || completed}
-        onClose={onClose}
+        onClose={() => {
+          void beforeHint()
+            .then(onClose)
+            .catch(() => undefined);
+        }}
         onSubmit={submit}
-        elapsedSeconds={Math.max(
-          0,
-          Math.floor(
-            ((attempt.ended_at ? Date.parse(attempt.ended_at) : now) -
-              Date.parse(attempt.started_at)) /
-              1000,
-          ),
+        elapsedSeconds={cardElapsedSeconds(
+          attempt,
+          attempt.ended_at ? Date.parse(attempt.ended_at) : now,
         )}
         normSeconds={attempt.norm_seconds}
         remote={remote}
@@ -56,6 +58,7 @@ export function AttemptEditor(props: AttemptEditorProps) {
             condition={attempt.caller_message}
             instruction={attempt.instructions}
           >
+            <LeaveLessonButton beforeLeave={beforeHint} disabled={busy} />
             <Telephone attemptId={attempt.id} completed={completed} />
             <LearningHelp
               attempt={attempt}

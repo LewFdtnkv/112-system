@@ -7,11 +7,23 @@ export function StudentOverviewPanel({
   data,
   own = false,
   onActivePage,
+  onAvailablePage,
 }: StudentOverviewPanelProps) {
   return (
     <div className="student-overview">
       <StudentIdentity user={data.user} groups={data.groups} />
-      <StudentActiveLessons data={data} own={own} onPage={onActivePage} />
+      <StudentActiveLessons
+        section="active"
+        data={data}
+        own={own}
+        onPage={onActivePage}
+      />
+      <StudentActiveLessons
+        section="available"
+        data={data}
+        own={own}
+        onPage={onAvailablePage}
+      />
       <StudentPerformance data={data} own={own} />
     </div>
   );

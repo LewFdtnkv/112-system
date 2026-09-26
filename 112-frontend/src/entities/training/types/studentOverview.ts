@@ -11,6 +11,7 @@ export interface StudentOverview {
   user: UserDetail;
   groups: string[];
   active_lessons: Page<LessonRow>;
+  available_lessons: Page<LessonRow>;
   performance: {
     tracks: PerformanceTrack[];
     total_lessons: number;

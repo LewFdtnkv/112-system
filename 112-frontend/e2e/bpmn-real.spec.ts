@@ -157,6 +157,7 @@ test("BPMN: comments, separate proctoring, automatic deadline and administration
   });
   await page.getByRole("button", { name: "Приступить к заданию" }).click();
   await page.getByRole("button", { name: "Подтвердить начало" }).click();
+  await page.getByRole("button", { name: "Начать следующую карточку" }).click();
   const dialog = page.getByRole("dialog");
   await dialog.getByLabel("Улица", { exact: true }).fill("Учебная улица");
   await dialog.getByLabel("Дом/Вл", { exact: true }).fill("7");

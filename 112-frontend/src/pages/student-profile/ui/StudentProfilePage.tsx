@@ -12,11 +12,17 @@ import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 export function StudentProfilePage() {
   const { studentId } = useParams<{ studentId: string }>();
+  const [availablePage, setAvailablePage] = useState(0);
   const [activePage, setActivePage] = useState(0);
   const profile = useQuery({
-    queryKey: ["student-overview", studentId, activePage],
+    queryKey: ["student-overview", studentId, activePage, availablePage],
     queryFn: ({ signal }) =>
-      activityApi.overview(studentId!, activePage * 6, signal),
+      activityApi.overview(
+        studentId!,
+        activePage * 6,
+        signal,
+        availablePage * 6,
+      ),
     enabled: !!studentId,
     refetchInterval: 15000,
   });
@@ -54,6 +60,7 @@ export function StudentProfilePage() {
             <StudentOverviewPanel
               data={profile.data}
               onActivePage={setActivePage}
+              onAvailablePage={setAvailablePage}
             />
             <MessageComposer studentId={studentId!} />
             <Typography variant="h6" component="h2">

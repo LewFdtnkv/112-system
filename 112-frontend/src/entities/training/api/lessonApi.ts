@@ -24,6 +24,15 @@ export const lessonApi = {
     backendApi
       .post(`student/lessons/${id(lessonId)}/start`)
       .json<StudentLesson>(),
+  presence: (lessonId: string, sessionId: string) =>
+    backendApi.post(`student/lessons/${id(lessonId)}/presence`, {
+      json: { session_id: sessionId },
+    }),
+  leave: (lessonId: string, sessionId: string) =>
+    backendApi.post(`student/lessons/${id(lessonId)}/leave`, {
+      json: { session_id: sessionId },
+      keepalive: true,
+    }),
   startAttempt: (assignmentId: string) =>
     backendApi
       .post(`student/assignments/${id(assignmentId)}/start`)

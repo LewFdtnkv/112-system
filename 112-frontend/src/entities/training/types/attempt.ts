@@ -4,6 +4,7 @@ import type { DDSContext } from "../model/catalogTypes";
 import type { ClassifierEntry, Recipient } from "./catalog";
 
 export interface Attempt {
+  pauses?: { start: string; end: string | null }[];
   exercise_scope?: string[] | null;
   learning: LearningPolicy;
   role?: "operator_112" | "dds";

@@ -56,3 +56,5 @@ export {
   scenarioDifficultyLabels,
   scenarioDifficultyLabel,
 } from "./model/scenarioDifficulty";
+
+export { cardElapsedSeconds } from "./model/cardClock";
