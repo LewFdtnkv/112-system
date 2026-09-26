@@ -48,6 +48,8 @@ test("learner receives grounded study advice separately from in-card help", asyn
   page.on("pageerror", (error) => errors.push(error.message));
   await page.route("**/api/v1/student/messages**", async (route) => {
     const url = new URL(route.request().url());
+    if (url.pathname.endsWith("/summary"))
+      return route.fulfill({ json: { unread_count: read ? 0 : 1 } });
     if (url.pathname.endsWith("/read")) {
       read = true;
       return route.fulfill({ status: 204 });

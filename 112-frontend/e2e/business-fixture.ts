@@ -53,6 +53,8 @@ export async function mockBusiness(
     const path = new URL(req.url()).pathname.replace("/api/v1/", "");
     if (path.startsWith("auth/") || path === "users/me")
       return route.fallback();
+    if (path === "student/messages/summary")
+      return route.fulfill({ json: { unread_count: 0 } });
     if (path === "student/messages")
       return route.fulfill({
         json: { items: [], total: 0, limit: 20, offset: 0 },

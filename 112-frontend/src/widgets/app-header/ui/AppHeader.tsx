@@ -1,3 +1,4 @@
+import { StudentNotificationBell } from "@/features/teaching-messages";
 import LogoutIcon from "@mui/icons-material/Logout";
 import SupportAgentIcon from "@mui/icons-material/SupportAgent";
 import { Button } from "@mui/material";
@@ -30,6 +31,7 @@ export const AppHeader = () => {
               <span className="app-header__user">
                 {session.name ?? session.username}
               </span>
+              {session.roles.includes("student") && <StudentNotificationBell />}
               <Button
                 className="app-header__logout"
                 type="button"

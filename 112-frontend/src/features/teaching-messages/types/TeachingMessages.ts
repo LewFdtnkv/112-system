@@ -4,7 +4,7 @@ export type MessageComposerProps = {
   studentId?: string;
 };
 
-export type StudentMessagesProps = { compact?: boolean };
+export type StudentMessagesProps = { compact?: boolean; unreadOnly?: boolean };
 
 export type StudentMessageProps = {
   message: Message;

@@ -57,8 +57,14 @@ export function MessageComposer({ groupId, studentId }: MessageComposerProps) {
   );
 }
 
-export function StudentMessages({ compact = false }: StudentMessagesProps) {
-  const { page, setPage, query, read } = useStudentMessages(compact);
+export function StudentMessages({
+  compact = false,
+  unreadOnly = false,
+}: StudentMessagesProps) {
+  const { page, setPage, query, read } = useStudentMessages(
+    compact,
+    unreadOnly,
+  );
   return (
     <Paper
       component={compact ? "details" : "section"}
@@ -72,7 +78,11 @@ export function StudentMessages({ compact = false }: StudentMessagesProps) {
       )}
       <Stack spacing={1}>
         <Typography variant="h6">
-          {compact ? "Сообщения преподавателя" : "Сообщения и рекомендации"}
+          {unreadOnly
+            ? "Непрочитанные сообщения"
+            : compact
+              ? "Сообщения преподавателя"
+              : "Сообщения и рекомендации"}
         </Typography>
         <QueryState
           pending={query.isPending}
@@ -80,7 +90,11 @@ export function StudentMessages({ compact = false }: StudentMessagesProps) {
           retry={() => void query.refetch()}
         >
           {query.data?.items.length === 0 && (
-            <Typography color="text.secondary">Сообщений пока нет</Typography>
+            <Typography color="text.secondary">
+              {unreadOnly
+                ? "Непрочитанных сообщений нет"
+                : "Сообщений пока нет"}
+            </Typography>
           )}
           {query.data?.items.map((m) => (
             <StudentMessage

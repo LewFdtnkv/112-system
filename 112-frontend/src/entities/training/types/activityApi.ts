@@ -1,3 +1,7 @@
+export interface MessageSummary {
+  unread_count: number;
+}
+
 export interface Message {
   id: string;
   text: string;

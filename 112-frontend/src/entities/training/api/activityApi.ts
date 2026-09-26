@@ -5,6 +5,7 @@ import type {
   Activity,
   FocusKind,
   Message,
+  MessageSummary,
   ProctoringEvent,
 } from "../types/activityApi";
 export const activityApi = {
@@ -29,13 +30,26 @@ export const activityApi = {
         hidden_count: number;
       }>
     >(),
-  messages: (offset = 0, includeAdvice = true, signal?: AbortSignal) =>
+  messages: (
+    offset = 0,
+    includeAdvice = true,
+    signal?: AbortSignal,
+    unreadOnly = false,
+  ) =>
     backendApi
       .get("student/messages", {
-        searchParams: { offset, include_advice: includeAdvice },
+        searchParams: {
+          offset,
+          include_advice: includeAdvice,
+          unread_only: unreadOnly,
+        },
         signal,
       })
       .json<Page<Message>>(),
+  messageSummary: (signal?: AbortSignal) =>
+    backendApi
+      .get("student/messages/summary", { signal })
+      .json<MessageSummary>(),
   recommendationFeedback: (id: string, helpful: boolean) =>
     backendApi.post(`student/messages/${encodeURIComponent(id)}/feedback`, {
       searchParams: { helpful },
