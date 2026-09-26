@@ -57,7 +57,7 @@ test("integer incident numbers survive filtering, sorting and reopening", async 
   await page.setViewportSize({ width: 1366, height: 900 });
   await page.goto("/login");
   await page.getByLabel("Логин").fill("student1");
-  await page.getByLabel("Пароль").fill("test-password");
+  await page.getByLabel("Пароль", { exact: true }).fill("test-password");
   await page.getByRole("button", { name: "Войти", exact: true }).click();
   await expect(page).toHaveURL(/student$/);
   await page.goto("/student/sessions/lesson");

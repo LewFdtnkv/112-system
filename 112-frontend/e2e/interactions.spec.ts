@@ -80,7 +80,7 @@ test("whole card rows, nested editing, hover, focus and press feedback", async (
   await page.setViewportSize({ width: 1600, height: 1000 });
   await page.goto("/login");
   await page.getByLabel("Логин").fill("teacher");
-  await page.getByLabel("Пароль").fill("test-password");
+  await page.getByLabel("Пароль", { exact: true }).fill("test-password");
   const login = page.getByRole("button", { name: "Войти" });
   await expect(login).toHaveCSS("transition-duration", /0\.15s/);
   await login.hover();

@@ -11,7 +11,7 @@ test("ARM flags toggle, persist and remain visible on small screens", async ({
   await page.setViewportSize({ width: 1600, height: 1000 });
   await page.goto("/login");
   await page.getByLabel("Логин").fill("student1");
-  await page.getByLabel("Пароль").fill("test-password");
+  await page.getByLabel("Пароль", { exact: true }).fill("test-password");
   await page.getByRole("button", { name: "Войти", exact: true }).click();
   await expect(page).toHaveURL(/student$/);
   await page.goto("/student/sessions/lesson");
@@ -128,7 +128,7 @@ test("teacher sets reference flags and passes supported flags to generation", as
   await page.setViewportSize({ width: 1600, height: 1050 });
   await page.goto("/login");
   await page.getByLabel("Логин").fill("teacher");
-  await page.getByLabel("Пароль").fill("test-password");
+  await page.getByLabel("Пароль", { exact: true }).fill("test-password");
   await page.getByRole("button", { name: "Войти", exact: true }).click();
   await expect(page).toHaveURL(/teacher$/);
   await page.goto("/cards");
@@ -216,7 +216,7 @@ test("a silent call can be saved without choosing a type or inventing an address
   await page.setViewportSize({ width: 1600, height: 1000 });
   await page.goto("/login");
   await page.getByLabel("Логин").fill("student1");
-  await page.getByLabel("Пароль").fill("test-password");
+  await page.getByLabel("Пароль", { exact: true }).fill("test-password");
   await page.getByRole("button", { name: "Войти", exact: true }).click();
   await expect(page).toHaveURL(/student$/);
   await page.goto("/student/sessions/lesson");

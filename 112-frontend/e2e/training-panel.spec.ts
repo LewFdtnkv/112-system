@@ -63,7 +63,7 @@ test("training panel groups the task and controls without nested incident scroll
     cues: [
       {
         id: "cue",
-        name: "Руководитель бригады",
+        name: "Руководитель аварийно-спасательной бригады Центрального административного округа",
         contact_key: "crew",
         status: "ready",
         duration_seconds: 10,
@@ -88,7 +88,8 @@ test("training panel groups the task and controls without nested incident scroll
       attempt_id: "attempt",
       station_id: "station",
       command_id: "command",
-      contact_name: "Руководитель бригады",
+      contact_name:
+        "Руководитель аварийно-спасательной бригады Центрального административного округа",
       endpoint_key: "crew",
       status: "dialing",
       direction: "outgoing",
@@ -112,7 +113,7 @@ test("training panel groups the task and controls without nested incident scroll
   );
   await page.goto("/login");
   await page.getByLabel("Логин").fill("student1");
-  await page.getByLabel("Пароль").fill("password");
+  await page.getByLabel("Пароль", { exact: true }).fill("password");
   await page.getByRole("button", { name: "Войти", exact: true }).click();
   await expect(page).toHaveURL(/student$/);
   await page.goto("/student/sessions/lesson");
@@ -157,12 +158,39 @@ test("training panel groups the task and controls without nested incident scroll
         .evaluate((el) => el.scrollTop),
     ).toBe(0);
   };
+  for (const label of ["АОН", "Предоставленный", "Телефон на месте"]) {
+    await page.getByLabel(label, { exact: true }).fill("+79991234567");
+  }
+  const checkPhoneWidths = async () => {
+    for (const label of ["АОН", "Предоставленный", "Телефон на месте"]) {
+      const fits = await page
+        .getByLabel(label, { exact: true })
+        .evaluate((el) => {
+          const input = el as HTMLInputElement;
+          const style = getComputedStyle(input);
+          const context = document.createElement("canvas").getContext("2d")!;
+          context.font = `${style.fontSize} ${style.fontFamily}`;
+          return (
+            context.measureText(input.value).width <=
+            input.clientWidth -
+              parseFloat(style.paddingLeft) -
+              parseFloat(style.paddingRight) +
+              1
+          );
+        });
+      expect(fits, `${label}: all digits should fit`).toBe(true);
+    }
+  };
+  await checkPhoneWidths();
   await checkFooter();
   await page.screenshot({
     path: `docs/screenshots/training-panel/${browserName}-desktop.png`,
     animations: "disabled",
   });
-  await panel.getByLabel("Кому позвонить").selectOption("cue-2:");
+  await panel.getByRole("combobox", { name: "Кому позвонить" }).click();
+  await page
+    .getByRole("option", { name: "Дежурный диспетчер", exact: true })
+    .click();
   await panel
     .getByRole("button", { name: "Выбрать контакт", exact: true })
     .click();
@@ -189,6 +217,7 @@ test("training panel groups the task and controls without nested incident scroll
   });
   await page.setViewportSize({ width: 390, height: 844 });
   await panel.scrollIntoViewIfNeeded();
+  await checkPhoneWidths();
   await checkFooter();
   const body = page.locator(".arm-card-body");
   expect(

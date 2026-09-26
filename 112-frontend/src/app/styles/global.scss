@@ -119,8 +119,10 @@ a:hover {
 }
 
 .app-header__utility a,
-.app-header__user {
+.app-header__user.MuiButton-root {
   color: #d8e5e9;
+  min-width: 0;
+  padding: 4px;
 }
 
 .app-header__utility > div {

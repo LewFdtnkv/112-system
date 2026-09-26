@@ -103,7 +103,7 @@ test("shared photos, missing and broken images, upload refresh and mobile header
   });
   await page.goto("/login");
   await page.getByLabel("Логин").fill("admin");
-  await page.getByLabel("Пароль").fill("test-password");
+  await page.getByLabel("Пароль", { exact: true }).fill("test-password");
   await page.getByRole("button", { name: "Войти" }).click();
   await expect(page).toHaveURL(/admin$/);
   // Client navigation keeps the shared query cache alive.
@@ -156,9 +156,12 @@ test("shared photos, missing and broken images, upload refresh and mobile header
   await expect(dialog.getByTestId("PersonIcon")).toBeVisible();
   await expect(dialog.locator("img")).toHaveCount(0);
   await dialog.getByRole("button", { name: "Закрыть", exact: true }).click();
+  await expect(dialog).toHaveCount(0);
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator(".app-header__user img")).toBeVisible();
-  expect(await page.evaluate(() => document.body.scrollWidth)).toBe(390);
+  await expect
+    .poll(() => page.evaluate(() => document.body.scrollWidth))
+    .toBe(390);
   await page.screenshot({
     path: info.outputPath("users-mobile.png"),
     animations: "disabled",
@@ -215,7 +218,7 @@ test("teacher lesson list and student summary keep names clickable beside icons"
   );
   await page.goto("/login");
   await page.getByLabel("Логин").fill("teacher");
-  await page.getByLabel("Пароль").fill("test-password");
+  await page.getByLabel("Пароль", { exact: true }).fill("test-password");
   await page.getByRole("button", { name: "Войти" }).click();
   await expect(page).toHaveURL(/teacher$/);
   await page.goto("/sessions");

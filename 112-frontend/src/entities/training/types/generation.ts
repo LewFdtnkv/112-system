@@ -1,4 +1,5 @@
 import type { FeatureValue } from "@/shared/lib/featureValues";
+import type { MapPoint } from "@/shared/lib/geo";
 
 export interface GenerationParameters {
   mode?: "assisted" | "template";
@@ -19,6 +20,9 @@ export interface GenerationParameters {
   locality?: string | null;
   street?: string | null;
   house?: string | null;
+  building?: string | null;
+  structure?: string | null;
+  location?: MapPoint | null;
   object?: string | null;
   time_of_day?: "morning" | "day" | "evening" | "night" | null;
   caller_state?: "calm" | "worried" | "panicked" | null;

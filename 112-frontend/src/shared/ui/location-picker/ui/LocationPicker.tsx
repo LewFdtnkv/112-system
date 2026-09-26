@@ -15,12 +15,10 @@ export function LocationPicker({
     query,
     setQuery,
     results,
-    setResults,
     selectedAddress,
     setSelectedAddress,
     searching,
     searchError,
-    setSearchError,
     error,
     setError,
     loading,
@@ -65,8 +63,6 @@ export function LocationPicker({
                 aria-label="Очистить поиск"
                 onClick={() => {
                   setQuery("");
-                  setResults([]);
-                  setSearchError("");
                 }}
               >
                 ×
@@ -98,7 +94,9 @@ export function LocationPicker({
           <p>Выберите подходящий адрес</p>
           <ul>
             {results.map((address) => (
-              <li key={`${address.point.latitude}:${address.point.longitude}`}>
+              <li
+                key={`${address.addressLine}:${address.point.latitude}:${address.point.longitude}`}
+              >
                 <button type="button" onClick={() => selectAddress(address)}>
                   <span>{address.addressLine}</span>
                 </button>

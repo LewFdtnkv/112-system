@@ -1,13 +1,12 @@
 import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
 import { cardFlagFields } from "@/entities/incident-card";
-import { Link, MenuItem } from "@mui/material";
+import { MenuItem } from "@mui/material";
 import { GenerationTextChoice } from "./GenerationTextChoice";
 import type { CardGenerationPanelProps } from "../types/CardGenerationPanels";
-import { addressChoices } from "../lib/catalogChoices";
+import { GenerationAddress } from "./GenerationAddress";
 
 export function GenerationDetails({ model }: CardGenerationPanelProps) {
   const data = model.options.data!;
-  const addresses = addressChoices(data, model.p);
   return (
     <>
       <h3>Отметки карточки</h3>
@@ -60,81 +59,7 @@ export function GenerationDetails({ model }: CardGenerationPanelProps) {
           }
         />
       </div>
-      <h3>Место происшествия</h3>
-      <p>
-        Случайный адрес выбирается целиком из {data.addresses.length} московских
-        адресов. Для своего адреса укажите улицу и дом или ориентир. Адресные
-        данные:{" "}
-        <Link
-          href={data.address_source.source_url}
-          target="_blank"
-          rel="noreferrer"
-        >
-          {data.address_source.source} ({data.address_source.license})
-        </Link>
-        .
-      </p>
-      <TextField
-        name="parameters.address_format"
-        select
-        label="Формат адреса"
-        value={model.p.address_format ?? "random"}
-        onChange={(e) =>
-          model.change({
-            address_format:
-              e.target.value === "random"
-                ? null
-                : (e.target.value as "structured" | "descriptive"),
-          })
-        }
-      >
-        <MenuItem value="random">Случайно</MenuItem>
-        {data.address_format.map((option) => (
-          <MenuItem key={option.value} value={option.value}>
-            {option.label}
-          </MenuItem>
-        ))}
-      </TextField>
-      <div className="generation-grid">
-        <GenerationTextChoice
-          model={model}
-          name="locality"
-          label="Населённый пункт"
-          values={addresses.locality}
-        />
-        <GenerationTextChoice
-          model={model}
-          name="street"
-          label="Улица"
-          values={addresses.street}
-        />
-        <GenerationTextChoice
-          model={model}
-          name="house"
-          label="Дом"
-          values={addresses.house}
-        />
-        <GenerationTextChoice
-          model={model}
-          name="object"
-          label="Объект"
-          values={data.object}
-        />
-      </div>
-      <TextField
-        name="parameters.address_description"
-        label="Описательный адрес — ориентиры"
-        multiline
-        minRows={2}
-        value={model.p.address_description ?? ""}
-        disabled={model.p.address_format === "structured" || !!model.p.house}
-        placeholder="Случайный ориентир из заготовок"
-        helperText="Например: за остановкой, рядом с зелёным ограждением. Номер дома не выдумывается."
-        onChange={(e) =>
-          model.change({ address_description: e.target.value || null })
-        }
-        slotProps={{ htmlInput: { maxLength: 200 } }}
-      />
+      <GenerationAddress model={model} />
       <h3>Заявитель и подача сообщения</h3>
       <p>
         Имя и фамилия выбираются случайно с учётом пола. Отчество добавляется в{" "}

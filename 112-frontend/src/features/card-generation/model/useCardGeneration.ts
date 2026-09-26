@@ -34,13 +34,42 @@ export function useCardGeneration({ onClose }: CardGenerationDialogProps) {
         next.gender = null;
         next.age = null;
       }
-      if (values.address_format === "descriptive") next.house = null;
+      if (values.address_format === "descriptive") {
+        next.house = null;
+        next.building = null;
+        next.structure = null;
+      }
       if (values.address_format === "structured")
         next.address_description = null;
-      if (values.locality !== undefined) {
+      if (values.locality !== undefined && values.street === undefined)
         next.street = null;
+      if (
+        (values.locality !== undefined || values.street !== undefined) &&
+        values.house === undefined
+      )
         next.house = null;
-      } else if (values.street !== undefined) next.house = null;
+      if (
+        !next.house ||
+        values.house !== undefined ||
+        values.street !== undefined ||
+        values.locality !== undefined
+      ) {
+        if (values.building === undefined) next.building = null;
+        if (values.structure === undefined) next.structure = null;
+      }
+      if (
+        values.location === undefined &&
+        [
+          "locality",
+          "street",
+          "house",
+          "building",
+          "structure",
+          "address_description",
+          "address_format",
+        ].some((key) => key in values)
+      )
+        next.location = null;
       return next;
     });
     setRequestId(createUuid());

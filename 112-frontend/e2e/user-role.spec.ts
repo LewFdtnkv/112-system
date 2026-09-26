@@ -66,7 +66,7 @@ test("account role is read-only, profile and access remain editable, creation of
   });
   await page.goto("/login");
   await page.getByLabel("Логин").fill("admin");
-  await page.getByLabel("Пароль").fill("test-password");
+  await page.getByLabel("Пароль", { exact: true }).fill("test-password");
   await page.getByRole("button", { name: "Войти" }).click();
   await expect(page).toHaveURL(/admin$/);
   await page.goto("/users");

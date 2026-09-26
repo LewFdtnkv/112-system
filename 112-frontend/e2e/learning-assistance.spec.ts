@@ -37,7 +37,7 @@ test("scenario assistance respects depth, scopes and invalidates on editing", as
   );
   await page.goto("/login");
   await page.getByLabel("Логин").fill("student1");
-  await page.getByLabel("Пароль").fill("test-password");
+  await page.getByLabel("Пароль", { exact: true }).fill("test-password");
   await page.getByRole("button", { name: "Войти", exact: true }).click();
   await expect(page).toHaveURL(/student$/);
   await page.goto("/student/sessions/lesson");
@@ -95,7 +95,7 @@ test("assessment never requests or exposes assistance", async ({ page }) => {
   });
   await page.goto("/login");
   await page.getByLabel("Логин").fill("student1");
-  await page.getByLabel("Пароль").fill("test-password");
+  await page.getByLabel("Пароль", { exact: true }).fill("test-password");
   await page.getByRole("button", { name: "Войти", exact: true }).click();
   await expect(page).toHaveURL(/student$/);
   await page.goto("/student/sessions/lesson");

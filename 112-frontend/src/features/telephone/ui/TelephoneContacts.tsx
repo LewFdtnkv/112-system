@@ -1,5 +1,6 @@
 import { useState } from "react";
 import CallOutlined from "@mui/icons-material/CallOutlined";
+import { MenuItem, Select } from "@mui/material";
 import { audioStatusLabels } from "@/entities/telephony";
 import type { TelephoneContactsProps } from "../types/telephoneContacts";
 
@@ -21,18 +22,23 @@ export function TelephoneContacts({
   return (
     <div className="training-telephone__contacts">
       {cues.length > 1 ? (
-        <select
-          aria-label="Кому позвонить"
+        <Select
+          className="training-telephone__contact-select"
+          SelectDisplayProps={{ "aria-label": "Кому позвонить" }}
           value={key(cue)}
           onChange={(e) => setSelected(e.target.value)}
           disabled={busy}
         >
           {cues.map((c) => (
-            <option key={key(c)} value={key(c)}>
+            <MenuItem
+              className="training-telephone__contact-option"
+              key={key(c)}
+              value={key(c)}
+            >
               {name(c)}
-            </option>
+            </MenuItem>
           ))}
-        </select>
+        </Select>
       ) : (
         <span>{name(cue)}</span>
       )}

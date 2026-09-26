@@ -1,4 +1,6 @@
 import { StudentNotificationBell } from "@/features/teaching-messages";
+import { AccountProfileDialog } from "@/features/account-profile";
+import { useState } from "react";
 import { UserIdentity } from "@/entities/training";
 import LogoutIcon from "@mui/icons-material/Logout";
 import SupportAgentIcon from "@mui/icons-material/SupportAgent";
@@ -9,6 +11,7 @@ import { signOut, useAuthStore } from "@/entities/user";
 import { routePaths } from "@/shared/config/routes";
 
 export const AppHeader = () => {
+  const [profileOpen, setProfileOpen] = useState(false);
   const session = useAuthStore((state) => state.session);
   const navigate = useNavigate();
 
@@ -29,12 +32,16 @@ export const AppHeader = () => {
         <div>
           {session ? (
             <>
-              <span className="app-header__user">
+              <Button
+                className="app-header__user"
+                aria-label="Открыть мой профиль"
+                onClick={() => setProfileOpen(true)}
+              >
                 <UserIdentity
                   userId={session.userId}
                   name={session.name ?? session.username ?? "Пользователь"}
                 />
-              </span>
+              </Button>
               {session.roles.includes("student") && <StudentNotificationBell />}
               <Button
                 className="app-header__logout"
@@ -53,6 +60,9 @@ export const AppHeader = () => {
           )}
         </div>
       </nav>
+      {profileOpen && (
+        <AccountProfileDialog onClose={() => setProfileOpen(false)} />
+      )}
     </header>
   );
 };

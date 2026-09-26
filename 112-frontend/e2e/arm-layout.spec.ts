@@ -11,7 +11,7 @@ for (const viewport of [
     page.on("dialog", (dialog) => void dialog.accept());
     await page.goto("/login");
     await page.getByLabel("Логин").fill("student1");
-    await page.getByLabel("Пароль").fill("test-password");
+    await page.getByLabel("Пароль", { exact: true }).fill("test-password");
     await page.getByRole("button", { name: "Войти" }).click();
     await expect(page).toHaveURL(/student$/);
     await page.goto("/student/sessions/lesson");

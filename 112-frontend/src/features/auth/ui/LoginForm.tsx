@@ -1,9 +1,20 @@
 import LoginIcon from "@mui/icons-material/Login";
-import { Alert, Button, Stack, TextField } from "@mui/material";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import {
+  Alert,
+  Button,
+  IconButton,
+  InputAdornment,
+  Stack,
+  TextField,
+} from "@mui/material";
+import { useState } from "react";
 import { useLoginForm } from "../model/useLoginForm";
 import type { LoginFormProps } from "../types/LoginForm";
 
 export const LoginForm = ({ error, onSubmit }: LoginFormProps) => {
+  const [visible, setVisible] = useState(false);
   const {
     username,
     usernameRef,
@@ -37,9 +48,27 @@ export const LoginForm = ({ error, onSubmit }: LoginFormProps) => {
       />
       <TextField
         variant="standard"
-        slotProps={{ inputLabel: { shrink: true } }}
         label="Пароль"
-        type="password"
+        type={visible ? "text" : "password"}
+        slotProps={{
+          inputLabel: { shrink: true },
+          input: {
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton
+                  type="button"
+                  aria-label={visible ? "Скрыть пароль" : "Показать пароль"}
+                  aria-pressed={visible}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => setVisible((value) => !value)}
+                  edge="end"
+                >
+                  {visible ? <VisibilityOff /> : <Visibility />}
+                </IconButton>
+              </InputAdornment>
+            ),
+          },
+        }}
         autoComplete="current-password"
         inputRef={passwordRef}
         {...password}

@@ -13,6 +13,11 @@ import { apiGet as get, apiId as id } from "./apiClient";
 /** User and study-group administration. */
 export const userApi = {
   me: () => get<UserDetail>("users/me"),
+  updateMe: (
+    body: Pick<UserUpdate, "first_name" | "last_name" | "middle_name">,
+  ) => backendApi.patch("users/me", { json: body }).json<UserDetail>(),
+  uploadMyPhoto: (file: File) =>
+    backendApi.put("users/me/photo", { body: file }),
   users: (params: Params, signal?: AbortSignal) =>
     get<Page<UserItem>>("views/users", params, signal),
   create: (body: UserCreate) =>

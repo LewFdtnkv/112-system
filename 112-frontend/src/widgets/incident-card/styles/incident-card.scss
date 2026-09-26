@@ -84,6 +84,7 @@
 }
 
 .arm-phone__field {
+  container-type: inline-size;
   position: relative;
   flex: 1;
   min-width: 0;
@@ -100,7 +101,7 @@
 }
 
 .arm-phone .arm-field input {
-  font-size: 21px;
+  font-size: clamp(12px, calc((100cqi - 38px) / 11), 21px);
   padding-right: 38px;
 }
 
@@ -1013,7 +1014,7 @@
   }
 
   .arm-phone .arm-field input {
-    font-size: 17px;
+    font-size: clamp(12px, calc((100cqi - 38px) / 11), 17px);
   }
 
   .arm-applicant {
@@ -1040,11 +1041,25 @@
 
 @media (width <= 1050px) {
   .arm-telephone-bar {
-    grid-template-columns: 180px repeat(3, minmax(0, 1fr)) 90px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    flex-basis: auto;
+  }
+  .arm-call-status {
+    grid-column: 1 / 3;
+    min-height: 62px;
+  }
+  .arm-card-clock,
+  .arm-view-switch {
+    grid-column: 3;
+    grid-row: 1;
+  }
+  .arm-phone {
+    grid-row: 2;
+    min-height: 62px;
   }
 
   .arm-phone .arm-field input {
-    font-size: 15px;
+    font-size: clamp(12px, calc((100cqi - 38px) / 11), 15px);
   }
 
   .arm-card-identification {
@@ -1133,17 +1148,17 @@
 
   .arm-phone:nth-of-type(2) {
     grid-row: 2;
-    grid-column: 1;
+    grid-column: 1 / -1;
   }
 
   .arm-phone:nth-of-type(3) {
-    grid-row: 2;
-    grid-column: 2;
+    grid-row: 3;
+    grid-column: 1 / -1;
   }
 
   .arm-phone:nth-of-type(4) {
-    grid-row: 2;
-    grid-column: 3;
+    grid-row: 4;
+    grid-column: 1 / -1;
   }
 
   .arm-phone__tools,

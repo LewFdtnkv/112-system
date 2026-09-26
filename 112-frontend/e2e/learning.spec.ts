@@ -66,7 +66,7 @@ test("teacher configures learning intent and assessment removes assistance", asy
 }, info) => {
   await page.goto("/login");
   await page.getByLabel("Логин").fill("teacher");
-  await page.getByLabel("Пароль").fill("test-password");
+  await page.getByLabel("Пароль", { exact: true }).fill("test-password");
   await page.getByRole("button", { name: "Войти", exact: true }).click();
   await expect(page).toHaveURL(/teacher$/);
   await page.route("**/api/v1/scenarios/scenario", (route) =>
@@ -231,7 +231,7 @@ test("student sees separate progress tracks and unmeasured dimensions", async ({
   );
   await page.goto("/login");
   await page.getByLabel("Логин").fill("student1");
-  await page.getByLabel("Пароль").fill("test-password");
+  await page.getByLabel("Пароль", { exact: true }).fill("test-password");
   await page.getByRole("button", { name: "Войти", exact: true }).click();
   await expect(
     page.getByRole("img", { name: "Общая успеваемость: 80%" }),

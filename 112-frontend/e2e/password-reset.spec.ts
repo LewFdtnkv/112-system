@@ -102,7 +102,7 @@ for (const own of [false, true]) {
     await page.setViewportSize({ width: 1366, height: 900 });
     await page.goto("/login");
     await page.getByLabel("Логин").fill("admin");
-    await page.getByLabel("Пароль").fill("admin-password");
+    await page.getByLabel("Пароль", { exact: true }).fill("admin-password");
     await page.getByRole("button", { name: "Войти", exact: true }).click();
     await expect(page).toHaveURL(/admin$/);
     await page.goto("/users");

@@ -7,9 +7,12 @@ import type { AddressSearchResponse } from "./types/Dadata";
 export type { GeocodedAddress } from "./types/GeocodedAddress";
 
 /** Адресный поиск выполняется backend-прокси, чтобы токен DaData не попадал в браузер. */
-export async function findAddresses(query: string): Promise<GeocodedAddress[]> {
+export async function findAddresses(
+  query: string,
+  signal?: AbortSignal,
+): Promise<GeocodedAddress[]> {
   const result = await backendApi
-    .post("addresses/suggest", { json: { query, count: 5 } })
+    .post("addresses/suggest", { json: { query, count: 5 }, signal })
     .json<AddressSearchResponse>();
   return result.items;
 }

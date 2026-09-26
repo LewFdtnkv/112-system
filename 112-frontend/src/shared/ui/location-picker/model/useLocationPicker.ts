@@ -1,3 +1,5 @@
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useDebounced } from "@/shared/lib/useDebounced";
 import {
   type RefObject,
   useCallback,
@@ -21,10 +23,33 @@ export function useLocationPicker(
     initial?.longitude.toString() ?? "",
   );
   const [query, setQueryValue] = useState(initialAddress);
-  const [results, setResults] = useState<GeocodedAddress[]>([]);
+  const client = useQueryClient();
+  const [editing, setEditing] = useState(false);
+  const term = useDebounced(query.trim(), 400);
+  const searchOptions = (text: string) => ({
+    queryKey: ["address-suggestions", text],
+    queryFn: ({ signal }: { signal: AbortSignal }) =>
+      findAddresses(text, signal),
+    staleTime: 30_000,
+    retry: false as const,
+  });
+  const suggestions = useQuery({
+    ...searchOptions(term),
+    enabled: !readOnly && editing && !!term,
+  });
+  const current = editing && term === query.trim() && !!term;
+  const results = current ? (suggestions.data ?? []) : [];
+  const searching =
+    editing &&
+    !!query.trim() &&
+    (term !== query.trim() || suggestions.isFetching);
+  const searchError =
+    current && suggestions.isError
+      ? "Поиск адресов недоступен. Попробуйте позднее или укажите точку на карте."
+      : current && suggestions.isSuccess && !results.length
+        ? "Адрес не найден. Уточните запрос."
+        : "";
   const [selectedAddress, setSelectedAddress] = useState<GeocodedAddress>();
-  const [searching, setSearching] = useState(false);
-  const [searchError, setSearchError] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [retry, setRetry] = useState(0);
@@ -40,11 +65,11 @@ export function useLocationPicker(
   const setQuery = (value: string) => {
     lookupVersion.current += 1;
     setQueryValue(value);
-    setResults([]);
+    setEditing(true);
     setSelectedAddress(undefined);
-    setSearchError("");
   };
   const updatePoint = useCallback((point: MapPoint) => {
+    setEditing(false);
     setLatitude(point.latitude.toFixed(6));
     setLongitude(point.longitude.toFixed(6));
     setSelectedAddress(undefined);
@@ -61,31 +86,15 @@ export function useLocationPicker(
     lookupVersion.current += 1;
     setSelectedAddress(address);
     setQueryValue(address.addressLine);
-    setResults([]);
+    setEditing(false);
     setLatitude(address.point.latitude.toFixed(6));
     setLongitude(address.point.longitude.toFixed(6));
     map.current?.setPoint(address.point);
   };
-  const search = async () => {
-    const value = query.trim();
-    if (!value) return;
-    setSearching(true);
-    setSearchError("");
-    setResults([]);
-    const version = ++lookupVersion.current;
-    try {
-      const found = await findAddresses(value);
-      if (version !== lookupVersion.current) return;
-      setResults(found);
-      if (!found.length) setSearchError("Адрес не найден. Уточните запрос.");
-    } catch {
-      if (version !== lookupVersion.current) return;
-      setSearchError(
-        "Поиск адресов недоступен. Проверьте подключение к DaData или попробуйте позднее.",
-      );
-    } finally {
-      setSearching(false);
-    }
+  const search = () => {
+    if (!query.trim()) return;
+    setEditing(true);
+    void client.prefetchQuery(searchOptions(query.trim()));
   };
   useEffect(() => {
     let disposed = false;
@@ -118,12 +127,10 @@ export function useLocationPicker(
     query,
     setQuery,
     results,
-    setResults,
     selectedAddress,
     setSelectedAddress,
     searching,
     searchError,
-    setSearchError,
     error,
     setError,
     loading,

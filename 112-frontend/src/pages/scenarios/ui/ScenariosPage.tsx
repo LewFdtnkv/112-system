@@ -29,6 +29,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import "../styles/scenarios.scss";
 export const ScenariosPage = () => {
   const navigate = useNavigate();
   const client = useQueryClient();
@@ -86,7 +87,7 @@ export const ScenariosPage = () => {
       <Button component={Link} to={routePaths.scenarioCreate}>
         Создать сценарий
       </Button>
-      <Stack direction="row" spacing={2}>
+      <div className="scenario-filters">
         <TextField
           label="Поиск сценария"
           value={q}
@@ -108,7 +109,7 @@ export const ScenariosPage = () => {
           <MenuItem value="draft">Черновики</MenuItem>
           <MenuItem value="published">Опубликованы</MenuItem>
         </TextField>
-      </Stack>
+      </div>
       <QueryState
         pending={query.isPending}
         error={query.error}
@@ -117,7 +118,7 @@ export const ScenariosPage = () => {
         {query.data && (
           <>
             <TableContainer>
-              <Table aria-label="Сценарии">
+              <Table aria-label="Сценарии" className="scenario-table">
                 <TableHead>
                   <TableRow>
                     <TableCell>Сценарий</TableCell>

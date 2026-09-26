@@ -16,6 +16,8 @@ export function ScenarioMetadataFields({
       <TextField
         name="title"
         label="Название сценария"
+        multiline
+        minRows={1}
         required
         value={form.title}
         onChange={(event) => onChange({ ...form, title: event.target.value })}

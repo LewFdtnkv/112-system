@@ -109,7 +109,7 @@ for (const role of ["operator_112", "dds"] as const) {
     );
     await page.goto("/login");
     await page.getByLabel("Логин").fill("student1");
-    await page.getByLabel("Пароль").fill("password");
+    await page.getByLabel("Пароль", { exact: true }).fill("password");
     await page.getByRole("button", { name: "Войти", exact: true }).click();
     await expect(page).toHaveURL(/student$/);
     await page.goto("/student/sessions/lesson");

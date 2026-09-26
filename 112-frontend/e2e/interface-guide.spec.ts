@@ -15,7 +15,7 @@ async function open(page: import("@playwright/test").Page) {
   );
   await page.goto("/login");
   await page.getByLabel("Логин").fill("student1");
-  await page.getByLabel("Пароль").fill("test-password");
+  await page.getByLabel("Пароль", { exact: true }).fill("test-password");
   await page.getByRole("button", { name: "Войти", exact: true }).click();
   await expect(page).toHaveURL(/student$/);
   await page.goto("/student/sessions/lesson");
@@ -442,7 +442,7 @@ test("teacher can assign interface introduction with full assistance", async ({
 }) => {
   await page.goto("/login");
   await page.getByLabel("Логин").fill("teacher");
-  await page.getByLabel("Пароль").fill("test-password");
+  await page.getByLabel("Пароль", { exact: true }).fill("test-password");
   await page.getByRole("button", { name: "Войти", exact: true }).click();
   await expect(page).toHaveURL(/teacher$/);
   await page.route("**/api/v1/scenarios/scenario", (r) =>
@@ -523,7 +523,7 @@ test("journal explains where to get the next card and disabling applies inside i
   });
   await page.goto("/login");
   await page.getByLabel("Логин").fill("student1");
-  await page.getByLabel("Пароль").fill("test-password");
+  await page.getByLabel("Пароль", { exact: true }).fill("test-password");
   await page.getByRole("button", { name: "Войти", exact: true }).click();
   await expect(page).toHaveURL(/student$/);
   await page.goto("/student/sessions/lesson");

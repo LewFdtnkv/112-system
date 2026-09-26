@@ -42,7 +42,7 @@ for (const mobile of [false, true]) {
     });
     await page.goto("/login");
     await page.getByLabel("Логин").fill("admin");
-    await page.getByLabel("Пароль").fill("test-password");
+    await page.getByLabel("Пароль", { exact: true }).fill("test-password");
     await page.getByRole("button", { name: "Войти", exact: true }).click();
     await expect(page).toHaveURL(/admin$/);
     await page.goto("/users");
@@ -102,7 +102,7 @@ test("ARM preserves drafts and highlights missing fields without revealing answe
   });
   await page.goto("/login");
   await page.getByLabel("Логин").fill("student1");
-  await page.getByLabel("Пароль").fill("test-password");
+  await page.getByLabel("Пароль", { exact: true }).fill("test-password");
   await page.getByRole("button", { name: "Войти", exact: true }).click();
   await expect(page).toHaveURL(/student$/);
   await page.goto("/student/sessions/lesson");
@@ -151,7 +151,7 @@ test("scenario submit explains missing title and cards", async ({
 }, info) => {
   await page.goto("/login");
   await page.getByLabel("Логин").fill("teacher");
-  await page.getByLabel("Пароль").fill("test-password");
+  await page.getByLabel("Пароль", { exact: true }).fill("test-password");
   await page.getByRole("button", { name: "Войти", exact: true }).click();
   await expect(page).toHaveURL(/teacher$/);
   await page.goto("/scenarios/new");
@@ -174,7 +174,7 @@ test("teacher card form retains its two columns and explains required values", a
   );
   await page.goto("/login");
   await page.getByLabel("Логин").fill("teacher");
-  await page.getByLabel("Пароль").fill("test-password");
+  await page.getByLabel("Пароль", { exact: true }).fill("test-password");
   await page.getByRole("button", { name: "Войти", exact: true }).click();
   await expect(page).toHaveURL(/teacher$/);
   await page.goto("/cards");

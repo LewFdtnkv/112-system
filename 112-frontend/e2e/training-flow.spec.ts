@@ -4,7 +4,7 @@ test("reopening an operator card reuses the shared query snapshot", async ({
 }, testInfo) => {
   await page.goto("/login");
   await page.getByLabel("Логин").fill("student1");
-  await page.getByLabel("Пароль").fill("test-password");
+  await page.getByLabel("Пароль", { exact: true }).fill("test-password");
   await page.getByRole("button", { name: "Войти" }).click();
   await expect(page).toHaveURL(/student$/);
   await page.goto("/student/sessions/lesson");
@@ -35,7 +35,7 @@ test("legacy submitted work without a persisted grade shows a fallback", async (
   page.on("dialog", (d) => void d.accept());
   await page.goto("/login");
   await page.getByLabel("Логин").fill("student1");
-  await page.getByLabel("Пароль").fill("test-password");
+  await page.getByLabel("Пароль", { exact: true }).fill("test-password");
   await page.getByRole("button", { name: "Войти" }).click();
   await expect(page).toHaveURL(/student$/);
   await page.goto("/student/sessions/lesson");

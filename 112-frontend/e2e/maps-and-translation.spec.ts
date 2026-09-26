@@ -42,7 +42,7 @@ for (const width of [1366, 390]) {
     );
     await page.goto("/login");
     await page.getByLabel("Логин").fill("student1");
-    await page.getByLabel("Пароль").fill("test-password");
+    await page.getByLabel("Пароль", { exact: true }).fill("test-password");
     await page.getByRole("button", { name: "Войти" }).click();
     await expect(page).toHaveURL(/student$/);
     await page.goto("/student/sessions/lesson");
@@ -140,7 +140,7 @@ test("missing map key and service failures preserve manual card editing", async 
   );
   await page.goto("/login");
   await page.getByLabel("Логин").fill("student1");
-  await page.getByLabel("Пароль").fill("test-password");
+  await page.getByLabel("Пароль", { exact: true }).fill("test-password");
   await page.getByRole("button", { name: "Войти" }).click();
   await expect(page).toHaveURL(/student$/);
   await page.goto("/student/sessions/lesson");

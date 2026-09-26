@@ -1,12 +1,11 @@
-import { getApiError } from "@/shared/api";
+import {
+  ProfileFields,
+  ProfilePhotoUpload,
+  useProfileCache,
+} from "@/features/account-profile";
 import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
 import { ValidatedForm } from "@/shared/ui/form-validation";
-import {
-  activityApi,
-  userApi,
-  UserPhoto,
-  type UserUpdate,
-} from "@/entities/training";
+import { userApi, type UserUpdate } from "@/entities/training";
 import { QueryState } from "@/shared/ui/QueryState";
 import {
   Alert,
@@ -19,7 +18,7 @@ import {
   Switch,
   Typography,
 } from "@mui/material";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { styles } from "../styles/UserDetailsDialog";
 import type {
@@ -78,13 +77,7 @@ function AccountForm({ user, onClose, onResetPassword }: AccountFormProps) {
   const [confirm, setConfirm] = useState(false);
   const [history, setHistory] = useState(false);
   const accessChanged = form.is_active !== user.is_active;
-  const client = useQueryClient();
-  const upload = useMutation({
-    mutationFn: (file: File) => activityApi.uploadPhoto(user.id, file),
-    onSuccess: () => {
-      void client.invalidateQueries({ queryKey: ["user-photo", user.id] });
-    },
-  });
+  const refresh = useProfileCache();
   const save = useMutation({
     mutationFn: () =>
       userApi.update(user.id, {
@@ -93,9 +86,8 @@ function AccountForm({ user, onClose, onResetPassword }: AccountFormProps) {
         email: form.email?.trim() || null,
         middle_name: form.middle_name?.trim() || null,
       }),
-    onSuccess: () => {
-      for (const key of ["users", "user", "student-options", "admin-summary"])
-        void client.invalidateQueries({ queryKey: [key] });
+    onSuccess: (updated) => {
+      refresh(updated);
       onClose();
     },
   });
@@ -110,23 +102,7 @@ function AccountForm({ user, onClose, onResetPassword }: AccountFormProps) {
         else save.mutate();
       }}
     >
-      <UserPhoto userId={user.id} />
-      <Button component="label" disabled={upload.isPending}>
-        Загрузить фотографию
-        <input
-          type="file"
-          hidden
-          accept="image/png,image/jpeg"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) upload.mutate(file);
-            e.target.value = "";
-          }}
-        />
-      </Button>
-      {upload.error && (
-        <Alert severity="error">{getApiError(upload.error).message}</Alert>
-      )}
+      <ProfilePhotoUpload userId={user.id} />
       <Button onClick={() => setHistory(true)}>История действий</Button>
       <Button onClick={onResetPassword} variant="outlined">
         Сбросить пароль
@@ -174,24 +150,10 @@ function AccountForm({ user, onClose, onResetPassword }: AccountFormProps) {
         value={user.username}
         slotProps={{ input: { readOnly: true } }}
       />
-      {(
-        [
-          ["last_name", "Фамилия"],
-          ["first_name", "Имя"],
-          ["middle_name", "Отчество"],
-          ["email", "Email"],
-        ] as const
-      ).map(([key, label]) => (
-        <TextField
-          name={key}
-          key={key}
-          label={label}
-          value={form[key] ?? ""}
-          type={key === "email" ? "email" : "text"}
-          slotProps={{ htmlInput: { maxLength: key === "email" ? 254 : 100 } }}
-          onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-        />
-      ))}
+      <ProfileFields
+        value={form}
+        onChange={(value) => setForm({ ...form, ...value })}
+      />
       <TextField
         label="Роль пользователя"
         value={roleLabels[user.role]}

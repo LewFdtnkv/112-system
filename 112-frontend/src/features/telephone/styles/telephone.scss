@@ -1,4 +1,8 @@
 .training-telephone {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -8,6 +12,17 @@
   font-size: 13px;
   p {
     margin: 0;
+  }
+  > *,
+  &__active > *,
+  &__incoming > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .arm-small-button {
+    white-space: normal;
+    height: auto;
+    min-height: 28px;
   }
   > details {
     flex-basis: 100%;
@@ -43,14 +58,27 @@
     gap: 6px;
     min-width: 0;
     max-width: 100%;
-    select {
+    .training-telephone__contact-select {
       max-width: 100%;
-      width: 280px;
+      width: 420px;
       min-height: 28px;
       border: 1px solid #b6c6cf;
       background: white;
       color: inherit;
       font: inherit;
+      .MuiSelect-select {
+        white-space: normal;
+        overflow-wrap: anywhere;
+        padding: 5px 28px 5px 8px;
+        min-height: 0;
+      }
+      fieldset {
+        border: 0;
+      }
+    }
+    > span {
+      flex: 1 1 200px;
+      min-width: 0;
     }
     button {
       display: inline-flex;
@@ -86,6 +114,12 @@
   [role="alert"] {
     color: #9d382e;
   }
+}
+
+.training-telephone__contact-option.MuiMenuItem-root {
+  max-width: min(480px, 90vw);
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .training-telephone__progress {
