@@ -27,10 +27,12 @@ import type {
   UserDetailsDialogProps,
 } from "../types/UserDetailsDialog";
 import { UserActivityDialog } from "./UserActivityDialog";
+import { UserPasswordResetDialog } from "./UserPasswordResetDialog";
 
 import { accountDate, roleLabels } from "../model/accountDisplay";
 
 export function UserDetailsDialog({ userId, onClose }: UserDetailsDialogProps) {
+  const [resetPassword, setResetPassword] = useState(false);
   const query = useQuery({
     queryKey: ["user", userId],
     queryFn: ({ signal }) => userApi.get(userId, signal),
@@ -49,15 +51,22 @@ export function UserDetailsDialog({ userId, onClose }: UserDetailsDialogProps) {
               key={`${userId}:${query.data.updated_at}`}
               user={query.data}
               onClose={onClose}
+              onResetPassword={() => setResetPassword(true)}
             />
           )}
         </QueryState>
       </DialogContent>
+      {resetPassword && query.data && (
+        <UserPasswordResetDialog
+          user={query.data}
+          onClose={() => setResetPassword(false)}
+        />
+      )}
     </Dialog>
   );
 }
 
-function AccountForm({ user, onClose }: AccountFormProps) {
+function AccountForm({ user, onClose, onResetPassword }: AccountFormProps) {
   const [form, setForm] = useState<UserUpdate>({
     first_name: user.first_name,
     last_name: user.last_name,
@@ -119,6 +128,9 @@ function AccountForm({ user, onClose }: AccountFormProps) {
         <Alert severity="error">{getApiError(upload.error).message}</Alert>
       )}
       <Button onClick={() => setHistory(true)}>История действий</Button>
+      <Button onClick={onResetPassword} variant="outlined">
+        Сбросить пароль
+      </Button>
       {history && (
         <UserActivityDialog
           userId={user.id}

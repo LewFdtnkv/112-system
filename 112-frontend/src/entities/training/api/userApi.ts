@@ -21,6 +21,12 @@ export const userApi = {
     get<UserDetail>(`users/${id(userId)}`, {}, signal),
   update: (userId: string, body: UserUpdate) =>
     backendApi.patch(`users/${id(userId)}`, { json: body }).json<UserDetail>(),
+  resetPassword: (userId: string, temporaryPassword: string) =>
+    backendApi
+      .post(`users/${id(userId)}/reset-password`, {
+        json: { temporary_password: temporaryPassword },
+      })
+      .json<UserDetail>(),
   groups: (params: Params, signal?: AbortSignal) =>
     get<Page<GroupItem>>("views/groups", params, signal),
   createGroup: (name: string) =>
