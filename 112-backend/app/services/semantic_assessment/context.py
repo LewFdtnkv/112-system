@@ -108,13 +108,19 @@ async def build_context(session, evaluation, check):
                 )
     else:
         situation = "\n".join(s["message"] for s in snapshot.get("dds_policy", {}).get("steps", []))
+        exercise = snapshot.get("dds_policy", {}).get("card_exercise")
+        if exercise:
+            situation += "\nИсходная история (не действия ученика): " + compact(
+                exercise["initial_crews"]
+            )
+            situation += "\nПолученные сообщения: " + compact(exercise["messages"])
         # Comments are optional. Their absence never creates a criterion or a penalty.
         if scope is None or "dds_response" in scope:
             comments = [
                 {"crew": c["name"], "status": h["status"], "comment": h["comment"]}
                 for c in snapshot["dds"].get("crews", [])
                 for h in c.get("history", [])
-                if h.get("comment", "").strip()
+                if h.get("comment", "").strip() and not h.get("prepared")
             ]
             if comments:
                 add(

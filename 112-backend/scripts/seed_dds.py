@@ -36,8 +36,38 @@ STEPS = [
 ]
 
 
+def card_exercise(profile_id, *, continuing=False, phone=False):
+    history = (
+        [
+            {
+                "status": status,
+                "seconds_before_start": seconds,
+                "crew_number": "УЧ-101",
+                "comment": message,
+            }
+            for status, seconds, message in (
+                ("assigned", 300, "Расчёт назначен, руководитель оповещён предыдущей сменой."),
+                ("responding", 180, "Расчёт выехал."),
+                ("arrived", 60, "Прибыли по адресу."),
+            )
+        ]
+        if continuing
+        else []
+    )
+    messages = (
+        [STEPS[0]["message"]] if phone else [s["message"] for s in STEPS[3 if continuing else 0 :]]
+    )
+    return {
+        "service_profile_id": str(profile_id),
+        "initial_crews": [{"crew_code": "fire-1", "history": history}] if history else [],
+        "required_crews": [{"crew_code": "fire-1", "status": "assigned" if phone else "completed"}],
+        "crew_calls_required": phone,
+        "messages": [{"crew_code": "fire-1", "message": m} for m in messages],
+    }
+
+
 async def populate_dds(
-    gateway, state, create, group_id, card_ids, service_id, with_crew_calls=False
+    gateway, state, create, group_id, card_ids, service_id, with_crew_calls=False, source_cards=None
 ):
     prefix = state.data["prefix"]
     profile_id = await create(
@@ -69,22 +99,39 @@ async def populate_dds(
         },
     )
     await gateway.publish(profile_id)
+    dds_card_ids = []
+    for i, source in enumerate(source_cards or [], start=1):
+        dds_card_ids.append(
+            await create(
+                f"dds-card-v2-{i}",
+                "cards",
+                source
+                | {
+                    "title": f"{prefix}: ДДС — "
+                    + ("продолжение работы" if i == 1 else "новая карточка"),
+                    "instructions": "",
+                    "dds_exercise": card_exercise(profile_id, continuing=i == 1),
+                },
+            )
+        )
     scenario_id = await create(
-        "dds-scenario",
+        "dds-scenario-v2",
         "scenarios",
         {
             "title": f"{prefix}: ДДС — пожар и работа расчёта",
             "role": "dds",
-            "card_ids": card_ids[:2],
+            "card_ids": dds_card_ids[:2] or card_ids[:2],
             "arrival_offsets_seconds": [0] * len(card_ids[:2]),
             "service_profile_id": profile_id,
             "instructions": (
                 "Учебная имитация: обработайте обе карточки. Выберите свою "
-                "службу в нижней панели. Назначьте расчёт № 1 и обновляйте "
-                "его статусы по сведениям старшего. Статус службы не меняйте. "
+                "службу в нижней панели. Изучите исходную историю и обновляйте "
+                "статусы расчёта по сведениям старшего. Статус службы не меняйте. "
                 "Резервный расчёт не требуется."
             ),
-            "dds_policy": {
+            "dds_policy": None
+            if dds_card_ids
+            else {
                 "workflow": "crews-v1",
                 "steps": STEPS,
                 "required_crews": [{"crew_code": "fire-1", "status": "completed"}],
@@ -98,7 +145,7 @@ async def populate_dds(
         ("active", "ДДС — практика работы с расчётами"),
     ):
         lesson_id = await create(
-            f"dds-lesson-{kind}",
+            f"dds-lesson-v2-{kind}",
             "lessons/start",
             {
                 "request_id": str(
@@ -123,13 +170,15 @@ async def populate_dds(
             await gateway.start(work["assignments"][0]["id"])
     if with_crew_calls:
         lessons["phone"] = await populate_crew_call_lesson(
-            create, gateway.publish, prefix, group_id, card_ids, service_id
+            create, gateway.publish, prefix, group_id, card_ids, service_id, source_cards
         )
     await gateway.logout()
     return {"profile_id": profile_id, "scenario_id": scenario_id, "lessons": lessons}
 
 
-async def populate_crew_call_lesson(create, publish, prefix, group_id, card_ids, service_id):
+async def populate_crew_call_lesson(
+    create, publish, prefix, group_id, card_ids, service_id, source_cards=None
+):
     """Additive plan shared by the unified seed and stand preparation; no fake PBX events."""
     phone_profile = await create(
         "dds-phone-profile",
@@ -158,18 +207,36 @@ async def populate_crew_call_lesson(create, publish, prefix, group_id, card_ids,
         },
     )
     await publish(phone_profile)
+    phone_cards = (
+        [
+            await create(
+                "dds-phone-card-v2",
+                "cards",
+                source_cards[0]
+                | {
+                    "title": f"{prefix}: ДДС — оповещение расчёта",
+                    "instructions": "",
+                    "dds_exercise": card_exercise(phone_profile, phone=True),
+                },
+            )
+        ]
+        if source_cards
+        else card_ids[:1]
+    )
     phone_scenario = await create(
-        "dds-phone-scenario",
+        "dds-phone-scenario-v2",
         "scenarios",
         {
             "title": f"{prefix}: ДДС — передать задачу руководителю",
             "role": "dds",
-            "card_ids": card_ids[:1],
+            "card_ids": phone_cards,
             "service_profile_id": phone_profile,
             "instructions": "Назначьте расчёт № 1, позвоните руководителю "
             "и передайте сведения о пожаре "
             "из карточки. После ответа «Принято» завершите упражнение.",
-            "dds_policy": {
+            "dds_policy": None
+            if source_cards
+            else {
                 "workflow": "crews-v1",
                 "crew_calls_required": True,
                 "steps": [STEPS[0]],
@@ -178,7 +245,7 @@ async def populate_crew_call_lesson(create, publish, prefix, group_id, card_ids,
         },
     )
     return await create(
-        "dds-phone-lesson",
+        "dds-phone-lesson-v2",
         "lessons/start",
         {
             "request_id": str(uuid5(NAMESPACE_URL, f"source-demo/{prefix}/{phone_scenario}/phone")),

@@ -20,6 +20,7 @@ from app.schemas.assessment import AssessmentPolicy
 from app.schemas.card_flags import validate_count, validate_flags
 from app.schemas.catalog import ClassifierEntryRead
 from app.schemas.dds import DDSPolicy
+from app.schemas.dds_exercise import DDSExercise
 from app.schemas.group import Title
 from app.schemas.learning import LearningPolicy
 from app.schemas.location import validate_location
@@ -52,6 +53,7 @@ class CardData(BaseModel):
 class CardDefinition(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    dds_exercise: DDSExercise | None = None
     title: Title
     classifier_version_id: UUID
     classifier_entry_id: UUID | None = None
@@ -154,8 +156,6 @@ class ScenarioCreate(ScenarioMetadata):
             raise ValueError("All cards must arrive within the scenario duration")
         if self.role == TrainingRole.DDS and self.service_profile_id is None:
             raise ValueError("DDS scenarios require a service profile")
-        if self.role == TrainingRole.DDS and self.dds_policy is None:
-            raise ValueError("DDS scenarios require exercise steps")
         return self
 
 

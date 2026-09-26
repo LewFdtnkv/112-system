@@ -166,7 +166,7 @@ async def test_local_training_uses_source_catalog_and_repeats(db_session, tmp_pa
     assert (
         await populate_training(gateway, state, catalog["classifier_id"], load_catalog()) == first
     )
-    for model, count in [(User, 3), (CardTemplate, 14), (Lesson, 16), (ClassifierVersion, 1)]:
+    for model, count in [(User, 3), (CardTemplate, 16), (Lesson, 16), (ClassifierVersion, 1)]:
         assert await db_session.scalar(select(func.count()).select_from(model)) == count
     from test_seed_demo import assert_dds_seed, assert_learning_seed
 
@@ -178,6 +178,8 @@ async def test_local_training_uses_source_catalog_and_repeats(db_session, tmp_pa
     active = await dds.lesson(first["dds"]["lessons"]["active"])
     assignment_id = active["assignments"][0]["id"]
     attempt = await dds.start(assignment_id)
+    assert attempt["dds"]["crews"][0]["status"] == "arrived"
+    assert all(h["prepared"] for h in attempt["dds"]["crews"][0]["history"])
     from uuid import uuid4
 
     changed = await dds.command(
@@ -188,8 +190,8 @@ async def test_local_training_uses_source_catalog_and_repeats(db_session, tmp_pa
             "request_id": str(uuid4()),
             "revision": attempt["dds"]["revision"],
             "information_event_id": attempt["dds"]["information"]["id"],
-            "status": "assigned",
-            "comment": "Бригада назначена учеником вручную",
+            "status": "in_progress",
+            "comment": "Ученик зафиксировал начало тушения",
         },
     )
     # Every seeded format must actually open, with the intended preparation.
@@ -232,7 +234,7 @@ async def test_local_training_uses_source_catalog_and_repeats(db_session, tmp_pa
             assert resumed["card"]["data"]["caller_name"] == "Введено учеником"
     unchanged = await dds.start(assignment_id)
     assert unchanged["dds"]["revision"] == changed["dds"]["revision"]
-    assert unchanged["dds"]["crews"][0]["comment"] == "Бригада назначена учеником вручную"
+    assert unchanged["dds"]["crews"][0]["comment"] == "Ученик зафиксировал начало тушения"
     from app.services.auth import login
 
     for role in ("teacher", "student"):

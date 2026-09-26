@@ -2,6 +2,7 @@ from decimal import ROUND_HALF_UP, Decimal
 
 from app.schemas.dds import CREW_LABELS, STATUS_LABELS
 from app.schemas.lesson_evaluation import FieldCheck
+from app.services.dds.evidence import initial_codes, prepared_assignment
 from app.services.field_evaluation import normalized, summarize
 from app.services.learning_scope import skills_for
 
@@ -139,8 +140,15 @@ def check_crew_exercise(policy, read):
             (
                 "dds_crews",
                 "dds.assignment.",
-                "Назначена",
-                bool(crew and (crew["status"] != "cancelled" or goal["status"] == "cancelled")),
+                "Назначение отменено" if goal["status"] == "cancelled" else "Назначена",
+                bool(
+                    crew
+                    and (
+                        crew["status"] == "cancelled"
+                        if goal["status"] == "cancelled"
+                        else crew["status"] != "cancelled"
+                    )
+                ),
             ),
             (
                 "dds_response",
@@ -149,6 +157,13 @@ def check_crew_exercise(policy, read):
                 crew_goal_met(crew, goal["status"]),
             ),
         ):
+            if (
+                skill == "dds_crews"
+                and goal["status"] != "cancelled"
+                and code in initial_codes(policy)
+                and prepared_assignment(crew)
+            ):
+                continue
             if skill in skills and not (skill == "dds_response" and goal["status"] == "assigned"):
                 fields.append(
                     FieldCheck(
@@ -163,7 +178,11 @@ def check_crew_exercise(policy, read):
     required = {g["crew_code"] for g in policy["required_crews"]}
     if "dds_crews" in skills:
         for code, crew in crews.items():
-            if code not in required and crew["status"] != "cancelled":
+            if (
+                code not in required
+                and crew["status"] != "cancelled"
+                and (code not in initial_codes(policy) or not prepared_assignment(crew))
+            ):
                 fields.append(
                     FieldCheck(
                         field=f"dds.assignment.extra.{code}",
@@ -177,7 +196,10 @@ def check_crew_exercise(policy, read):
     if policy.get("crew_calls_required") and "dds_crews" in skills:
         calls = {c["crew_code"]: c for c in read.dds.get("crew_calls", [])}
         for goal in policy["required_crews"]:
-            if goal["status"] == "cancelled":
+            if goal["status"] == "cancelled" or (
+                goal["crew_code"] in initial_codes(policy)
+                and prepared_assignment(crews.get(goal["crew_code"]))
+            ):
                 continue
             code = goal["crew_code"]
             completed = calls.get(code, {}).get("completed", False)

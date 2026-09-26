@@ -48,6 +48,10 @@ async def context(session, attempt, responses):
     crew_workflow = attempt.settings_snapshot["dds_policy"].get("workflow") == "crews-v1"
     calls = await notifications(session, attempt, crews)
     return {
+        "crew_messages": attempt.settings_snapshot["dds_policy"]
+        .get("card_exercise", {})
+        .get("messages", []),
+        "card_exercise": bool(attempt.settings_snapshot["dds_policy"].get("card_exercise")),
         "crew_calls": calls,
         "workflow": "crews-v1" if crew_workflow else "service-v1",
         "crews": crews,
@@ -98,7 +102,12 @@ async def context(session, attempt, responses):
         ),
         "information": {"id": str(info.id), "message": info.payload["message"]} if info else None,
         "history": [
-            {"id": str(e.id), "at": e.occurred_at.isoformat(), **e.payload} for e in history
+            {
+                "id": str(e.id),
+                "at": e.payload.get("source_at") or e.occurred_at.isoformat(),
+                **e.payload,
+            }
+            for e in history
         ],
         "responses": [
             {
@@ -148,17 +157,21 @@ async def crew_context(session, attempt):
             "assigned_at": row.assigned_at.isoformat(),
             "status_updated_at": next(
                 (
-                    e.occurred_at
+                    e.payload.get("source_at") or e.occurred_at.isoformat()
                     for e in reversed(events)
                     if e.payload["crew_code"] == row.crew_code
                 ),
-                row.assigned_at,
-            ).isoformat(),
+                row.assigned_at.isoformat(),
+            ),
             "crew_number": row.crew_number,
             "comment": row.comment,
             "allowed_statuses": sorted(CREW_TRANSITIONS[row.status]),
             "history": [
-                {"id": str(e.id), "at": e.occurred_at.isoformat(), **e.payload}
+                {
+                    "id": str(e.id),
+                    "at": e.payload.get("source_at") or e.occurred_at.isoformat(),
+                    **e.payload,
+                }
                 for e in events
                 if e.payload["crew_code"] == row.crew_code
             ],

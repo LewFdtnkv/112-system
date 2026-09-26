@@ -63,13 +63,18 @@ def dds_task(read, goals):
                 "dds_response",
                 GOALS["dds_response"],
                 f"Откройте карандаш бригады «{goal['name']}». "
-                f"По сообщению сценария выберите следующий статус; комментарий необязателен.",
+                "По сообщению бригады в нижней панели выберите следующий статус; "
+                "комментарий необязателен.",
                 f"Для бригады «{goal['name']}» следующий шаг: «{CREW_LABELS[route[0]]}». "
                 f"Основание — сведения задания.",
             )
     expected = {g["crew_code"] for g in goals}
     for crew in crews.values():
-        if crew["crew_code"] not in expected and crew["status"] != "cancelled":
+        if (
+            crew["crew_code"] not in expected
+            and crew["status"] != "cancelled"
+            and not any(e.get("prepared") for e in crew["history"])
+        ):
             return (
                 f"crew.extra.{crew['crew_code']}",
                 "dds_crews",

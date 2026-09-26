@@ -60,15 +60,43 @@ def field_skill(path):
 def validate_exercise(policy, scenario, cards):
     skills = skills_for(policy.model_dump(mode="json"), scenario.role)
     if scenario.role == "dds":
-        targets = (scenario.completion_rules.get("dds") or {}).get("required_crews", [])
-        if not targets:
-            raise HTTPException(422, "Для занятия ДДС укажите в сценарии бригады и цели их работы.")
-        if (
-            focused(policy.model_dump(mode="json"))
-            and "dds_response" in skills
-            and all(t["status"] == "assigned" for t in targets)
-        ):
-            raise HTTPException(422, "Для отработки статусов нужна цель после назначения бригады.")
+        for card in cards:
+            exercise = card.snapshot.get("dds_exercise")
+            targets = (exercise or scenario.completion_rules.get("dds") or {}).get(
+                "required_crews", []
+            )
+            if not targets:
+                raise HTTPException(
+                    422, "Для занятия ДДС укажите в карточке бригады и цели их работы."
+                )
+            if focused(policy.model_dump(mode="json")):
+                initial = {
+                    c["crew_code"]: c["history"][-1]["status"]
+                    for c in (exercise or {}).get("initial_crews", [])
+                }
+                assignment_work = any(
+                    initial.get(t["crew_code"]) in (None, "cancelled") or t["status"] == "cancelled"
+                    for t in targets
+                )
+                response_work = any(t["status"] not in {"assigned", "cancelled"} for t in targets)
+                if skills == {"dds_response"} and any(
+                    initial.get(t["crew_code"]) == "cancelled" for t in targets
+                ):
+                    raise HTTPException(
+                        422,
+                        "В исходной истории назначение бригады отменено: "
+                        "добавьте навык назначения бригад или выберите другую карточку.",
+                    )
+                if "dds_crews" in skills and not assignment_work:
+                    raise HTTPException(
+                        422,
+                        "Все нужные бригады уже назначены: "
+                        "выберите отработку статусов или другую карточку.",
+                    )
+                if "dds_response" in skills and not response_work:
+                    raise HTTPException(
+                        422, "Для отработки статусов нужна цель после назначения бригады."
+                    )
         return
     if not focused(policy.model_dump(mode="json")):
         return

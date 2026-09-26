@@ -18,7 +18,7 @@ async def summarize_process(session, attempt_id, through):
             .order_by(AttemptEvent.sequence)
         )
     )
-    server = [e for e in events if not e.kind.startswith("ui.")]
+    server = [e for e in events if not e.kind.startswith("ui.") and not e.payload.get("prepared")]
     browser = [e for e in events if e.kind.startswith("ui.")]
     hints = [e for e in server if e.kind == "learning.hint_issued"]
     changes = Counter(
@@ -101,6 +101,7 @@ async def summarize_process(session, attempt_id, through):
                 "other_card": e.attempt_id != attempt_id,
             }
             for e in reversed(surrounding)
+            if not e.payload.get("prepared")
         ]
     return {
         "parallel_card_activity": parallel,

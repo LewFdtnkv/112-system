@@ -172,7 +172,14 @@ async def populate_training(
         },
     )
     dds = await populate_dds(
-        gateway.dds(), state, create, group_id, card_ids, fire_service_id, with_crew_calls
+        gateway.dds(),
+        state,
+        create,
+        group_id,
+        card_ids,
+        fire_service_id,
+        with_crew_calls,
+        source_cards[:2],
     )
     learning = await populate_learning(
         state, create, group_id, ids["student"], source_cards, dds["profile_id"]

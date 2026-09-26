@@ -89,6 +89,7 @@ async def cards(
     teacher: TeacherDep,
     q: Search = "",
     classifier_version_id: UUID | None = None,
+    dds_profile_id: UUID | None = None,
     limit: Limit = 20,
     offset: Offset = 0,
 ):
@@ -118,6 +119,10 @@ async def cards(
     )
     if q:
         query = query.where(CardTemplate.title.ilike(f"%{q}%"))
+    if dds_profile_id:
+        query = query.where(
+            CardTemplate.dds_exercise["service_profile_id"].astext == str(dds_profile_id)
+        )
     if classifier_version_id:
         query = query.where(CardTemplate.classifier_version_id == classifier_version_id)
     total, rows = await page_rows(

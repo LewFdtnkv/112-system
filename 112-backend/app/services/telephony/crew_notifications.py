@@ -3,6 +3,7 @@
 from sqlalchemy import select
 
 from app.models import CrewAssignment, TrainingCall
+from app.services.dds.evidence import initial_codes, prepared_assignment
 from app.services.learning_scope import skills_for
 
 
@@ -33,7 +34,10 @@ async def notifications(session, attempt, crews):
     result = []
     # Student-visible progress must not reveal which unselected crews the answer key expects.
     for code, crew in assigned.items():
-        if crew["status"] == "cancelled":
+        if crew["status"] == "cancelled" or (
+            code in initial_codes(attempt.settings_snapshot["dds_policy"])
+            and prepared_assignment(crew)
+        ):
             continue
         successful = next(
             (

@@ -19,10 +19,16 @@ from app.services.service_profiles import profile_read
 
 
 async def initialize(session, attempt, scenario, source, now):
-    raw = scenario.completion_rules.get("dds")
+    exercise = source.snapshot.get("dds_exercise")
+    if exercise:
+        from app.services.dds.exercise import policy_for
+
+        raw = policy_for(exercise)
+    else:
+        raw = scenario.completion_rules.get("dds")
     if not raw:
         raise HTTPException(409, "DDS scenario requires configured exercise steps")
-    policy = DDSPolicy.model_validate(raw)
+    policy = DDSPolicy.model_validate({k: v for k, v in raw.items() if k != "card_exercise"})
     profile = await session.get(ServiceProfile, scenario.service_profile_id)
     profile_data = (await profile_read(session, profile)).model_dump(mode="json")
     attempt.settings_snapshot = attempt.settings_snapshot | {
@@ -64,15 +70,32 @@ async def initialize(session, attempt, scenario, source, now):
         {"service_id": str(profile.service_id), "sent_at": now.isoformat()},
         actor=EventActor.SIMULATION,
     )
+    if exercise:
+        from app.services.dds.exercise import prepare_crews
+
+        response = await session.scalar(
+            select(ServiceResponse).where(
+                ServiceResponse.attempt_id == attempt.id,
+                ServiceResponse.service_id == profile.service_id,
+            )
+        )
+        await prepare_crews(session, attempt, response, profile_data, exercise, now)
+        attempt.settings_snapshot = attempt.settings_snapshot | {"dds_policy": raw}
     if attempt.settings_snapshot.get("learning_engine"):
         from app.models import CrewAssignment
 
         learning = attempt.settings_snapshot["learning"]
         skills = skills_for(learning, "dds")
-        effective = policy.model_dump(mode="json") | {"workflow": "crews-v1"}
+        effective = (raw if exercise else policy.model_dump(mode="json")) | {"workflow": "crews-v1"}
         if "dds_response" not in skills:
+            prepared = {
+                c["crew_code"]: c["history"][-1]["status"]
+                for c in (exercise or {}).get("initial_crews", [])
+            }
             effective["required_crews"] = [
-                {**r, "status": "assigned"} for r in effective["required_crews"]
+                {**r, "status": "cancelled" if r["status"] == "cancelled" else "assigned"}
+                for r in effective["required_crews"]
+                if prepared.get(r["crew_code"]) in (None, "cancelled") or r["status"] == "cancelled"
             ]
         attempt.settings_snapshot = attempt.settings_snapshot | {"dds_policy": effective}
         if focused(learning):
@@ -87,6 +110,10 @@ async def initialize(session, attempt, scenario, source, now):
                 )
             )
             for goal in effective["required_crews"]:
+                if exercise and goal["crew_code"] in {
+                    c["crew_code"] for c in exercise["initial_crews"]
+                }:
+                    continue
                 crew = next(c for c in profile_data["crews"] if c["code"] == goal["crew_code"])
                 session.add(
                     CrewAssignment(

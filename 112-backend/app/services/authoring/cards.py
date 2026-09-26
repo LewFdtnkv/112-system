@@ -60,6 +60,7 @@ async def card_read(session: AsyncSession, card: CardTemplate) -> CardRead:
     job = await session.scalar(select(AIJob).where(AIJob.card_template_id == card.id))
     inference = (job.output or {}).get("inference", {}) if job else {}
     return CardRead(
+        dds_exercise=card.dds_exercise,
         generation_example=card.generation_example,
         generated_by_ai=job is not None,
         generation_method=inference.get("source"),
@@ -99,6 +100,8 @@ async def validate_card_definition(session: AsyncSession, payload: CardCreate) -
     check_consistency(payload.data)
     check_silent(payload.data, payload.classifier_entry_id, payload.recipient_service_ids)
     if flags(payload.data).get("noContact"):
+        if payload.dds_exercise:
+            raise HTTPException(422, "Для карточки ДДС нужна служба-получатель.")
         return []
     entry = (
         await session.get(ClassifierEntry, payload.classifier_entry_id)
@@ -141,6 +144,10 @@ async def validate_card_definition(session: AsyncSession, payload: CardCreate) -
         raise HTTPException(
             status_code=422, detail="Every recipient must be an existing active service"
         )
+    if payload.dds_exercise:
+        from app.services.dds.exercise import validate_profile
+
+        await validate_profile(session, payload.dds_exercise, payload.recipient_service_ids)
     return recipients
 
 
@@ -149,8 +156,9 @@ async def create_card(session: AsyncSession, teacher_id: UUID, payload: CardCrea
     card = CardTemplate(
         created_by_id=teacher_id,
         **payload.model_dump(
-            exclude={"recipient_service_ids", "data", "use_recommended_recipients"}
+            exclude={"recipient_service_ids", "data", "use_recommended_recipients", "dds_exercise"}
         ),
+        dds_exercise=payload.dds_exercise.model_dump(mode="json") if payload.dds_exercise else None,
         data=payload.data.model_dump(mode="json"),
     )
     session.add(card)
@@ -175,9 +183,18 @@ async def update_card(
         raise HTTPException(409, "Used cards cannot be edited")
     recipients = await validate_card_definition(session, payload)
     for key, value in payload.model_dump(
-        exclude={"revision", "recipient_service_ids", "use_recommended_recipients", "data"}
+        exclude={
+            "revision",
+            "recipient_service_ids",
+            "use_recommended_recipients",
+            "data",
+            "dds_exercise",
+        }
     ).items():
         setattr(card, key, value)
+    card.dds_exercise = (
+        payload.dds_exercise.model_dump(mode="json") if payload.dds_exercise else None
+    )
     card.data = payload.data.model_dump(mode="json")
     card.generation_example = False
     card.revision += 1

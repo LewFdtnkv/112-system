@@ -139,6 +139,22 @@ async def create_scenario(
             {"service_id": str(service.id), "name": service.name, "short_name": service.short_name}
         )
     for card in cards:
+        if payload.role == TrainingRole.DDS and card.dds_exercise:
+            from app.schemas.dds_exercise import DDSExercise
+            from app.services.dds.exercise import validate_profile
+
+            exercise = DDSExercise.model_validate(card.dds_exercise)
+            if exercise.service_profile_id != payload.service_profile_id:
+                raise HTTPException(
+                    422, f"Карточка «{card.title}» подготовлена для другого профиля ДДС."
+                )
+            await validate_profile(session, exercise, [r["service_id"] for r in by_card[card.id]])
+        elif payload.role == TrainingRole.DDS and not payload.dds_policy:
+            raise HTTPException(
+                422,
+                f"В карточке «{card.title}» настройте упражнение ДДС: "
+                "бригады, историю и сообщения.",
+            )
         if payload.role == TrainingRole.OPERATOR_112 and not card.caller_message:
             raise HTTPException(
                 status_code=422, detail="Operator 112 cards require a caller message"
@@ -215,6 +231,7 @@ async def create_scenario(
                 position=position,
                 arrival_offset_seconds=payload.arrival_offsets_seconds[position - 1],
                 snapshot={
+                    "dds_exercise": card.dds_exercise if payload.role == TrainingRole.DDS else None,
                     "title": card.title,
                     "instructions": card.instructions,
                     "caller_message": card.caller_message,

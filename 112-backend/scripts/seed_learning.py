@@ -3,9 +3,9 @@
 from uuid import NAMESPACE_URL, uuid5
 
 if __package__:
-    from scripts.seed_dds import STEPS
+    from scripts.seed_dds import card_exercise
 else:
-    from seed_dds import STEPS
+    from seed_dds import card_exercise
 
 
 async def populate_learning(state, create, group_id, student_id, source_cards, profile_id):
@@ -28,6 +28,8 @@ async def populate_learning(state, create, group_id, student_id, source_cards, p
                 source
                 | {
                     "title": f"{prefix}: навыки — {source['title'].removeprefix(prefix + ': ')}",
+                    "instructions": "Изучите учебную ситуацию и выполните действия своей роли.",
+                    "dds_exercise": card_exercise(profile_id),
                     "caller_message": (
                         f"Меня зовут {caller}. Учебный номер для обратной связи: {phone}. "
                         "Страна — Россия, субъект — Москва. " + source["caller_message"]
@@ -55,13 +57,9 @@ async def populate_learning(state, create, group_id, student_id, source_cards, p
                 "instructions": (
                     "Работайте только с бригадами своей службы. Для реагирования нужен "
                     "учебный пожарный расчёт № 1; резервный расчёт не требуется. "
-                    "Сведения старшего расчёта даны ниже. Статус службы не меняйте."
+                    "Сообщения старшего расчёта находятся у бригады в нижней панели. "
+                    "Статус службы не меняйте."
                 ),
-                "dds_policy": {
-                    "workflow": "crews-v1",
-                    "steps": STEPS,
-                    "required_crews": [{"crew_code": "fire-1", "status": "completed"}],
-                },
             }
         scenarios[role] = await create(f"learning-scenario-{role}", "scenarios", payload)
 
