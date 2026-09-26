@@ -44,24 +44,6 @@
       "label": "Женский"
     }
   ],
-  "time_of_day": [
-    {
-      "value": "morning",
-      "label": "Утро"
-    },
-    {
-      "value": "day",
-      "label": "День"
-    },
-    {
-      "value": "evening",
-      "label": "Вечер"
-    },
-    {
-      "value": "night",
-      "label": "Ночь"
-    }
-  ],
   "caller_state": [
     {
       "value": "calm",

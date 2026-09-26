@@ -68,7 +68,10 @@ export const buildCardTemplateInput: CardTemplatePayloadBuilder = ({
         ...flags,
         ...(silent
           ? { callerGender: null, callerAge: null, callerStatus: null }
-          : {}),
+          : {
+              callerGender: person.gender || null,
+              callerAge: person.age || null,
+            }),
       },
     },
   },

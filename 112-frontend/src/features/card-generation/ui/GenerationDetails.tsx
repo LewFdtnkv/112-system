@@ -72,7 +72,6 @@ export function GenerationDetails({ model }: CardGenerationPanelProps) {
             ["message_format", "Формат сообщения"],
             ["caller_information", "Сведения о заявителе"],
             ["gender", "Пол заявителя"],
-            ["time_of_day", "Время суток"],
             ["caller_state", "Состояние заявителя"],
             ["detail_level", "Подробность сообщения"],
           ] as const

@@ -24,7 +24,6 @@ export interface GenerationParameters {
   structure?: string | null;
   location?: MapPoint | null;
   object?: string | null;
-  time_of_day?: "morning" | "day" | "evening" | "night" | null;
   caller_state?: "calm" | "worried" | "panicked" | null;
   detail_level?: "brief" | "normal" | "detailed" | null;
   feature_answers?: Record<string, FeatureValue>;
@@ -52,7 +51,6 @@ export interface GenerationOptions {
   object: string[];
   patronymic_probability: number;
   gender: { value: string; label: string }[];
-  time_of_day: { value: string; label: string }[];
   caller_state: { value: string; label: string }[];
   detail_level: { value: string; label: string }[];
   message_format: { value: string; label: string }[];

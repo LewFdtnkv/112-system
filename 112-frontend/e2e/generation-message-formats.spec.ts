@@ -22,9 +22,13 @@ test("teacher chooses anonymous SMS and descriptive address without conflicting 
   await page.getByLabel("Логин", { exact: true }).fill("teacher");
   await page.getByLabel("Пароль", { exact: true }).fill("password");
   await page.getByRole("button", { name: "Войти", exact: true }).click();
+  await expect(page).toHaveURL(/teacher$/);
   await page.goto("/cards");
   await page.getByRole("button", { name: "Сгенерировать карточки" }).click();
   const dialog = page.getByRole("dialog");
+  await expect(
+    dialog.getByRole("combobox", { name: "Время суток", exact: true }),
+  ).toHaveCount(0);
   const choose = async (label: string, value: string) => {
     await dialog.getByRole("combobox", { name: label, exact: true }).click();
     await page.getByRole("option", { name: value, exact: true }).click();
@@ -84,5 +88,6 @@ test("teacher chooses anonymous SMS and descriptive address without conflicting 
   });
   expect(parameters).not.toHaveProperty("no_contact");
   expect(parameters).not.toHaveProperty("call_dropped");
+  expect(parameters).not.toHaveProperty("time_of_day");
   expect(errors).toEqual([]);
 });
