@@ -124,12 +124,8 @@ async def student_overview(
             offset=offset,
         )
 
-    active_page = await lesson_section(
-        (active.c.work_status == "in_progress") & active.c.paused_at.is_(None), active_offset
-    )
-    available_page = await lesson_section(
-        (active.c.work_status == "assigned") | active.c.paused_at.is_not(None), available_offset
-    )
+    active_page = await lesson_section(active.c.work_status == "in_progress", active_offset)
+    available_page = await lesson_section(active.c.work_status == "assigned", available_offset)
     groups = (
         select(TrainingGroup.name).join(GroupMembership).where(GroupMembership.user_id == user.id)
     )

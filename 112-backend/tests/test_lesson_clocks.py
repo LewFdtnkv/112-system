@@ -97,8 +97,9 @@ async def test_unlimited_pause_persists_and_old_session_cannot_pause_resume(
     )
     assert response.status_code == 409
     overview = await e.request("GET", "student/overview")
-    assert overview["active_lessons"]["total"] == 0
-    assert overview["available_lessons"]["items"][0]["paused_at"]
+    assert overview["active_lessons"]["total"] == 1
+    assert overview["active_lessons"]["items"][0]["paused_at"]
+    assert overview["available_lessons"]["total"] == 0
     resumed = await e.request("POST", path + "/start")
     assert (
         not resumed["paused_at"] and resumed["presence_session_id"] != work["presence_session_id"]
