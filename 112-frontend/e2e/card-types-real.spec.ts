@@ -205,7 +205,11 @@ test("112 popular types, two-character search and registration without notificat
   const input = editor.getByLabel("Тип происшествия", { exact: true });
   await input.fill("О");
   await page.waitForTimeout(450);
-  await expect(editor.locator(".arm-category-results")).toHaveCount(0);
+  await expect(
+    editor
+      .locator(".arm-category-results")
+      .getByRole("button", { name: "Ошибочно набран номер", exact: true }),
+  ).toBeVisible();
   expect(searches).toHaveLength(0);
   await input.fill("Ош");
   const results = editor.locator(".arm-category-results");

@@ -23,6 +23,22 @@ export const attemptApi = {
       params,
       signal,
     ),
+  allEntries: async (
+    attemptId: string,
+    signal?: AbortSignal,
+  ): Promise<ClassifierEntry[]> => {
+    const entries: ClassifierEntry[] = [];
+    const limit = 100;
+    for (;;) {
+      const page = await attemptApi.entries(
+        attemptId,
+        { limit, offset: entries.length },
+        signal,
+      );
+      entries.push(...page);
+      if (page.length < limit) return entries;
+    }
+  },
   services: (attemptId: string, params: Params, signal?: AbortSignal) =>
     get<Page<Service>>(
       `student/attempts/${id(attemptId)}/services`,

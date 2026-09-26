@@ -75,8 +75,7 @@ test("guide introduces the task, waits for correct and confirmed answers, includ
       const texts: Record<string, string> = {
         "guide.source":
           "Здесь условия задачи. Прочитайте их и нажмите «Продолжить».",
-        classifier_entry_id:
-          "Выберите тип происшествия. Для поиска введите хотя бы два символа.",
+        classifier_entry_id: "Найдите и выберите тип происшествия.",
         "guide.address":
           "Заполните адрес по условию задачи в отдельных полях. Неизвестные сведения оставьте пустыми. Описательный адрес здесь не нужен.",
         description:
@@ -145,7 +144,7 @@ test("guide introduces the task, waits for correct and confirmed answers, includ
   await panel.getByRole("button", { name: "Продолжить", exact: true }).click();
   await page
     .getByRole("textbox", { name: "Тип происшествия", exact: true })
-    .fill("по");
+    .fill("п");
   const result = page.locator(".arm-category-results");
   await expect(
     result.getByRole("button", { name: "Пожар", exact: true }),

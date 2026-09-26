@@ -1,3 +1,4 @@
+import { useAttemptCatalog } from "./useAttemptCatalog";
 import type { IncidentCardFields } from "@/entities/incident-card";
 import { attemptApi } from "@/entities/training";
 import { attemptCard, type RemoteEditor } from "@/features/incident-editing";
@@ -21,7 +22,6 @@ export function useAttemptEditor({ initial, onSaved }: AttemptEditorProps) {
   const [activity, setActivity] = useState(0);
   const [highlight, setHighlight] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const debounced = useDebounced(search.trim());
   const [answers, setAnswers] = useState<Record<string, FeatureValue>>(
     (initial.card.data.features?.ekp as Record<string, FeatureValue>) ?? {},
   );
@@ -46,19 +46,11 @@ export function useAttemptEditor({ initial, onSaved }: AttemptEditorProps) {
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
   }, [completed]);
-  const entries = useQuery({
-    queryKey: ["attempt-entries", attempt.id, debounced],
-    queryFn: ({ signal }) =>
-      attemptApi.entries(attempt.id, { q: debounced }, signal),
-    enabled: !completed && debounced.length >= 2 && search.trim().length >= 2,
-  });
-  const popular = useQuery({
-    queryKey: ["attempt-popular-entries", attempt.id],
-    queryFn: ({ signal }) =>
-      attemptApi.entries(attempt.id, { popular: true, limit: 11 }, signal),
-    enabled: !completed,
-    staleTime: Infinity,
-  });
+  const { entries, matches, popular } = useAttemptCatalog(
+    attempt.id,
+    !completed,
+    search,
+  );
   const recipients = useQuery({
     queryKey: ["recipients", attempt.id, selected?.id, debouncedAnswers],
     queryFn: ({ signal }) =>
@@ -109,7 +101,6 @@ export function useAttemptEditor({ initial, onSaved }: AttemptEditorProps) {
       : [];
   const error =
     entries.error ||
-    popular.error ||
     (JSON.stringify(answers) === JSON.stringify(debouncedAnswers) &&
     !recipients.isFetching
       ? recipients.error
@@ -134,14 +125,11 @@ export function useAttemptEditor({ initial, onSaved }: AttemptEditorProps) {
           : (fields.ekpAnswers ?? {}),
       );
     },
-    categories: (debounced === search.trim() && debounced.length >= 2
-      ? (entries.data ?? [])
-      : []
-    ).map((e) => ({
+    categories: matches.map((e) => ({
       id: e.id,
       name: e.display_name || e.name,
     })),
-    popularCategories: (popular.data ?? []).map((e) => ({
+    popularCategories: popular.map((e) => ({
       id: e.id,
       name: e.display_name || e.name,
     })),
@@ -166,18 +154,11 @@ export function useAttemptEditor({ initial, onSaved }: AttemptEditorProps) {
     })),
     search: setSearch,
     select: (id) =>
-      setSelected(
-        [...(entries.data ?? []), ...(popular.data ?? [])].find(
-          (e) => e.id === id,
-        ) ?? null,
-      ),
+      setSelected((entries.data ?? []).find((e) => e.id === id) ?? null),
     onSave: async (fields) => {
       await save(fields);
     },
-    searching:
-      entries.isFetching ||
-      popular.isFetching ||
-      (search.trim().length >= 2 && debounced !== search.trim()),
+    searching: entries.isFetching,
     error: error ? getApiError(error).message : undefined,
   };
   const beforeHint = async () => {

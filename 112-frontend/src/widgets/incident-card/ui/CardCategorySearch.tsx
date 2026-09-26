@@ -1,5 +1,5 @@
 import { ArmField } from "@/shared/ui/arm";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { CardCategoryEditorProps } from "../types/CardCategoryEditor";
 export function CardCategorySearch({
   editor,
@@ -8,10 +8,14 @@ export function CardCategorySearch({
   const [query, setQuery] = useState("");
   const [choosing, setChoosing] = useState(false);
   const term = query.trim();
-  const results = choosing && term.length >= 2;
+  const results = choosing && term.length > 0;
   const choices = results
     ? editor.remote.categories
     : (editor.remote.popularCategories ?? []).slice(0, 11);
+  const resultList = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (results) resultList.current?.scrollIntoView({ block: "nearest" });
+  }, [results, choices.length]);
   const choose = (id: string) => {
     editor.setCategory(id);
     setQuery("");
@@ -45,13 +49,9 @@ export function CardCategorySearch({
           setChoosing(true);
         }}
       />
-      {choosing && term.length < 2 && (
-        <small className="arm-category-hint">
-          Введите не менее 2 символов для поиска
-        </small>
-      )}
       {(results || (!editor.fields.categoryId && !term)) && (
         <div
+          ref={resultList}
           className={results ? "arm-category-results" : "arm-category-choices"}
         >
           {choices.map((category) => (
