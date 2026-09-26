@@ -9,7 +9,8 @@ from starlette.concurrency import run_in_threadpool
 
 from app.core.security import hash_password
 from app.models import AuthSession, User, UserActivity
-from app.schemas.user import UserCreate, UserUpdate
+from app.schemas.user import UserCreate, UserPasswordReset, UserUpdate
+from app.services.auth import lock_user
 
 
 async def create_user(
@@ -97,5 +98,34 @@ async def update_user(
             .where(AuthSession.user_id == user.id, AuthSession.revoked_at.is_(None))
             .values(revoked_at=datetime.now(UTC))
         )
+    await session.commit()
+    return user
+
+
+async def reset_password(
+    session: AsyncSession, user_id: UUID, admin_id: UUID, payload: UserPasswordReset
+) -> User:
+    password_hash = await run_in_threadpool(
+        hash_password, payload.temporary_password.get_secret_value()
+    )
+    # Share the account administration lock with access changes, then serialize against
+    # login, refresh and password changes so no session survives a completed reset.
+    await session.execute(text("SELECT pg_advisory_xact_lock(112, 7)"))
+    admin = await session.get(User, admin_id, populate_existing=True)
+    if admin is None or not admin.is_active or not admin.is_admin or admin.must_change_password:
+        raise HTTPException(status_code=403, detail="Administrator access required")
+    user = await lock_user(session, user_id)
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    now = datetime.now(UTC)
+    user.password_hash = password_hash
+    user.must_change_password = True
+    user.password_changed_at = now
+    await session.execute(
+        update(AuthSession)
+        .where(AuthSession.user_id == user.id, AuthSession.revoked_at.is_(None))
+        .values(revoked_at=now)
+    )
+    session.add(UserActivity(user_id=user.id, actor_id=admin_id, kind="account.password_reset"))
     await session.commit()
     return user

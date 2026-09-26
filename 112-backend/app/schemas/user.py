@@ -1,19 +1,30 @@
 from datetime import datetime
-from typing import Literal
+from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator, model_validator
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, SecretStr, model_validator
 
 from app.schemas.auth import Username
 
 UserRole = Literal["student", "teacher", "admin"]
 
 
+def nonblank_password(value: SecretStr) -> SecretStr:
+    if not value.get_secret_value().strip():
+        raise ValueError("Password must not be blank")
+    return value
+
+
+TemporaryPassword = Annotated[
+    SecretStr, Field(min_length=12, max_length=128), AfterValidator(nonblank_password)
+]
+
+
 class UserCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     username: Username
-    initial_password: SecretStr = Field(min_length=12, max_length=128)
+    initial_password: TemporaryPassword
     first_name: str = Field(default="", max_length=100)
     last_name: str = Field(default="", max_length=100)
     middle_name: str | None = Field(default=None, max_length=100)
@@ -35,13 +46,6 @@ class UserCreate(BaseModel):
         if self.is_admin and self.is_teacher:
             raise ValueError("A user must have exactly one role")
         return self
-
-    @field_validator("initial_password")
-    @classmethod
-    def nonblank_password(cls, value: SecretStr) -> SecretStr:
-        if not value.get_secret_value().strip():
-            raise ValueError("Password must not be blank")
-        return value
 
 
 class UserRead(BaseModel):
@@ -73,3 +77,9 @@ class UserUpdate(BaseModel):
     email: str | None = Field(default=None, max_length=254, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
     reason: str | None = Field(default=None, min_length=1, max_length=2000)
     is_active: bool = True
+
+
+class UserPasswordReset(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    temporary_password: TemporaryPassword

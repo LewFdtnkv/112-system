@@ -6,8 +6,8 @@ from sqlalchemy import select
 from app.api.dependencies import AdminDep, CurrentUserDep, SessionDep, StaffDep
 from app.api.pagination import Limit, Offset
 from app.models import User
-from app.schemas.user import UserCreate, UserRead, UserUpdate
-from app.services.users import create_user, update_user
+from app.schemas.user import UserCreate, UserPasswordReset, UserRead, UserUpdate
+from app.services.users import create_user, reset_password, update_user
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -49,3 +49,10 @@ async def edit_user(
     user_id: UUID, payload: UserUpdate, session: SessionDep, admin: AdminDep
 ) -> User:
     return await update_user(session, user_id, admin.id, payload)
+
+
+@router.post("/{user_id}/reset-password", response_model=UserRead)
+async def reset_user_password(
+    user_id: UUID, payload: UserPasswordReset, session: SessionDep, admin: AdminDep
+) -> User:
+    return await reset_password(session, user_id, admin.id, payload)
