@@ -6,6 +6,7 @@ import type {
   FocusKind,
   Message,
   MessageSummary,
+  MonitoringRow,
   ProctoringEvent,
 } from "../types/activityApi";
 export const activityApi = {
@@ -19,17 +20,9 @@ export const activityApi = {
       )
       .json<StudentOverview>(),
   monitoring: (offset = 0) =>
-    backendApi.get("teaching/monitoring", { searchParams: { offset } }).json<
-      Page<{
-        attempt_id: string;
-        student_name: string;
-        title: string;
-        visibility: string | null;
-        focus: string | null;
-        last_seen: string | null;
-        hidden_count: number;
-      }>
-    >(),
+    backendApi
+      .get("teaching/monitoring", { searchParams: { offset } })
+      .json<Page<MonitoringRow>>(),
   messages: (
     offset = 0,
     includeAdvice = true,
@@ -94,7 +87,8 @@ export const activityApi = {
         sessions: number;
       }[]
     >(),
-  photo: (id: string) => backendApi.get(`users/${id}/photo`).blob(),
+  photo: (id: string, signal?: AbortSignal) =>
+    backendApi.get(`users/${id}/photo`, { signal }).blob(),
   uploadPhoto: (id: string, file: File) =>
     backendApi.put(`admin/users/${id}/photo`, { body: file }),
   proctoring: (

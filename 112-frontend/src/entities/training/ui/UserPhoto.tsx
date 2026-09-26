@@ -1,25 +1,23 @@
 import { Avatar } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
-import { activityApi } from "../api/activityApi";
+import PersonIcon from "@mui/icons-material/Person";
+import { useUserPhoto } from "../model/useUserPhoto";
 import { styles } from "../styles/UserPhoto";
 import type { UserPhotoProps } from "../types/UserPhoto";
 
-export function UserPhoto({ userId }: UserPhotoProps) {
-  const photo = useQuery({
-    queryKey: ["user-photo", userId],
-    queryFn: () => activityApi.photo(userId),
-  });
-  const [url, setUrl] = useState("");
-  useEffect(() => {
-    if (!photo.data?.size) return;
-    const reader = new FileReader();
-    reader.onload = () => setUrl(String(reader.result));
-    reader.readAsDataURL(photo.data);
-    return () => {
-      reader.onload = null;
-      reader.abort();
-    };
-  }, [photo.data]);
-  return <Avatar src={url} alt="Фотография пользователя" sx={styles.avatar} />;
+export function UserPhoto({
+  userId,
+  size = "profile",
+  decorative = false,
+}: UserPhotoProps) {
+  const photo = useUserPhoto(userId);
+  return (
+    <Avatar
+      src={photo.isError ? undefined : (photo.data ?? undefined)}
+      alt={decorative ? "" : "Фотография пользователя"}
+      aria-hidden={decorative || undefined}
+      sx={size === "small" ? styles.small : styles.avatar}
+    >
+      <PersonIcon fontSize={size === "small" ? "small" : "large"} />
+    </Avatar>
+  );
 }

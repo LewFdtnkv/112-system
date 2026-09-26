@@ -1,4 +1,4 @@
-import { userName } from "@/entities/training";
+import { UserIdentity, userName } from "@/entities/training";
 import { rowAction } from "@/shared/lib/rowAction";
 import { PageControls } from "@/shared/ui/QueryState";
 import {
@@ -41,7 +41,10 @@ export function UsersTable({
                     className="table-block-link"
                     onClick={() => onSelect(user)}
                   >
-                    {userName(user)} ({user.username})
+                    <UserIdentity
+                      userId={user.id}
+                      name={`${userName(user)} (${user.username})`}
+                    />
                   </Button>
                 </TableCell>
                 <TableCell>

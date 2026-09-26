@@ -4,6 +4,7 @@ import {
   lessonPercent,
   percentText,
   workStatusLabels,
+  UserIdentity,
 } from "@/entities/training";
 import {
   getStudentTrainingWorkspacePath,
@@ -70,7 +71,10 @@ export function LessonListTable({
                       className="table-block-link"
                       onClick={() => onStudentSelect(row.student_id)}
                     >
-                      {row.student_name}
+                      <UserIdentity
+                        userId={row.student_id}
+                        name={row.student_name}
+                      />
                     </Button>
                     <small className="block-detail">{row.group_name}</small>
                   </TableCell>

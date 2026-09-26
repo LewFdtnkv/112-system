@@ -2,6 +2,17 @@ export interface MessageSummary {
   unread_count: number;
 }
 
+export interface MonitoringRow {
+  attempt_id: string;
+  student_id: string;
+  student_name: string;
+  title: string;
+  visibility: string | null;
+  focus: string | null;
+  last_seen: string | null;
+  hidden_count: number;
+}
+
 export interface Message {
   id: string;
   text: string;

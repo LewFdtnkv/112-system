@@ -535,7 +535,7 @@ a:hover {
 
   .app-header__brand small,
   .app-header__utility > a,
-  .app-header__user {
+  .app-header__user .user-identity__name {
     display: none;
   }
 
@@ -651,6 +651,10 @@ a:hover {
 .table-block-link:hover {
   background: transparent;
   text-decoration: underline;
+}
+
+.table-block-link .user-identity {
+  width: 100%;
 }
 
 .table-clickable-row {

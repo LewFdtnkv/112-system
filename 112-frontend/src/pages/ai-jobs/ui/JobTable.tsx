@@ -1,4 +1,5 @@
 import { jobPurposes, jobStatuses, jobMethods } from "@/entities/ai-job";
+import { UserIdentity } from "@/entities/training";
 import { rowAction } from "@/shared/lib/rowAction";
 import {
   Button,
@@ -85,10 +86,24 @@ export function JobTable({ items, onSelect }: JobTableProps) {
                 )}
               </TableCell>
               <TableCell>
-                {job.created_by_username ?? "Система"}
+                {job.created_by_id ? (
+                  <UserIdentity
+                    userId={job.created_by_id}
+                    name={job.created_by_username ?? "Пользователь"}
+                  />
+                ) : (
+                  "Система"
+                )}
                 {job.student_username && (
                   <Typography variant="caption" component="div">
-                    Ученик: {job.student_username}
+                    {job.student_id ? (
+                      <UserIdentity
+                        userId={job.student_id}
+                        name={`Ученик: ${job.student_username}`}
+                      />
+                    ) : (
+                      job.student_username
+                    )}
                   </Typography>
                 )}
               </TableCell>

@@ -13,6 +13,7 @@ import {
   Typography,
 } from "@mui/material";
 import { stationModeLabels } from "@/entities/telephony";
+import { UserIdentity, userName } from "@/entities/training";
 import type { StationInput } from "@/entities/telephony";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { getApiError } from "@/shared/api";
@@ -102,7 +103,10 @@ export function StationsPage() {
           <MenuItem value="">Не назначен</MenuItem>
           {students.data?.items.map((s) => (
             <MenuItem key={s.id} value={s.id}>
-              {s.last_name} {s.first_name} ({s.username})
+              <UserIdentity
+                userId={s.id}
+                name={`${userName(s)} (${s.username})`}
+              />
             </MenuItem>
           ))}
         </TextField>
@@ -149,7 +153,10 @@ export function StationsPage() {
                     <MenuItem value="">Не назначен</MenuItem>
                     {students.data?.items.map((s) => (
                       <MenuItem key={s.id} value={s.id}>
-                        {s.last_name} {s.first_name} ({s.username})
+                        <UserIdentity
+                          userId={s.id}
+                          name={`${userName(s)} (${s.username})`}
+                        />
                       </MenuItem>
                     ))}
                   </TextField>

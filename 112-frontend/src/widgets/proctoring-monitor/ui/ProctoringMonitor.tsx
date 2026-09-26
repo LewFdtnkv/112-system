@@ -1,4 +1,4 @@
-import { activityApi } from "@/entities/training";
+import { activityApi, UserIdentity } from "@/entities/training";
 import { ProctoringHistory } from "@/features/proctoring";
 import { rowAction } from "@/shared/lib/rowAction";
 import { PageControls, QueryState } from "@/shared/ui/QueryState";
@@ -55,7 +55,9 @@ export function ProctoringMonitor() {
                 key={r.attempt_id}
                 {...rowAction(() => setAttempt(r.attempt_id))}
               >
-                <TableCell>{r.student_name}</TableCell>
+                <TableCell>
+                  <UserIdentity userId={r.student_id} name={r.student_name} />
+                </TableCell>
                 <TableCell>{r.title}</TableCell>
                 <TableCell>
                   {r.visibility === "tab.hidden"

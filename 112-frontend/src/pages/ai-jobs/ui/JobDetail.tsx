@@ -1,4 +1,5 @@
 import { jobPurposes, jobStatuses, jobMethods } from "@/entities/ai-job";
+import { UserIdentity } from "@/entities/training";
 import { QueryState } from "@/shared/ui/QueryState";
 import {
   Alert,
@@ -97,8 +98,20 @@ export function JobDetail({ id, onClose }: JobDetailProps) {
                     {Object.entries({
                       "Вид задачи": jobPurposes[job.purpose],
                       Состояние: jobStatuses[job.status],
-                      Инициатор: job.created_by_username ?? "Система",
-                      Ученик: job.student_username,
+                      Инициатор: job.created_by_id ? (
+                        <UserIdentity
+                          userId={job.created_by_id}
+                          name={job.created_by_username ?? "Пользователь"}
+                        />
+                      ) : (
+                        "Система"
+                      ),
+                      Ученик: job.student_id ? (
+                        <UserIdentity
+                          userId={job.student_id}
+                          name={job.student_username ?? "Ученик"}
+                        />
+                      ) : null,
                       Модель: job.model_version,
                       "Версия промпта": job.prompt_version,
                       "Попытки запуска": job.retry_count,

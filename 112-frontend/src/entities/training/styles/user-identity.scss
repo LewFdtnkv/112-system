@@ -1,0 +1,14 @@
+.user-identity {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+  vertical-align: middle;
+  text-align: left;
+
+  &__name {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+}

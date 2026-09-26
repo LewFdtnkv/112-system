@@ -40,6 +40,7 @@ export { lessonPercent, percentText } from "./model/studentOverview";
 export type { StudentOverview } from "./model/studentOverview";
 export * from "./types/generation";
 export { UserPhoto } from "./ui/UserPhoto";
+export { UserIdentity } from "./ui/UserIdentity";
 
 export * from "./types/learning";
 export * from "./types/semanticAssessment";

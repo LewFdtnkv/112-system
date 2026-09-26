@@ -1,4 +1,4 @@
-import { userApi, userName } from "@/entities/training";
+import { userApi, userName, UserIdentity } from "@/entities/training";
 import { GroupDisband } from "@/features/group-disband";
 import { StudentProfileDialog } from "@/features/student-profile";
 import { MessageComposer } from "@/features/teaching-messages";
@@ -105,7 +105,10 @@ export function GroupMembersDialog({
                     {members.data.items.map((user) => (
                       <li key={user.id}>
                         <Button onClick={() => setProfile(user.id)}>
-                          {userName(user)} · Профиль
+                          <UserIdentity
+                            userId={user.id}
+                            name={`${userName(user)} · Профиль`}
+                          />
                         </Button>
                         <Button
                           onClick={() => {

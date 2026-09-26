@@ -1,4 +1,9 @@
-import { activityApi, percentText, userName } from "@/entities/training";
+import {
+  activityApi,
+  percentText,
+  userName,
+  UserIdentity,
+} from "@/entities/training";
 import { getStudentProfilePath } from "@/shared/config/routes";
 import { QueryState } from "@/shared/ui/QueryState";
 import {
@@ -43,7 +48,10 @@ export function StudentProfileDialog({
             <Stack spacing={2} sx={styles.stack}>
               <div>
                 <Typography variant="h6">
-                  {userName(query.data.user)}
+                  <UserIdentity
+                    userId={query.data.user.id}
+                    name={userName(query.data.user)}
+                  />
                 </Typography>
                 <Typography color="text.secondary">
                   {query.data.groups.join(" · ") || "Без учебной группы"}
