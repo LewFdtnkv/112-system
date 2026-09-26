@@ -1,0 +1,51 @@
+[
+  {
+    "id": "consultation-anonymous",
+    "template": "consultation-numbers",
+    "seed": 108,
+    "parameters": {
+      "caller_information": "anonymous",
+      "message_format": "sms"
+    }
+  },
+  {
+    "id": "wrong-number",
+    "template": "wrong-number",
+    "seed": 112,
+    "parameters": {
+      "caller_information": "name_only",
+      "caller_name": "Екатерина"
+    }
+  },
+  {
+    "id": "self-fall",
+    "template": "medical-self-fall",
+    "seed": 509,
+    "parameters": {
+      "caller_information": "full",
+      "age": 72,
+      "gender": "female",
+      "caller_name": "Мария Иванова"
+    }
+  },
+  {
+    "id": "descriptive-address",
+    "template": "fire-rubbish",
+    "seed": 811,
+    "parameters": {
+      "address_format": "descriptive",
+      "message_format": "sms",
+      "caller_information": "anonymous",
+      "has_victims": false
+    }
+  },
+  {
+    "id": "self-fall-unknown-gender",
+    "template": "medical-self-fall",
+    "seed": 510,
+    "parameters": {
+      "caller_information": "name_only",
+      "caller_name": "Саша"
+    }
+  }
+]

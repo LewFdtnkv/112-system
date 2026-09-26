@@ -6,7 +6,8 @@ import re
 def normalize_recommendation(criterion, decision):
     if criterion["code"] != "description" or decision.verdict not in ("incorrect", "partial"):
         return decision, {}
-    if not re.search(
+    numeric_answer = bool(re.fullmatch(r"[\d\s.,+\-]+", criterion.get("answer", "")))
+    if not numeric_answer and not re.search(
         r"дословн|точн\w*\s+воспроизвед|точн\w*\s+(?:повтор|перепис)",
         decision.recommendation,
         re.I,
@@ -19,7 +20,9 @@ def normalize_recommendation(criterion, decision):
         }
     ), {
         "recommendation_guard": {
-            "reason": "Paraphrases are allowed by the rubric",
+            "reason": "Use narrative instead of a number; do not invent a field for that number"
+            if numeric_answer
+            else "Paraphrases are allowed by the rubric",
             "original": decision.recommendation,
         }
     }

@@ -1,10 +1,21 @@
 import copy
 import json
+from types import SimpleNamespace
 
 import pytest
 from test_semantic_assessment import decision, model_job
 
-from app.services.generation.prose import assemble, generation_prompt, source, validate_message
+from app.services.generation import llm
+from app.services.generation.narration import fallback
+from app.services.generation.prose import (
+    Narration,
+    assemble,
+    exact_service_source,
+    generation_prompt,
+    source,
+    validate_message,
+)
+from app.services.generation.protection import protect
 from app.services.semantic_assessment.inference import evaluate
 from app.services.semantic_assessment.prompts import messages
 from app.services.semantic_assessment.recovery import AssessmentFailure, failure_details
@@ -75,6 +86,57 @@ def test_caller_name_cannot_be_reassigned_to_victim():
     message = " ".join(source(data)[1]).replace("Меня зовут [ИМЯ].", "Пострадавшего зовут [ИМЯ].")
     with pytest.raises(ValueError, match="Имя относится к заявителю"):
         validate_message(data, message)
+
+
+@pytest.mark.parametrize("template", ["wrong-number", "medical-self-fall"])
+def test_unknown_gender_uses_neutral_self_description(template):
+    data = sample(
+        template,
+        parameters={
+            "caller_information": "name_only",
+            "caller_name": "Екатерина",
+        },
+    )
+    text = fallback(data).caller_message
+    assert "ошибся" not in text and "Я упал" not in text
+    assert data["facts"]["Пол"] is None
+    message = " ".join(source(data)[1])
+    validate_message(data, message)
+    with pytest.raises(ValueError, match="Пол неизвестен"):
+        validate_message(data, message + " Я упал.")
+
+
+def test_unchanged_service_request_does_not_need_an_ai_critic(monkeypatch):
+    data = sample(
+        "consultation-numbers",
+        parameters={
+            "caller_information": "anonymous",
+            "message_format": "sms",
+        },
+    )
+    message = " ".join(source(data)[1])
+
+    def request(model, prompt, schema, **kwargs):
+        assert schema is Narration
+        return Narration(message=message), {}
+
+    monkeypatch.setattr(llm, "request", request)
+    text, metadata = llm.compose(SimpleNamespace(input=data, model_version="test"))
+    assert metadata["review_source"] == "exact-source"
+    assert protect(data, text, metadata)[1]["source"] == "assisted"
+    assert not exact_service_source(data, message + " Огонь!")
+    corrupted = {**metadata, "draft": message + " Огонь!"}
+    assert protect(data, text, corrupted)[1]["source"] == "template-fallback"
+
+
+def test_negative_operational_flags_remain_in_call_clarifications():
+    data = sample("medical-self-fall", parameters={"blocked": False, "refused_ambulance": False})
+    text = assemble(data, " ".join(source(data)[1])).caller_message
+    speech, clarification = text.split("В ходе уточнения выяснено:")
+    assert "Сюда можно добраться" not in speech
+    assert "От скорой никто не отказывался" not in speech
+    assert "Сюда можно добраться" in clarification
+    assert "От скорой никто не отказывался" in clarification
 
 
 def test_dds_scope_examples_remain_when_rag_supplies_other_examples():
@@ -165,3 +227,18 @@ def test_advice_cannot_demand_verbatim_copying_for_description():
     assert metadata["recommendation_guard"]["original"] == result.recommendation
     # Structured address corrections may legitimately demand exact values.
     assert normalize_recommendation({"code": "address_text"}, result) == (result, {})
+
+
+def test_numeric_garbage_does_not_invent_a_separate_code_field():
+    result = decision().model_copy(
+        update={
+            "verdict": "incorrect",
+            "recommendation": "Код должен быть в другом поле.",
+        }
+    )
+    guarded, metadata = normalize_recommendation(
+        {"code": "description", "answer": "214214"}, result
+    )
+    assert "своими словами" in guarded.recommendation
+    assert "другом поле" not in guarded.recommendation
+    assert metadata["recommendation_guard"]["original"] == result.recommendation

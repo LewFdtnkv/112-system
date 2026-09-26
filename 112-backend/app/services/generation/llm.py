@@ -12,9 +12,11 @@ from app.services.generation.prose import (
     Narration,
     Review,
     assemble,
+    exact_service_source,
     fingerprint,
     generation_prompt,
     review_prompt,
+    source,
     validate_message,
     validate_review,
 )
@@ -103,16 +105,25 @@ def compose(job):
             )
             report["draft"] = draft.message
             validate_message(job.input, draft.message)
-            if deadline - time.monotonic() < 2:
-                raise TimeoutError("No time left for independent review")
-            review, report["critic"] = request(
-                job.model_version,
-                review_prompt(job.input, draft.message),
-                Review,
-                seed=job.input["seed"],
-                temperature=0,
-                timeout=deadline - time.monotonic(),
-            )
+            if exact_service_source(job.input, draft.message):
+                review = Review(
+                    covered=list(range(len(source(job.input)[1]))),
+                    unsupported=[],
+                    contradictions=[],
+                )
+                report["review_source"] = "exact-source"
+            else:
+                if deadline - time.monotonic() < 2:
+                    raise TimeoutError("No time left for independent review")
+                review, report["critic"] = request(
+                    job.model_version,
+                    review_prompt(job.input, draft.message),
+                    Review,
+                    seed=job.input["seed"],
+                    temperature=0,
+                    timeout=deadline - time.monotonic(),
+                )
+                report["review_source"] = "model"
             report["review"] = review.model_dump()
             validate_review(job.input, draft.message, review)
             text = assemble(job.input, draft.message)
@@ -121,9 +132,15 @@ def compose(job):
                 "source": "assisted",
                 "draft": draft.message,
                 "review": review.model_dump(),
+                "review_source": report["review_source"],
                 "input_hash": fingerprint(job.input),
-                "quality_note": "ИИ написал сообщение и проверил его по исходным фактам. "
-                "Перед занятием требуется проверка преподавателя.",
+                "quality_note": (
+                    "Текст ИИ точно совпал с подготовленным служебным сообщением; "
+                    "совпадение проверено автоматически. "
+                    if report["review_source"] == "exact-source"
+                    else "ИИ написал сообщение и проверил его по исходным фактам. "
+                )
+                + "Перед занятием требуется проверка преподавателя.",
             }
         except (OSError, ValueError, KeyError, TypeError) as exc:
             report["error_type"] = type(exc).__name__

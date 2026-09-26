@@ -40,6 +40,14 @@ def render(job_input, selection):
             .replace("Я упал", "Я упала")
             .replace("самому", "самой")
         )
+    elif not plan.get("speaker_gender") and not facts.get("Пол"):
+        event = event.replace("ошибся номером", "это ошибка набора")
+        if plan.get("caller_is_victim"):
+            event = [
+                "После падения мне больно, не могу подняться. Помогите, пожалуйста.",
+                "Помогите мне, пожалуйста. Больно после падения, "
+                "без помощи не получается подняться.",
+            ][chosen.wording]
     address = "" if plan["service_call"] else f"Это {facts['Адрес']}."
     # Coordinates, names and house numbers are substituted by code, not produced by LLM.
     if plan["service_call"]:
@@ -75,9 +83,9 @@ def render(job_input, selection):
                 else "От медицинской помощи пострадавшие отказываются."
             )
         if flags.get("blocked") is False:
-            parts.append("Сюда можно добраться.")
+            (parts if sms else clarifications).append("Сюда можно добраться.")
         if flags.get("refusedAmbulance") is False and count:
-            parts.append("От скорой никто не отказывался.")
+            (parts if sms else clarifications).append("От скорой никто не отказывался.")
     # Additional explicitly authored answers retain their meaning without invented paraphrases.
     extras = plan.get("extra_evidence", [])
     if sms:
