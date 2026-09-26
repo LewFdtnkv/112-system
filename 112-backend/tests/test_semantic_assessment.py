@@ -11,8 +11,9 @@ from test_teacher_api import teaching as teaching
 from app.models import AIJob, Evaluation, LessonEvaluation
 from app.models.enums import AIPurpose, EvaluationMethod, JobStatus
 from app.schemas.semantic_assessment import SemanticDecision
-from app.services.generation_worker import claim, finish
+from app.services.generation_worker import claim, fail, finish
 from app.services.semantic_assessment.inference import evaluate
+from app.services.semantic_assessment.recovery import AssessmentFailure
 from app.services.semantic_assessment.results import card_score
 
 pytestmark = pytest.mark.anyio
@@ -249,6 +250,7 @@ async def test_failed_jobs_reconcile_to_formal_grade_and_retry_is_authorized(exe
         job.status = JobStatus.FAILED
         job.retry_count = 3
         job.error = "Сервис временно недоступен"
+        job.prompt_version = "semantic-v2-rag"
     await db_session.commit()
     await reconcile(db_session)
     grade = await e.request("GET", f"student/lessons/{e.lesson['id']}/evaluation")
@@ -263,10 +265,36 @@ async def test_failed_jobs_reconcile_to_formal_grade_and_retry_is_authorized(exe
     assert (await e.request("POST", path, actor="teacher"))["status"] == "queued"
     assert (await e.request("POST", path, actor="teacher"))["status"] == "queued"
     job = await claim(db_session)
+    assert job is not None
+    assert job.context["prompt_upgrade"]["from"] == "semantic-v2-rag"
     await finish(db_session, job.id, job.worker_id, fake_output(job, 0), {})
     updated = await e.request("GET", f"student/lessons/{e.lesson['id']}/evaluation")
     assert updated["revision"] == 3 and updated["method"] == "hybrid"
     assert updated["assessment_details"]["semantic"]["status"] == "partial"
+
+
+async def test_failed_attempt_preserves_diagnostics_with_lease_fencing(exercise, db_session):
+    await exercise.complete()
+    job = await claim(db_session)
+    checkpoint = {"signature": "test", "findings": [], "trace": []}
+    error = AssessmentFailure(
+        TimeoutError("http://private:password@model"),
+        {"criterion": "description", "stage": "verification", "seconds": 300.1},
+        checkpoint,
+    )
+    await fail(db_session, job.id, "expired-worker", error)
+    await db_session.refresh(job)
+    assert "inference_failures" not in job.context
+    assert job.status == JobStatus.RUNNING
+    await fail(db_session, job.id, job.worker_id, error)
+    await db_session.refresh(job)
+    assert job.status == JobStatus.QUEUED and job.output is None
+    assert job.context["assessment_checkpoint"] == checkpoint
+    diagnostic = job.context["inference_failures"][0]
+    assert diagnostic["attempt"] == 1
+    assert diagnostic["category"] == "timeout"
+    assert diagnostic["criterion"] == "description"
+    assert "password" not in str(job.context)
 
 
 async def test_additional_services_never_hide_a_missing_required_service(exercise, db_session):

@@ -48,7 +48,7 @@ def embed(texts, *, query=False):
             "input": [INSTRUCTION + text if query else text for text in texts],
             "truncate": False,
             "keep_alive": 0,
-            "options": {"num_ctx": 2048},
+            "options": {"num_ctx": 2048, "num_thread": settings.llm_threads},
         },
     )
     vectors = result.get("embeddings", [])

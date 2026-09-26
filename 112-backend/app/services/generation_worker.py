@@ -196,6 +196,25 @@ async def fail(session, job_id, token, error):
     ):
         await session.rollback()
         return
+    diagnostic = {
+        "attempt": job.retry_count,
+        "at": datetime.now(UTC).isoformat(),
+        "error_type": type(error).__name__,
+        **getattr(error, "diagnostic", {}),
+    }
+    # Do not persist arbitrary exception strings: they can contain URLs, credentials
+    # or raw validation input. Model traces already belong to protected job details.
+    job.context = {
+        **job.context,
+        "inference_failures": [*job.context.get("inference_failures", []), diagnostic][
+            -MAX_ATTEMPTS:
+        ],
+        **(
+            {"assessment_checkpoint": error.checkpoint}
+            if isinstance(error, assessment_inference.AssessmentFailure)
+            else {}
+        ),
+    }
     job.error = (
         "Смысловая проверка недоступна или ответ модели не прошёл проверку. "
         "Сохранена оценка по правилам."

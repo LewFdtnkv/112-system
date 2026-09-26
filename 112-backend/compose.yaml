@@ -18,7 +18,7 @@ x-backend: &backend
     TELEPHONY_SIP_DOMAIN: ${SIP_PUBLIC_ADDRESS:-localhost}
     TELEPHONY_WS_URL: ${TELEPHONY_WS_URL:-/sip-ws}
     LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-300}
-    GENERATION_LLM_THREADS: ${GENERATION_LLM_THREADS:-2}
+    LLM_THREADS: ${LLM_THREADS:-2}
     SEMANTIC_ASSESSMENT_ENABLED: ${SEMANTIC_ASSESSMENT_ENABLED:-true}
     ASSESSMENT_RAG_ENABLED: ${ASSESSMENT_RAG_ENABLED:-true}
     EMBEDDING_MODEL: ${EMBEDDING_MODEL:-qwen3-embedding:0.6b}
@@ -67,6 +67,9 @@ services:
   llm:
     image: ollama/ollama:0.34.2
     environment:
+      # llama-server otherwise retains up to 8 GiB of old prompt states in RAM.
+      # Keep the current request's KV cache, but disable the cross-request cache.
+      LLAMA_ARG_CACHE_RAM: ${LLM_PROMPT_CACHE_MB:-0}
       OLLAMA_NUM_PARALLEL: ${LLM_PARALLEL_REQUESTS:-1}
       OLLAMA_MAX_LOADED_MODELS: "1"
       OLLAMA_CONTEXT_LENGTH: "4096"

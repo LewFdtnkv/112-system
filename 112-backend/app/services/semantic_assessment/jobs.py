@@ -27,6 +27,14 @@ async def retry(session, attempt):
     if not job:
         raise HTTPException(409, "Для этой попытки смысловая проверка не назначена.")
     if job.status == JobStatus.FAILED:
+        if job.prompt_version != PROMPT_VERSION:
+            # An explicit teacher retry uses the current evaluator over the same
+            # frozen learner evidence. Existing grades are not rewritten on deploy.
+            job.context = {
+                **job.context,
+                "prompt_upgrade": {"from": job.prompt_version, "to": PROMPT_VERSION},
+            }
+            job.prompt_version = PROMPT_VERSION
         job.status = JobStatus.QUEUED
         job.retry_count = 0
         job.available_at = datetime.now(UTC)

@@ -40,11 +40,7 @@ def request(model, prompt, schema, *, seed, temperature, timeout):
                 "options": {
                     "num_ctx": 4096,
                     "num_predict": 400 if schema is Review else 650,
-                    **(
-                        {"num_thread": settings.generation_llm_threads}
-                        if settings.generation_llm_threads
-                        else {}
-                    ),
+                    "num_thread": settings.llm_threads,
                     "temperature": temperature,
                     "top_p": 0.8,
                     "seed": seed,
@@ -83,6 +79,7 @@ def compose(job):
     metadata = {
         "model": job.model_version,
         "seed": job.input["seed"],
+        "num_thread": settings.llm_threads,
         "prose_version": VERSION,
         "examples": examples,
         "retrieval": "incident-channel-features",

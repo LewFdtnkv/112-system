@@ -53,3 +53,13 @@ def reject_meta_speech(message):
         re.I,
     ):
         raise ValueError("Убери комментарии о тексте и реплики оператора. Ты просишь помощь")
+
+
+def reject_weakened_consciousness(data, message):
+    if data["narrative"]["answers"].get("conscious") is False and re.search(
+        r"не\s+(?:вста[её]т|может\s+(?:встать|подняться))", message, re.I
+    ):
+        raise ValueError(
+            "Не заменяй потерю сознания невозможностью встать. "
+            "Скажи, что человек без сознания; сохрани заданные сведения о дыхании"
+        )

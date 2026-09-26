@@ -9,8 +9,7 @@ from app.models import ServiceProfile
 from app.models.enums import PublicationStatus
 from app.services.learning_scope import field_skill
 from app.services.semantic_assessment.process import summarize_process
-
-PROMPT_VERSION = "semantic-v2-rag"
+from app.services.semantic_assessment.prompts import PROMPT_VERSION as PROMPT_VERSION
 
 
 def compact(value):
@@ -124,6 +123,7 @@ async def build_context(session, evaluation, check):
                     situation,
                     compact(comments),
                     "dds",
+                    optional=True,
                 )
     facts = {k: actual.get(k) for k in ("address_details", "features")}
     facts["flags"] = actual.get("additional_fields", {}).get("details", {})

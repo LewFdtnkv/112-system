@@ -87,7 +87,7 @@ def test_failed_critic_never_publishes_unchecked_prose(monkeypatch):
 
     def request(model, prompt, schema, **kwargs):
         if schema is Narration:
-            return Narration(message="Горит мусор. [АДРЕС]. [ИМЯ]."), {}
+            return Narration(message="Горит мусор. [АДРЕС]. Меня зовут [ИМЯ]."), {}
         raise TimeoutError("model unavailable")
 
     monkeypatch.setattr(llm, "request", request)

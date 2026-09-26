@@ -2,12 +2,15 @@
 
 import hashlib
 import json
+import time
 import urllib.request
 
 from app.core.config import settings
 from app.schemas.semantic_assessment import SemanticDecision, SemanticFinding
 from app.services.semantic_assessment.evidence import explicitly_conflicting, response_schema
 from app.services.semantic_assessment.prompts import messages
+from app.services.semantic_assessment.recovery import AssessmentFailure, fingerprint, restore
+from app.services.semantic_assessment.response_guards import normalize_recommendation
 
 CREDIT = {"correct": 1.0, "partial": 0.5, "incorrect": 0.0}
 
@@ -29,6 +32,7 @@ def call(criterion, facts, model, verification=False):
                 "messages": prompt,
                 "options": {
                     "num_ctx": 4096,
+                    "num_thread": settings.llm_threads,
                     "num_predict": 650,
                     "temperature": 0.1,
                     "seed": 113 if verification else 112,
@@ -49,6 +53,7 @@ def call(criterion, facts, model, verification=False):
     if result.get("prompt_eval_count", 0) > 3400:
         raise ValueError("Insufficient context reserve for semantic evidence")
     decision = SemanticDecision.model_validate_json(result["message"]["content"])
+    decision, corrections = normalize_recommendation(criterion, decision)
     metrics = {
         k: result.get(k)
         for k in (
@@ -59,7 +64,13 @@ def call(criterion, facts, model, verification=False):
             "eval_count",
         )
     }
-    return decision, {**metrics, "messages": prompt, "response_schema": response_schema(criterion)}
+    return decision, {
+        **metrics,
+        **corrections,
+        "num_thread": settings.llm_threads,
+        "messages": prompt,
+        "response_schema": response_schema(criterion),
+    }
 
 
 def supported(decision, criterion):
@@ -75,7 +86,35 @@ def supported(decision, criterion):
 
 
 def evaluate(job, invoke=call):
-    results, trace = [], []
+    signature = fingerprint(job)
+    results, trace = restore(job, signature)
+    diagnostic = {"stage": "context", "num_thread": settings.llm_threads}
+
+    def tracked(criterion, facts, model, verification=False):
+        diagnostic.update(
+            stage="verification" if verification else "decision", criterion=criterion["code"]
+        )
+        started = time.monotonic()
+        try:
+            return (
+                invoke(criterion, facts, model, True)
+                if verification
+                else invoke(criterion, facts, model)
+            )
+        finally:
+            diagnostic["seconds"] = round(time.monotonic() - started, 3)
+
+    try:
+        return _evaluate(job, tracked, results, trace)
+    except Exception as error:
+        raise AssessmentFailure(
+            error,
+            diagnostic,
+            {"signature": signature, "findings": [r.model_dump() for r in results], "trace": trace},
+        ) from error
+
+
+def _evaluate(job, invoke, results, trace):
     process = job.input.get("process", {})
     facts = job.input["submitted_facts"] | {
         "learning_process": {
@@ -89,12 +128,15 @@ def evaluate(job, invoke=call):
     }
     retrieval = getattr(job, "context", {}).get("retrieval", {})
     used = {}
+    completed = {result.code for result in results}
     for original in job.input["criteria"]:
         examples = list(retrieval.get("examples", {}).get(original["code"], []))
         criterion = original | {"_retrieved_examples": examples}
         while examples and sum(len(m["content"]) for m in messages(criterion, facts, True)) > 8000:
             examples.pop()
         used[criterion["code"]] = [e["id"] for e in examples]
+        if criterion["code"] in completed:
+            continue
         base = {"code": criterion["code"], "label": criterion["label"]}
         if explicitly_conflicting(criterion["situation"]) or explicitly_conflicting(
             criterion["reference"]

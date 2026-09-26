@@ -52,7 +52,13 @@ def select_ids(data, invoke=None):
         "format": schema,
         "keep_alive": "60s",
         "messages": prompt,
-        "options": {"num_ctx": 4096, "num_predict": 220, "temperature": 0.1, "seed": 112},
+        "options": {
+            "num_ctx": 4096,
+            "num_thread": settings.llm_threads,
+            "num_predict": 220,
+            "temperature": 0.1,
+            "seed": 112,
+        },
     }
     if invoke:
         raw = invoke(body)
