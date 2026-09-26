@@ -406,7 +406,7 @@ test("compare four card review layouts and inspect immutable ARM answers", async
   await page.getByRole("link", { name: "Карточки занятия" }).click();
   await page
     .getByRole("button", {
-      name: `Открыть карточку ${attempt.card.id}`,
+      name: `Открыть карточку ${attempt.card.display_number}`,
       exact: true,
     })
     .click();

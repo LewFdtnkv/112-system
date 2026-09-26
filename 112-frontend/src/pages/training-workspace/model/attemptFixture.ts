@@ -13,6 +13,7 @@ export const initialAttempt: Attempt = {
   norm_seconds: 60,
   card: {
     id: "card",
+    display_number: 1042,
     revision: 3,
     classifier_version_id: "version",
     classifier_entry_id: null,

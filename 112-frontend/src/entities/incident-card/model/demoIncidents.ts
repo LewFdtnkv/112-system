@@ -3,6 +3,7 @@ import type { IncidentCard } from "./types";
 export const demoIncidents: readonly IncidentCard[] = [
   {
     id: "378879302",
+    displayNumber: 378879302,
     createdDate: "17.09.2026",
     operatorNumber: "0",
     workstation: "4",
@@ -37,6 +38,7 @@ export const demoIncidents: readonly IncidentCard[] = [
   },
   {
     id: "378879304",
+    displayNumber: 378879304,
     createdDate: "17.09.2026",
     operatorNumber: "0",
     workstation: "4",
@@ -71,6 +73,7 @@ export const demoIncidents: readonly IncidentCard[] = [
   },
   {
     id: "378879308",
+    displayNumber: 378879308,
     createdDate: "17.09.2026",
     operatorNumber: "0",
     workstation: "4",
@@ -105,6 +108,7 @@ export const demoIncidents: readonly IncidentCard[] = [
   },
   {
     id: "378879314",
+    displayNumber: 378879314,
     createdDate: "17.09.2026",
     operatorNumber: "0",
     workstation: "4",

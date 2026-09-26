@@ -52,6 +52,7 @@ test("DDS arrivals do not close the current card and survive page reload", async
       card: {
         ...base.card,
         id: `card-${n}`,
+        display_number: 1042 + n,
         status: "notified",
         data: {
           ...base.card.data,
@@ -129,6 +130,7 @@ test("DDS arrivals do not close the current card and survive page reload", async
         started && i < arrivals
           ? {
               id: a.card.id,
+              display_number: a.card.display_number,
               started_at: time,
               status: "notified",
               address_text: a.card.data.address_text!,

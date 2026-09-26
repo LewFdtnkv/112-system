@@ -46,7 +46,7 @@ for (const width of [1366, 390]) {
     await page.getByRole("button", { name: "Войти" }).click();
     await expect(page).toHaveURL(/student$/);
     await page.goto("/student/sessions/lesson");
-    await page.getByRole("row", { name: "Карточка card", exact: true }).click();
+    await page.getByRole("row", { name: "Карточка 1042", exact: true }).click();
     const card = page.getByRole("dialog", {
       name: "Карточка происшествия № card",
     });
@@ -144,7 +144,7 @@ test("missing map key and service failures preserve manual card editing", async 
   await page.getByRole("button", { name: "Войти" }).click();
   await expect(page).toHaveURL(/student$/);
   await page.goto("/student/sessions/lesson");
-  await page.getByRole("row", { name: "Карточка card", exact: true }).click();
+  await page.getByRole("row", { name: "Карточка 1042", exact: true }).click();
   const card = page.getByRole("dialog", {
     name: "Карточка происшествия № card",
   });

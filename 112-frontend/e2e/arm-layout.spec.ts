@@ -27,7 +27,7 @@ for (const viewport of [
       "scrollWidth",
       viewport.width,
     );
-    await page.getByRole("row", { name: "Карточка card", exact: true }).focus();
+    await page.getByRole("row", { name: "Карточка 1042", exact: true }).focus();
     await page.keyboard.press("Enter");
     const card = page.getByRole("dialog");
     await expect(card).toBeVisible();

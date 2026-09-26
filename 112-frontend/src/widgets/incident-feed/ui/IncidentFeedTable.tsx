@@ -70,7 +70,7 @@ export function IncidentFeedTable({
                     : "table-clickable-row"
                 }
                 tabIndex={0}
-                aria-label={`Карточка ${incident.id}`}
+                aria-label={`Карточка ${incident.displayNumber ?? "—"}`}
               >
                 <td>
                   <ArmIconButton
@@ -79,7 +79,7 @@ export function IncidentFeedTable({
                         ? "right"
                         : "down"
                     }
-                    label={`Описание карточки ${incident.id}`}
+                    label={`Описание карточки ${incident.displayNumber ?? "—"}`}
                     aria-expanded={!hiddenDescriptions.includes(incident.id)}
                     onClick={(event) => {
                       event.stopPropagation();
@@ -99,7 +99,7 @@ export function IncidentFeedTable({
                   {incident.operatorNumber ?? "—"}
                 </td>
                 <td>{incident.workstation ?? "—"}</td>
-                <td>{incident.displayNumber ?? incident.id}</td>
+                <td>{incident.displayNumber ?? "—"}</td>
                 <td>
                   {incident.createdDate?.replace(/\.20(\d{2})$/, ".$1") ?? "—"}
                 </td>
@@ -125,7 +125,7 @@ export function IncidentFeedTable({
                 <td>
                   <ArmIconButton
                     icon="clipboard"
-                    label={`Открыть карточку ${incident.id}`}
+                    label={`Открыть карточку ${incident.displayNumber ?? "—"}`}
                     onClick={(event) => {
                       event.stopPropagation();
                       onOpen(incident);

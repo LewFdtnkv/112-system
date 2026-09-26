@@ -2,6 +2,7 @@ import type { LearningPolicy, LearningResult } from "./learning";
 
 export interface JournalCard {
   id: string;
+  display_number: number;
   started_at: string;
   status: string;
   address_text: string | null;

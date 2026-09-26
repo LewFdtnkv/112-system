@@ -56,7 +56,7 @@ export function attemptCard(attempt: Attempt): IncidentCard {
       : attempt.recipient_services;
   return {
     id: attempt.card.id,
-    displayNumber: attempt.card.id.slice(0, 8),
+    displayNumber: attempt.card.display_number,
     createdDate: new Date(attempt.started_at).toLocaleDateString("ru-RU", {
       timeZone: "Europe/Moscow",
     }),
@@ -93,7 +93,7 @@ export function attemptCard(attempt: Attempt): IncidentCard {
 export function referenceCard(source: ReferenceCardSource): IncidentCard {
   return {
     id: source.id,
-    displayNumber: source.id.slice(0, 8),
+    displayNumber: source.display_number,
     createdAt: "",
     channel: "112",
     origin: "generated",
@@ -134,7 +134,7 @@ export function cardData(
 export function journalCard(card: JournalCard): IncidentCard {
   return {
     id: card.id,
-    displayNumber: card.id.slice(0, 8),
+    displayNumber: card.display_number,
     categoryName: card.category_name ?? "Без категории",
     createdDate: new Date(card.started_at).toLocaleDateString("ru-RU", {
       timeZone: "Europe/Moscow",

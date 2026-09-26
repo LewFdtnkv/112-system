@@ -20,6 +20,7 @@ export interface Attempt {
   card: {
     recipient_service_ids?: string[] | null;
     id: string;
+    display_number: number;
     revision: number;
     classifier_version_id: string;
     classifier_entry_id: string | null;

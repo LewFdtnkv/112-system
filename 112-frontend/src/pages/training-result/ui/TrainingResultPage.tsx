@@ -37,6 +37,7 @@ export const TrainingResultPage = () => {
             : {
                 reference: {
                   id: current.assignment_id,
+                  display_number: current.attempt?.card.display_number,
                   title: current.source_snapshot?.title ?? "Карточка",
                   data:
                     preview.side === "expected"

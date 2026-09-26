@@ -20,7 +20,7 @@ export const filterIncidents = (
       const { fields } = incident;
       const address = formatAddress(fields.address);
       const text = [
-        incident.id,
+        incident.displayNumber,
         incident.categoryName ?? getCategoryName(fields.categoryId),
         address,
         fields.description,

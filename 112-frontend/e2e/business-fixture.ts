@@ -19,6 +19,7 @@ export async function mockBusiness(
     norm_seconds: 60,
     card: {
       id: "card",
+      display_number: 1042,
       revision: 1,
       classifier_version_id: "version",
       classifier_entry_id: "entry",
@@ -117,6 +118,7 @@ export async function mockBusiness(
               status: attempt.status,
               card: {
                 id: "card",
+                display_number: 1042,
                 started_at: attempt.started_at,
                 status: attempt.card.status,
                 address_text: attempt.card.data.address_text,

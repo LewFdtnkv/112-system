@@ -73,7 +73,7 @@ export interface IncidentCardFields {
 
 export interface IncidentCard {
   categoryName?: string;
-  displayNumber?: string;
+  displayNumber?: number;
   createdDate?: string;
   operatorNumber?: string;
   workstation?: string;

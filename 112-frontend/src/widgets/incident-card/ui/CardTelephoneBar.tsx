@@ -80,7 +80,11 @@ export function CardTelephoneBar({
         </div>
       ))}
       <div className="arm-card-identification">
-        <strong>Происшествие {card.displayNumber ?? card.id}</strong>
+        <strong>
+          {card.displayNumber != null
+            ? `Происшествие ${card.displayNumber}`
+            : "Учебная карточка"}
+        </strong>
         <span>
           Созд. {card.createdDate ?? "—"} в {card.createdAt}
         </span>
