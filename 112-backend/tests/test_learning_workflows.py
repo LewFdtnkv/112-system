@@ -360,7 +360,8 @@ async def test_interface_guide_follows_saved_work_and_records_help(exercise, db_
     await hint(str(uuid4()), status=422)
     first = await hint(source["hint"]["id"])
     assert first["hint"]["task"] == "classifier_entry_id"
-    assert "два символа" in first["hint"]["text"]
+    assert "выберите тип происшествия" in first["hint"]["text"]
+    assert "символ" not in first["hint"]["text"]
     assert "правильный ответ" not in first["hint"]["text"]
     assert first["hint"]["correction"] is None
     # An action step cannot be skipped with a forged Continue command.

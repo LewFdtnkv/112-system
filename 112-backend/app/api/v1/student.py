@@ -111,16 +111,18 @@ async def codes(
             ClassifierEntry.popular_order, ClassifierEntry.source_row, ClassifierEntry.id
         )
         limit = min(limit, 11)
-    elif len(term) < 2:
-        return []
-    else:
-        # Escape LIKE wildcards: two '%' characters must not expose the entire catalog.
+    elif term:
+        # Search treats LIKE wildcards as literal characters.
         term = term.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
         query = query.where(
             ClassifierEntry.code.ilike(f"%{term}%", escape="\\")
             | ClassifierEntry.name.ilike(f"%{term}%", escape="\\")
             | ClassifierEntry.display_name.ilike(f"%{term}%", escape="\\")
         ).order_by(ClassifierEntry.name, ClassifierEntry.id)
+    else:
+        query = query.order_by(
+            ClassifierEntry.popular_order, ClassifierEntry.source_row, ClassifierEntry.id
+        )
     return list(await session.scalars(query.limit(limit).offset(offset)))
 
 

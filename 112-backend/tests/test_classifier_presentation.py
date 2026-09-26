@@ -85,7 +85,7 @@ def service_document():
     return doc
 
 
-async def test_popular_and_two_character_search_are_scoped(api, teaching):
+async def test_popular_full_catalog_and_single_character_search_are_scoped(api, teaching):
     doc = service_document()
     for n in range(14):
         doc["entries"].append(
@@ -99,8 +99,15 @@ async def test_popular_and_two_character_search_are_scoped(api, teaching):
         )
     a, entries, _ = await exercise(api, teaching, doc)
     path = f"student/attempts/{a['id']}/classifier-entries"
-    for q in ("", "?q=п", "?q=%20%20", "?q=%25%25"):
-        assert await api("GET", path + q, actor="student") == []
+    catalog = await api("GET", path + "?limit=100", actor="student")
+    assert {e["id"] for e in catalog} == {e["id"] for e in entries}
+    assert await api("GET", path + "?q=%20%20&limit=100", actor="student") == catalog
+    assert await api("GET", path + "?q=%25", actor="student") == []
+    found_letter = await api("GET", path + "?q=п&limit=100", actor="student")
+    assert len(found_letter) >= 14
+    page = await api("GET", path + "?limit=2&offset=2", actor="student")
+    assert page == catalog[2:4]
+    await api("GET", path, actor="student2", status=404)
     popular = await api("GET", path + "?popular=true&limit=100", actor="student")
     assert len(popular) == 11 and popular[0]["display_name"] == "Ошибочно набран номер"
     assert all(e["is_popular"] for e in popular)

@@ -12,7 +12,7 @@ from app.services.learning_hints.dds import dds_task
 from app.services.learning_hints.operator import operator_task
 
 INSTRUCTIONS = {
-    "classification": "Выберите тип происшествия. Для поиска введите хотя бы два символа.",
+    "classification": "Найдите и выберите тип происшествия.",
     "caller": "Заполните сведения, которые сообщил заявитель. Неизвестное оставьте пустым.",
     "address": "Укажите место происшествия в подсвеченном поле.",
     "description": "Кратко опишите, что случилось. Можно написать своими словами.",
@@ -23,7 +23,7 @@ INSTRUCTIONS = {
 }
 
 
-GUIDE_VERSION = 3
+GUIDE_VERSION = 4
 
 
 def guide_text(task, target, explanation):
