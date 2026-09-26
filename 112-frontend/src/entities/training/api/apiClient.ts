@@ -9,5 +9,5 @@ export const apiGet = <T>(
   signal?: AbortSignal,
 ) => backendApi.get(path, { searchParams: params, signal }).json<T>();
 
-export const apiPost = <T>(path: string, json: unknown) =>
-  backendApi.post(path, { json }).json<T>();
+export const apiPost = <T>(path: string, json: unknown, signal?: AbortSignal) =>
+  backendApi.post(path, { json, signal }).json<T>();

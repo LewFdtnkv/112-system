@@ -76,9 +76,9 @@ test("guide introduces the task, waits for correct and confirmed answers, includ
         "guide.source":
           "Здесь условия задачи. Прочитайте их и нажмите «Продолжить».",
         classifier_entry_id:
-          "Выберите тип происшествия. Для поиска введите хотя бы два символа.\n\nПо условию задачи правильный ответ: Пожар.",
+          "Выберите тип происшествия. Для поиска введите хотя бы два символа.",
         "guide.address":
-          "Заполните адрес по условию задачи в отдельных полях. Неизвестные сведения оставьте пустыми. Описательный адрес здесь не нужен.\n\nУлица — Лесная улица; Дом — 12.",
+          "Заполните адрес по условию задачи в отдельных полях. Неизвестные сведения оставьте пустыми. Описательный адрес здесь не нужен.",
         description:
           "Кратко опишите, что случилось. Можно своими словами. Допишите ответ и нажмите «Продолжить».",
         "guide.services":
@@ -107,6 +107,21 @@ test("guide introduces the task, waits for correct and confirmed answers, includ
             level: "solution",
             presentation: "highlight",
             text: texts[task],
+            correction:
+              body.check_task === task && task === "guide.address"
+                ? [
+                    a.card.data.address_details.street &&
+                    a.card.data.address_details.street !== "Лесная улица"
+                      ? "Улица — Лесная улица"
+                      : "",
+                    a.card.data.address_details.house &&
+                    a.card.data.address_details.house !== "12"
+                      ? "Дом — 12"
+                      : "",
+                  ]
+                    .filter(Boolean)
+                    .join("; ") || null
+                : null,
             advance: ["guide.source", "guide.services", "description"].includes(
               task,
             )
@@ -148,7 +163,8 @@ test("guide introduces the task, waits for correct and confirmed answers, includ
     path: "docs/screenshots/interface-guide/type-search.png",
   });
   await result.getByRole("button", { name: "Пожар", exact: true }).click();
-  await expect(panel).toContainText("Лесная улица");
+  await expect(panel).toContainText("Заполните адрес");
+  await expect(panel).not.toContainText("Лесная улица");
   await expect
     .poll(async () => {
       const hole = await page

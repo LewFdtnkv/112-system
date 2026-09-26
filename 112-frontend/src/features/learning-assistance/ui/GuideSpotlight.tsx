@@ -62,6 +62,11 @@ export function GuideSpotlight({
           {hint.text.split("\n\n").map((paragraph, i) => (
             <p key={i}>{paragraph}</p>
           ))}
+          {hint.correction && (
+            <p className="interface-guide-correction" role="status">
+              {hint.correction}
+            </p>
+          )}
           {!g && (
             <p>
               Нужная область пока скрыта. Закройте вспомогательное окно или
