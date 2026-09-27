@@ -9,8 +9,13 @@ export default defineConfig({
     baseURL: externalBaseURL ?? "http://127.0.0.1:4173",
     trace: "retain-on-failure",
     ...devices["Desktop Chrome"],
+    browserName: process.env.PLAYWRIGHT_FIREFOX_EXECUTABLE_PATH
+      ? "firefox"
+      : "chromium",
     launchOptions: {
-      executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
+      executablePath:
+        process.env.PLAYWRIGHT_FIREFOX_EXECUTABLE_PATH ||
+        process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
     },
   },
   webServer: externalBaseURL
