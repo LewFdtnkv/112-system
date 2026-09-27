@@ -1,6 +1,10 @@
 import { backendApi } from "@/shared/api";
 import type { Page } from "@/shared/types/pagination";
-import type { Message, MessageSummary } from "../types/activityApi";
+import type {
+  Message,
+  MessageSummary,
+  ReferralLesson,
+} from "../types/activityApi";
 export const messageApi = {
   messages: (
     offset = 0,
@@ -26,6 +30,10 @@ export const messageApi = {
     backendApi.post(`student/messages/${encodeURIComponent(id)}/feedback`, {
       searchParams: { helpful },
     }),
+  createReferralLesson: (id: string) =>
+    backendApi
+      .post(`student/learning-referrals/${encodeURIComponent(id)}/lesson`)
+      .json<ReferralLesson>(),
   readMessage: (id: string) => backendApi.post(`student/messages/${id}/read`),
   send: (text: string, target: { group_id?: string; student_id?: string }) =>
     backendApi

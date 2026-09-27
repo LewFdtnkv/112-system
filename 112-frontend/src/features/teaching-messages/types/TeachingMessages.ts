@@ -1,4 +1,4 @@
-import type { Message } from "@/entities/training";
+import type { Message, RecommendationDetails } from "@/entities/training";
 export type MessageComposerProps = {
   groupId?: string;
   studentId?: string;
@@ -15,3 +15,7 @@ export type StudentMessageProps = {
 export type TeacherMessageDialogProps = MessageComposerProps & {
   onClose: () => void;
 };
+
+export type RecommendationSuggestion = NonNullable<
+  RecommendationDetails["suggestions"]
+>[number];

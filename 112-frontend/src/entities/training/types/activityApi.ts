@@ -44,5 +44,17 @@ export interface RecommendationDetails {
     label: string;
     lesson_id: string | null;
     lesson_title: string | null;
+    referral?: {
+      id: string;
+      expires_at: string;
+      status: "available" | "expired" | "used";
+      lesson_id: string | null;
+      lesson_title: string | null;
+    } | null;
   }[];
+}
+
+export interface ReferralLesson {
+  lesson_id: string;
+  created: boolean;
 }

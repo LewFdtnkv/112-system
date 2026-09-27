@@ -1,9 +1,8 @@
 import { Alert, Button, Chip, Stack, Typography } from "@mui/material";
-import { Link } from "react-router-dom";
-import { getTrainingSessionPath } from "@/shared/config/routes";
 import { getApiError } from "@/shared/api";
 import { useRecommendationFeedback } from "../model/useStudentMessages";
 import type { StudentMessageProps } from "../types/TeachingMessages";
+import { RecommendationAction } from "./RecommendationAction";
 import { styles } from "../styles/TeachingMessages";
 
 export function StudentMessage({
@@ -32,7 +31,7 @@ export function StudentMessage({
             : `${m.teacher_name} · ${m.group_name ?? "Лично вам"}`}
         </strong>
         {advice && (
-          <Stack direction="row" spacing={1}>
+          <Stack direction="row" spacing={1} useFlexGap sx={styles.badges}>
             <Chip
               size="small"
               label={details.role === "dds" ? "ДДС" : "Оператор 112"}
@@ -55,23 +54,9 @@ export function StudentMessage({
         <Typography sx={styles.typography}>{m.text}</Typography>
         {advice && !details.obsolete && (
           <>
-            {details.suggestions?.map((s) =>
-              s.lesson_id ? (
-                <Button
-                  key={s.skill}
-                  component={Link}
-                  to={getTrainingSessionPath(s.lesson_id)}
-                  variant="outlined"
-                >
-                  {s.label}: открыть занятие
-                </Button>
-              ) : (
-                <Typography key={s.skill} variant="body2">
-                  По навыку «{s.label}» подходящее занятие ещё не назначено.
-                  Обсудите тренировку с преподавателем.
-                </Typography>
-              ),
-            )}
+            {details.suggestions?.map((s) => (
+              <RecommendationAction key={s.skill} suggestion={s} />
+            ))}
             <Stack direction="row" spacing={1}>
               <Button
                 disabled={feedback.isPending || details.feedback === "helpful"}

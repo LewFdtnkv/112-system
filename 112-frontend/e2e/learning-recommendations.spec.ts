@@ -106,7 +106,7 @@ test("learner receives grounded study advice separately from in-card help", asyn
   await expect(message).toContainText("расхождениями — 4");
   await expect(
     message.getByRole("link", { name: /открыть занятие/ }),
-  ).toHaveAttribute("href", "/training/lesson");
+  ).toHaveAttribute("href", "/student/sessions/lesson");
   await message.scrollIntoViewIfNeeded();
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.screenshot({
@@ -131,7 +131,7 @@ test("learner receives grounded study advice separately from in-card help", asyn
   });
   await page.reload();
   await expect(message).toContainText("Отзыв сохранён");
-  await page.goto("/training/lesson");
+  await page.goto("/student/sessions/lesson");
   await expect(
     page.getByText("Учебный помощник · дальнейшее обучение"),
   ).toHaveCount(0);
