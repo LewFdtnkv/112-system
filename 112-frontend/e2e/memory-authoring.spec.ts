@@ -125,6 +125,9 @@ test("generation memory lists approved cards and lets teacher disable examples",
   await page.route("**/api/v1/cards/example-card", (route) =>
     route.fulfill({ json: card }),
   );
+  await page.route("**/api/v1/cards/example-card/dds-generations", (route) =>
+    route.fulfill({ json: [] }),
+  );
   await page.route(
     "**/api/v1/cards/example-card/generation-example",
     (route) => {
@@ -144,6 +147,30 @@ test("generation memory lists approved cards and lets teacher disable examples",
     fullPage: true,
   });
   await page.getByRole("cell", { name: card.title }).click();
+  const toggle = page.getByLabel("Использовать как пример генерации");
+  const content = page.getByRole("dialog").locator(".MuiDialogContent-root");
+  await expect(toggle).toBeInViewport();
+  for (const [size, viewport] of [
+    ["desktop", { width: 1440, height: 950 }],
+    ["mobile", { width: 390, height: 844 }],
+  ] as const) {
+    await page.setViewportSize(viewport);
+    await content.evaluate((element) => {
+      element.scrollTop = element.scrollHeight;
+    });
+    expect(
+      await content.evaluate((element) => element.scrollTop),
+    ).toBeGreaterThan(0);
+    await expect(toggle).toBeInViewport();
+    await expect(
+      page.getByRole("button", { name: "Закрыть", exact: true }),
+    ).toBeInViewport();
+    await page.screenshot({
+      path: `docs/screenshots/memory-authoring/generation-card-${size}.png`,
+      fullPage: true,
+      animations: "disabled",
+    });
+  }
   await page.getByLabel("Использовать как пример генерации").click();
   await expect(
     page.getByLabel("Использовать как пример генерации"),

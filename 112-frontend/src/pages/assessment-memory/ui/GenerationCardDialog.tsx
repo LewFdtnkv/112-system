@@ -6,7 +6,6 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  Stack,
 } from "@mui/material";
 import { cardQueryOptions } from "@/entities/training";
 import { CardDetails } from "@/features/card-authoring";
@@ -14,6 +13,7 @@ import { GenerationExample } from "@/features/card-generation";
 import { TrainingCardPreview } from "@/widgets/incident-card";
 import { QueryState } from "@/shared/ui/QueryState";
 import type { GenerationCardDialogProps } from "../types/generationMemory";
+import "../styles/assessment-memory.scss";
 
 export function GenerationCardDialog({
   id,
@@ -40,17 +40,18 @@ export function GenerationCardDialog({
             retry={() => void detail.refetch()}
           >
             {detail.data && (
-              <Stack spacing={2}>
-                <GenerationExample card={detail.data} />
-                <CardDetails
-                  card={detail.data}
-                  onPreview={() => setPreview(true)}
-                />
-              </Stack>
+              <CardDetails
+                card={detail.data}
+                onPreview={() => setPreview(true)}
+              />
             )}
           </QueryState>
         </DialogContent>
-        <DialogActions>
+        <DialogActions
+          className="generation-memory-card-actions"
+          disableSpacing
+        >
+          {detail.data && <GenerationExample card={detail.data} compact />}
           <Button onClick={onClose}>Закрыть</Button>
         </DialogActions>
       </Dialog>
