@@ -301,3 +301,80 @@ def test_explicitly_conflicting_source_cannot_be_automatically_penalized(field):
     finding = result["findings"][0]
     assert finding["verdict"] == "uncertain" and not finding["applied"]
     assert finding["credit"] is None
+
+
+async def test_teacher_can_author_scoped_memory_without_an_ai_job(exercise, db_session):
+    e = exercise
+    criteria = await e.request("GET", "assessment-memory/criteria", actor="teacher")
+    assert {c["code"] for c in criteria} >= {"description", "dds.comments", "additional_services"}
+    payload = {
+        "request_id": str(uuid4()),
+        "criterion_code": "description",
+        "condition": "Мужчина потерял сознание, дыхание сохранено.",
+        "answer": "Без сознания, дышит.",
+        "verdict": "correct",
+        "reason": "Существенные факты сохранены, слова равнозначны.",
+    }
+    await e.request("POST", "assessment-memory", payload, status=403)
+    saved = await e.request("POST", "assessment-memory", payload, actor="teacher", status=201)
+    repeated = await e.request("POST", "assessment-memory", payload, actor="teacher", status=201)
+    assert repeated["id"] == saved["id"] and saved["enabled"]
+    await e.request(
+        "POST",
+        "assessment-memory",
+        payload | {"answer": "Другой ответ"},
+        actor="teacher",
+        status=409,
+    )
+    for invalid in (
+        {"criterion_code": "address_details.house"},
+        {"condition": " " * 20},
+        {"reason": "x" * 701},
+    ):
+        await e.request("POST", "assessment-memory", payload | invalid, actor="teacher", status=422)
+    foreign = await e.request("GET", "assessment-memory", actor="other")
+    assert saved["id"] not in {row["id"] for row in foreign["items"]}
+    await e.request(
+        "PATCH", f"assessment-memory/{saved['id']}", {"enabled": False}, actor="other", status=404
+    )
+    row = await db_session.get(AssessmentExample, UUID(saved["id"]))
+    assert row.source_job_id is None
+    row.embedding, row.embedding_model = VECTOR, "fixture-digest"
+    await db_session.commit()
+    criterion = {
+        "kind": "text",
+        "code": "description",
+        "situation": payload["condition"],
+        "answer": payload["answer"],
+    }
+    found = await retrieve(
+        db_session, criterion, VECTOR, "fixture-digest", teacher_id=e.t.accounts["teacher"].id
+    )
+    assert found[0]["id"] == saved["id"] and found[0]["reason"] == payload["reason"]
+    assert not await retrieve(
+        db_session, criterion, VECTOR, "fixture-digest", teacher_id=e.t.accounts["other"].id
+    )
+    await e.request("DELETE", f"assessment-memory/{saved['id']}", actor="teacher")
+    assert not await retrieve(
+        db_session, criterion, VECTOR, "fixture-digest", teacher_id=e.t.accounts["teacher"].id
+    )
+
+
+async def test_generation_memory_filter_matches_teacher_opt_in(exercise):
+    e = exercise
+    first = await e.request("POST", "cards", e.t.card_payload, actor="teacher", status=201)
+    await e.request(
+        "PUT",
+        f"cards/{first['id']}/generation-example",
+        {"enabled": True, "revision": first["revision"]},
+        actor="teacher",
+    )
+    enabled = await e.request("GET", "views/cards?generation_example=true", actor="teacher")
+    assert enabled["total"] == 1 and enabled["items"][0]["id"] == first["id"]
+    assert enabled["items"][0]["generation_example"] is True
+    disabled = await e.request("GET", "views/cards?generation_example=false", actor="teacher")
+    assert first["id"] not in {r["id"] for r in disabled["items"]}
+    assert (await e.request("GET", "views/cards?generation_example=true", actor="other"))[
+        "total"
+    ] == 0
+    await e.request("GET", "views/cards?generation_example=true", actor="student", status=403)

@@ -6,13 +6,28 @@ from fastapi import APIRouter, Query
 from app.api.dependencies import SessionDep, TeacherDep
 from app.api.pagination import Limit, Offset
 from app.schemas.assessment_memory import (
+    MEMORY_CRITERIA,
+    MemoryExampleCreate,
     MemoryLibraryItem,
     MemoryLibraryPage,
     MemoryPreferenceUpdate,
 )
-from app.services.assessment_memory import catalog
+from app.services.assessment_memory import authoring, catalog
 
 router = APIRouter(prefix="/assessment-memory", tags=["assessment memory"])
+
+
+@router.get("/criteria")
+async def criteria(teacher: TeacherDep):
+    return [
+        {"code": code, "label": label, "kind": kind}
+        for code, (label, kind) in MEMORY_CRITERIA.items()
+    ]
+
+
+@router.post("", response_model=MemoryLibraryItem, status_code=201)
+async def create(payload: MemoryExampleCreate, session: SessionDep, teacher: TeacherDep):
+    return await authoring.create(session, teacher.id, payload)
 
 
 @router.get("", response_model=MemoryLibraryPage)

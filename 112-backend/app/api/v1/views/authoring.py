@@ -90,6 +90,7 @@ async def cards(
     q: Search = "",
     classifier_version_id: UUID | None = None,
     dds_profile_id: UUID | None = None,
+    generation_example: bool | None = None,
     limit: Limit = 20,
     offset: Offset = 0,
 ):
@@ -125,6 +126,8 @@ async def cards(
         )
     if classifier_version_id:
         query = query.where(CardTemplate.classifier_version_id == classifier_version_id)
+    if generation_example is not None:
+        query = query.where(CardTemplate.generation_example.is_(generation_example))
     total, rows = await page_rows(
         session, query.order_by(CardTemplate.created_at.desc(), CardTemplate.id), limit, offset
     )
@@ -157,6 +160,7 @@ async def cards(
                 recipients=services[card.id],
                 scenario_count=count,
                 generated_by_ai=job_id is not None,
+                generation_example=card.generation_example,
             )
             for card, name, display_name, label, count, job_id in rows
         ],

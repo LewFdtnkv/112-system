@@ -20,6 +20,34 @@ class MemoryCreate(BaseModel):
         return value.strip()
 
 
+MEMORY_CRITERIA = {
+    "description": ("112 — Смысл сообщения", "text"),
+    "address_text": ("112 — Адрес целиком", "text"),
+    "address_details.description": ("112 — Описание места", "text"),
+    "additional_fields.operatorAction": ("112 — Комментарий оператора", "text"),
+    "additional_fields.details.classificationDescription": ("112 — Уточнение типа", "text"),
+    "additional_services": ("112 — Дополнительные службы", "services"),
+    "dds.comments": ("ДДС — Комментарии бригад", "dds"),
+}
+
+
+class MemoryExampleCreate(MemoryCreate):
+    condition: str = Field(min_length=15, max_length=3000)
+    answer: str = Field(max_length=2000)
+
+    @field_validator("criterion_code")
+    @classmethod
+    def supported_criterion(cls, value):
+        if value not in MEMORY_CRITERIA:
+            raise ValueError("Выберите критерий смысловой проверки")
+        return value
+
+    @field_validator("condition", "answer", mode="before")
+    @classmethod
+    def trim_text(cls, value):
+        return value.strip() if isinstance(value, str) else value
+
+
 class MemoryRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: UUID
