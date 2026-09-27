@@ -10,7 +10,7 @@ export function GenerationDetails({ model }: CardGenerationPanelProps) {
   return (
     <>
       <h3>Отметки карточки</h3>
-      <p>Значения выбираются до обращения к ИИ и входят в эталонное решение.</p>
+      <p>Выбранные отметки войдут в условие и эталонное решение.</p>
       <div className="generation-grid">
         {cardFlagFields.map(({ parameter, label }) => {
           if (parameter === "no_contact" || parameter === "call_dropped")
@@ -62,9 +62,8 @@ export function GenerationDetails({ model }: CardGenerationPanelProps) {
       <GenerationAddress model={model} />
       <h3>Заявитель и подача сообщения</h3>
       <p>
-        Имя и фамилия выбираются случайно с учётом пола. Отчество добавляется в{" "}
-        {Math.round(data.patronymic_probability * 100)}% случаев. Можно указать
-        своё ФИО или ФИ; пол в этом случае задайте отдельно, если он известен.
+        Имя выбирается случайно. Можно указать своё ФИО или имя и фамилию;
+        пол в этом случае задайте отдельно, если он известен.
       </p>
       <div className="generation-grid">
         {(

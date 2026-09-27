@@ -130,10 +130,13 @@ test("shared photos, missing and broken images, upload refresh and mobile header
     name: "photo.png",
     mimeType: "image/png",
     buffer: Buffer.from(
-      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=",
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGMImHAAAALUAaGysefKAAAAAElFTkSuQmCC",
       "base64",
     ),
   });
+  await page
+    .getByRole("button", { name: "Сохранить фотографию", exact: true })
+    .click();
   await expect(profile).not.toHaveAttribute("src", oldSource!);
   const source = await profile.getAttribute("src");
   await dialog.getByRole("button", { name: "Закрыть", exact: true }).click();

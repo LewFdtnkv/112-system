@@ -43,6 +43,9 @@ test("semantic assessment: teacher sees evidence, uncertainty and preserved ARM"
   page,
 }) => {
   const business = await mockBusiness(page);
+  await page.route("**/api/v1/**/assessment-memory", (route) =>
+    route.fulfill({ json: [] }),
+  );
   await page.route("**/api/v1/**/proctoring*", (route) =>
     route.fulfill({ json: { items: [], total: 0, limit: 20, offset: 0 } }),
   );
@@ -56,6 +59,7 @@ test("semantic assessment: teacher sees evidence, uncertainty and preserved ARM"
     position: 1,
     attempt,
     automatic_check: null,
+    source_classifier_entry: attempt.classifier_entry,
     source_snapshot: {
       title: "Пожар с пострадавшим",
       caller_message: "На кухне дым из розетки, мужчина обжёг руку.",
@@ -141,14 +145,16 @@ test("semantic assessment: teacher sees evidence, uncertainty and preserved ARM"
     .click();
   await page.setViewportSize({ width: 1440, height: 1080 });
   await page.screenshot({
-    path: "docs/screenshots/semantic-assessment/teacher.png",
+    path: "docs/screenshots/interface-copy/assessment-teacher.png",
     fullPage: true,
+    animations: "disabled",
   });
   await page.getByRole("button", { name: "Ответ в АРМ", exact: true }).click();
   await expect(page.getByLabel("Навигация по карточкам работы")).toBeVisible();
   await page.screenshot({
-    path: "docs/screenshots/semantic-assessment/arm.png",
-    fullPage: true,
+    path: "docs/screenshots/interface-copy/assessment-arm.png",
+    fullPage: false,
+    animations: "disabled",
   });
 });
 
@@ -167,7 +173,8 @@ test("semantic assessment: student sees incomplete grade and recommendations", a
   await expect(page.getByText(/Смысловая проверка неполная/)).toBeVisible();
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.screenshot({
-    path: "docs/screenshots/semantic-assessment/student.png",
+    path: "docs/screenshots/interface-copy/assessment-student.png",
     fullPage: true,
+    animations: "disabled",
   });
 });

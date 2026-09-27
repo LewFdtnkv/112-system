@@ -117,10 +117,13 @@ for (const role of ["student", "teacher", "admin"]) {
       name: "avatar.png",
       mimeType: "image/png",
       buffer: Buffer.from(
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=",
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGMImHAAAALUAaGysefKAAAAAElFTkSuQmCC",
         "base64",
       ),
     });
+    await page
+      .getByRole("button", { name: "Сохранить фотографию", exact: true })
+      .click();
     await expect(
       dialog.getByText("Фотография обновлена", { exact: true }),
     ).toBeVisible();

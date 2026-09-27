@@ -139,7 +139,7 @@ export function CardLibraryTable({
           </TableRow>
         </TableHead>
         <TableBody>
-          <GenerationRows jobs={generationJobs} />
+          <GenerationRows jobs={generationJobs} onOpenCard={onOpen} />
           {cards.map((card) => (
             <CardLibraryRow
               key={card.id}

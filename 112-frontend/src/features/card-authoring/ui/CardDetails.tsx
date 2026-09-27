@@ -2,6 +2,7 @@ import { Button } from "@mui/material";
 import { CardDataFields, type FeatureDefinition } from "@/entities/training";
 import type { CardDetailsProps } from "../types/CardSections";
 import { CardRoleSection, CardSections } from "./CardSections";
+import { DDSGeneration } from "./DDSGeneration";
 import { CardDDSDetails } from "./CardDDSDetails";
 
 export function CardDetails({ card, onPreview }: CardDetailsProps) {
@@ -65,6 +66,7 @@ export function CardDetails({ card, onPreview }: CardDetailsProps) {
       </CardRoleSection>
       <CardRoleSection kind="dds">
         <CardDDSDetails card={card} />
+        <DDSGeneration card={card} />
       </CardRoleSection>
     </CardSections>
   );

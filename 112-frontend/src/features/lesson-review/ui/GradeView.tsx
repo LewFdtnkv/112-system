@@ -1,6 +1,7 @@
 import { Alert, Paper, Stack, Typography } from "@mui/material";
 import { styles } from "../styles/LessonReview";
 import type { GradeViewProps } from "../types/LessonReview";
+import { scoreText } from "../model/scoreText";
 import { SemanticStatus } from "./SemanticReview";
 
 export function GradeView({ grade }: GradeViewProps) {
@@ -12,7 +13,7 @@ export function GradeView({ grade }: GradeViewProps) {
           : grade.method === "rules"
             ? "Автоматическая оценка"
             : "Оценка преподавателя"}
-        : {grade.score} / {grade.max_score}
+        : {scoreText(grade.score)} / {scoreText(grade.max_score)}
       </Typography>
       <p style={styles.p}>{grade.comment}</p>
       {grade.assessment_details && (
@@ -39,7 +40,8 @@ export function GradeView({ grade }: GradeViewProps) {
           )}
           {grade.assessment_details.criteria.map((criterion) => (
             <Typography key={criterion.code} variant="body2">
-              {criterion.label}: {criterion.score} / {criterion.max_score}
+              {criterion.label}: {scoreText(criterion.score)} /{" "}
+              {scoreText(criterion.max_score)}
             </Typography>
           ))}
           {!!grade.assessment_details.recommendations?.length && (

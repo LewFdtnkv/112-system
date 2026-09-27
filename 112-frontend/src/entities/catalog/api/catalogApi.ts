@@ -63,7 +63,6 @@ export const catalogApi = {
     name: string;
     short_name?: string | null;
   }) => post<Service>("admin/services", body),
-  createClassifier: (body: unknown) => post<Classifier>("admin/classifiers", body),
   publishClassifier: (versionId: string) =>
     post<Classifier>(`admin/classifiers/${id(versionId)}/publish`, {}),
 };

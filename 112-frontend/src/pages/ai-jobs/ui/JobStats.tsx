@@ -10,7 +10,7 @@ export function JobStats({ summary: s }: JobStatsProps) {
       <article>
         <span>В работе</span>
         <strong>{s.running}</strong>
-        <small>Обрабатываются воркером</small>
+        <small>Выполняются сейчас</small>
       </article>
       <article>
         <span>Завершено</span>

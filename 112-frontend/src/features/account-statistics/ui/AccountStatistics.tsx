@@ -4,21 +4,9 @@ import { download } from "@/shared/lib/download";
 import { QueryState } from "@/shared/ui/QueryState";
 import { Alert, Button, Stack, Typography } from "@mui/material";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Legend,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-const roles: Record<string, string> = {
-  admin: "Администраторы",
-  teacher: "Преподаватели",
-  student: "Ученики",
-};
+import { metrics, roles } from "../model/metrics";
+import "../styles/account-statistics.scss";
+
 export function AccountStatistics() {
   const query = useQuery({
     queryKey: ["account-statistics"],
@@ -38,35 +26,35 @@ export function AccountStatistics() {
         retry={() => void query.refetch()}
       >
         {query.data && (
-          <>
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart
-                data={query.data.map((r) => ({ ...r, name: roles[r.role] }))}
+          <div className="account-statistics">
+            {metrics.map(({ key, label }) => (
+              <section
+                key={key}
+                className={`account-statistics__tile account-statistics__tile--${key}`}
+                aria-label={label}
               >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis allowDecimals={false} />
-                <Tooltip />
-                <Legend />
-                <Bar
-                  dataKey="registered"
-                  name="Учётные записи"
-                  fill="#1976a1"
-                />
-                <Bar
-                  dataKey="sessions"
-                  name="Действующие сеансы"
-                  fill="#63a68c"
-                />
-              </BarChart>
-            </ResponsiveContainer>
-            <Typography>
-              Всего: {query.data.reduce((n, r) => n + r.registered, 0)} ·{" "}
-              {query.data
-                .map((r) => `${roles[r.role]}: ${r.registered}`)
-                .join(" · ")}
-            </Typography>
-          </>
+                <h3 className="account-statistics__label">{label}</h3>
+                <p className="account-statistics__value">
+                  {query.data
+                    .reduce((total, row) => total + row[key], 0)
+                    .toLocaleString("ru-RU")}
+                </p>
+                <dl className="account-statistics__roles">
+                  {Object.entries(roles).map(([role, name]) => (
+                    <div key={role}>
+                      <dt>{name}</dt>
+                      <dd>
+                        {(
+                          query.data.find((row) => row.role === role)?.[key] ??
+                          0
+                        ).toLocaleString("ru-RU")}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </section>
+            ))}
+          </div>
         )}
       </QueryState>
       <Typography variant="caption">

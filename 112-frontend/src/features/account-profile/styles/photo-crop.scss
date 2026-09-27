@@ -1,0 +1,37 @@
+.photo-crop {
+  padding-top: 4px;
+
+  &__preview {
+    width: min(100%, 280px);
+    aspect-ratio: 1;
+    align-self: center;
+    border-radius: 50%;
+    border: 2px solid #72939f;
+    background: white;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    transition:
+      border-color 150ms ease,
+      box-shadow 150ms ease;
+
+    &:hover,
+    &:focus-visible {
+      border-color: #197e9c;
+      box-shadow: 0 0 0 3px #197e9c26;
+    }
+    &:active {
+      cursor: grabbing;
+    }
+  }
+
+  &__scale {
+    padding-inline: 10px;
+  }
+  &__actions {
+    padding: 12px 20px 20px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}

@@ -121,7 +121,7 @@ function IncidentCardForm(props: IncidentCardFormProps) {
         </div>
         {editor.saved && (
           <p className="arm-card-notice" role="status">
-            Черновик сохранён на сервере.
+            Черновик сохранён.
           </p>
         )}
         {props.remote.error && (

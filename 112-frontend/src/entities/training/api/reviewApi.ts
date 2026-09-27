@@ -1,3 +1,4 @@
+import type { StudentLessonFeedback } from "../types/semanticAssessment";
 import type { Grade, GradeInput, WorkReview } from "../model/types";
 import {
   apiGet as get,
@@ -27,6 +28,12 @@ export const reviewApi = {
     post<Grade>(
       `lessons/${id(lessonId)}/students/${id(studentId)}/evaluations`,
       body,
+    ),
+  feedback: (lessonId: string, signal?: AbortSignal) =>
+    get<StudentLessonFeedback>(
+      `student/lessons/${id(lessonId)}/feedback`,
+      {},
+      signal,
     ),
   evaluation: (lessonId: string, signal?: AbortSignal) =>
     get<Grade | null>(`student/lessons/${id(lessonId)}/evaluation`, {}, signal),

@@ -4,7 +4,8 @@ import { RetrievedExamples } from "./RetrievedExamples";
 import { AssessmentMemory } from "./AssessmentMemory";
 import { useAssessmentMemory } from "../model/useAssessmentMemory";
 import { useSemanticRetry } from "../model/useSemanticRetry";
-import { semanticLabels, semanticStatusLabels } from "../model/semanticLabels";
+import { SemanticFindingView } from "./SemanticFindingView";
+import { semanticStatusLabels } from "../model/semanticLabels";
 import type {
   SemanticReviewProps,
   SemanticStatusProps,
@@ -73,32 +74,7 @@ export function SemanticReview(props: SemanticReviewProps) {
         </Alert>
       )}
       {review.findings.map((finding) => (
-        <Alert
-          key={finding.code}
-          severity={
-            !finding.applied
-              ? "warning"
-              : finding.verdict === "correct"
-                ? "success"
-                : finding.verdict === "partial"
-                  ? "warning"
-                  : "error"
-          }
-        >
-          <strong>
-            {finding.label}: {semanticLabels[finding.verdict]}
-          </strong>
-          <p>{finding.reason}</p>
-          {finding.reference_quote && (
-            <p>Основание: «{finding.reference_quote}»</p>
-          )}
-          {finding.answer_quote && <p>В ответе: «{finding.answer_quote}»</p>}
-          {finding.recommendation && <p>{finding.recommendation}</p>}
-          <small>
-            {finding.applied
-              ? "Решение принято для расчёта; итог зависит от полноты проверки всех смысловых полей."
-              : "Автоматически в балл не включено."}
-          </small>
+        <SemanticFindingView key={finding.code} finding={finding}>
           {!!review.retrieval?.used_examples?.[finding.code]?.length && (
             <p>
               Использовано разборов из памяти:{" "}
@@ -112,31 +88,28 @@ export function SemanticReview(props: SemanticReviewProps) {
               entries={memory.data}
             />
           )}
-        </Alert>
+        </SemanticFindingView>
       ))}
-      <Typography variant="body2">
-        Модель: {review.model ?? "—"} · Рубрика: {review.prompt_version ?? "—"}
-      </Typography>
       {review.status === "succeeded" && review.retrieval && (
         <RetrievedExamples target={target} />
       )}
       <details>
         <summary>Процесс выполнения и подсказки</summary>
         <p>
-          Подтверждённых событий: {review.process.server_event_count ?? 0}.
-          Наблюдений браузера: {review.process.browser_event_count ?? 0}. Выдано
+          Сохранённых действий: {review.process.server_event_count ?? 0}.
+          Изменений при вводе: {review.process.browser_event_count ?? 0}. Выдано
           подсказок: {review.process.hints_count ?? 0}.
         </p>
         <p>
-          Максимальный промежуток между серверными событиями:{" "}
+          Наибольший перерыв между сохранёнными действиями:{" "}
           {review.process.max_gap_between_server_events_seconds ?? 0} с. Это не
           доказательство бездействия. Паузы, подсказки и исправления не
           штрафуются.
         </p>
         {!!review.process.delivery_gaps_reported && (
           <Alert severity="warning">
-            Браузер сообщил о потере части наблюдений. Серверные действия
-            сохранены.
+            Часть истории ввода отсутствует. Сохранения карточки и выполненные
+            действия учтены.
           </Alert>
         )}
         {review.process.hints?.map((hint) => (

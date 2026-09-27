@@ -1,2 +1,5 @@
 import { type GenerationJob } from "@/entities/training";
-export type GenerationRowsProps = { jobs: GenerationJob[] };
+export type GenerationRowsProps = {
+  jobs: GenerationJob[];
+  onOpenCard: (id: string) => void;
+};

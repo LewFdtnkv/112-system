@@ -1,5 +1,6 @@
 export type AIJobStatus = "queued" | "running" | "succeeded" | "failed";
-export type AIJobPurpose = "generation" | "evaluation" | "recommendation";
+export type AIJobPurpose =
+  "generation" | "dds_generation" | "evaluation" | "recommendation";
 export interface AIJobItem {
   id: string;
   purpose: AIJobPurpose;
@@ -21,6 +22,8 @@ export interface AIJobItem {
 export interface AIJobDetail extends AIJobItem {
   prompt_version: string;
   idempotency_key: string;
+  target_card_id: string | null;
+  parent_job_id: string | null;
   card_template_id: string | null;
   scenario_version_id: string | null;
   attempt_id: string | null;

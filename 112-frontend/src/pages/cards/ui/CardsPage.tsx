@@ -151,8 +151,7 @@ export const CardsPage = () => {
                     : detail.data.generation_method === "template-fallback"
                       ? "Использован текст заготовки: ИИ недоступен или ответ не прошёл проверку."
                       : "Карточка подготовлена автоматически.")}
-                {detail.data.generation_template &&
-                  ` Сюжет: ${detail.data.generation_template}.`}{" "}
+                {" "}
                 Проверьте условие и эталонное решение перед включением в
                 сценарий.
               </Alert>

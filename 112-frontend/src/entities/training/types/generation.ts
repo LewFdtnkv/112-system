@@ -29,6 +29,7 @@ export interface GenerationParameters {
   feature_answers?: Record<string, FeatureValue>;
 }
 export interface GenerationJob {
+  kind?: "generation" | "dds_generation";
   id: string;
   status: "queued" | "running" | "succeeded" | "failed";
   created_at: string;

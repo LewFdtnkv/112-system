@@ -17,7 +17,7 @@ export interface SemanticSummary {
   reviewed_cards: number;
   applied_criteria: number;
   needs_review: number;
-  semantic_weight_percent: number;
+  semantic_weight_percent: number | null;
 }
 
 export interface SemanticReview {
@@ -47,4 +47,17 @@ export interface SemanticReview {
       displayed_in_browser?: boolean;
     }[];
   };
+}
+
+export interface StudentCardFeedback {
+  assignment_id: string;
+  position: number;
+  title: string;
+  status: SemanticReview["status"] | "not_started";
+  findings: SemanticFinding[];
+}
+
+export interface StudentLessonFeedback {
+  submitted: boolean;
+  cards: StudentCardFeedback[];
 }

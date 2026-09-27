@@ -1,7 +1,7 @@
 import {
+  assistanceLabels,
   crewStatusLabels,
   ddsStatusLabels,
-  fieldLabels,
   attemptApi,
 } from "@/entities/training";
 import { QueryState } from "@/shared/ui/QueryState";
@@ -19,55 +19,10 @@ import {
 } from "@mui/material";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useState } from "react";
+import { kinds, label, reasons, text } from "../model/auditPresentation";
 import { styles } from "../styles/AuditTrail";
 import type { AuditTrailProps, EventDetailsProps } from "../types/AuditTrail";
 
-const kinds: Record<string, string> = {
-  "learning.prepared": "Поля вне выбранных навыков подготовлены системой",
-  "learning.hint_issued": "Выдана учебная подсказка",
-  "dds.card_received": "Получение карточки ДДС",
-  "dds.information": "Сообщение по сценарию",
-  "dds.status_changed": "Изменение статуса ДДС",
-  "dds.crew_changed": "Назначение / статус бригады",
-  "dds.submitted": "Сдача упражнения ДДС",
-  "attempt.started": "Начало карточки",
-  "card.draft_saved": "Сохранение черновика",
-  "card.notified": "Оповещение служб",
-  "command.rejected": "Действие отклонено",
-  "assessment.rules_completed": "Автоматическая оценка",
-  "assessment.teacher_reviewed": "Пересмотр преподавателем",
-  "ui.card_opened": "Открытие формы",
-  "ui.card_closed": "Закрытие формы",
-  "ui.field_changed": "Изменение поля",
-};
-const label = (path: string) =>
-  path
-    .split(".")
-    .filter((part) => part !== "data")
-    .map((part) => fieldLabels[part] ?? part)
-    .join(" / ");
-const reasons: Record<string, string> = {
-  "Card revision is stale; reload the card":
-    "Карточка изменена в другой вкладке. Требуется обновить данные",
-  "Address and incident description are required":
-    "Заполните адрес и сообщение о происшествии",
-  "This attempt is no longer editable": "Работа уже завершена",
-  "This attempt cannot be submitted": "Эту работу нельзя отправить повторно",
-  "Choose an incident code from the assigned classifier":
-    "Выберите тип происшествия",
-  "Choose a code from the assigned classifier":
-    "Выберите тип из справочника задания",
-  "Active prepared service routes are required":
-    "Для выбранного типа не настроены службы",
-  "Conditional routing is not supported by this workflow yet":
-    "Условные правила оповещения пока не поддерживаются",
-};
-const text = (value: unknown) =>
-  value === null || value === undefined || value === ""
-    ? "Пусто"
-    : typeof value === "object"
-      ? JSON.stringify(value)
-      : String(value);
 function EventDetails({ event }: EventDetailsProps) {
   const changes = event.payload.changes as
     { field: string; before: unknown; after: unknown }[] | undefined;
@@ -77,7 +32,23 @@ function EventDetails({ event }: EventDetailsProps) {
         <summary>Изменено полей: {changes.length}</summary>
         {changes.map((change) => (
           <p key={change.field}>
-            {label(change.field)}: {text(change.before)} → {text(change.after)}
+            {label(change.field)}:{" "}
+            {change.field === "classifier_entry_id" ? (
+              change.after ? (
+                change.before ? (
+                  "Выбор изменён"
+                ) : (
+                  "Выбран"
+                )
+              ) : (
+                "Выбор снят"
+              )
+            ) : (
+              <>
+                {text(change.before, change.field)} →{" "}
+                {text(change.after, change.field)}
+              </>
+            )}
           </p>
         ))}
       </details>
@@ -87,7 +58,10 @@ function EventDetails({ event }: EventDetailsProps) {
       { hint?: { text?: string } } | undefined;
     return (
       <>
-        {String(event.payload.level)} ·{" "}
+        {assistanceLabels[
+          event.payload.level as keyof typeof assistanceLabels
+        ] ?? "Подсказка"}{" "}
+        ·{" "}
         {event.payload.trigger === "automatic"
           ? "Напоминание после паузы"
           : "По запросу ученика"}
@@ -103,21 +77,22 @@ function EventDetails({ event }: EventDetailsProps) {
         {String(event.payload.name)} ·{" "}
         {crewStatusLabels[String(event.payload.status)]} · Наряд:{" "}
         {String(event.payload.crew_number ?? "—")} ·{" "}
-        {String(event.payload.comment)}
+        {String(event.payload.comment ?? "")}
       </>
     );
   if (event.kind === "dds.status_changed")
     return (
       <>
         {ddsStatusLabels[String(event.payload.status)]} ·{" "}
-        {String(event.payload.comment)} · Наряд:{" "}
+        {String(event.payload.comment ?? "")} · Наряд:{" "}
         {String(event.payload.crew_number ?? "—")}
       </>
     );
   if (event.kind === "ui.field_changed")
     return (
       <>
-        {label(String(event.payload.field))}: {text(event.payload.value)}
+        {label(String(event.payload.field))}:{" "}
+        {text(event.payload.value, String(event.payload.field))}
       </>
     );
   if (event.kind === "command.rejected")
@@ -131,7 +106,7 @@ function EventDetails({ event }: EventDetailsProps) {
     return (
       <>
         {String(event.payload.score)} / {String(event.payload.max_score)} —{" "}
-        {String(event.payload.comment)}
+        {String(event.payload.comment ?? "")}
       </>
     );
   return <>—</>;
@@ -160,9 +135,8 @@ export function AuditTrail({
       {open && (
         <Stack spacing={1} sx={styles.stack}>
           <Alert severity="info">
-            Сохранения и оповещение подтверждены сервером. Наблюдения браузера
-            отражают ввод между сохранениями, могут быть неполными и не
-            используются сами по себе для снижения оценки.
+            История ввода между сохранениями может быть неполной. Она сама по
+            себе не служит основанием для снижения оценки.
           </Alert>
           <QueryState
             pending={query.isPending}
@@ -176,7 +150,7 @@ export function AuditTrail({
                     <TableCell>№</TableCell>
                     <TableCell>Время получения (МСК)</TableCell>
                     <TableCell>Действие</TableCell>
-                    <TableCell>Источник</TableCell>
+                    <TableCell>Подтверждение</TableCell>
                     <TableCell>Подробности</TableCell>
                   </TableRow>
                 </TableHead>
@@ -189,11 +163,13 @@ export function AuditTrail({
                           timeZone: "Europe/Moscow",
                         })}
                       </TableCell>
-                      <TableCell>{kinds[event.kind] ?? event.kind}</TableCell>
+                      <TableCell>
+                        {kinds[event.kind] ?? "Действие ученика"}
+                      </TableCell>
                       <TableCell>
                         {event.kind.startsWith("ui.")
-                          ? "Браузер · не подтверждено"
-                          : "Сервер"}
+                          ? "Ввод без сохранения"
+                          : "Сохранено"}
                       </TableCell>
                       <TableCell sx={styles.tableCell}>
                         <EventDetails event={event} />

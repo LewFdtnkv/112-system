@@ -422,6 +422,11 @@ a:hover {
   color: #fff;
 }
 
+.auth-main .MuiInputAdornment-root,
+.auth-main .MuiInputAdornment-root .MuiIconButton-root {
+  color: inherit;
+}
+
 .auth-main .MuiInput-root::before {
   border-bottom-color: #fff;
 }

@@ -1,4 +1,7 @@
-import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
+import {
+  ValidationField,
+  ValidatedTextField as TextField,
+} from "@/shared/ui/form-validation";
 import {
   assistanceLabels,
   learningSkillLabels,
@@ -76,48 +79,58 @@ export function LearningSettings({
         />
         {focused && (
           <>
-            <p>Целевые навыки · выберите хотя бы один</p>
-            <div
-              className="learning-skill-options"
-              role="group"
-              aria-label="Целевые навыки"
+            <ValidationField
+              name="learning.target_skills"
+              label="Целевые навыки"
+              validate={() =>
+                !value.target_skills.length
+                  ? "Выберите хотя бы один навык для отработки."
+                  : undefined
+              }
             >
-              {(Object.keys(learningSkillLabels) as LearningSkill[])
-                .filter(
-                  (skill) =>
-                    skill !== "interface" &&
-                    (!role ||
-                      (role === "dds"
-                        ? skill.startsWith("dds_")
-                        : !skill.startsWith("dds_"))),
-                )
-                .map((skill) => (
-                  <Chip
-                    key={skill}
-                    label={learningSkillLabels[skill]}
-                    clickable
-                    color={
-                      value.target_skills.includes(skill)
-                        ? "primary"
-                        : "default"
-                    }
-                    variant={
-                      value.target_skills.includes(skill)
-                        ? "filled"
-                        : "outlined"
-                    }
-                    aria-pressed={value.target_skills.includes(skill)}
-                    onClick={() =>
-                      onChange({
-                        ...value,
-                        target_skills: value.target_skills.includes(skill)
-                          ? value.target_skills.filter((s) => s !== skill)
-                          : [...value.target_skills, skill],
-                      })
-                    }
-                  />
-                ))}
-            </div>
+              <p>Целевые навыки · выберите хотя бы один</p>
+              <div
+                className="learning-skill-options"
+                role="group"
+                aria-label="Целевые навыки"
+              >
+                {(Object.keys(learningSkillLabels) as LearningSkill[])
+                  .filter(
+                    (skill) =>
+                      skill !== "interface" &&
+                      (!role ||
+                        (role === "dds"
+                          ? skill.startsWith("dds_")
+                          : !skill.startsWith("dds_"))),
+                  )
+                  .map((skill) => (
+                    <Chip
+                      key={skill}
+                      label={learningSkillLabels[skill]}
+                      clickable
+                      color={
+                        value.target_skills.includes(skill)
+                          ? "primary"
+                          : "default"
+                      }
+                      variant={
+                        value.target_skills.includes(skill)
+                          ? "filled"
+                          : "outlined"
+                      }
+                      aria-pressed={value.target_skills.includes(skill)}
+                      onClick={() =>
+                        onChange({
+                          ...value,
+                          target_skills: value.target_skills.includes(skill)
+                            ? value.target_skills.filter((s) => s !== skill)
+                            : [...value.target_skills, skill],
+                        })
+                      }
+                    />
+                  ))}
+              </div>
+            </ValidationField>
             <Alert severity="info">
               Выбранные элементы ученик выполняет сам. Остальные поля
               подготовлены и защищены от изменений; они не входят в оценку.

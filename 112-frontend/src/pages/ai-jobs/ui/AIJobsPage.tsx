@@ -26,8 +26,7 @@ export function AIJobsPage() {
       />
       {query.data && <JobStats summary={query.data.summary} />}
       <Typography variant="caption">
-        Счётчики — за всё время, независимо от фильтров. Обновление каждые 5
-        секунд в активной вкладке.
+        Счётчики — за всё время, независимо от фильтров.
         {query.data && ` Данные на ${jobDate(query.data.as_of)}.`}
       </Typography>
       <JobFilters filters={filters} update={update} />

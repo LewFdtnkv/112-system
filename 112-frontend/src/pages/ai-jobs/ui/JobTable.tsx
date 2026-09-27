@@ -24,8 +24,6 @@ export function JobTable({ items, onSelect }: JobTableProps) {
               "Задача",
               "Состояние",
               "Инициатор / ученик",
-              "Модель",
-              "Попытки",
               "Создана",
               "Завершена",
               "",
@@ -41,9 +39,6 @@ export function JobTable({ items, onSelect }: JobTableProps) {
             <TableRow key={job.id} {...rowAction(() => onSelect(job.id))}>
               <TableCell>
                 <b>{jobPurposes[job.purpose]}</b>
-                <Typography variant="caption" component="div" title={job.id}>
-                  {job.id.slice(0, 8)}
-                </Typography>
               </TableCell>
               <TableCell>
                 <Chip
@@ -65,7 +60,7 @@ export function JobTable({ items, onSelect }: JobTableProps) {
                     component="div"
                     color="warning.main"
                   >
-                    Истёк срок удержания воркером
+                    Задержка обработки
                   </Typography>
                 )}
                 {job.generation_method && (
@@ -107,10 +102,6 @@ export function JobTable({ items, onSelect }: JobTableProps) {
                   </Typography>
                 )}
               </TableCell>
-              <TableCell className="ai-jobs__model">
-                {job.model_version ?? "—"}
-              </TableCell>
-              <TableCell align="right">{job.retry_count}</TableCell>
               <TableCell className="ai-jobs__date">
                 {jobDate(job.created_at)}
               </TableCell>
@@ -120,7 +111,7 @@ export function JobTable({ items, onSelect }: JobTableProps) {
               <TableCell>
                 <Button
                   onClick={() => onSelect(job.id)}
-                  aria-label={`Подробнее о задаче ${job.id.slice(0, 8)}`}
+                  aria-label={`Подробнее: ${jobPurposes[job.purpose]}, ${jobDate(job.created_at)}`}
                 >
                   Подробнее
                 </Button>

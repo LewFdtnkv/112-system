@@ -15,7 +15,7 @@ export function RuleGeneralFields({ form, onChange }: RuleGeneralFieldsProps) {
       {(["code", "section", "name", "response_scenario"] as const).map(
         (key) => (
           <TextField
-            name={key}
+            name={`entry.${key}`}
             key={key}
             required={key !== "response_scenario"}
             label={labels[key]}
@@ -27,7 +27,7 @@ export function RuleGeneralFields({ form, onChange }: RuleGeneralFieldsProps) {
         ),
       )}
       <TextField
-        name="display_name"
+        name="entry.display_name"
         label="Короткое название для ученика"
         value={form.display_name ?? ""}
         helperText="Без технического кода. Если не заполнено, используется название происшествия."
@@ -47,7 +47,7 @@ export function RuleGeneralFields({ form, onChange }: RuleGeneralFieldsProps) {
       />
       {form.is_popular && (
         <TextField
-          name="popular_order"
+          name="entry.popular_order"
           label="Порядок быстрой кнопки"
           type="number"
           helperText="Меньшее число — раньше. Ученик видит до 11 популярных типов."

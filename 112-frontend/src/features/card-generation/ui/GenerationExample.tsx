@@ -21,15 +21,15 @@ export function GenerationExample({ card }: GenerationExampleProps) {
                 ? save.variables
                 : (card.generation_example ?? false)
             }
-            disabled={save.isPending || !card.caller_message}
+            disabled={save.isPending || (!card.caller_message && !card.dds_exercise)}
             onChange={(_, enabled) => save.mutate(enabled)}
           />
         }
         label="Использовать как пример генерации"
       />
       <Typography variant="body2" color="text.secondary">
-        Отметьте после проверки условия и эталонного решения. ИИ будет
-        использовать карточку как образец речи только для ваших генераций. После
+        Отметьте после проверки условия, эталонного решения и упражнения ДДС. ИИ
+        сможет брать отсюда примеры речи и сообщений бригад только для ваших генераций. После
         редактирования отметка сбросится. Её можно снять в любой момент.
       </Typography>
       {save.error && (

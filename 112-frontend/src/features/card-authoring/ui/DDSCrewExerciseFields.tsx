@@ -1,5 +1,8 @@
 import { crewStatusLabels } from "@/entities/training";
-import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
+import {
+  ValidationField,
+  ValidatedTextField as TextField,
+} from "@/shared/ui/form-validation";
 import { Button, MenuItem, Paper, Stack, Typography } from "@mui/material";
 import type { DDSCrewExerciseFieldsProps } from "../types/CardDDSSettings";
 import { ddsEditorStyles as styles } from "../styles/CardDDSSettings";
@@ -43,84 +46,99 @@ export function DDSCrewExerciseFields({
             ? "Продолжение работы: история до начала занятия"
             : "Новая работа: бригада ещё не назначена"}
         </Typography>
-        {history.map((event, i) => (
-          <Paper key={i} variant="outlined" sx={styles.history}>
-            <Stack spacing={1}>
-              <Stack direction="row" sx={styles.row}>
-                <TextField
-                  sx={styles.field}
-                  select
-                  label={`Исходный статус ${i + 1}`}
-                  value={event.status}
-                  onChange={(e) =>
-                    setHistory(
-                      history.map((h, j) =>
-                        j === i ? { ...h, status: e.target.value } : h,
-                      ),
-                    )
-                  }
-                >
-                  {Object.entries(crewStatusLabels).map(([key, label]) => (
-                    <MenuItem key={key} value={key}>
-                      {label}
-                    </MenuItem>
-                  ))}
-                </TextField>
-                <TextField
-                  sx={styles.field}
-                  required
-                  type="number"
-                  name={`dds_exercise.initial_crews.${initialIndex}.history.${i}.seconds_before_start`}
-                  label="Минут до поступления карточки"
-                  value={event.seconds_before_start / 60}
-                  slotProps={{ htmlInput: { min: 0, max: 1440, step: 1 } }}
-                  onChange={(e) =>
-                    setHistory(
-                      history.map((h, j) =>
-                        j === i
-                          ? {
-                              ...h,
-                              seconds_before_start: Number(e.target.value) * 60,
-                            }
-                          : h,
-                      ),
-                    )
-                  }
-                />
-                <Button
-                  onClick={() => setHistory(history.filter((_, j) => i !== j))}
-                >
-                  Удалить запись
-                </Button>
-              </Stack>
-              <TextField
-                label="Номер наряда"
-                value={event.crew_number ?? ""}
-                onChange={(e) =>
-                  setHistory(
-                    history.map((h, j) =>
-                      j === i
-                        ? { ...h, crew_number: e.target.value || null }
-                        : h,
-                    ),
-                  )
-                }
-              />
-              <TextField
-                label="Комментарий в исходной истории"
-                multiline
-                value={event.comment}
-                onChange={(e) =>
-                  setHistory(
-                    history.map((h, j) =>
-                      j === i ? { ...h, comment: e.target.value } : h,
-                    ),
-                  )
-                }
-              />
-            </Stack>
-          </Paper>
-        ))}
+        <ValidationField
+          name={`dds_exercise.initial_crews.${initialIndex}`}
+          label={`История: ${crew.name}`}
+        >
+          <Stack spacing={2}>
+            {history.map((event, i) => (
+              <Paper key={i} variant="outlined" sx={styles.history}>
+                <Stack spacing={1}>
+                  <Stack direction="row" sx={styles.row}>
+                    <TextField
+                      sx={styles.field}
+                      select
+                      name={`dds_exercise.initial_crews.${initialIndex}.history.${i}.status`}
+                      label={`Исходный статус ${i + 1}`}
+                      value={event.status}
+                      onChange={(e) =>
+                        setHistory(
+                          history.map((h, j) =>
+                            j === i ? { ...h, status: e.target.value } : h,
+                          ),
+                        )
+                      }
+                    >
+                      {Object.entries(crewStatusLabels).map(([key, label]) => (
+                        <MenuItem key={key} value={key}>
+                          {label}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                    <TextField
+                      sx={styles.field}
+                      required
+                      type="number"
+                      name={`dds_exercise.initial_crews.${initialIndex}.history.${i}.seconds_before_start`}
+                      label="Минут до поступления карточки"
+                      value={event.seconds_before_start / 60}
+                      slotProps={{ htmlInput: { min: 0, max: 1440, step: 1 } }}
+                      onChange={(e) =>
+                        setHistory(
+                          history.map((h, j) =>
+                            j === i
+                              ? {
+                                  ...h,
+                                  seconds_before_start:
+                                    Number(e.target.value) * 60,
+                                }
+                              : h,
+                          ),
+                        )
+                      }
+                    />
+                    <Button
+                      onClick={() =>
+                        setHistory(history.filter((_, j) => i !== j))
+                      }
+                    >
+                      Удалить запись
+                    </Button>
+                  </Stack>
+                  <TextField
+                    name={`dds_exercise.initial_crews.${initialIndex}.history.${i}.crew_number`}
+                    slotProps={{ htmlInput: { maxLength: 100 } }}
+                    label="Номер наряда"
+                    value={event.crew_number ?? ""}
+                    onChange={(e) =>
+                      setHistory(
+                        history.map((h, j) =>
+                          j === i
+                            ? { ...h, crew_number: e.target.value || null }
+                            : h,
+                        ),
+                      )
+                    }
+                  />
+                  <TextField
+                    name={`dds_exercise.initial_crews.${initialIndex}.history.${i}.comment`}
+                    slotProps={{ htmlInput: { maxLength: 5000 } }}
+                    label="Комментарий в исходной истории"
+                    multiline
+                    value={event.comment}
+                    onChange={(e) =>
+                      setHistory(
+                        history.map((h, j) =>
+                          j === i ? { ...h, comment: e.target.value } : h,
+                        ),
+                      )
+                    }
+                  />
+                </Stack>
+              </Paper>
+            ))}
+          </Stack>
+        </ValidationField>
         <Button
           disabled={history.length >= 30}
           onClick={() =>
@@ -140,6 +158,7 @@ export function DDSCrewExerciseFields({
         </Button>
         <TextField
           select
+          name={`dds_exercise.required_crews.${goalIndex}.status`}
           label="Учебная цель после начала занятия"
           value={goal}
           onChange={(e) =>
@@ -174,9 +193,10 @@ export function DDSCrewExerciseFields({
             required
             multiline
             minRows={2}
+            slotProps={{ htmlInput: { maxLength: 5000 } }}
             name={`dds_exercise.messages.${messageIndex}.message`}
             label="Новое сообщение для ученика"
-            helperText="Например: «Расчёт прибыл по адресу, приступает к работе». Сообщение появится у бригады, но не изменит её статус автоматически."
+            helperText="Сведения от бригады, по которым ученик должен внести следующий статус. Сообщение само статус не меняет."
             value={message}
             onChange={(e) =>
               onChange({

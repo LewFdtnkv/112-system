@@ -62,6 +62,7 @@ beforeEach(() => {
   vi.spyOn(attemptApi, "get").mockResolvedValue(structuredClone(initial));
   vi.spyOn(attemptApi, "entries").mockResolvedValue([]);
   vi.spyOn(attemptApi, "recipients").mockResolvedValue([]);
+  vi.spyOn(attemptApi, "observations").mockResolvedValue({ accepted: 1 });
 });
 afterEach(() => {
   cleanup();

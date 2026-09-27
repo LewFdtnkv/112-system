@@ -1,4 +1,7 @@
 export const fieldLabels: Record<string, string> = {
+  location: "Точка на карте",
+  latitude: "Широта",
+  longitude: "Долгота",
   gender: "Пол",
   age: "Возраст",
   height_cm: "Рост, см",

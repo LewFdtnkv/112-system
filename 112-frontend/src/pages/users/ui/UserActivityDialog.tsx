@@ -1,4 +1,6 @@
+import { userKeys } from "@/entities/user";
 import { userAuditApi } from "@/entities/user";
+import { activityLabels } from "../model/activityLabels";
 import { getApiError } from "@/shared/api";
 import { download } from "@/shared/lib/download";
 import { PageControls, QueryState } from "@/shared/ui/QueryState";
@@ -22,7 +24,7 @@ export function UserActivityDialog({
 }: UserActivityDialogProps) {
   const [page, setPage] = useState(0);
   const query = useQuery({
-    queryKey: ["user-activity", userId, page],
+    queryKey: [...userKeys.activity, userId, page],
     queryFn: () => userAuditApi.activity(userId, page * 20),
   });
   const exportLog = useMutation({
@@ -45,11 +47,12 @@ export function UserActivityDialog({
             {query.data?.items.map((e) => (
               <Stack key={e.id} sx={styles.stack}>
                 <Typography>
-                  <strong>{e.kind}</strong> ·{" "}
-                  {new Date(e.occurred_at).toLocaleString("ru-RU")}
+                  <strong>
+                    {activityLabels[e.kind] ?? "Действие пользователя"}
+                  </strong>{" "}
+                  · {new Date(e.occurred_at).toLocaleString("ru-RU")}
                 </Typography>
                 <Typography sx={styles.typography}>{e.reason}</Typography>
-                <small>Исполнитель: {e.actor_id ?? "Система"}</small>
               </Stack>
             ))}
             {query.data?.total === 0 && (

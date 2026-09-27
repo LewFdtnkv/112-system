@@ -7,3 +7,8 @@ export type SemanticReviewProps = {
   attemptId: string;
 };
 export type SemanticStatusProps = { summary: SemanticSummary };
+
+export type SemanticFindingViewProps = {
+  finding: import("@/entities/training").SemanticFinding;
+  children?: import("react").ReactNode;
+};

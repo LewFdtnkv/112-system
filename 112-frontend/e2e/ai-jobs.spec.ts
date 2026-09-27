@@ -143,9 +143,12 @@ test("admin monitors jobs, filters, reads payloads and receives updates", async 
   ).toBeVisible();
   await expect(page.getByRole("table", { name: "ИИ-задачи" })).toBeVisible();
   expect(detailRequests).toBe(0);
+  await expect(page.getByRole("table")).not.toContainText("10000000");
+  await expect(page.getByRole("table")).not.toContainText("qwen3:");
+  await expect(page.getByRole("table")).not.toContainText("воркер");
   await page.setViewportSize({ width: 1600, height: 1000 });
   await page.screenshot({
-    path: "docs/screenshots/ai-jobs/table-desktop.png",
+    path: "docs/screenshots/interface-copy/table-desktop.png",
     fullPage: true,
   });
   await page.getByRole("button", { name: "Следующая страница" }).click();
@@ -164,15 +167,21 @@ test("admin monitors jobs, filters, reads payloads and receives updates", async 
   await page.keyboard.press("Enter");
   const dialog = page.getByRole("dialog", { name: "Данные ИИ-задачи" });
   await expect(dialog).toBeVisible();
+  await expect(dialog.getByText(firstId, { exact: true })).not.toBeVisible();
   await expect(
     dialog.getByText("card-generation-v5", { exact: true }),
-  ).toBeVisible();
+  ).not.toBeVisible();
   expect(detailRequests).toBeGreaterThan(0);
   await page.waitForTimeout(200);
   await page.screenshot({
-    path: "docs/screenshots/ai-jobs/detail-desktop.png",
+    path: "docs/screenshots/interface-copy/detail-desktop.png",
     fullPage: true,
   });
+  await dialog.getByText("Технические сведения", { exact: true }).click();
+  await expect(dialog.getByText(firstId, { exact: true })).toBeVisible();
+  await expect(
+    dialog.getByText("card-generation-v5", { exact: true }),
+  ).toBeVisible();
   await dialog
     .getByRole("tab", { name: "Входные данные", exact: true })
     .click();
@@ -188,14 +197,14 @@ test("admin monitors jobs, filters, reads payloads and receives updates", async 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.waitForTimeout(200);
   await page.screenshot({
-    path: "docs/screenshots/ai-jobs/detail-mobile.png",
+    path: "docs/screenshots/interface-copy/detail-mobile.png",
     fullPage: true,
   });
   completed = true;
   await expect
     .poll(() => detailRequests, { timeout: 12000 })
     .toBeGreaterThan(1);
-  await dialog.getByRole("tab", { name: "Сведения", exact: true }).click();
+  await dialog.getByText("Технические сведения", { exact: true }).click();
   await expect(dialog.getByText("Успешно", { exact: true })).toBeVisible({
     timeout: 12000,
   });
@@ -203,7 +212,7 @@ test("admin monitors jobs, filters, reads payloads and receives updates", async 
   await page.goto("/admin/ai-jobs");
   await expect(page.getByRole("table", { name: "ИИ-задачи" })).toBeVisible();
   await page.screenshot({
-    path: "docs/screenshots/ai-jobs/table-mobile.png",
+    path: "docs/screenshots/interface-copy/table-mobile.png",
     fullPage: true,
   });
   await page.goto("/admin/ai-jobs?q=absent");

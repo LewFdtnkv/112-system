@@ -8,17 +8,13 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  Tab,
-  Tabs,
-  Typography,
 } from "@mui/material";
-import { useState } from "react";
+import { JobDiagnostics } from "./JobDiagnostics";
 import { jobDate } from "../lib/format";
 import { useJobDetail } from "../model/useJobDetail";
 import type { JobDetailProps } from "../types";
 export function JobDetail({ id, onClose }: JobDetailProps) {
   const query = useJobDetail(id);
-  const [tab, setTab] = useState("summary");
   const job = query.data;
   return (
     <Dialog
@@ -30,9 +26,6 @@ export function JobDetail({ id, onClose }: JobDetailProps) {
     >
       <DialogTitle id="ai-job-title">Данные ИИ-задачи</DialogTitle>
       <DialogContent className="ai-jobs__detail">
-        <Typography component="p" className="ai-jobs__id" data-selectable>
-          {id}
-        </Typography>
         <QueryState
           pending={query.isPending}
           error={query.error}
@@ -43,8 +36,7 @@ export function JobDetail({ id, onClose }: JobDetailProps) {
               {job.error && <Alert severity="error">{job.error}</Alert>}
               {job.lease_expired && (
                 <Alert severity="warning">
-                  Воркер не продлил срок удержания задачи. После его истечения
-                  задачу может повторно забрать свободный воркер.
+                  Обработка задерживается. Ожидается повторный запуск.
                 </Alert>
               )}
               {job.generation_method === "template-fallback" && (
@@ -53,105 +45,40 @@ export function JobDetail({ id, onClose }: JobDetailProps) {
                   ИИ. Причина и попытки проверки доступны в результате.
                 </Alert>
               )}
-              <Tabs
-                value={tab}
-                onChange={(_, value: string) => setTab(value)}
-                variant="fullWidth"
-                aria-label="Данные задачи"
-              >
-                <Tab
-                  wrapped
-                  value="summary"
-                  label="Сведения"
-                  id="job-tab-summary"
-                  aria-controls="job-panel"
-                />
-                <Tab
-                  wrapped
-                  value="input"
-                  label="Входные данные"
-                  id="job-tab-input"
-                  aria-controls="job-panel"
-                />
-                <Tab
-                  wrapped
-                  value="output"
-                  label="Результат"
-                  id="job-tab-output"
-                  aria-controls="job-panel"
-                />
-                <Tab
-                  wrapped
-                  value="context"
-                  label="Контекст"
-                  id="job-tab-context"
-                  aria-controls="job-panel"
-                />
-              </Tabs>
-              <div
-                role="tabpanel"
-                id="job-panel"
-                aria-labelledby={`job-tab-${tab}`}
-              >
-                {tab === "summary" ? (
-                  <dl className="ai-jobs__fields">
-                    {Object.entries({
-                      "Вид задачи": jobPurposes[job.purpose],
-                      Состояние: jobStatuses[job.status],
-                      Инициатор: job.created_by_id ? (
-                        <UserIdentity
-                          userId={job.created_by_id}
-                          name={job.created_by_username ?? "Пользователь"}
-                        />
-                      ) : (
-                        "Система"
-                      ),
-                      Ученик: job.student_id ? (
-                        <UserIdentity
-                          userId={job.student_id}
-                          name={job.student_username ?? "Ученик"}
-                        />
-                      ) : null,
-                      Модель: job.model_version,
-                      "Версия промпта": job.prompt_version,
-                      "Попытки запуска": job.retry_count,
-                      Создана: jobDate(job.created_at),
-                      "Доступна для запуска с": jobDate(job.available_at),
-                      Завершена: jobDate(job.completed_at),
-                      "Удержание воркером до": jobDate(job.lease_expires_at),
-                      "Способ генерации": job.generation_method
-                        ? (jobMethods[job.generation_method] ??
-                          job.generation_method)
-                        : null,
-                      "ID инициатора": job.created_by_id,
-                      "ID ученика": job.student_id,
-                      "ID карточки": job.card_template_id,
-                      "ID редакции сценария": job.scenario_version_id,
-                      "ID попытки ученика": job.attempt_id,
-                      "Ключ идемпотентности": job.idempotency_key,
-                    }).map(([label, value]) => (
-                      <div key={label}>
-                        <dt>{label}</dt>
-                        <dd data-selectable>{value ?? "—"}</dd>
-                      </div>
-                    ))}
-                  </dl>
-                ) : tab === "output" && job.output === null ? (
-                  <Typography>Результат ещё не получен.</Typography>
-                ) : (
-                  <pre className="ai-jobs__json" data-selectable>
-                    {JSON.stringify(
-                      tab === "input"
-                        ? job.input
-                        : tab === "output"
-                          ? job.output
-                          : job.context,
-                      null,
-                      2,
-                    )}
-                  </pre>
-                )}
-              </div>
+              <dl className="ai-jobs__fields">
+                {Object.entries({
+                  "Вид задачи": jobPurposes[job.purpose],
+                  Состояние: jobStatuses[job.status],
+                  Инициатор: job.created_by_id ? (
+                    <UserIdentity
+                      userId={job.created_by_id}
+                      name={job.created_by_username ?? "Пользователь"}
+                    />
+                  ) : (
+                    "Система"
+                  ),
+                  Ученик: job.student_id ? (
+                    <UserIdentity
+                      userId={job.student_id}
+                      name={job.student_username ?? "Ученик"}
+                    />
+                  ) : null,
+                  Создана: jobDate(job.created_at),
+                  Завершена: jobDate(job.completed_at),
+                  "Способ генерации": job.generation_method
+                    ? (jobMethods[job.generation_method] ??
+                      job.generation_method)
+                    : null,
+                })
+                  .filter(([, value]) => value != null)
+                  .map(([label, value]) => (
+                    <div key={label}>
+                      <dt>{label}</dt>
+                      <dd data-selectable>{value ?? "—"}</dd>
+                    </div>
+                  ))}
+              </dl>
+              <JobDiagnostics job={job} />
             </>
           )}
         </QueryState>

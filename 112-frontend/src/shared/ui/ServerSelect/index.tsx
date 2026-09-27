@@ -9,6 +9,7 @@ export function ServerSelect({
   label,
   name,
   required = false,
+  validate,
   queryKey,
   load,
   value,
@@ -27,7 +28,9 @@ export function ServerSelect({
       name={name || label}
       label={label}
       disabled={disabled}
-      validate={() => (required && !value ? `Выберите: ${label}.` : undefined)}
+      validate={() =>
+        required && !value ? `Выберите: ${label}.` : validate?.()
+      }
     >
       <Autocomplete
         disabled={disabled}
@@ -53,9 +56,7 @@ export function ServerSelect({
             label={label}
             error={!!query.error}
             helperText={
-              query.error
-                ? getApiError(query.error).message
-                : "Поиск на сервере; показаны первые 20 совпадений"
+              query.error ? getApiError(query.error).message : undefined
             }
           />
         )}

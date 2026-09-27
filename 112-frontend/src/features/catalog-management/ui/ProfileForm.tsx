@@ -18,9 +18,16 @@ const loadServices = async (query: string, signal: AbortSignal) =>
     label: `${service.code} — ${service.name}`,
   }));
 
-export function ProfileForm({ initial, existing, onSaved }: ProfileFormProps) {
+export function ProfileForm({
+  initial,
+  existing,
+  onSaved,
+  service,
+}: ProfileFormProps) {
   const [form, setForm] = useState(initial);
-  const [serviceLabel, setServiceLabel] = useState("Назначенная служба");
+  const [serviceLabel, setServiceLabel] = useState(
+    service?.name ?? "Назначенная служба",
+  );
   const published = existing?.status === "published";
   const save = useMutation({
     mutationFn: () =>
@@ -49,7 +56,7 @@ export function ProfileForm({ initial, existing, onSaved }: ProfileFormProps) {
         required
         label="Служба профиля"
         queryKey={["admin-service-options"]}
-        disabled={!!existing}
+        disabled={!!existing || !!service}
         value={
           form.service_id ? { id: form.service_id, label: serviceLabel } : null
         }

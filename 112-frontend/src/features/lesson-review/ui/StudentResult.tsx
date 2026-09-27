@@ -5,6 +5,7 @@ import { Alert, Button } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import type { StudentResultProps } from "../types/LessonReview";
+import { StudentFeedback } from "./StudentFeedback";
 import { GradeView } from "./GradeView";
 
 export function StudentResult({ lessonId }: StudentResultProps) {
@@ -42,6 +43,9 @@ export function StudentResult({ lessonId }: StudentResultProps) {
             : "Работа ещё не сдана"}
           .
         </Alert>
+      )}
+      {lesson.data?.work_status === "submitted" && (
+        <StudentFeedback lessonId={lessonId} />
       )}
       <Button component={Link} to={getStudentTrainingWorkspacePath(lessonId)}>
         Карточки занятия

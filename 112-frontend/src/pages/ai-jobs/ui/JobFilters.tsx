@@ -5,7 +5,7 @@ export function JobFilters({ filters, update }: JobFiltersProps) {
   return (
     <div className="ai-jobs__filters">
       <TextField
-        label="Поиск по ID, пользователю или модели"
+        label="Поиск по пользователю или модели"
         value={filters.q}
         onChange={(e) => update("q", e.target.value)}
         slotProps={{ htmlInput: { maxLength: 200 } }}

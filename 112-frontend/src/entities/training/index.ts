@@ -60,3 +60,5 @@ export {
 export { cardElapsedSeconds } from "./model/cardClock";
 
 export type { DDSCardExercise, PreparedCrewEvent } from "./types/ddsExercise";
+export { ddsGenerationApi } from "./api/ddsGenerationApi";
+export type { DDSGenerationInput } from "./types/ddsGeneration";

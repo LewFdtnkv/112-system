@@ -74,6 +74,7 @@ export function ScenarioCardsFields({
           </Stack>
           {role === "dds" && (
             <TextField
+              name={`arrival_offsets_seconds.${index}`}
               type="number"
               label={
                 index === 0

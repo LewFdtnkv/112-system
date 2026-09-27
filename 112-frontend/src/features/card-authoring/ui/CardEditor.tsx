@@ -49,6 +49,12 @@ export function CardEditor({ onClose, initial, onReload }: CardEditorProps) {
         </CardRoleSection>
         <CardRoleSection kind="dds">
           <CardDDSSettings
+            recipientServiceIds={
+              editor.silent
+                ? []
+                : (editor.manualRecipients?.map((service) => service.id) ??
+                  editor.recipients)
+            }
             value={editor.ddsExercise}
             onChange={editor.setDDSExercise}
           />

@@ -1,0 +1,766 @@
+[
+  {
+    "body": {
+      "detail": "Username already exists",
+      "field_errors": [
+        {
+          "path": "username",
+          "message": "Этот логин уже занят. Укажите другой логин.",
+          "code": "username_already_exists"
+        }
+      ]
+    },
+    "expected": [
+      {
+        "path": "username",
+        "message": "Этот логин уже занят. Укажите другой логин."
+      }
+    ]
+  },
+  {
+    "body": {
+      "detail": "Service code already exists",
+      "message": "Служба с таким кодом уже существует.",
+      "field_errors": [
+        {
+          "path": "code",
+          "message": "Служба с таким кодом уже существует. Укажите другой код.",
+          "code": "service_code_already_exists"
+        }
+      ]
+    },
+    "expected": [
+      {
+        "path": "code",
+        "message": "Служба с таким кодом уже существует. Укажите другой код."
+      }
+    ]
+  },
+  {
+    "body": {
+      "detail": "Classifier label already exists",
+      "message": "Версия ЕКП с таким названием уже существует.",
+      "field_errors": [
+        {
+          "path": "label",
+          "message": "Версия ЕКП с таким названием уже существует. Укажите другое название.",
+          "code": "classifier_label_already_exists"
+        }
+      ]
+    },
+    "expected": [
+      {
+        "path": "label",
+        "message": "Версия ЕКП с таким названием уже существует. Укажите другое название."
+      }
+    ]
+  },
+  {
+    "body": {
+      "detail": [
+        {
+          "loc": [
+            "body",
+            "parent",
+            0
+          ],
+          "type": "value_error",
+          "msg": "Value error, End must be after start"
+        }
+      ],
+      "field_errors": [
+        {
+          "path": "parent.0.available_until",
+          "message": "Дата окончания должна быть позже даты начала.",
+          "code": "value_error"
+        }
+      ]
+    },
+    "expected": [
+      {
+        "path": "parent.0.available_until",
+        "message": "Дата окончания должна быть позже даты начала."
+      }
+    ]
+  },
+  {
+    "body": {
+      "detail": "Assignment end must be in the future",
+      "field_errors": [
+        {
+          "path": "available_until",
+          "message": "Дата окончания уже прошла. Укажите будущую дату.",
+          "code": "assignment_end_must_be_in_the_future"
+        }
+      ]
+    },
+    "expected": [
+      {
+        "path": "available_until",
+        "message": "Дата окончания уже прошла. Укажите будущую дату."
+      }
+    ]
+  },
+  {
+    "body": {
+      "detail": [
+        {
+          "loc": [
+            "body",
+            "parent",
+            0
+          ],
+          "type": "value_error",
+          "msg": "Value error, All cards must arrive within the scenario duration"
+        }
+      ],
+      "field_errors": [
+        {
+          "path": "parent.0.arrival_offsets_seconds",
+          "message": "Все карточки должны поступить до окончания сценария. Уменьшите интервалы или увеличьте длительность сценария.",
+          "code": "value_error"
+        }
+      ]
+    },
+    "expected": [
+      {
+        "path": "parent.0.arrival_offsets_seconds",
+        "message": "Все карточки должны поступить до окончания сценария. Уменьшите интервалы или увеличьте длительность сценария."
+      }
+    ]
+  },
+  {
+    "body": {
+      "detail": [
+        {
+          "loc": [
+            "body",
+            "parent",
+            0
+          ],
+          "type": "value_error",
+          "msg": "Value error, Arrival schedule must match cards, start at zero and be ordered"
+        }
+      ],
+      "field_errors": [
+        {
+          "path": "parent.0.arrival_offsets_seconds",
+          "message": "Проверьте расписание: первая карточка поступает сразу, следующие — по порядку.",
+          "code": "value_error"
+        }
+      ]
+    },
+    "expected": [
+      {
+        "path": "parent.0.arrival_offsets_seconds",
+        "message": "Проверьте расписание: первая карточка поступает сразу, следующие — по порядку."
+      }
+    ]
+  },
+  {
+    "body": {
+      "detail": [
+        {
+          "loc": [
+            "body",
+            "parent",
+            0
+          ],
+          "type": "value_error",
+          "msg": "Value error, DDS scenarios require a service profile"
+        }
+      ],
+      "field_errors": [
+        {
+          "path": "parent.0.service_profile_id",
+          "message": "Выберите профиль службы ДДС.",
+          "code": "value_error"
+        }
+      ]
+    },
+    "expected": [
+      {
+        "path": "parent.0.service_profile_id",
+        "message": "Выберите профиль службы ДДС."
+      }
+    ]
+  },
+  {
+    "body": {
+      "detail": [
+        {
+          "loc": [
+            "body",
+            "parent",
+            0
+          ],
+          "type": "value_error",
+          "msg": "Value error, Choose target skills for focused practice or review"
+        }
+      ],
+      "field_errors": [
+        {
+          "path": "parent.0.target_skills",
+          "message": "Выберите хотя бы один навык для отработки.",
+          "code": "value_error"
+        }
+      ]
+    },
+    "expected": [
+      {
+        "path": "parent.0.target_skills",
+        "message": "Выберите хотя бы один навык для отработки."
+      }
+    ]
+  },
+  {
+    "body": {
+      "detail": [
+        {
+          "loc": [
+            "body",
+            "parent",
+            0
+          ],
+          "type": "value_error",
+          "msg": "Value error, Feature options must be unique"
+        }
+      ],
+      "field_errors": [
+        {
+          "path": "parent.0.options",
+          "message": "Варианты признака повторяются. Оставьте каждый вариант один раз.",
+          "code": "value_error"
+        }
+      ]
+    },
+    "expected": [
+      {
+        "path": "parent.0.options",
+        "message": "Варианты признака повторяются. Оставьте каждый вариант один раз."
+      }
+    ]
+  },
+  {
+    "body": {
+      "detail": [
+        {
+          "loc": [
+            "body",
+            "parent",
+            0
+          ],
+          "type": "value_error",
+          "msg": "Value error, Choice features require options"
+        }
+      ],
+      "field_errors": [
+        {
+          "path": "parent.0.options",
+          "message": "Добавьте варианты выбора для признака.",
+          "code": "value_error"
+        }
+      ]
+    },
+    "expected": [
+      {
+        "path": "parent.0.options",
+        "message": "Добавьте варианты выбора для признака."
+      }
+    ]
+  },
+  {
+    "body": {
+      "detail": [
+        {
+          "loc": [
+            "body",
+            "parent",
+            0
+          ],
+          "type": "value_error",
+          "msg": "Value error, Visibility groups must contain 1 to 30 conditions"
+        }
+      ],
+      "field_errors": [
+        {
+          "path": "parent.0.visible_when",
+          "message": "Выберите условие показа признака или удалите пустой вариант.",
+          "code": "value_error"
+        }
+      ]
+    },
+    "expected": [
+      {
+        "path": "parent.0.visible_when",
+        "message": "Выберите условие показа признака или удалите пустой вариант."
+      }
+    ]
+  },
+  {
+    "body": {
+      "detail": [
+        {
+          "loc": [
+            "body",
+            "parent",
+            0
+          ],
+          "type": "value_error",
+          "msg": "Value error, Feature keys must not repeat"
+        }
+      ],
+      "field_errors": [
+        {
+          "path": "parent.0.features",
+          "message": "Ключи признаков повторяются. Укажите разные ключи.",
+          "code": "value_error"
+        }
+      ]
+    },
+    "expected": [
+      {
+        "path": "parent.0.features",
+        "message": "Ключи признаков повторяются. Укажите разные ключи."
+      }
+    ]
+  },
+  {
+    "body": {
+      "detail": [
+        {
+          "loc": [
+            "body",
+            "parent",
+            0
+          ],
+          "type": "value_error",
+          "msg": "Value error, Visibility must refer to preceding fields and valid values"
+        }
+      ],
+      "field_errors": [
+        {
+          "path": "parent.0.features",
+          "message": "Условия показа должны ссылаться на предыдущие признаки и их допустимые значения.",
+          "code": "value_error"
+        }
+      ]
+    },
+    "expected": [
+      {
+        "path": "parent.0.features",
+        "message": "Условия показа должны ссылаться на предыдущие признаки и их допустимые значения."
+      }
+    ]
+  },
+  {
+    "body": {
+      "detail": [
+        {
+          "loc": [
+            "body",
+            "parent",
+            0
+          ],
+          "type": "value_error",
+          "msg": "Value error, Service routes must not repeat"
+        }
+      ],
+      "field_errors": [
+        {
+          "path": "parent.0.routes",
+          "message": "Одна служба указана в нескольких маршрутах. Оставьте один маршрут для каждой службы.",
+          "code": "value_error"
+        }
+      ]
+    },
+    "expected": [
+      {
+        "path": "parent.0.routes",
+        "message": "Одна служба указана в нескольких маршрутах. Оставьте один маршрут для каждой службы."
+      }
+    ]
+  },
+  {
+    "body": {
+      "detail": [
+        {
+          "loc": [
+            "body",
+            "parent",
+            0
+          ],
+          "type": "value_error",
+          "msg": "Value error, At least one unconditional route is required"
+        }
+      ],
+      "field_errors": [
+        {
+          "path": "parent.0.routes",
+          "message": "Добавьте хотя бы один маршрут без условий: очистите у него выбранные признаки.",
+          "code": "value_error"
+        }
+      ]
+    },
+    "expected": [
+      {
+        "path": "parent.0.routes",
+        "message": "Добавьте хотя бы один маршрут без условий: очистите у него выбранные признаки."
+      }
+    ]
+  },
+  {
+    "body": {
+      "detail": [
+        {
+          "loc": [
+            "body",
+            "parent",
+            0
+          ],
+          "type": "value_error",
+          "msg": "Value error, Route conditions must match declared feature types and options"
+        }
+      ],
+      "field_errors": [
+        {
+          "path": "parent.0.routes",
+          "message": "Условия маршрутов не соответствуют признакам. Заново выберите значения условий.",
+          "code": "value_error"
+        }
+      ]
+    },
+    "expected": [
+      {
+        "path": "parent.0.routes",
+        "message": "Условия маршрутов не соответствуют признакам. Заново выберите значения условий."
+      }
+    ]
+  },
+  {
+    "body": {
+      "detail": [
+        {
+          "loc": [
+            "body",
+            "parent",
+            0
+          ],
+          "type": "value_error",
+          "msg": "Value error, Only one main service is allowed"
+        }
+      ],
+      "field_errors": [
+        {
+          "path": "parent.0.routes",
+          "message": "Главной может быть только одна служба.",
+          "code": "value_error"
+        }
+      ]
+    },
+    "expected": [
+      {
+        "path": "parent.0.routes",
+        "message": "Главной может быть только одна служба."
+      }
+    ]
+  },
+  {
+    "body": {
+      "detail": "Operator 112 cards require a caller message",
+      "field_errors": [
+        {
+          "path": "card_ids",
+          "message": "В одной из карточек нет сообщения заявителя для оператора 112. Дополните её или уберите из сценария.",
+          "code": "operator_112_cards_require_a_caller_message"
+        }
+      ]
+    },
+    "expected": [
+      {
+        "path": "card_ids",
+        "message": "В одной из карточек нет сообщения заявителя для оператора 112. Дополните её или уберите из сценария."
+      }
+    ]
+  },
+  {
+    "body": {
+      "detail": "All cards must use the same classifier version",
+      "message": "Все карточки сценария должны использовать одну версию ЕКП.",
+      "field_errors": [
+        {
+          "path": "card_ids",
+          "message": "Все карточки сценария должны использовать одну версию ЕКП.",
+          "code": "all_cards_must_use_the_same_classifier_version"
+        }
+      ]
+    },
+    "expected": [
+      {
+        "path": "card_ids",
+        "message": "Все карточки сценария должны использовать одну версию ЕКП."
+      }
+    ]
+  },
+  {
+    "body": {
+      "detail": "Each DDS card must be addressed to the profile service",
+      "message": "Каждая карточка сценария ДДС должна быть адресована службе выбранного профиля.",
+      "field_errors": [
+        {
+          "path": "card_ids",
+          "message": "Каждая карточка ДДС должна быть адресована службе выбранного профиля. Проверьте список карточек и профиль.",
+          "code": "each_dds_card_must_be_addressed_to_the_profile_service"
+        }
+      ]
+    },
+    "expected": [
+      {
+        "path": "card_ids",
+        "message": "Каждая карточка ДДС должна быть адресована службе выбранного профиля. Проверьте список карточек и профиль."
+      }
+    ]
+  },
+  {
+    "body": {
+      "detail": "The group has no students",
+      "field_errors": [
+        {
+          "path": "group_id",
+          "message": "В выбранной группе нет учеников. Добавьте учеников или выберите другую группу.",
+          "code": "the_group_has_no_students"
+        }
+      ]
+    },
+    "expected": [
+      {
+        "path": "group_id",
+        "message": "В выбранной группе нет учеников. Добавьте учеников или выберите другую группу."
+      }
+    ]
+  },
+  {
+    "body": {
+      "detail": [
+        {
+          "loc": [
+            "body",
+            "nested",
+            "field"
+          ],
+          "type": "missing",
+          "msg": "Содержательное сообщение."
+        }
+      ],
+      "field_errors": [
+        {
+          "path": "nested.field",
+          "message": "Заполните это поле.",
+          "code": "missing"
+        }
+      ]
+    },
+    "expected": [
+      {
+        "path": "nested.field",
+        "message": "Заполните это поле."
+      }
+    ]
+  },
+  {
+    "body": {
+      "detail": [
+        {
+          "loc": [
+            "body",
+            "nested",
+            "field"
+          ],
+          "type": "string_too_short",
+          "msg": "Содержательное сообщение."
+        }
+      ],
+      "field_errors": [
+        {
+          "path": "nested.field",
+          "message": "Значение слишком короткое. Дополните поле.",
+          "code": "string_too_short"
+        }
+      ]
+    },
+    "expected": [
+      {
+        "path": "nested.field",
+        "message": "Значение слишком короткое. Дополните поле."
+      }
+    ]
+  },
+  {
+    "body": {
+      "detail": [
+        {
+          "loc": [
+            "body",
+            "nested",
+            "field"
+          ],
+          "type": "string_too_long",
+          "msg": "Содержательное сообщение."
+        }
+      ],
+      "field_errors": [
+        {
+          "path": "nested.field",
+          "message": "Сократите значение поля.",
+          "code": "string_too_long"
+        }
+      ]
+    },
+    "expected": [
+      {
+        "path": "nested.field",
+        "message": "Сократите значение поля."
+      }
+    ]
+  },
+  {
+    "body": {
+      "detail": [
+        {
+          "loc": [
+            "body",
+            "nested",
+            "field"
+          ],
+          "type": "int_parsing",
+          "msg": "Содержательное сообщение."
+        }
+      ],
+      "field_errors": [
+        {
+          "path": "nested.field",
+          "message": "Введите целое число.",
+          "code": "int_parsing"
+        }
+      ]
+    },
+    "expected": [
+      {
+        "path": "nested.field",
+        "message": "Введите целое число."
+      }
+    ]
+  },
+  {
+    "body": {
+      "detail": [
+        {
+          "loc": [
+            "body",
+            "nested",
+            "field"
+          ],
+          "type": "finite_number",
+          "msg": "Содержательное сообщение."
+        }
+      ],
+      "field_errors": [
+        {
+          "path": "nested.field",
+          "message": "Введите конечное число.",
+          "code": "finite_number"
+        }
+      ]
+    },
+    "expected": [
+      {
+        "path": "nested.field",
+        "message": "Введите конечное число."
+      }
+    ]
+  },
+  {
+    "body": {
+      "detail": [
+        {
+          "loc": [
+            "body",
+            "nested",
+            "field"
+          ],
+          "type": "uuid_parsing",
+          "msg": "Содержательное сообщение."
+        }
+      ],
+      "field_errors": [
+        {
+          "path": "nested.field",
+          "message": "Выберите значение из списка.",
+          "code": "uuid_parsing"
+        }
+      ]
+    },
+    "expected": [
+      {
+        "path": "nested.field",
+        "message": "Выберите значение из списка."
+      }
+    ]
+  },
+  {
+    "body": {
+      "detail": [
+        {
+          "loc": [
+            "body",
+            "nested",
+            "field"
+          ],
+          "type": "value_error",
+          "msg": "Содержательное сообщение."
+        }
+      ],
+      "field_errors": [
+        {
+          "path": "nested.field",
+          "message": "Проверьте значение этого поля.",
+          "code": "value_error"
+        }
+      ]
+    },
+    "expected": [
+      {
+        "path": "nested.field",
+        "message": "Проверьте значение этого поля."
+      }
+    ]
+  },
+  {
+    "body": {
+      "detail": [
+        {
+          "loc": [
+            "body",
+            "nested",
+            "field"
+          ],
+          "type": "form_constraint",
+          "msg": "Содержательное сообщение."
+        }
+      ],
+      "field_errors": [
+        {
+          "path": "nested.field",
+          "message": "Содержательное сообщение.",
+          "code": "form_constraint"
+        }
+      ]
+    },
+    "expected": [
+      {
+        "path": "nested.field",
+        "message": "Содержательное сообщение."
+      }
+    ]
+  }
+]

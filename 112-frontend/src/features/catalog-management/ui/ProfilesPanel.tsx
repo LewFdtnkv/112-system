@@ -1,7 +1,7 @@
 import {
-  serviceProfileApi,
   catalogKeys,
   invalidateProfiles,
+  serviceProfileApi,
   type ProfileInput,
   type ServiceProfile,
 } from "@/entities/catalog";
@@ -20,11 +20,13 @@ import {
   TableCell,
   TableHead,
   TableRow,
+  TableContainer,
   Typography,
 } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { ProfileForm } from "./ProfileForm";
+import type { ProfilesPanelProps } from "../types/ProfilesPanel";
 const empty: ProfileInput = {
   service_id: "",
   name: "",
@@ -45,22 +47,27 @@ const input = (p: ServiceProfile): ProfileInput => ({
   contacts: p.contacts,
   crews: p.crews ?? [],
 });
-export function ProfilesPanel() {
+export function ProfilesPanel({ service }: ProfilesPanelProps) {
   const client = useQueryClient();
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState<string>();
   const [fresh, setFresh] = useState(false);
   const query = useQuery({
-    queryKey: catalogKeys.adminProfileList(undefined, page),
+    queryKey: catalogKeys.adminProfileList(service?.id, page),
     queryFn: ({ signal }) =>
-      serviceProfileApi.adminList({ offset: page * 20 }, signal),
+      serviceProfileApi.adminList(
+        { offset: page * 20, ...(service ? { service_id: service.id } : {}) },
+        signal,
+      ),
   });
   const detail = useQuery({
     queryKey: catalogKeys.adminProfile(selected),
     enabled: !!selected,
     queryFn: ({ signal }) => serviceProfileApi.adminGet(selected!, signal),
   });
-  const refresh = () => { void invalidateProfiles(client); };
+  const refresh = () => {
+    void invalidateProfiles(client);
+  };
   const publish = useMutation({
     mutationFn: (id: string) => serviceProfileApi.publish(id),
     onSuccess: refresh,
@@ -85,42 +92,50 @@ export function ProfilesPanel() {
       >
         {query.data && (
           <>
-            <Table aria-label="Профили служб">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Профиль</TableCell>
-                  <TableCell>Версия</TableCell>
-                  <TableCell>Статус</TableCell>
-                  <TableCell>Действия</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {query.data.items.map((p) => (
-                  <TableRow key={p.id} {...rowAction(() => setSelected(p.id))}>
-                    <TableCell>
-                      <Button
-                        className="table-block-link"
-                        onClick={() => setSelected(p.id)}
-                      >
-                        {p.name}
-                      </Button>
-                    </TableCell>
-                    <TableCell>{p.version}</TableCell>
-                    <TableCell>
-                      {p.status === "published" ? "Опубликован" : "Черновик"}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        disabled={p.status !== "draft" || publish.isPending}
-                        onClick={() => publish.mutate(p.id)}
-                      >
-                        Опубликовать профиль
-                      </Button>
-                    </TableCell>
+            {query.data.total === 0 && (
+              <Typography>Профилей пока нет.</Typography>
+            )}
+            <TableContainer>
+              <Table aria-label="Профили служб">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Профиль</TableCell>
+                    <TableCell>Версия</TableCell>
+                    <TableCell>Статус</TableCell>
+                    <TableCell>Действия</TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHead>
+                <TableBody>
+                  {query.data.items.map((p) => (
+                    <TableRow
+                      key={p.id}
+                      {...rowAction(() => setSelected(p.id))}
+                    >
+                      <TableCell>
+                        <Button
+                          className="table-block-link"
+                          onClick={() => setSelected(p.id)}
+                        >
+                          {p.name}
+                        </Button>
+                      </TableCell>
+                      <TableCell>{p.version}</TableCell>
+                      <TableCell>
+                        {p.status === "published" ? "Опубликован" : "Черновик"}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          disabled={p.status !== "draft" || publish.isPending}
+                          onClick={() => publish.mutate(p.id)}
+                        >
+                          Опубликовать профиль
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
             <PageControls
               total={query.data.total}
               page={page}
@@ -137,14 +152,16 @@ export function ProfilesPanel() {
         }}
         fullWidth
         maxWidth="md"
+        aria-labelledby="service-profile-title"
       >
-        <DialogTitle>
+        <DialogTitle id="service-profile-title">
           {fresh ? "Новый профиль службы" : "Профиль службы"}
         </DialogTitle>
         <DialogContent>
           {fresh ? (
             <ProfileForm
-              initial={empty}
+              initial={{ ...empty, service_id: service?.id ?? "" }}
+              service={service}
               onSaved={() => {
                 setFresh(false);
                 refresh();
@@ -161,6 +178,7 @@ export function ProfilesPanel() {
                   key={`${detail.data.id}-${detail.data.revision}`}
                   initial={input(detail.data)}
                   existing={detail.data}
+                  service={service}
                   onSaved={() => {
                     setSelected(undefined);
                     refresh();

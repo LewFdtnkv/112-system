@@ -33,6 +33,10 @@ export function CardGenerationDialog({ onClose }: CardGenerationDialogProps) {
           error={save.error}
           onSubmit={() => save.mutate()}
         >
+          <p>
+            Упражнение ДДС можно подготовить отдельно: откройте готовую карточку
+            и перейдите в раздел «Оператор ДДС — работа бригад».
+          </p>
           <QueryState
             pending={options.isPending}
             error={options.error}

@@ -195,7 +195,7 @@ function AccountForm({ user, onClose, onResetPassword }: AccountFormProps) {
           Обязательная смена пароля: {user.must_change_password ? "Да" : "Нет"}
         </Typography>
         <Typography variant="caption" sx={styles.typography}>
-          ID: {user.id} · Время московское
+          Время московское
         </Typography>
       </Stack>
       <Button type="submit" disabled={save.isPending}>

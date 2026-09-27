@@ -4,7 +4,7 @@ import { Alert, Button, Chip, TableCell, TableRow } from "@mui/material";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { GenerationRowsProps } from "../types/GenerationRows";
 
-export function GenerationRows({ jobs }: GenerationRowsProps) {
+export function GenerationRows({ jobs, onOpenCard }: GenerationRowsProps) {
   const client = useQueryClient();
   const retry = useMutation({
     mutationFn: generationApi.retry,
@@ -16,7 +16,10 @@ export function GenerationRows({ jobs }: GenerationRowsProps) {
       {jobs.map((job) => (
         <TableRow className="generation-pending" key={job.id}>
           <TableCell>
-            <strong>{job.title}</strong>
+            <strong>
+              {job.kind === "dds_generation" ? "ДДС · " : ""}
+              {job.title}
+            </strong>
             <small>
               <Chip
                 size="small"
@@ -44,12 +47,16 @@ export function GenerationRows({ jobs }: GenerationRowsProps) {
             })}
           </TableCell>
           <TableCell align="center">
-            {job.status === "failed" ? (
+            {job.status === "failed" && job.kind !== "dds_generation" ? (
               <Button
                 disabled={retry.isPending}
                 onClick={() => retry.mutate(job.id)}
               >
                 Повторить
+              </Button>
+            ) : job.kind === "dds_generation" && job.card_template_id ? (
+              <Button onClick={() => onOpenCard(job.card_template_id!)}>
+                Открыть карточку
               </Button>
             ) : (
               "Подготовка"

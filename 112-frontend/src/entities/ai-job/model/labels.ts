@@ -7,6 +7,7 @@ export const jobStatuses: Record<AIJobStatus, string> = {
 };
 export const jobPurposes: Record<AIJobPurpose, string> = {
   generation: "Генерация карточки",
+  dds_generation: "Упражнение ДДС",
   evaluation: "Оценивание",
   recommendation: "Рекомендации",
 };

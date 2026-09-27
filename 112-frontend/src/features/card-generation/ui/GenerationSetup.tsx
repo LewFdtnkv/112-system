@@ -1,6 +1,6 @@
-import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
-import type { FeatureDefinition } from "@/entities/training";
 import { catalogLookupApi } from "@/entities/catalog";
+import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
+import type { FeatureDefinition } from "@/shared/lib/featureValues";
 import { randomUUID as createUuid } from "@/shared/lib/uuid";
 import { ServerSelect, type SelectOption } from "@/shared/ui/ServerSelect";
 import { Alert, Chip, MenuItem, Stack } from "@mui/material";
@@ -15,11 +15,8 @@ export function GenerationSetup({ model }: CardGenerationPanelProps) {
   return (
     <>
       <Alert severity="info">
-        Выбираем совместимый сюжет из {data.template_count} заготовок.
-        «Случайно» меняет параметры для каждой карточки. ИИ пишет сообщение
-        заявителя, затем отдельно проверяет его по заданным фактам. Ваши
-        отмеченные карточки служат примерами речи. Готовые материалы проверьте
-        перед добавлением в сценарий.
+        «Случайно» выбирает новые значения для каждой карточки. Готовые условия
+        и эталонные решения проверьте перед добавлением в сценарий.
       </Alert>
       <TextField
         name="parameters.mode"
@@ -82,13 +79,13 @@ export function GenerationSetup({ model }: CardGenerationPanelProps) {
           queryKey={["generation-entries", model.version?.id]}
           load={async (q, signal) => [
             random,
-            ...(await catalogLookupApi.entries(model.version!.id, { q }, signal)).map(
-              (v) => ({
-                id: v.id,
-                label: v.display_name || v.name,
-                metadata: v.conditions.features,
-              }),
-            ),
+            ...(
+              await catalogLookupApi.entries(model.version!.id, { q }, signal)
+            ).map((v) => ({
+              id: v.id,
+              label: v.display_name || v.name,
+              metadata: v.conditions.features,
+            })),
           ]}
           onChange={(v) => {
             model.setEntry(v ?? random);
