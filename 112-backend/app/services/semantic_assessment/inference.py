@@ -131,6 +131,10 @@ def _evaluate(job, invoke, results, trace):
     completed = {result.code for result in results}
     for original in job.input["criteria"]:
         examples = list(retrieval.get("examples", {}).get(original["code"], []))
+        # DDS keeps two fixed scope examples and at most two retrieved examples.
+        # Report only examples that can actually reach the prompt.
+        if original["kind"] == "dds":
+            examples = examples[:2]
         criterion = original | {"_retrieved_examples": examples}
         while examples and sum(len(m["content"]) for m in messages(criterion, facts, True)) > 8000:
             examples.pop()

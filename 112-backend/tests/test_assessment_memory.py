@@ -101,6 +101,32 @@ def test_examples_are_separate_from_evidence_and_budget_is_bounded():
     assert result["retrieval"]["used_examples"] == {"description": []}
 
 
+def test_dds_reports_only_examples_actually_in_the_prompt():
+    job = model_job(kind="dds")
+    examples = [
+        {
+            "id": f"memory-{index}",
+            "condition": f"Исходная ситуация {index}",
+            "answer": "Прибыли на место.",
+            "verdict": "correct",
+            "reason": "Понятное сообщение.",
+        }
+        for index in range(3)
+    ]
+    job.context = {"retrieval": {"status": "ready", "examples": {"description": examples}}}
+    prompts = []
+
+    def invoke(criterion, facts, model, verification=False):
+        prompts.append(messages(criterion, facts, verification)[1]["content"])
+        return decision(), {}
+
+    result = evaluate(job, invoke)
+    assert result["retrieval"]["used_examples"] == {"description": ["memory-0", "memory-1"]}
+    assert len(prompts) == 2
+    assert all("Исходная ситуация 2" not in prompt for prompt in prompts)
+    assert all("Исходная ситуация 0" in prompt for prompt in prompts)
+
+
 async def test_teacher_can_publish_replace_and_withdraw_but_not_change_grade(exercise, db_session):
     e = exercise
     attempt = await e.complete()

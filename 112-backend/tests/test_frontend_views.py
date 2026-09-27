@@ -4,7 +4,27 @@ import pytest
 from test_student_workflow import exercise as exercise
 from test_teacher_api import teaching as teaching
 
+from app.models import User
+
 pytestmark = pytest.mark.anyio
+
+
+async def test_message_recipient_directory_contains_only_owned_students(exercise, db_session):
+    e = exercise
+    foreign = User(username=f"foreign-{uuid4()}", password_hash="unused-test-hash")
+    db_session.add(foreign)
+    await db_session.commit()
+    path = "views/users?role=student&owned_only=true"
+    own = await e.request("GET", path, actor="teacher")
+    assert str(e.t.accounts["student"].id) in {row["id"] for row in own["items"]}
+    assert str(e.t.accounts["student2"].id) in {row["id"] for row in own["items"]}
+    assert str(foreign.id) not in {row["id"] for row in own["items"]}
+    assert (await e.request("GET", path, actor="other"))["total"] == 0
+    await e.request("GET", path, actor="student", status=403)
+    await e.request("GET", path, actor="admin", status=403)
+    # Full directory remains available for group membership and lesson assignment.
+    all_students = await e.request("GET", "views/users?role=student", actor="teacher")
+    assert str(foreign.id) in {row["id"] for row in all_students["items"]}
 
 
 async def test_page_projections_scope_search_and_pagination(exercise):

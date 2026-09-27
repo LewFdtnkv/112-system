@@ -1,7 +1,7 @@
 from typing import Literal
 from uuid import UUID
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from sqlalchemy import func, select
 
 from app.api.dependencies import AdminDep, SessionDep, StaffDep, TeacherDep
@@ -19,6 +19,7 @@ from app.schemas.views import (
     Page,
     UserItem,
 )
+from app.services.activity import student_scope
 from app.services.groups import owned_group
 
 router = APIRouter(prefix="/views", tags=["frontend pages"])
@@ -31,15 +32,18 @@ async def users(
     q: Search = "",
     role: Literal["all", "student", "teacher", "admin"] = "all",
     group_id: UUID | None = None,
+    owned_only: bool = False,
     limit: Limit = 20,
     offset: Offset = 0,
 ):
     query = select(User)
+    if owned_only:
+        if not staff.is_teacher:
+            raise HTTPException(status_code=403, detail="Teacher access required")
+        query = query.where(student_scope(staff.id))
     if group_id:
         if not staff.is_teacher:
             # Admin is allowed the account directory, not another teacher's group management.
-            from fastapi import HTTPException
-
             raise HTTPException(status_code=403, detail="Teacher access required")
         await owned_group(session, group_id, staff.id)
         query = query.join(GroupMembership, GroupMembership.user_id == User.id).where(

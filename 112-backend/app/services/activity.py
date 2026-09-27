@@ -15,20 +15,27 @@ from app.models import (
 from app.services.groups import owned_group
 
 
-async def owned_student(session, student_id: UUID, teacher_id: UUID):
+def student_scope(teacher_id: UUID):
+    """Students reachable through a teacher's groups or assigned lessons."""
     in_group = (
         select(GroupMembership.user_id)
         .join(TrainingGroup)
-        .where(TrainingGroup.teacher_id == teacher_id, GroupMembership.user_id == student_id)
+        .where(TrainingGroup.teacher_id == teacher_id, GroupMembership.user_id == User.id)
         .exists()
     )
     assigned = (
         select(Assignment.id)
         .join(Lesson)
-        .where(Lesson.teacher_id == teacher_id, Assignment.student_id == student_id)
+        .where(Lesson.teacher_id == teacher_id, Assignment.student_id == User.id)
         .exists()
     )
-    user = await session.scalar(select(User).where(User.id == student_id, or_(in_group, assigned)))
+    return or_(in_group, assigned)
+
+
+async def owned_student(session, student_id: UUID, teacher_id: UUID):
+    user = await session.scalar(
+        select(User).where(User.id == student_id, student_scope(teacher_id))
+    )
     if user is None:
         raise HTTPException(404, "Student not found")
     return user
