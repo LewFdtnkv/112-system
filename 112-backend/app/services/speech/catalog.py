@@ -4,6 +4,8 @@ VERSION = "piper-1.8.0-v1"
 VOICES = {
     "denis": "Денис — мужской голос",
     "dmitri": "Дмитрий — мужской голос",
+    "irina": "Ирина — женский голос",
+    "ruslan": "Руслан — мужской голос",
 }
 PURPOSES = ("caller", "greeting", "acknowledgment")
 

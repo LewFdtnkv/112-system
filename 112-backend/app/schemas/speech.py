@@ -9,7 +9,7 @@ from app.schemas.catalog_document import StrictModel
 class SpeechCreate(StrictModel):
     request_id: UUID
     title: str = Field(min_length=1, max_length=200)
-    voice: Literal["denis", "dmitri"]
+    voice: Literal["denis", "dmitri", "irina", "ruslan"]
     kind: Literal["caller", "crew"]
     text: str = Field(default="", max_length=1000)
     greeting: str = Field(default="", max_length=200)

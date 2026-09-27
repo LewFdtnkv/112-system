@@ -136,11 +136,29 @@ async def test_retry_exhaustion_expired_lease_and_permanent_error(
     assert asset.status == "failed" and asset.attempts == 2
 
 
+@pytest.mark.parametrize("voice", ["denis", "dmitri", "irina", "ruslan"])
+async def test_each_voice_can_queue_caller_and_crew(library, teaching, db_client, voice):
+    caller = await create(
+        db_client,
+        teaching,
+        {
+            "request_id": str(uuid4()),
+            "title": "Заявитель",
+            "kind": "caller",
+            "voice": voice,
+            "text": "На улице горит автомобиль.",
+        },
+    )
+    crew = await create(db_client, teaching, payload(voice=voice))
+    assert len(caller) == 1 and len(crew) == 2
+    assert all(r["voice"] == voice and r["status"] == "queued" for r in caller + crew)
+
+
 async def test_queue_limit_and_voice_catalog(library, teaching, db_client):
     response = await db_client.get(
         "/api/v1/telephony/recordings/voices", headers=teaching.headers["teacher"]
     )
-    assert {v["id"] for v in response.json()} == {"denis", "dmitri"}
+    assert {v["id"] for v in response.json()} == {"denis", "dmitri", "irina", "ruslan"}
     for _ in range(10):
         await create(db_client, teaching)
     await create(db_client, teaching, expected=429)
