@@ -23,6 +23,12 @@ export function guideAnchor(hint: LearningHint): GuideAnchor | null {
         : "Выберите нужные значения и подтвердите их кнопкой в открытом окне. После закрытия окна вернёмся к карточке.",
     };
   }
+  if (hint.target === "address") {
+    // An address spans several inputs even when the current check concerns one field.
+    // Keep street, house and the other parts visible and outside the guidance panel.
+    const address = visible('[data-learning-target="address"]');
+    if (address) return { element: address };
+  }
   if (hint.target?.startsWith("dds_")) {
     const own = exact("dds.own_service");
     const expand = exact("dds.expand");
