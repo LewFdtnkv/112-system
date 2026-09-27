@@ -21,3 +21,6 @@ state.json
 .generation-review
 
 .dds-card-check
+
+performance/artifacts
+.performance-*.log

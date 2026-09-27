@@ -1,0 +1,455 @@
+{
+  "created_at": "2026-09-27T18:39:41.394340+00:00",
+  "mode": "reads",
+  "host": "http://api:8000",
+  "users": 100,
+  "inflight": 500,
+  "presence_errors": [],
+  "results": [
+    {
+      "successful": 500,
+      "errors": 0,
+      "successful_rps": 49.97,
+      "p50_ms": 7,
+      "p95_ms": 210,
+      "p99_ms": 346,
+      "max_ms": 393,
+      "status": {
+        "200": 500
+      },
+      "target_rps": 50,
+      "offered": 500,
+      "sent": 500,
+      "dropped": 0,
+      "window_seconds": 10,
+      "generator_dropped": 0,
+      "capacity_dropped": 0,
+      "including_drain_seconds": 10.006,
+      "scheduler_max_lag_ms": 9.4,
+      "routes": {
+        "student/messages/summary": {
+          "successful": 89,
+          "errors": 0,
+          "successful_rps": 8.89,
+          "p50_ms": 3,
+          "p95_ms": 95,
+          "p99_ms": 243,
+          "max_ms": 243,
+          "status": {
+            "200": 89
+          }
+        },
+        "views/student/lessons": {
+          "successful": 170,
+          "errors": 0,
+          "successful_rps": 16.99,
+          "p50_ms": 7,
+          "p95_ms": 266,
+          "p99_ms": 371,
+          "max_ms": 393,
+          "status": {
+            "200": 170
+          }
+        },
+        "student/overview": {
+          "successful": 141,
+          "errors": 0,
+          "successful_rps": 14.09,
+          "p50_ms": 17,
+          "p95_ms": 239,
+          "p99_ms": 346,
+          "max_ms": 370,
+          "status": {
+            "200": 141
+          }
+        },
+        "users/me": {
+          "successful": 100,
+          "errors": 0,
+          "successful_rps": 9.99,
+          "p50_ms": 3,
+          "p95_ms": 108,
+          "p99_ms": 274,
+          "max_ms": 330,
+          "status": {
+            "200": 100
+          }
+        }
+      },
+      "within_exploratory_slo": true
+    },
+    {
+      "successful": 998,
+      "errors": 2,
+      "successful_rps": 99.78,
+      "p50_ms": 8,
+      "p95_ms": 250,
+      "p99_ms": 378,
+      "max_ms": 527,
+      "status": {
+        "200": 998,
+        "ReadError": 2
+      },
+      "target_rps": 100,
+      "offered": 1000,
+      "sent": 1000,
+      "dropped": 0,
+      "window_seconds": 10,
+      "generator_dropped": 0,
+      "capacity_dropped": 0,
+      "including_drain_seconds": 10.002,
+      "scheduler_max_lag_ms": 6.16,
+      "routes": {
+        "student/messages/summary": {
+          "successful": 204,
+          "errors": 0,
+          "successful_rps": 20.4,
+          "p50_ms": 3,
+          "p95_ms": 229,
+          "p99_ms": 296,
+          "max_ms": 347,
+          "status": {
+            "200": 204
+          }
+        },
+        "views/student/lessons": {
+          "successful": 312,
+          "errors": 1,
+          "successful_rps": 31.19,
+          "p50_ms": 7,
+          "p95_ms": 205,
+          "p99_ms": 299,
+          "max_ms": 363,
+          "status": {
+            "200": 312,
+            "ReadError": 1
+          }
+        },
+        "student/overview": {
+          "successful": 294,
+          "errors": 1,
+          "successful_rps": 29.39,
+          "p50_ms": 17,
+          "p95_ms": 349,
+          "p99_ms": 455,
+          "max_ms": 476,
+          "status": {
+            "200": 294,
+            "ReadError": 1
+          }
+        },
+        "users/me": {
+          "successful": 188,
+          "errors": 0,
+          "successful_rps": 18.8,
+          "p50_ms": 2,
+          "p95_ms": 201,
+          "p99_ms": 321,
+          "max_ms": 527,
+          "status": {
+            "200": 188
+          }
+        }
+      },
+      "within_exploratory_slo": true
+    },
+    {
+      "successful": 2161,
+      "errors": 0,
+      "successful_rps": 148.62,
+      "p50_ms": 2465,
+      "p95_ms": 5225,
+      "p99_ms": 6900,
+      "max_ms": 9817,
+      "status": {
+        "200": 2161
+      },
+      "target_rps": 250,
+      "offered": 2500,
+      "sent": 2161,
+      "dropped": 339,
+      "window_seconds": 10,
+      "generator_dropped": 5,
+      "capacity_dropped": 334,
+      "including_drain_seconds": 14.541,
+      "scheduler_max_lag_ms": 12.14,
+      "routes": {
+        "views/student/lessons": {
+          "successful": 673,
+          "errors": 0,
+          "successful_rps": 46.28,
+          "p50_ms": 2467,
+          "p95_ms": 5247,
+          "p99_ms": 7775,
+          "max_ms": 9817,
+          "status": {
+            "200": 673
+          }
+        },
+        "users/me": {
+          "successful": 449,
+          "errors": 0,
+          "successful_rps": 30.88,
+          "p50_ms": 2454,
+          "p95_ms": 5088,
+          "p99_ms": 6384,
+          "max_ms": 7675,
+          "status": {
+            "200": 449
+          }
+        },
+        "student/overview": {
+          "successful": 595,
+          "errors": 0,
+          "successful_rps": 40.92,
+          "p50_ms": 2500,
+          "p95_ms": 5265,
+          "p99_ms": 6834,
+          "max_ms": 9708,
+          "status": {
+            "200": 595
+          }
+        },
+        "student/messages/summary": {
+          "successful": 444,
+          "errors": 0,
+          "successful_rps": 30.54,
+          "p50_ms": 2462,
+          "p95_ms": 5246,
+          "p99_ms": 6718,
+          "max_ms": 8444,
+          "status": {
+            "200": 444
+          }
+        }
+      },
+      "within_exploratory_slo": false
+    },
+    {
+      "successful": 2051,
+      "errors": 2,
+      "successful_rps": 143.11,
+      "p50_ms": 2983,
+      "p95_ms": 6158,
+      "p99_ms": 8698,
+      "max_ms": 10037,
+      "status": {
+        "200": 2051,
+        "ReadTimeout": 2
+      },
+      "target_rps": 500,
+      "offered": 5000,
+      "sent": 2053,
+      "dropped": 2947,
+      "window_seconds": 10,
+      "generator_dropped": 25,
+      "capacity_dropped": 2922,
+      "including_drain_seconds": 14.331,
+      "scheduler_max_lag_ms": 15.62,
+      "routes": {
+        "student/messages/summary": {
+          "successful": 426,
+          "errors": 1,
+          "successful_rps": 29.73,
+          "p50_ms": 2977,
+          "p95_ms": 6103,
+          "p99_ms": 7261,
+          "max_ms": 10028,
+          "status": {
+            "200": 426,
+            "ReadTimeout": 1
+          }
+        },
+        "views/student/lessons": {
+          "successful": 620,
+          "errors": 1,
+          "successful_rps": 43.26,
+          "p50_ms": 2978,
+          "p95_ms": 6117,
+          "p99_ms": 8986,
+          "max_ms": 10037,
+          "status": {
+            "200": 620,
+            "ReadTimeout": 1
+          }
+        },
+        "users/me": {
+          "successful": 394,
+          "errors": 0,
+          "successful_rps": 27.49,
+          "p50_ms": 2945,
+          "p95_ms": 6361,
+          "p99_ms": 8450,
+          "max_ms": 9739,
+          "status": {
+            "200": 394
+          }
+        },
+        "student/overview": {
+          "successful": 611,
+          "errors": 0,
+          "successful_rps": 42.63,
+          "p50_ms": 3035,
+          "p95_ms": 6173,
+          "p99_ms": 8636,
+          "max_ms": 9512,
+          "status": {
+            "200": 611
+          }
+        }
+      },
+      "within_exploratory_slo": false
+    },
+    {
+      "successful": 1973,
+      "errors": 6,
+      "successful_rps": 135.16,
+      "p50_ms": 3154,
+      "p95_ms": 6500,
+      "p99_ms": 8321,
+      "max_ms": 10296,
+      "status": {
+        "200": 1973,
+        "ReadTimeout": 6
+      },
+      "target_rps": 1000,
+      "offered": 10000,
+      "sent": 1979,
+      "dropped": 8021,
+      "window_seconds": 10,
+      "generator_dropped": 2013,
+      "capacity_dropped": 6008,
+      "including_drain_seconds": 14.598,
+      "scheduler_max_lag_ms": 26.71,
+      "routes": {
+        "student/messages/summary": {
+          "successful": 398,
+          "errors": 0,
+          "successful_rps": 27.26,
+          "p50_ms": 3142,
+          "p95_ms": 6680,
+          "p99_ms": 9351,
+          "max_ms": 10296,
+          "status": {
+            "200": 398
+          }
+        },
+        "users/me": {
+          "successful": 411,
+          "errors": 0,
+          "successful_rps": 28.15,
+          "p50_ms": 3133,
+          "p95_ms": 6174,
+          "p99_ms": 7249,
+          "max_ms": 9433,
+          "status": {
+            "200": 411
+          }
+        },
+        "views/student/lessons": {
+          "successful": 553,
+          "errors": 3,
+          "successful_rps": 37.88,
+          "p50_ms": 3126,
+          "p95_ms": 6472,
+          "p99_ms": 7835,
+          "max_ms": 10035,
+          "status": {
+            "200": 553,
+            "ReadTimeout": 3
+          }
+        },
+        "student/overview": {
+          "successful": 611,
+          "errors": 3,
+          "successful_rps": 41.86,
+          "p50_ms": 3210,
+          "p95_ms": 6532,
+          "p99_ms": 8624,
+          "max_ms": 10033,
+          "status": {
+            "200": 611,
+            "ReadTimeout": 3
+          }
+        }
+      },
+      "within_exploratory_slo": false
+    },
+    {
+      "successful": 1915,
+      "errors": 5,
+      "successful_rps": 132.77,
+      "p50_ms": 3151,
+      "p95_ms": 6547,
+      "p99_ms": 8684,
+      "max_ms": 10836,
+      "status": {
+        "200": 1915,
+        "ReadTimeout": 5
+      },
+      "target_rps": 1500,
+      "offered": 15000,
+      "sent": 1920,
+      "dropped": 13080,
+      "window_seconds": 10,
+      "generator_dropped": 6053,
+      "capacity_dropped": 7027,
+      "including_drain_seconds": 14.423,
+      "scheduler_max_lag_ms": 22.74,
+      "routes": {
+        "student/messages/summary": {
+          "successful": 389,
+          "errors": 3,
+          "successful_rps": 26.97,
+          "p50_ms": 3096,
+          "p95_ms": 6672,
+          "p99_ms": 9799,
+          "max_ms": 10049,
+          "status": {
+            "200": 389,
+            "ReadTimeout": 3
+          }
+        },
+        "users/me": {
+          "successful": 394,
+          "errors": 1,
+          "successful_rps": 27.32,
+          "p50_ms": 3148,
+          "p95_ms": 6538,
+          "p99_ms": 7989,
+          "max_ms": 10448,
+          "status": {
+            "200": 394,
+            "ReadTimeout": 1
+          }
+        },
+        "views/student/lessons": {
+          "successful": 556,
+          "errors": 1,
+          "successful_rps": 38.55,
+          "p50_ms": 3169,
+          "p95_ms": 6401,
+          "p99_ms": 9312,
+          "max_ms": 10836,
+          "status": {
+            "200": 556,
+            "ReadTimeout": 1
+          }
+        },
+        "student/overview": {
+          "successful": 576,
+          "errors": 0,
+          "successful_rps": 39.94,
+          "p50_ms": 3168,
+          "p95_ms": 6668,
+          "p99_ms": 8126,
+          "max_ms": 10497,
+          "status": {
+            "200": 576
+          }
+        }
+      },
+      "within_exploratory_slo": false
+    }
+  ]
+}

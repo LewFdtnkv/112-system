@@ -4,6 +4,8 @@ FastAPI · SQLAlchemy (asyncpg) · PostgreSQL 17 · Alembic · Docker Compose ·
 
 Структура модулей, границы транзакций и правила зависимостей: [архитектура backend](docs/BACKEND_ARCHITECTURE.md).
 
+Нагрузочные проверки: [Locust, отдельный стенд и ступени 1000+ RPS](performance/README.md).
+
 Бригады ДДС: настройка в профиле службы, ручное назначение, независимая история и
 автоматическая проверка целей — [описание и API](docs/DDS_CREWS.md). Миграция `0016_dds_crews`
 сохраняет существующие задания и оценки.

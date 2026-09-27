@@ -1,0 +1,75 @@
+name: system112-performance
+
+x-environment: &environment
+  APP_NAME: System112 performance
+  DATABASE_URL: postgresql+asyncpg://perf:perf-local-only@db:5432/perf112
+  JWT_SECRET_KEY: performance-only-secret-not-for-production-112
+  ACCESS_TOKEN_MINUTES: "60"
+  SEMANTIC_ASSESSMENT_ENABLED: "false"
+  LEARNING_RECOMMENDATIONS_ENABLED: "false"
+  ASSESSMENT_RAG_ENABLED: "false"
+  TELEPHONY_ENABLED: "false"
+
+services:
+  db:
+    image: system112-postgres:17-pgvector0.8.2
+    build: ../docker/postgres
+    cpus: 4
+    mem_limit: 2g
+    shm_size: 256m
+    environment:
+      POSTGRES_USER: perf
+      POSTGRES_PASSWORD: perf-local-only
+      POSTGRES_DB: perf112
+    command: ["postgres", "-c", "shared_preload_libraries=pg_stat_statements", "-c", "track_io_timing=on"]
+    ports: ["127.0.0.1:15438:5432"]
+    volumes: ["data:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U perf -d perf112"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  migrate:
+    build: ..
+    environment: *environment
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      db: {condition: service_healthy}
+  api:
+    build: ..
+    environment: *environment
+    cpus: 4
+    mem_limit: 2g
+    ports: ["127.0.0.1:18000:8000"]
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/ready', timeout=3)"]
+      interval: 5s
+      timeout: 4s
+      retries: 20
+  seed:
+    build: ..
+    environment: *environment
+    profiles: [tools]
+    user: "0:0"
+    volumes: ["./:/app/performance"]
+    command: ["python", "-m", "performance.seed", "--users", "100", "--cards", "20"]
+    depends_on:
+      api: {condition: service_healthy}
+  load:
+    build:
+      context: ..
+      dockerfile: performance/Dockerfile
+    profiles: [tools]
+    working_dir: /work
+    volumes: ["./:/work/performance"]
+    environment:
+      PERF_DATA: /work/performance/artifacts/manifest.json
+      PERF_HOST: http://api:8000
+    ports: ["127.0.0.1:18089:8089"]
+    depends_on:
+      api: {condition: service_healthy}
+    command: ["-f", "performance/locustfile.py", "--host", "http://api:8000", "StudentWorkflow"]
+volumes:
+  data:

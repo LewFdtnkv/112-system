@@ -1,0 +1,82 @@
+{
+  "created_at": "2026-09-27T18:43:00.976616+00:00",
+  "mode": "writes",
+  "host": "http://api:8000",
+  "users": 20,
+  "inflight": 500,
+  "presence_errors": [],
+  "results": [
+    {
+      "successful": 10,
+      "errors": 0,
+      "successful_rps": 1.0,
+      "p50_ms": 93,
+      "p95_ms": 198,
+      "p99_ms": 198,
+      "max_ms": 198,
+      "status": {
+        "200": 10
+      },
+      "target_rps": 1,
+      "offered": 10,
+      "sent": 10,
+      "dropped": 0,
+      "window_seconds": 10,
+      "generator_dropped": 0,
+      "capacity_dropped": 0,
+      "including_drain_seconds": 10.008,
+      "scheduler_max_lag_ms": 10.72,
+      "routes": {
+        "PUT card": {
+          "successful": 10,
+          "errors": 0,
+          "successful_rps": 1.0,
+          "p50_ms": 93,
+          "p95_ms": 198,
+          "p99_ms": 198,
+          "max_ms": 198,
+          "status": {
+            "200": 10
+          }
+        }
+      },
+      "within_exploratory_slo": true
+    },
+    {
+      "successful": 152,
+      "errors": 0,
+      "successful_rps": 13.53,
+      "p50_ms": 1237,
+      "p95_ms": 2392,
+      "p99_ms": 3177,
+      "max_ms": 3366,
+      "status": {
+        "200": 152
+      },
+      "target_rps": 100,
+      "offered": 1000,
+      "sent": 152,
+      "dropped": 848,
+      "window_seconds": 10,
+      "generator_dropped": 1,
+      "capacity_dropped": 847,
+      "including_drain_seconds": 11.237,
+      "scheduler_max_lag_ms": 12.68,
+      "routes": {
+        "PUT card": {
+          "successful": 152,
+          "errors": 0,
+          "successful_rps": 13.53,
+          "p50_ms": 1237,
+          "p95_ms": 2392,
+          "p99_ms": 3177,
+          "max_ms": 3366,
+          "status": {
+            "200": 152
+          }
+        }
+      },
+      "within_exploratory_slo": false
+    }
+  ]
+}

@@ -113,6 +113,7 @@ services:
         condition: service_healthy
 
   db:
+    cpus: ${DB_CPUS:-4}
     build: ./docker/postgres
     image: system112-postgres:17-pgvector0.8.2
     environment:
@@ -139,6 +140,7 @@ services:
 
   api:
     <<: *backend
+    cpus: ${API_CPUS:-4}
     environment:
       <<: *backend-environment
       DADATA_API_KEY: ${DADATA_API_KEY:-}
