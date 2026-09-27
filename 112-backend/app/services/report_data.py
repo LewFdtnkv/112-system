@@ -12,7 +12,9 @@ from app.models import (
     Evaluation,
     IncidentCard,
     LessonEvaluation,
+    ScenarioCard,
 )
+from app.services.error_analytics.checks import observations
 from app.services.learning_recommendations.profile import credits_for
 from app.services.semantic_assessment.results import card_score, jobs_for
 
@@ -34,7 +36,7 @@ CHECK_STATUS = {
 }
 
 
-async def card_results(session, lesson_rows):
+async def card_results(session, lesson_rows, *, analytics=False):
     owners = {(r["lesson_id"], r["student_id"]): r for r in lesson_rows}
     if not owners:
         return []
@@ -50,6 +52,18 @@ async def card_results(session, lesson_rows):
     ).all()
     if len(assignments) > 10000:
         raise HTTPException(422, "Сократите период отчёта: допускается до 10000 карточек.")
+    snapshots = (
+        {
+            s.id: s
+            for s in await session.scalars(
+                select(ScenarioCard).where(
+                    ScenarioCard.id.in_([a.scenario_card_id for a, _, _ in assignments])
+                )
+            )
+        }
+        if analytics
+        else {}
+    )
     ids = [a.id for _, a, _ in assignments if a]
     evaluations = {
         e.attempt_id: e
@@ -116,6 +130,18 @@ async def card_results(session, lesson_rows):
                 "findings": (job.output or {}).get("findings", []) if job else [],
             }
         )
+        if analytics:
+            source = snapshots.get(assignment.scenario_card_id)
+            result[-1].update(
+                completed_at=attempt.ended_at.isoformat() if attempt and attempt.ended_at else None,
+                template_key=str(
+                    source.card_template_id if source else assignment.scenario_version_id
+                ),
+                card_title=source.snapshot.get("title", "Учебная карточка")
+                if source
+                else row["scenario_title"],
+                analytics_checks=observations(evaluation, checks, job) if evaluation else [],
+            )
     return result
 
 
