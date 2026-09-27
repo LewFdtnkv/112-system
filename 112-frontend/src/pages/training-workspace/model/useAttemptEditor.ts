@@ -9,21 +9,24 @@ import { useDebounced } from "@/shared/lib/useDebounced";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import type { AttemptEditorProps } from "../types/TrainingWorkspacePage";
-import { useAttemptWrites } from "./useAttemptWrites";
-export function useAttemptEditor({ initial, onSaved }: AttemptEditorProps) {
-  const writes = useAttemptWrites(initial);
+import { useAttemptDraft } from "./useAttemptDraft";
+import type { Attempt } from "@/entities/training";
+export function useAttemptEditor(
+  { initial, onSaved }: AttemptEditorProps,
+  onReset: (value: Attempt) => void,
+) {
+  const writes = useAttemptDraft(initial, onReset);
   const { attempt } = writes;
-  const observedFields = useRef(JSON.stringify(attemptCard(initial).fields));
-  const pendingFields = useRef<IncidentCardFields | null>(null);
+  const lastActivityFields = useRef(JSON.stringify(writes.initialFields));
   const autosaveError = writes.draft.error
     ? getApiError(writes.draft.error).message
     : "";
-  const [selected, setSelected] = useState(initial.classifier_entry);
+  const [selectedId, setSelectedId] = useState(writes.initialFields.categoryId);
   const [activity, setActivity] = useState(0);
   const [highlight, setHighlight] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [answers, setAnswers] = useState<Record<string, FeatureValue>>(
-    (initial.card.data.features?.ekp as Record<string, FeatureValue>) ?? {},
+    writes.initialFields.ekpAnswers ?? {},
   );
   const debouncedAnswers = useDebounced(answers);
   const [now, setNow] = useState(() => Date.now());
@@ -51,6 +54,11 @@ export function useAttemptEditor({ initial, onSaved }: AttemptEditorProps) {
     !completed,
     search,
   );
+  const selected =
+    entries.data?.find((entry) => entry.id === selectedId) ??
+    (initial.classifier_entry?.id === selectedId
+      ? initial.classifier_entry
+      : null);
   const recipients = useQuery({
     queryKey: ["recipients", attempt.id, selected?.id, debouncedAnswers],
     queryFn: ({ signal }) =>
@@ -66,28 +74,11 @@ export function useAttemptEditor({ initial, onSaved }: AttemptEditorProps) {
         : attemptApi.recipients(attempt.id, selected!.id, signal),
     enabled: !!selected && !completed,
   });
-  const persist = writes.draft.mutateAsync;
-  const persistRef = useRef(persist);
-  useEffect(() => {
-    persistRef.current = persist;
-  });
-  useEffect(() => {
-    if (completed) return;
-    const timer = window.setInterval(() => {
-      const fields = pendingFields.current;
-      if (!fields) return;
-      pendingFields.current = null;
-      void persistRef.current(fields).catch(() => undefined);
-    }, 1000);
-    return () => window.clearInterval(timer);
-  }, [completed]);
   const save = async (fields: IncidentCardFields) => {
-    pendingFields.current = null;
     audit.observe(fields);
-    const updated = await persist(fields);
+    await writes.save(fields);
     await audit.flush();
     onSaved();
-    return updated;
   };
   const submit = async (fields: IncidentCardFields) => {
     await save(fields);
@@ -112,12 +103,11 @@ export function useAttemptEditor({ initial, onSaved }: AttemptEditorProps) {
       (selected?.conditions?.features as
         { key: string; label: string }[] | undefined) ?? [],
     onFieldsChange: (fields) => {
-      const serialized = JSON.stringify(fields);
-      if (!completed && serialized !== observedFields.current) {
-        observedFields.current = serialized;
+      if (!completed && JSON.stringify(fields) !== lastActivityFields.current) {
+        lastActivityFields.current = JSON.stringify(fields);
         setActivity(Date.now());
-        pendingFields.current = fields;
       }
+      writes.observe(fields);
       audit.observe(fields);
       setAnswers((previous) =>
         JSON.stringify(previous) === JSON.stringify(fields.ekpAnswers ?? {})
@@ -153,31 +143,17 @@ export function useAttemptEditor({ initial, onSaved }: AttemptEditorProps) {
       short_name: s.short_name,
     })),
     search: setSearch,
-    select: (id) =>
-      setSelected((entries.data ?? []).find((e) => e.id === id) ?? null),
+    select: setSelectedId,
     onSave: async (fields) => {
       await save(fields);
     },
     searching: entries.isFetching,
     error: error ? getApiError(error).message : undefined,
   };
-  const beforeHint = async () => {
-    const fields = pendingFields.current;
-    if (fields) {
-      pendingFields.current = null;
-      try {
-        await persist(fields);
-      } catch (error) {
-        pendingFields.current ??= fields;
-        throw error;
-      }
-    } else if (writes.draft.error) {
-      throw new Error(
-        "Сначала сохраните черновик: предыдущая запись не удалась.",
-      );
-    }
-  };
+  const beforeHint = writes.flush;
   return {
+    localDraft: writes,
+    editorCard: { ...attemptCard(attempt), fields: writes.initialFields },
     attempt,
     autosaveError,
     audit,

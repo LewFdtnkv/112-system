@@ -8,7 +8,10 @@ import { cardData } from "@/features/incident-editing";
 import { useMutation } from "@tanstack/react-query";
 
 /** All writes to one attempt run sequentially; revision is read at execution time. */
-export function useAttemptWrites(initial: Attempt) {
+export function useAttemptWrites(
+  initial: Attempt,
+  expectedRevision?: () => number,
+) {
   const snapshot = useAttemptSnapshot(initial);
   const scope = { id: `attempt:${initial.id}` };
   const draft = useMutation({
@@ -22,7 +25,7 @@ export function useAttemptWrites(initial: Attempt) {
         throw new Error("Карточка уже завершена.");
       return attemptApi.saveDraft(
         current.id,
-        current.card.revision,
+        expectedRevision?.() ?? current.card.revision,
         fields.categoryId || null,
         cardData(fields, current.card.data),
         fields.manualServices?.map((s) => s.id) ?? null,

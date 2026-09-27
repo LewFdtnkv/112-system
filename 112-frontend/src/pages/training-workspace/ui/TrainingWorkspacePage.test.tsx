@@ -22,6 +22,7 @@ import {
 } from "@/entities/training";
 import { TrainingWorkspacePage } from "./TrainingWorkspacePage";
 import { initialAttempt as initial } from "../model/attemptFixture";
+import { useAuthStore } from "@/entities/user";
 
 const lesson: StudentLesson = {
   learning: defaultLearningPolicy(),
@@ -45,6 +46,7 @@ const lesson: StudentLesson = {
   ],
 };
 beforeEach(() => {
+  useAuthStore.getState().setSession({ userId: "student", roles: ["student"] });
   vi.spyOn(telephonyApi, "state").mockResolvedValue({
     enabled: false,
     station: null,
@@ -158,7 +160,7 @@ it("keeps entered values when saving fails", async () => {
   await userEvent.click(
     within(card).getByRole("button", { name: "Сохранить черновик" }),
   );
-  expect(await within(card).findByRole("alert")).toBeVisible();
+  expect((await within(card).findAllByRole("alert")).length).toBeGreaterThan(0);
   expect(
     within(card).getByLabelText("Сообщение со слов заявителя", { exact: true }),
   ).toHaveValue("Сохранить мои слова");

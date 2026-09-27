@@ -3,12 +3,36 @@ import { LeaveLessonButton } from "./LeaveLessonButton";
 import { TrainingPanel } from "./TrainingPanel";
 import { Telephone } from "@/features/telephone";
 import { LearningHelp } from "@/features/learning-assistance";
-import { attemptCard } from "@/features/incident-editing";
 import { IncidentCardDialog } from "@/widgets/incident-card";
 import { Alert } from "@mui/material";
 import { useAttemptEditor } from "../model/useAttemptEditor";
+import { useState } from "react";
+import { AttemptDraftNotice } from "./AttemptDraftNotice";
 import type { AttemptEditorProps } from "../types/TrainingWorkspacePage";
+import type {
+  AttemptEditorContentProps,
+  AttemptReplacement,
+} from "../types/AttemptDraft";
 export function AttemptEditor(props: AttemptEditorProps) {
+  const [replacement, setReplacement] = useState<AttemptReplacement | null>(
+    null,
+  );
+  return (
+    <AttemptEditorContent
+      key={replacement?.epoch ?? 0}
+      {...props}
+      initial={replacement?.attempt ?? props.initial}
+      onReset={(attempt) =>
+        setReplacement((previous) => ({
+          attempt,
+          epoch: (previous?.epoch ?? 0) + 1,
+        }))
+      }
+    />
+  );
+}
+
+function AttemptEditorContent(props: AttemptEditorContentProps) {
   const { onClose } = props;
   const {
     attempt,
@@ -22,12 +46,11 @@ export function AttemptEditor(props: AttemptEditorProps) {
     setHighlight,
     beforeHint,
     busy,
-  } = useAttemptEditor(props);
+    localDraft,
+    editorCard,
+  } = useAttemptEditor(props, props.onReset);
   return (
     <>
-      {autosaveError && (
-        <Alert severity="error">Черновик не сохранён: {autosaveError}</Alert>
-      )}
       {audit.failed && (
         <Alert severity="warning">
           Не удалось передать часть истории ввода. Вы можете продолжать
@@ -35,7 +58,7 @@ export function AttemptEditor(props: AttemptEditorProps) {
         </Alert>
       )}
       <IncidentCardDialog
-        card={attemptCard(attempt)}
+        card={editorCard}
         log={[]}
         isSubmitted={attempt.status === "completed"}
         readOnly={attempt.status === "interrupted"}
@@ -58,6 +81,7 @@ export function AttemptEditor(props: AttemptEditorProps) {
             condition={attempt.caller_message}
             instruction={attempt.instructions}
           >
+            <AttemptDraftNotice draft={localDraft} error={autosaveError} />
             <LeaveLessonButton beforeLeave={beforeHint} disabled={busy} />
             <Telephone attemptId={attempt.id} completed={completed} />
             <LearningHelp
