@@ -30,7 +30,8 @@ from conftest import (
     db_session as db_session,
 )
 from test_student_workflow import exercise as exercise  # noqa: E402
-from test_teacher_api import teaching as teaching  # noqa: E402
+from test_teacher_api import PASSWORD  # noqa: E402
+from test_teacher_api import teaching as teaching
 
 from app.core.config import settings  # noqa: E402
 from app.models.enums import JobStatus  # noqa: E402
@@ -134,6 +135,16 @@ async def test_live_teacher_feedback(exercise, db_session):
     def save():
         Path(report_path).write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
 
+    async def teacher_request(method, path, payload=None):
+        # CPU experiments can exceed the normal 15-minute access-token lifetime.
+        response = await e.db_client.post(
+            "/api/v1/auth/login",
+            json={"username": e.t.accounts["teacher"].username, "password": PASSWORD},
+        )
+        assert response.status_code == 200, response.text
+        e.t.headers["teacher"] = {"Authorization": f"Bearer {response.json()['access_token']}"}
+        return await e.request(method, path, payload, actor="teacher")
+
     async def bundle(criterion, owner=teacher_id):
         # A fresh assessment: the source feedback job must not be the current job.
         return await retrieve_batch(
@@ -158,22 +169,26 @@ async def test_live_teacher_feedback(exercise, db_session):
         return result
 
     for case in CASES:
-        record = {
-            "name": case["name"],
-            "criterion": case["criterion"],
-            "control": case.get("control"),
-        }
-        report["cases"].append(record)
         criterion = case["criterion"]
         cached = next(
             (item for item in prior.get("cases", []) if item["criterion"] == criterion), None
         )
-        if (
-            cached
-            and "baseline" in cached
-            and prior.get("model") == report["model"]
+        compatible = (
+            prior.get("model") == report["model"]
             and prior.get("prompt_version") == PROMPT_VERSION
-        ):
+            and prior.get("threads") == settings.llm_threads
+        )
+        if cached and compatible and "after_withdrawal" in cached:
+            report["cases"].append(cached)
+            save()
+            continue
+        record = {
+            "name": case["name"],
+            "criterion": criterion,
+            "control": case.get("control"),
+        }
+        report["cases"].append(record)
+        if cached and "baseline" in cached and compatible:
             baseline = cached["baseline"]["output"]
             record["baseline"] = cached["baseline"]
             record["baseline_reused_from_interrupted_run"] = True
@@ -195,7 +210,8 @@ async def test_live_teacher_feedback(exercise, db_session):
             f"lessons/{e.lesson['id']}/students/{e.t.accounts['student'].id}"
             f"/attempts/{attempt['id']}/assessment-memory"
         )
-        feedback = await e.request("POST", path, correction, actor="teacher")
+        save()
+        feedback = await teacher_request("POST", path, correction)
         record["feedback_id"] = feedback["id"]
         while await index_pending(db_session):
             pass
@@ -207,6 +223,6 @@ async def test_live_teacher_feedback(exercise, db_session):
         )
         await run(record, "after_feedback", criterion, after)
         await run(record, "after_feedback_repeat", criterion, after)
-        await e.request("DELETE", path + "/" + feedback["id"], actor="teacher")
+        await teacher_request("DELETE", path + "/" + feedback["id"])
         await run(record, "after_withdrawal", criterion, await bundle(criterion))
         save()
