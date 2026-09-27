@@ -138,8 +138,9 @@ test("training panel groups the task and controls without nested incident scroll
     Array.from(el.children).map((child) => child.className),
   );
   expect(sections[0]).toBe("training-panel__source");
-  expect(sections[1]).toBe("training-telephone");
-  expect(sections[2]).toBe("learning-help");
+  expect(sections[1]).toBe("lesson-session-tools");
+  expect(sections[2]).toBe("training-telephone");
+  expect(sections[3]).toBe("learning-help");
   const questionnaire = page.locator(".arm-questionnaire");
   await expect(questionnaire).toHaveCSS("overflow-y", "visible");
   expect(

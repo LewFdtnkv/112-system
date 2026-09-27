@@ -1,5 +1,7 @@
 import { LeaveLessonButton } from "./LeaveLessonButton";
 import { TrainingPanel } from "./TrainingPanel";
+import { DDSReactionClock } from "./DDSReactionClock";
+import { ddsPanelText } from "../model/ddsPanelText";
 import { DDSArrivalStatus } from "./DDSArrivalStatus";
 import { Telephone } from "@/features/telephone";
 import { LearningHelp } from "@/features/learning-assistance";
@@ -18,6 +20,7 @@ export function DDSWorkspace(props: DDSWorkspaceProps) {
   const workspace = useDDSWorkspace(props);
   const { attempt, dds, completed, elapsed, error, busy, reload, close } =
     workspace;
+  const text = ddsPanelText(attempt);
   return (
     <DDSWorkspaceProvider value={workspace}>
       <IncidentCardDialog
@@ -53,62 +56,25 @@ export function DDSWorkspace(props: DDSWorkspaceProps) {
           <TrainingPanel
             navigation={
               props.lesson?.delivery === "dds-stream-v1" && (
-                <>
-                  <DDSArrivalStatus lesson={props.lesson} />
-                  <nav
-                    className="dds-card-navigation"
-                    aria-label="Поступившие карточки"
-                  >
-                    {props.lesson.assignments
-                      .filter((a) => a.attempt_id)
-                      .map((a) => (
-                        <button
-                          key={a.id}
-                          type="button"
-                          className="arm-small-button"
-                          aria-current={
-                            a.attempt_id === attempt.id ? "page" : undefined
-                          }
-                          disabled={busy || a.attempt_id === attempt.id}
-                          onClick={() => {
-                            if (
-                              !workspace.editing ||
-                              window.confirm(
-                                "Перейти к другой карточке? Несохранённая запись статуса будет потеряна.",
-                              )
-                            )
-                              props.onSelectAssignment?.(a);
-                          }}
-                        >
-                          Карточка {a.position} ·{" "}
-                          {a.status === "in_progress"
-                            ? "в работе"
-                            : "завершена"}
-                        </button>
-                      ))}
-                  </nav>
-                </>
+                <DDSArrivalStatus lesson={props.lesson} />
               )
             }
-            condition={
-              <>
-                {dds.profile.name} · {dds.goal}
-                {!completed && dds.information && (
-                  <p>{dds.information.message}</p>
-                )}
-              </>
+            condition={text.condition}
+            instruction={text.instruction}
+            aside={
+              <DDSReactionClock
+                elapsed={elapsed}
+                norm={dds.reaction_norm_seconds}
+                responded={!!dds.first_decision_at}
+                completed={completed}
+              />
             }
-            instruction={attempt.instructions}
             reference={
               <details>
-                <summary>
-                  Памятка службы ·{" "}
-                  {dds.reaction_norm_seconds != null
-                    ? `первая реакция: ${elapsed} с / норматив ${dds.reaction_norm_seconds} с`
-                    : `первичное решение: ${elapsed} с от направления`}
-                </summary>
-                <p>{dds.profile.responsibility}</p>
-                <p>{dds.profile.procedure}</p>
+                <summary>Памятка службы · {dds.profile.name}</summary>
+                {text.reference && (
+                  <p className="dds-reference-text">{text.reference}</p>
+                )}
                 {dds.profile.territories.map((t) => (
                   <p key={t.code}>
                     {t.name}: {t.description}

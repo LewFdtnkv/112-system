@@ -20,7 +20,7 @@ test("DDS arrivals do not close the current card and survive page reload", async
   page,
 }) => {
   const base = (await mockBusiness(page)).currentAttempt();
-  const time = new Date().toISOString();
+  const time = new Date(Date.now() - 35000).toISOString();
   const profile = {
     id: "profile",
     service_id: "service",
@@ -47,7 +47,8 @@ test("DDS arrivals do not close the current card and survive page reload", async
       assignment_id: `assignment-${n}`,
       role: "dds",
       norm_seconds: 30,
-      instructions: "Получено сообщение: бригада приступила к реагированию.",
+      instructions:
+        "Бригада сообщает: началось реагирование.\n\nЗафиксируйте сведения.\n\nЗафиксируйте сведения.",
       caller_message: null,
       card: {
         ...base.card,
@@ -73,7 +74,8 @@ test("DDS arrivals do not close the current card and survive page reload", async
         status: "received",
         goal: "Обработать бригады по сведениям задания",
         sent_at: time,
-        first_decision_at: null,
+        first_decision_at:
+          n === 2 ? new Date(Date.parse(time) + 5000).toISOString() : null,
         reaction_norm_seconds: 30,
         crew_number: null,
         comment: "",
@@ -125,7 +127,7 @@ test("DDS arrivals do not close the current card and survive page reload", async
       received_at: started && i < arrivals ? time : null,
       first_opened_at: opened.has(i) ? time : null,
       response_norm_seconds: 30,
-      first_response_at: null,
+      first_response_at: a.dds?.first_decision_at,
       card:
         started && i < arrivals
           ? {
@@ -183,16 +185,48 @@ test("DDS arrivals do not close the current card and survive page reload", async
   await expect(page.locator(".arm-card-dialog")).toContainText(
     "Происшествие 1",
   );
+  await expect(
+    page
+      .locator(".training-panel__source")
+      .getByText("Бригада сообщает: началось реагирование.", { exact: true }),
+  ).toHaveCount(1);
+  await expect(
+    page.locator(".training-panel__row").filter({ hasText: "Инструкция" }),
+  ).toHaveText("ИнструкцияЗафиксируйте сведения.");
   arrivals = 2;
-  await expect(page.locator(".dds-card-navigation button")).toHaveCount(2, {
+  await expect(
+    page.locator(".arm-card-dialog .dds-arrival-status"),
+  ).toContainText("Поступило: 2 из 2", {
     timeout: 10000,
   });
   await expect(page.locator(".arm-card-dialog")).toContainText(
     "Происшествие 1",
   );
-  await page.getByRole("button", { name: "Карточка 2 · в работе" }).click();
+  await expect(
+    page.getByRole("navigation", { name: "Поступившие карточки" }),
+  ).toHaveCount(0);
+  await expect(page.locator(".dds-reaction-clock")).toContainText(
+    "Норматив нарушен",
+  );
+  await page.screenshot({
+    path: "docs/screenshots/dds-stream/reaction-overdue.png",
+    fullPage: true,
+  });
+  await page.getByRole("button", { name: "Закрыть карточку ДДС" }).click();
+  await expect(page.locator(".dds-reaction-time")).toHaveCount(2);
+  await expect(
+    page.getByRole("columnheader", { name: "Реакция" }),
+  ).toBeVisible();
+  await page
+    .getByRole("row", { name: "Карточка 1044", exact: true })
+    .getByRole("cell", { name: "1044", exact: true })
+    .click();
   await expect(page.locator(".arm-card-dialog")).toContainText(
     "Происшествие 2",
+  );
+  await expect(page.locator(".dds-reaction-clock")).toContainText("00:05");
+  await expect(page.locator(".dds-reaction-clock")).not.toHaveClass(
+    /is-overdue/,
   );
   await page.getByRole("button", { name: "Служба 101" }).click();
   await page.screenshot({
@@ -200,6 +234,13 @@ test("DDS arrivals do not close the current card and survive page reload", async
     fullPage: true,
     animations: "disabled",
   });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator(".dds-reaction-clock")).toBeVisible();
+  await page.screenshot({
+    path: "docs/screenshots/dds-stream/card-mobile.png",
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 1280, height: 720 });
   await page.getByRole("button", { name: "Закрыть карточку ДДС" }).click();
   await page.screenshot({
     path: "docs/screenshots/dds-stream/journal.png",

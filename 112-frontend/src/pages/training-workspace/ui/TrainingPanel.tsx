@@ -6,24 +6,37 @@ export function TrainingPanel({
   instruction,
   reference,
   navigation,
+  aside,
   children,
 }: TrainingPanelProps) {
-  return (
-    <section className="training-panel" aria-label="Учебное задание">
-      {navigation}
-      <div className="training-panel__source" data-learning-target="source">
-        {condition && (
-          <div className="training-panel__row">
-            <strong>Условие</strong>
-            <div>{condition}</div>
-          </div>
-        )}
+  const source = (
+    <div className="training-panel__source" data-learning-target="source">
+      {condition && (
+        <div className="training-panel__row">
+          <strong>Условие</strong>
+          <div>{condition}</div>
+        </div>
+      )}
+      {instruction && (
         <div className="training-panel__row">
           <strong>Инструкция</strong>
           <div>{instruction}</div>
         </div>
-        {reference}
-      </div>
+      )}
+      {reference}
+    </div>
+  );
+  return (
+    <section className="training-panel" aria-label="Учебное задание">
+      {navigation}
+      {aside ? (
+        <div className="training-panel__heading">
+          {source}
+          {aside}
+        </div>
+      ) : (
+        source
+      )}
       {children}
     </section>
   );

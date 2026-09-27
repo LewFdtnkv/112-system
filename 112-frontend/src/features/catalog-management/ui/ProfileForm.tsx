@@ -87,6 +87,7 @@ export function ProfileForm({
       <TextField
         name="procedure"
         label="Порядок действий и правила службы"
+        helperText="Справочная памятка для всех занятий этой службы. Здесь нужны общие правила, а не условие конкретной карточки, номера нарядов или текущие сообщения бригад."
         multiline
         minRows={2}
         value={form.procedure}

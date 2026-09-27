@@ -26,7 +26,7 @@ export function IncidentFeedTable({
         aria-label="Список происшествий"
       >
         <colgroup>
-          {[32, 30, 32, 32, timing ? 64 : 32, 54, 44, 76, 76, 80].map(
+          {[32, 30, 32, 32, timing ? 76 : 32, 54, 44, 76, 76, 80].map(
             (width, index) => (
               <col key={index} style={styles.col(width)} />
             ),
@@ -42,7 +42,7 @@ export function IncidentFeedTable({
             <th />
             <th colSpan={2}>Связи</th>
             <th>ЧС</th>
-            <th />
+            <th>{timing ? "Реакция" : null}</th>
             <th>Опер.</th>
             <th>АРМ</th>
             <th>Номер</th>

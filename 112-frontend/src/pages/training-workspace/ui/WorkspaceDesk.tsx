@@ -176,12 +176,6 @@ export function WorkspaceDesk({ lesson, workspace }: WorkspaceStageProps) {
           key={`${attempt.id}:${attempt.status}`}
           initial={attempt}
           lesson={lesson}
-          onSelectAssignment={(assignment) =>
-            openAttempt({
-              assignmentId: assignment.id,
-              attemptId: assignment.attempt_id,
-            })
-          }
           onClose={closeAttempt}
           onSaved={refresh}
         />

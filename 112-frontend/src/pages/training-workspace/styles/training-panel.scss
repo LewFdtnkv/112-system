@@ -8,7 +8,13 @@
   font:
     13px/1.4 Arial,
     sans-serif;
+  &__heading {
+    display: flex;
+    align-items: flex-start;
+  }
   &__source {
+    flex: 1;
+    min-width: 0;
     padding: 8px 10px;
   }
   &__row {

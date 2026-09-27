@@ -71,6 +71,7 @@ function Editor({ initial }: EditorProps) {
       <TextField
         name="instructions"
         label="Инструкция ученику"
+        helperText="Общие требования ко всем карточкам сценария. Не повторяйте условия отдельных карточек и памятку службы; если дополнительных требований нет, оставьте поле пустым."
         multiline
         minRows={3}
         value={form.instructions}
