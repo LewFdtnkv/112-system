@@ -189,3 +189,30 @@ async def test_endpoint_scope_filters_and_latest_manual_review(exercise, db_sess
     reviewed = await e.request("GET", path, actor="teacher")
     assert reviewed["summary"]["teacher_reviewed"] == 3
     assert reviewed["cards"]["total"] == 0
+
+
+@pytest.mark.anyio
+async def test_historical_unscored_evaluation_is_not_a_result(exercise, db_session):
+    from app.models import Evaluation
+
+    e = exercise
+    await e.complete(0)
+    evaluation = await db_session.scalar(select(Evaluation))
+    evaluation.score = evaluation.max_score = None
+    job = await db_session.scalar(select(AIJob).where(AIJob.purpose == "evaluation"))
+    job.status = "succeeded"
+    job.output = {
+        "findings": [
+            {
+                "code": "description",
+                "label": "Описание",
+                "applied": True,
+                "credit": 1,
+                "reason": "Верно",
+            }
+        ]
+    }
+    await db_session.commit()
+    report = await e.request("GET", "views/analytics/errors?days=90", actor="teacher")
+    assert report["summary"]["ungraded"] == 1
+    assert report["summary"]["checked"] == 0

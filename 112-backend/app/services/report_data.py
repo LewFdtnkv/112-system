@@ -94,6 +94,14 @@ async def card_results(session, lesson_rows, *, analytics=False):
         row = owners[assignment.lesson_id, assignment.student_id]
         grade = grades.get((assignment.lesson_id, assignment.student_id))
         evaluation = evaluations.get(attempt.id) if attempt else None
+        # Historical AI records may be completed without publishing a numeric grade.
+        # They cannot be treated as a scored result or fed into hybrid arithmetic.
+        if evaluation and (
+            evaluation.status != "completed"
+            or evaluation.score is None
+            or evaluation.max_score is None
+        ):
+            evaluation = None
         checks = criteria[evaluation.id] if evaluation else []
         job = jobs.get(attempt.id) if attempt else None
         score, maximum, _ = card_score(evaluation, checks, job) if evaluation else (None, None, [])
