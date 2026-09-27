@@ -264,3 +264,250 @@ async def test_late_job_cannot_publish_after_teacher_override(evidence, db_sessi
     assert await finish(session, job.id, job.worker_id, output)
     assert await session.scalar(select(func.count()).select_from(TeachingMessage)) == 0
     assert job.output["publication"] == "superseded_or_unavailable"
+
+
+@pytest.fixture
+async def referral(evidence, db_session):
+    from app.models import LearningReferral
+
+    job = await ready_job(db_session, evidence.student_id)
+    selected = next(
+        m["id"] for m in job.context["materials"]["examples"] if m["strategy"] == "focused"
+    )
+    await finish(db_session, job.id, job.worker_id, {"selected_ids": [selected], "mode": "ai"})
+    return await db_session.scalar(select(LearningReferral))
+
+
+def test_referral_calendar_month():
+    from datetime import UTC, datetime
+
+    from app.services.learning_recommendations.referrals import next_month
+
+    assert next_month(datetime(2028, 1, 31, 15, tzinfo=UTC)) == datetime(
+        2028, 2, 29, 15, tzinfo=UTC
+    )
+    assert next_month(datetime(2026, 12, 31, tzinfo=UTC)) == datetime(2027, 1, 31, tzinfo=UTC)
+
+
+async def test_referral_creates_personal_lesson_once(evidence, referral, db_client, db_session):
+    from app.models import Assignment, Lesson, LessonExecution
+    from app.services.learning_recommendations.referrals import next_month
+
+    message = await db_session.get(TeachingMessage, referral.message_id)
+    assert referral.expires_at == next_month(message.created_at)
+    assert referral.learning["target_skills"] == ["address"]
+    path = f"/api/v1/student/learning-referrals/{referral.id}/lesson"
+    assert (await db_client.post(path)).status_code == 401
+    first = await db_client.post(path, headers=evidence.headers)
+    assert first.status_code == 200, first.text
+    assert first.json()["created"] is True
+    second = await db_client.post(path, headers=evidence.headers)
+    assert second.json() == first.json() | {"created": False}
+    lesson_id = UUID(first.json()["lesson_id"])
+    lesson = await db_session.get(Lesson, lesson_id)
+    assert lesson.teacher_id == evidence.teacher_id
+    assert lesson.available_until is None  # Expiry limits issuance, not the created exercise.
+    assert lesson.learning == referral.learning
+    assert set(
+        await db_session.scalars(
+            select(Assignment.student_id).where(Assignment.lesson_id == lesson_id)
+        )
+    ) == {evidence.student_id}
+    execution = await db_session.get(LessonExecution, (lesson_id, evidence.student_id))
+    assert execution.started_at is None  # Creation must not start the student's timer.
+    listed = (await db_client.get("/api/v1/student/messages", headers=evidence.headers)).json()
+    published = listed["items"][0]["details"]["suggestions"][0]["referral"]
+    assert published["status"] == "used" and published["lesson_id"] == str(lesson_id)
+    workspace = await db_client.get(
+        f"/api/v1/student/lessons/{lesson_id}", headers=evidence.headers
+    )
+    assert workspace.status_code == 200, workspace.text
+
+
+@pytest.mark.parametrize(
+    "reason,code", [("expired", 410), ("obsolete", 409), ("archived", 409), ("disbanded", 409)]
+)
+async def test_referral_rejects_unavailable_without_creating_lesson(
+    reason, code, evidence, referral, db_client, db_session
+):
+    from datetime import UTC, datetime, timedelta
+
+    from app.models import Lesson, Scenario, ScenarioVersion, TrainingGroup
+
+    before = await db_session.scalar(select(func.count()).select_from(Lesson))
+    if reason == "expired":
+        referral.expires_at = datetime.now(UTC) - timedelta(seconds=1)
+    elif reason == "obsolete":
+        m = await db_session.get(TeachingMessage, referral.message_id)
+        m.details = m.details | {"obsolete": True}
+    elif reason == "archived":
+        v = await db_session.get(ScenarioVersion, referral.scenario_version_id)
+        scenario = await db_session.get(Scenario, v.scenario_id)
+        scenario.is_archived = True
+    else:
+        for g in await db_session.scalars(
+            select(TrainingGroup).where(TrainingGroup.teacher_id == evidence.teacher_id)
+        ):
+            g.disbanded_at = datetime.now(UTC)
+    await db_session.commit()
+    response = await db_client.post(
+        f"/api/v1/student/learning-referrals/{referral.id}/lesson", headers=evidence.headers
+    )
+    assert response.status_code == code, response.text
+    assert response.json().get("message") or response.json().get("field_errors")
+    assert await db_session.scalar(select(func.count()).select_from(Lesson)) == before
+    assert referral.lesson_id is None
+
+
+async def test_referral_is_not_a_general_student_assignment_permission(
+    evidence, referral, db_client, db_session
+):
+    for role in ("student", "teacher", "admin"):
+        user = User(
+            username=f"referral-{role}",
+            password_hash=hash_password("password-123"),
+            must_change_password=False,
+            is_teacher=role == "teacher",
+            is_admin=role == "admin",
+        )
+        db_session.add(user)
+        await db_session.commit()
+        token = (
+            await db_client.post(
+                "/api/v1/auth/login", json={"username": user.username, "password": "password-123"}
+            )
+        ).json()["access_token"]
+        response = await db_client.post(
+            f"/api/v1/student/learning-referrals/{referral.id}/lesson",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert response.status_code == (404 if role == "student" else 403), response.text
+    assert referral.lesson_id is None
+
+
+async def test_existing_recommendations_backfill_without_renewal(evidence, referral, db_session):
+    from datetime import UTC, datetime, timedelta
+
+    from sqlalchemy import delete
+
+    from app.models import LearningReferral
+    from scripts.backfill_learning_referrals import backfill
+
+    original_expiry = referral.expires_at
+    await db_session.execute(delete(LearningReferral))
+    await db_session.commit()
+    assert await backfill(db_session) == 1
+    assert await backfill(db_session) == 0
+    replaced = await db_session.scalar(select(LearningReferral))
+    assert replaced.expires_at == original_expiry
+    await db_session.execute(delete(LearningReferral))
+    message = await db_session.get(TeachingMessage, referral.message_id)
+    message.created_at = datetime.now(UTC) - timedelta(days=32)
+    await db_session.commit()
+    assert await backfill(db_session) == 0
+
+
+async def test_no_referral_for_incompatible_skill(evidence, referral, db_session):
+    from sqlalchemy import delete
+
+    from app.models import LearningReferral
+    from app.services.learning_recommendations.referrals import issue_referrals
+
+    message = await db_session.get(TeachingMessage, referral.message_id)
+    await db_session.execute(delete(LearningReferral))
+    message.details = message.details | {"role": "dds"}
+    assert (
+        await issue_referrals(
+            db_session,
+            message,
+            evidence.student_id,
+            [{"skill": "address", "lesson_kind": "review"}],
+        )
+        == 0
+    )
+
+
+@pytest.mark.parametrize("skill,expected", [("dds_crews", 0), ("dds_response", 1)])
+async def test_referral_preserves_dds_delivery_and_scope(
+    evidence, referral, db_session, db_client, skill, expected
+):
+    from app.models import Assignment, LearningReferral, ScenarioCard
+    from app.services.learning_recommendations.referrals import issue_referrals
+
+    message = await db_session.get(TeachingMessage, referral.message_id)
+    message.details = message.details | {
+        "role": "dds",
+        "sources": {},
+        "skills": {skill: {"label": "Работа бригад"}},
+    }
+    assert (
+        await issue_referrals(
+            db_session, message, evidence.student_id, [{"skill": skill, "lesson_kind": "review"}]
+        )
+        == expected
+    )
+    if not expected:
+        return  # Completed DDS examples already have crews: assignment-only work is unsuitable.
+    await db_session.commit()
+    dds_referral = await db_session.scalar(
+        select(LearningReferral).where(LearningReferral.skill == skill)
+    )
+    response = await db_client.post(
+        f"/api/v1/student/learning-referrals/{dds_referral.id}/lesson", headers=evidence.headers
+    )
+    assert response.status_code == 200, response.text
+    assignments = list(
+        await db_session.scalars(
+            select(Assignment).where(Assignment.lesson_id == UUID(response.json()["lesson_id"]))
+        )
+    )
+    assert assignments
+    for assignment in assignments:
+        card = await db_session.get(ScenarioCard, assignment.scenario_card_id)
+        assert card.snapshot["dds_exercise"]
+        assert assignment.settings["delivery"] == "dds-stream-v1"
+        assert assignment.settings["arrival_offset_seconds"] == card.arrival_offset_seconds
+        assert assignment.settings["learning"]["target_skills"] == [skill]
+
+
+async def test_referrals_exclude_unfinished_and_future_lessons(evidence, db_session):
+    from sqlalchemy import delete
+
+    from app.services.learning_recommendations.referrals import candidate_scenarios
+
+    assert await candidate_scenarios(db_session, evidence.student_id, "operator_112")
+    # An assignment alone (including a future exam) is never sufficient permission.
+    await db_session.execute(
+        delete(LessonEvaluation).where(LessonEvaluation.student_id == evidence.student_id)
+    )
+    assert await candidate_scenarios(db_session, evidence.student_id, "operator_112") == []
+
+
+async def test_referral_checks_teacher_override_before_background_invalidation(
+    evidence, referral, db_session, db_client
+):
+    message = await db_session.get(TeachingMessage, referral.message_id)
+    grade = await db_session.get(
+        LessonEvaluation, UUID(next(iter(message.details["sources"].values())))
+    )
+    db_session.add(
+        LessonEvaluation(
+            lesson_id=grade.lesson_id,
+            student_id=evidence.student_id,
+            reviewer_id=evidence.teacher_id,
+            request_id=uuid4(),
+            revision=grade.revision + 1,
+            supersedes_id=grade.id,
+            score=100,
+            max_score=100,
+            comment="Проверено преподавателем",
+        )
+    )
+    await db_session.commit()
+    assert not message.details["obsolete"]
+    response = await db_client.post(
+        f"/api/v1/student/learning-referrals/{referral.id}/lesson", headers=evidence.headers
+    )
+    assert response.status_code == 409, response.text
+    assert "пересмотрены" in response.json()["message"]
+    assert referral.lesson_id is None

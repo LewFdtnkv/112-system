@@ -13,6 +13,7 @@ from app.models import (
 from app.services.activity import owned_student
 from app.services.groups import owned_group
 from app.services.learning_recommendations.jobs import available_lessons
+from app.services.learning_recommendations.referrals import referrals_for_messages
 
 
 async def send_message(session, teacher_id, payload):
@@ -88,13 +89,18 @@ async def list_messages(
             available.update(
                 str(lesson.id) for lesson in await available_lessons(session, student_id, role)
             )
+        referrals = await referrals_for_messages(session, student_id, [m["id"] for m in items])
         for item in items:
             if item["source"] == "learning_advice":
                 item["details"] = item["details"] | {
                     "suggestions": [
-                        s
-                        if s.get("lesson_id") in available and not item["details"].get("obsolete")
-                        else s | {"lesson_id": None, "lesson_title": None}
+                        (
+                            s
+                            if s.get("lesson_id") in available
+                            and not item["details"].get("obsolete")
+                            else s | {"lesson_id": None, "lesson_title": None}
+                        )
+                        | {"referral": referrals.get((item["id"], s["skill"]))}
                         for s in item["details"].get("suggestions", [])
                     ]
                 }

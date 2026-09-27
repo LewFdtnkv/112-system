@@ -36,3 +36,8 @@ class ProctoringObservation(BaseModel):
 class ProctoringBatch(BaseModel):
     model_config = ConfigDict(extra="forbid")
     events: list[ProctoringObservation] = Field(min_length=1, max_length=20)
+
+
+class ReferralLessonRead(BaseModel):
+    lesson_id: UUID
+    created: bool

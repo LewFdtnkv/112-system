@@ -22,6 +22,7 @@ from app.models.directory import (
 from app.models.evaluation import AIJob, CriterionEvidence, CriterionResult, Evaluation
 from app.models.incident import IncidentCard, ResponseEvent, ServiceResponse
 from app.models.learning_guide import LearningGuide
+from app.models.learning_referral import LearningReferral
 from app.models.lesson_evaluation import LessonEvaluation
 from app.models.lesson_execution import LessonExecution
 from app.models.scenario import AnswerKey, Scenario, ScenarioVersion
@@ -56,6 +57,7 @@ __all__ = [
     "UserPhoto",
     "AIJob",
     "LearningGuide",
+    "LearningReferral",
     "AssessmentExample",
     "AssessmentMemoryPreference",
     "AnswerKey",

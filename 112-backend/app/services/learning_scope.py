@@ -2,6 +2,8 @@
 
 from copy import deepcopy
 
+from fastapi import HTTPException
+
 from app.core.validation import reject_field
 from app.domain.dds_workflow import INACTIVE
 from app.schemas.student import DraftData
@@ -67,6 +69,17 @@ def field_skill(path):
 
 
 def validate_exercise(policy, scenario, cards):
+    skills = set(policy.target_skills)
+    if scenario.role == "operator_112" and skills & {"dds_response", "dds_crews"}:
+        raise HTTPException(422, "DDS skills require a DDS scenario")
+    if scenario.role == "dds" and skills & {
+        "address",
+        "caller",
+        "classification",
+        "notification",
+        "description",
+    }:
+        raise HTTPException(422, "Card entry skills require an operator 112 scenario")
     skills = skills_for(policy.model_dump(mode="json"), scenario.role)
     if scenario.role == "dds":
         for card in cards:

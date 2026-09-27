@@ -21,6 +21,7 @@ from app.models.enums import AIPurpose, JobStatus
 from app.services.learning_recommendations.inference import PROMPT_VERSION, validate
 from app.services.learning_recommendations.materials import retrieve
 from app.services.learning_recommendations.profile import build_profile
+from app.services.learning_recommendations.referrals import issue_referrals
 
 
 async def enqueue(session, student_id, role):
@@ -233,6 +234,7 @@ async def finish(session, job_id, token, output):
         session.add(message)
         await session.flush()
         session.add(MessageRecipient(message_id=message.id, student_id=job.student_id))
+        await issue_referrals(session, message, job.student_id, selected)
         output.update(publication="sent", message_id=str(message.id))
     job.output, job.status, job.completed_at = output, JobStatus.SUCCEEDED, datetime.now(UTC)
     job.worker_id = job.lease_expires_at = None

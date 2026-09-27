@@ -99,7 +99,7 @@ async def replay(
 
 
 async def start_lesson(
-    session: AsyncSession, teacher_id: UUID, payload: LessonStart
+    session: AsyncSession, teacher_id: UUID, payload: LessonStart, *, commit: bool = True
 ) -> tuple[LessonRead, bool]:
     if payload.learning.kind == "worked_example":
         raise HTTPException(422, "Guided learning is not available yet")
@@ -132,17 +132,6 @@ async def start_lesson(
     if existing is not None:
         return await lesson_read(session, existing), False
     scenario = await owned_scenario(session, payload.scenario_version_id, teacher_id)
-    skills = set(payload.learning.target_skills)
-    if scenario.role == "operator_112" and skills & {"dds_response", "dds_crews"}:
-        raise HTTPException(422, "DDS skills require a DDS scenario")
-    if scenario.role == "dds" and skills & {
-        "address",
-        "caller",
-        "classification",
-        "notification",
-        "description",
-    }:
-        raise HTTPException(422, "Card entry skills require an operator 112 scenario")
     parent = await session.scalar(
         select(Scenario).where(Scenario.id == scenario.scenario_id).with_for_update()
     )
@@ -264,8 +253,13 @@ async def start_lesson(
         )
 
         await prepare_scenario(session, scenario)
-        await session.commit()
+        if commit:
+            await session.commit()
+        else:
+            await session.flush()
     except IntegrityError:
+        if not commit:
+            raise  # The caller owns this transaction and its rollback.
         # Same request ID racing across different group locks is guarded by the DB unique key.
         await session.rollback()
         existing = await replay(session, teacher_id, payload.request_id, fingerprint)
