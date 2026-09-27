@@ -19,15 +19,12 @@ export function useScenarioEditor({ initial }: EditorProps) {
     initial,
     scenarioEditorInitial,
   );
-  const { form, profile, rows, choice } = state;
+  const { form, profile, rows } = state;
   const schedule = {
     cards: rows.map((row) => row.card),
     delays: rows.map((row) => row.delay),
-    choice,
     offsets: arrivalOffsets(rows),
-    setChoice: (value: SelectOption | null) =>
-      dispatch({ type: "choice", value }),
-    add: () => dispatch({ type: "add" }),
+    add: (card: SelectOption) => dispatch({ type: "add", card }),
     remove: (index: number) => dispatch({ type: "remove", index }),
     move: (index: number, step: number) =>
       dispatch({ type: "move", index, step }),

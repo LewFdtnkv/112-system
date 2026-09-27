@@ -11,11 +11,9 @@ export type ScenarioCardsFieldsProps = {
   profileId?: string;
   role: ScenarioInput["role"];
   cards: SelectOption[];
-  choice: SelectOption | null;
   delays: number[];
   offsets: number[];
-  onChoiceChange: (choice: SelectOption | null) => void;
-  onAdd: () => void;
+  onAdd: (card: SelectOption) => void;
   onRemove: (index: number) => void;
   onMove: (index: number, step: number) => void;
   onDelayChange: (index: number, value: number) => void;
@@ -29,13 +27,12 @@ export type ScenarioDdsSettingsProps = {
 export type ScenarioEditorState = {
   form: ScenarioInput;
   profile: SelectOption | null;
-  choice: SelectOption | null;
   rows: { card: SelectOption; delay: number }[];
 };
 export type ScenarioEditorAction =
   | { type: "form"; value: ScenarioInput }
-  | { type: "profile" | "choice"; value: SelectOption | null }
-  | { type: "add" }
+  | { type: "profile"; value: SelectOption | null }
+  | { type: "add"; card: SelectOption }
   | { type: "remove"; index: number }
   | { type: "move"; index: number; step: number }
   | { type: "delay"; index: number; value: number };

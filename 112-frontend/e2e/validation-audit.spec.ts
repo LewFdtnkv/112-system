@@ -68,9 +68,6 @@ test("DDS schedule and incompatible cards have actionable errors", async ({
   await choose(page, "Профиль службы", "Пожарная служба");
   for (let n = 0; n < 2; n++) {
     await choose(page, "Карточка из библиотеки", "Пожар в квартире");
-    await page
-      .getByRole("button", { name: "Добавить карточку", exact: true })
-      .click();
   }
   await page.getByLabel("Длительность, мин").fill("1");
   await page

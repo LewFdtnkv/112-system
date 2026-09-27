@@ -10,10 +10,8 @@ export function ScenarioCardsFields({
   role,
   profileId,
   cards,
-  choice,
   delays,
   offsets,
-  onChoiceChange,
   onAdd,
   onRemove,
   onMove,
@@ -29,8 +27,12 @@ export function ScenarioCardsFields({
       <ServerSelect
         label="Карточка из библиотеки"
         queryKey={[...cardKeys.options, role, profileId]}
-        value={choice}
-        onChange={onChoiceChange}
+        key={cards.length}
+        value={null}
+        disabled={cards.length >= 100}
+        onChange={(card) => {
+          if (card) onAdd(card);
+        }}
         load={async (query, signal) =>
           (
             await cardApi.cards(
@@ -48,9 +50,11 @@ export function ScenarioCardsFields({
           }))
         }
       />
-      <Button disabled={!choice || cards.length >= 100} onClick={onAdd}>
-        Добавить карточку
-      </Button>
+      {cards.length >= 100 && (
+        <Typography variant="body2">
+          В сценарий можно добавить не более 100 карточек.
+        </Typography>
+      )}
       {cards.map((card, index) => (
         <Paper key={index} sx={styles.paper}>
           <Stack direction="row" sx={styles.stack} spacing={1}>

@@ -222,9 +222,7 @@ test("real API: authoring, operator drafts, revision conflict, notification and 
   await page.getByLabel("Название сценария").fill(`Сценарий ${suffix}`);
   await page.getByLabel("Категория", { exact: true }).fill("Пожар");
   await select(page, "Карточка из библиотеки", `Пожар ${suffix}`);
-  await page.getByRole("button", { name: "Добавить карточку" }).click();
   await select(page, "Карточка из библиотеки", `Пожар ${suffix}`);
-  await page.getByRole("button", { name: "Добавить карточку" }).click();
   await page.getByLabel("Статус публикации").click();
   await page.getByRole("option", { name: "Опубликован", exact: true }).click();
   await page

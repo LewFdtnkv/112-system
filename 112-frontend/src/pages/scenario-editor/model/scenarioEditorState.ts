@@ -40,7 +40,6 @@ export function scenarioEditorInitial(
     profile: initial?.service_profile_id
       ? { id: initial.service_profile_id, label: "Назначенный профиль ДДС" }
       : null,
-    choice: null,
     rows:
       initial?.cards.map((card, index, cards) => ({
         card: { id: card.card_template_id, label: card.snapshot.title },
@@ -66,16 +65,13 @@ export function scenarioEditorReducer(
         profile: action.value,
         form: { ...state.form, dds_policy: null },
       };
-    case "choice":
-      return { ...state, choice: action.value };
     case "add":
-      return state.choice
+      return state.rows.length < 100
         ? {
             ...state,
-            choice: null,
             rows: [
               ...state.rows,
-              { card: state.choice, delay: state.rows.length ? 60 : 0 },
+              { card: action.card, delay: state.rows.length ? 60 : 0 },
             ],
           }
         : state;

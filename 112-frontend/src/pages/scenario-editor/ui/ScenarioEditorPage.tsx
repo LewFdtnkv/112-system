@@ -96,10 +96,8 @@ function Editor({ initial }: EditorProps) {
             role={form.role}
             profileId={profile?.id}
             cards={schedule.cards}
-            choice={schedule.choice}
             delays={schedule.delays}
             offsets={schedule.offsets}
-            onChoiceChange={schedule.setChoice}
             onAdd={schedule.add}
             onRemove={schedule.remove}
             onMove={schedule.move}

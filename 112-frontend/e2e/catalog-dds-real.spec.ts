@@ -298,9 +298,6 @@ test("real API: EKP file roundtrip, rule editing, profile publication and DDS ex
     .click();
   await choose(page, "Карточка из библиотеки", card.title);
   await page
-    .getByRole("button", { name: "Добавить карточку", exact: true })
-    .click();
-  await page
     .getByRole("combobox", { name: "Статус публикации", exact: true })
     .click();
   await page.getByRole("option", { name: "Опубликован", exact: true }).click();

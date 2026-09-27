@@ -36,10 +36,19 @@ for (const role of ["dds", "operator_112"]) {
     await choose("Профиль службы", "Пожарная служба");
     for (const card of cards) {
       await choose("Карточка из библиотеки", card.title);
-      await page
-        .getByRole("button", { name: "Добавить карточку", exact: true })
-        .click();
+      await expect(
+        page.getByRole("button", { name: "Убрать", exact: true }),
+      ).toHaveCount(cards.indexOf(card) + 1);
+      await expect(
+        page.getByRole("combobox", {
+          name: "Карточка из библиотеки",
+          exact: true,
+        }),
+      ).toHaveValue("");
     }
+    await expect(
+      page.getByRole("button", { name: "Добавить карточку", exact: true }),
+    ).toHaveCount(0);
     const delays = page.getByLabel("Через сколько секунд после предыдущей");
     await delays.nth(0).fill("45");
     await delays.nth(1).fill("90");
