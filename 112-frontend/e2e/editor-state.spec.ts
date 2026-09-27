@@ -61,7 +61,7 @@ for (const role of ["dds", "operator_112"]) {
     await expect(
       page.getByRole("button", { name: "Добавить карточку", exact: true }),
     ).toHaveCount(0);
-    const delays = page.getByLabel("Через сколько секунд после предыдущей");
+    const delays = page.getByLabel("После предыдущей карточки, с");
     if (role === "dds") {
       await delays.nth(0).fill("45");
       await delays.nth(1).fill("90");

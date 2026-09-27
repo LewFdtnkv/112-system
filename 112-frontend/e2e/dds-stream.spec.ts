@@ -295,6 +295,9 @@ test("teacher edits per-card arrival intervals", async ({ page }) => {
       },
     })),
   };
+  await page.route("**/api/v1/cards/card-*", (r) =>
+    r.fulfill({ json: { audio: { caller_ids: [], crew_variants: [] } } }),
+  );
   await page.route("**/api/v1/scenarios/scenario", (r) =>
     r.fulfill({ json: scenario }),
   );
@@ -306,18 +309,41 @@ test("teacher edits per-card arrival intervals", async ({ page }) => {
   );
   await login(page, "teacher");
   await page.goto("/scenarios/scenario/edit");
-  const delays = page.getByLabel("Через сколько секунд после предыдущей", {
+  const delays = page.getByLabel("После предыдущей карточки, с", {
     exact: true,
   });
   await expect(delays.nth(0)).toHaveValue("40");
   await expect(delays.nth(1)).toHaveValue("90");
   await delays.nth(1).fill("120");
   await expect(
-    page.getByText("Поступление через 160 с", { exact: false }),
+    page.getByText("Итого от начала занятия: 160 с", { exact: false }),
   ).toBeVisible();
   await page.screenshot({
     path: "docs/screenshots/dds-stream/schedule.png",
     fullPage: true,
     animations: "disabled",
   });
+  await page
+    .getByRole("button", { name: "Записи карточки", exact: true })
+    .first()
+    .click();
+  const emptyRecordings = page.getByText("Свои голоса не выбраны.", {
+    exact: false,
+  });
+  await expect(emptyRecordings).toBeVisible();
+  for (const width of [1280, 390]) {
+    await page.setViewportSize({ width, height: 900 });
+    const description = (await emptyRecordings.boundingBox())!;
+    const field = (await page
+      .locator('[data-validation-field="arrival_offsets_seconds.0"]')
+      .boundingBox())!;
+    expect(field.y - description.y - description.height).toBeGreaterThanOrEqual(
+      12,
+    );
+    await page.screenshot({
+      path: `docs/screenshots/dds-stream/schedule-recordings-${width}.png`,
+      fullPage: true,
+      animations: "disabled",
+    });
+  }
 });

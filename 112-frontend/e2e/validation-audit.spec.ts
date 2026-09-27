@@ -73,15 +73,16 @@ test("DDS schedule and incompatible cards have actionable errors", async ({
   await page
     .getByRole("button", { name: "Сохранить сценарий", exact: true })
     .click();
-  await expect(
-    page.getByLabel("Через сколько секунд после предыдущей"),
-  ).toHaveAttribute("aria-invalid", "true");
+  await expect(page.getByLabel("После предыдущей карточки, с")).toHaveAttribute(
+    "aria-invalid",
+    "true",
+  );
   await expect(page.locator(".form-validation-summary")).toContainText(
     "Карточка 2 поступает",
   );
   expect(saves).toBe(0);
   await shot(page, "schedule");
-  await page.getByLabel("Через сколько секунд после предыдущей").fill("30");
+  await page.getByLabel("После предыдущей карточки, с").fill("30");
   await page
     .getByRole("button", { name: "Сохранить сценарий", exact: true })
     .click();

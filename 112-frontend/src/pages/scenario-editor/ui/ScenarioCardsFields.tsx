@@ -90,7 +90,7 @@ export function ScenarioCardsFields({
               label={
                 index === 0
                   ? "Первая карточка — сразу"
-                  : "Через сколько секунд после предыдущей"
+                  : "После предыдущей карточки, с"
               }
               value={delays[index]}
               disabled={index === 0}
@@ -98,7 +98,11 @@ export function ScenarioCardsFields({
               onChange={(event) =>
                 onDelayChange(index, Number(event.target.value))
               }
-              helperText={`Поступление через ${offsets[index]} с от старта занятия. Завершение предыдущей карточки не требуется.`}
+              helperText={
+                index === 0
+                  ? "Поступает в момент начала занятия."
+                  : `Отсчёт начинается при поступлении предыдущей карточки, независимо от её завершения. Итого от начала занятия: ${offsets[index]} с.`
+              }
             />
           )}
         </Paper>
