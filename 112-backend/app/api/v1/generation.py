@@ -1,7 +1,8 @@
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException
-from sqlalchemy import func, select
+from sqlalchemy import and_, func, select
+from sqlalchemy.orm import aliased
 
 from app.api.dependencies import SessionDep, TeacherDep
 from app.api.pagination import Limit, Offset
@@ -51,7 +52,27 @@ async def list_jobs(
         AIJob.purpose.in_([AIPurpose.GENERATION, AIPurpose.DDS_GENERATION]),
     )
     if pending_only:
-        query = query.where(AIJob.status != JobStatus.SUCCEEDED)
+        later = aliased(AIJob)
+        resolved = (
+            select(later.id)
+            .where(
+                later.created_by_id == AIJob.created_by_id,
+                later.target_card_id == AIJob.target_card_id,
+                later.purpose == AIPurpose.DDS_GENERATION,
+                later.status == JobStatus.SUCCEEDED,
+                later.created_at > AIJob.created_at,
+            )
+            .exists()
+        )
+        # Keep the audit history, but hide DDS failures resolved by a later success.
+        query = query.where(
+            AIJob.status != JobStatus.SUCCEEDED,
+            ~and_(
+                AIJob.purpose == AIPurpose.DDS_GENERATION,
+                AIJob.status == JobStatus.FAILED,
+                resolved,
+            ),
+        )
     total = await session.scalar(select(func.count()).select_from(query.subquery()))
     offset = min(offset, max(0, ((total - 1) // limit) * limit))
     jobs = await session.scalars(

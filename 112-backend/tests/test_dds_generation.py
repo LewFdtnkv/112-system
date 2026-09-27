@@ -1,4 +1,5 @@
 from copy import deepcopy
+from datetime import timedelta
 from uuid import UUID, uuid4
 
 import pytest
@@ -82,6 +83,69 @@ async def test_critic_failure_preserves_card(teaching, monkeypatch):
     assert row.dds_exercise is None and row.revision == 1
     assert job.status == JobStatus.FAILED
     assert len(job.context["inference_failures"][0]["attempts"]) == 2
+
+
+async def test_successful_retry_removes_old_failure_from_pending_list(teaching, api):
+    t = teaching
+    card, request, first = await enqueue(t)
+    failed = await worker.claim(t.db_session)
+    await worker.fail(t.db_session, failed.id, failed.worker_id, inference.DDSGenerationFailure({}))
+    path = f"cards/{card['id']}/dds-generations"
+    pending_path = "card-generations?pending_only=true&limit=1&offset=10"
+    assert (await api("GET", pending_path, actor="teacher"))["total"] == 1
+
+    second = await t.post(path, request | {"request_id": str(uuid4())}, expected=202)
+    succeeded = await worker.claim(t.db_session)
+    # Explicit chronology also works inside the fixture's single DB transaction.
+    succeeded.created_at = failed.created_at + timedelta(seconds=1)
+    await worker.finish(
+        t.db_session,
+        succeeded.id,
+        succeeded.worker_id,
+        inference.assemble(succeeded.input["plan"], draft(succeeded)),
+        {},
+    )
+    pending = await api("GET", pending_path, actor="teacher")
+    assert pending["items"] == []
+    assert pending["total"] == 0 and pending["offset"] == 0
+    history = await api("GET", path, actor="teacher")
+    assert [j["id"] for j in history] == [second["id"], first["id"]]
+    assert [j["status"] for j in history] == ["succeeded", "failed"]
+    assert (await api("GET", "card-generations", actor="teacher"))["total"] == 2
+    assert (await api("GET", f"admin/ai-jobs/{first['id']}"))["status"] == "failed"
+
+    # A later failed replacement is still relevant, even with a ready exercise.
+    replacement = await t.post(
+        path,
+        request | {"request_id": str(uuid4()), "revision": 2, "replace_existing": True},
+        expected=202,
+    )
+    latest = await worker.claim(t.db_session)
+    latest.created_at = succeeded.created_at + timedelta(seconds=1)
+    await worker.fail(t.db_session, latest.id, latest.worker_id, inference.DDSGenerationFailure({}))
+    pending = await api("GET", pending_path, actor="teacher")
+    assert [j["id"] for j in pending["items"]] == [replacement["id"]]
+    assert pending["total"] == 1 and pending["offset"] == 0
+
+
+async def test_success_does_not_hide_another_cards_failure(teaching, api):
+    t = teaching
+    _, _, first = await enqueue(t)
+    failed = await worker.claim(t.db_session)
+    await worker.fail(t.db_session, failed.id, failed.worker_id, inference.DDSGenerationFailure({}))
+    await enqueue(t)
+    succeeded = await worker.claim(t.db_session)
+    succeeded.created_at = failed.created_at + timedelta(seconds=1)
+    await worker.finish(
+        t.db_session,
+        succeeded.id,
+        succeeded.worker_id,
+        inference.assemble(succeeded.input["plan"], draft(succeeded)),
+        {},
+    )
+    pending = await api("GET", "card-generations?pending_only=true", actor="teacher")
+    assert [j["id"] for j in pending["items"]] == [first["id"]]
+    assert pending["total"] == 1
 
 
 @pytest.mark.parametrize("change", ["edit", "used"])
