@@ -104,6 +104,8 @@ async def get_job(session, job_id: UUID):
                     AIJob.prompt_version,
                     AIJob.idempotency_key,
                     AIJob.card_template_id,
+                    AIJob.target_card_id,
+                    AIJob.parent_job_id,
                     AIJob.scenario_version_id,
                     AIJob.attempt_id,
                     AIJob.input,

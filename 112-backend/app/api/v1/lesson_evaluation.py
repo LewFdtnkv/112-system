@@ -7,7 +7,12 @@ from app.api.dependencies import SessionDep, StudentDep, TeacherDep
 from app.api.pagination import EventSequence, Limit
 from app.models import LessonEvaluation
 from app.schemas.audit import AuditPage
-from app.schemas.lesson_evaluation import LessonGradeCreate, LessonGradeRead, LessonWorkReview
+from app.schemas.lesson_evaluation import (
+    LessonGradeCreate,
+    LessonGradeRead,
+    LessonWorkReview,
+    StudentLessonFeedback,
+)
 from app.services.attempt_audit import assessment_context, audit_page, teacher_attempt
 from app.services.lesson_evaluation import ensure_automatic_grade, grade_lesson, review_work
 from app.services.student.access import student_lesson
@@ -94,3 +99,10 @@ async def result(lesson_id: UUID, session: SessionDep, student: StudentDep):
         .order_by(LessonEvaluation.revision.desc())
         .limit(1)
     )
+
+
+@router.get("/student/lessons/{lesson_id}/feedback", response_model=StudentLessonFeedback)
+async def feedback(lesson_id: UUID, session: SessionDep, student: StudentDep):
+    from app.services.student.feedback import lesson_feedback
+
+    return await lesson_feedback(session, lesson_id, student.id)

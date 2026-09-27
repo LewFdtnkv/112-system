@@ -17,10 +17,13 @@ async def listing(
     session: SessionDep,
     admin: AdminDep,
     q: str = Query(default="", max_length=200),
+    service_id: UUID | None = None,
     offset: Offset = 0,
     limit: Limit = 20,
 ):
     query = select(ServiceProfile).where(ServiceProfile.name.ilike(f"%{q}%"))
+    if service_id is not None:
+        query = query.where(ServiceProfile.service_id == service_id)
     total = await session.scalar(select(func.count()).select_from(query.subquery()))
     rows = list(
         await session.scalars(

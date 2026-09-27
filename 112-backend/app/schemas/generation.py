@@ -97,6 +97,7 @@ class GeneratedText(BaseModel):
 
 
 class GenerationRead(BaseModel):
+    kind: Literal["generation", "dds_generation"] = "generation"
     id: UUID
     status: Literal["queued", "running", "succeeded", "failed"]
     created_at: datetime

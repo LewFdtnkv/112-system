@@ -82,6 +82,7 @@ class JobStatus(StrEnum):
 class AIPurpose(StrEnum):
     RECOMMENDATION = "recommendation"
     GENERATION = "generation"
+    DDS_GENERATION = "dds_generation"
     EVALUATION = "evaluation"
 
 

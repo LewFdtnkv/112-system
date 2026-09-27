@@ -5,6 +5,7 @@ from fastapi import HTTPException
 from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.validation import reject_field
 from app.models import (
     AnswerKey,
     Assignment,
@@ -145,13 +146,15 @@ async def create_scenario(
 
             exercise = DDSExercise.model_validate(card.dds_exercise)
             if exercise.service_profile_id != payload.service_profile_id:
-                raise HTTPException(
-                    422, f"Карточка «{card.title}» подготовлена для другого профиля ДДС."
+                reject_field(
+                    "card_ids",
+                    f"Карточка «{card.title}» подготовлена для другого профиля ДДС. "
+                    "Уберите её из сценария или верните соответствующий профиль.",
                 )
             await validate_profile(session, exercise, [r["service_id"] for r in by_card[card.id]])
         elif payload.role == TrainingRole.DDS and not payload.dds_policy:
-            raise HTTPException(
-                422,
+            reject_field(
+                "card_ids",
                 f"В карточке «{card.title}» настройте упражнение ДДС: "
                 "бригады, историю и сообщения.",
             )

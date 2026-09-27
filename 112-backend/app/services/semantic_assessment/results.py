@@ -8,6 +8,7 @@ from sqlalchemy import select
 from app.models import AIJob, Assignment, Attempt, CriterionResult, Evaluation, LessonEvaluation
 from app.models.enums import AIPurpose, EvaluationMethod, JobStatus
 from app.schemas.semantic_assessment import SemanticReview, SemanticSummary
+from app.services.semantic_assessment.policy import text_weight
 
 
 async def jobs_for(session, attempt_ids):
@@ -28,7 +29,10 @@ def summary(jobs):
     pending = sum(j.status in (JobStatus.QUEUED, JobStatus.RUNNING) for j in jobs)
     failed = sum(j.status == JobStatus.FAILED for j in jobs)
     unresolved = sum(not f["applied"] for f in findings)
+    weights = {text_weight(j.input) for j in jobs}
     return SemanticSummary(
+        semantic_weight_percent=next(iter(weights)) if len(weights) == 1 else None,
+        policy_version="semantic-v2" if weights - {20} else "semantic-v1",
         status="pending"
         if pending
         else "not_applicable"
@@ -98,7 +102,8 @@ def card_score(evaluation, criteria, job):
             weight = maximum
             adjustments = []
         else:
-            weight = maximum / 4  # 80% existing formal criteria, 20% semantic text.
+            percent = Decimal(text_weight(evaluation.context_snapshot))
+            weight = maximum * percent / (100 - percent)
             score += weight * credit
             maximum += weight
         adjustments.append(
@@ -111,7 +116,7 @@ def card_score(evaluation, criteria, job):
                 + (
                     "В упражнении на текст заменена проверка наличия."
                     if presence_only
-                    else "Доля смысловой проверки — 20%."
+                    else f"Доля смысловой проверки — {percent}%."
                 ),
             }
         )
@@ -198,7 +203,7 @@ async def publish_result(session, lesson, student_id):
             "semantic": info,
             "scope": "hybrid" if info["status"] == "complete" else "partial",
             "criteria": list(grouped.values()),
-            "policy_version": "semantic-v1",
+            "policy_version": info["policy_version"],
             "recommendations": list(
                 dict.fromkeys(
                     f["recommendation"]

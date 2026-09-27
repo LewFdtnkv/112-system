@@ -168,6 +168,33 @@ async def test_profile_directories_versions_and_rights(api, teaching):
     await api("POST", "admin/service-profiles", invalid, status=422)
 
 
+async def test_admin_profiles_filter_by_service_before_pagination(api, teaching):
+    other = await api(
+        "POST", "admin/services", {"code": uuid4().hex, "name": "Другая служба"}, status=201
+    )
+    data = {
+        "service_id": str(teaching.service.id),
+        "name": "Общий поисковый текст",
+        "responsibility": "Район",
+    }
+    first = await api("POST", "admin/service-profiles", data, status=201)
+    await api("POST", f"admin/service-profiles/{first['id']}/publish")
+    second = await api("POST", "admin/service-profiles", data, status=201)
+    await api("POST", "admin/service-profiles", data | {"service_id": other["id"]}, status=201)
+    path = f"admin/service-profiles?service_id={teaching.service.id}&limit=1&q=Общий"
+    page = await api("GET", path)
+    assert page["total"] == 2
+    assert page["items"][0]["id"] == second["id"]
+    older = await api("GET", path + "&offset=1")
+    assert older["total"] == 2
+    assert older["items"][0]["id"] == first["id"]
+    assert older["items"][0]["status"] == "published"
+    assert (await api("GET", f"admin/service-profiles?service_id={uuid4()}"))["total"] == 0
+    await api("GET", "admin/service-profiles?service_id=invalid", status=422)
+    for actor in ("teacher", "student"):
+        await api("GET", path, actor=actor, status=403)
+
+
 @pytest.fixture
 async def dds(api, teaching):
     t = teaching

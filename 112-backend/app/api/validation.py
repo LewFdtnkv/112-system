@@ -4,6 +4,7 @@ from fastapi import Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
+from app.api.errors import public_error
 from app.schemas.numbers import invalid_json_number
 
 
@@ -32,11 +33,5 @@ async def validate_json_numbers(request: Request):
 async def validation_error_response(request: Request, exc: RequestValidationError):
     # Never echo submitted inputs (including passwords) or exception contexts.
     # NaN/Infinity in Pydantic's diagnostic input otherwise breaks JSONResponse.
-    return JSONResponse(
-        status_code=422,
-        content={
-            "detail": [
-                {"type": e["type"], "loc": list(e["loc"]), "msg": e["msg"]} for e in exc.errors()
-            ]
-        },
-    )
+    detail = [{"type": e["type"], "loc": list(e["loc"]), "msg": e["msg"]} for e in exc.errors()]
+    return JSONResponse(status_code=422, content=public_error(detail))

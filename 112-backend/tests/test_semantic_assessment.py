@@ -76,7 +76,7 @@ def test_empty_text_and_unknown_service_competence_do_not_call_llm():
 
 
 def test_hybrid_arithmetic_preserves_structured_errors_and_unresolved_weight():
-    evaluation = SimpleNamespace(score=Decimal(50), max_score=Decimal(100))
+    evaluation = SimpleNamespace(score=Decimal(50), max_score=Decimal(100), context_snapshot={})
     criteria = [
         SimpleNamespace(
             code="address",
@@ -173,7 +173,7 @@ async def test_submit_enqueues_once_and_worker_publishes_new_revision(exercise, 
         assert not await finish(db_session, job.id, "old-token", fake_output(job), {})
     grade = await e.request("GET", f"student/lessons/{e.lesson['id']}/evaluation")
     assert grade["method"] == "hybrid" and grade["revision"] == 2
-    assert grade["score"] == "80.00"
+    assert grade["score"] == "75.00"
     assert grade["assessment_details"]["semantic"]["status"] == "complete"
     work = await e.request(
         "GET",
@@ -337,3 +337,91 @@ async def test_dds_optional_comments_and_skill_scope(exercise, db_session):
     assert len((await build_context(db_session, obj, SimpleNamespace(fields=[])))["criteria"]) == 1
     snapshot["exercise_scope"] = ["dds_crews"]
     assert not (await build_context(db_session, obj, SimpleNamespace(fields=[])))["criteria"]
+
+
+def test_new_text_share_is_25_percent_and_old_checks_stay_at_20():
+    from app.services.semantic_assessment.results import summary
+
+    evaluation = SimpleNamespace(score=Decimal(100), max_score=Decimal(100), context_snapshot={})
+    criteria = [
+        SimpleNamespace(
+            code="address",
+            score=Decimal(100),
+            max_score=Decimal(100),
+            explanation="",
+            criterion_snapshot={"fields": [{"field": "address_details.house"}]},
+        )
+    ]
+    job = SimpleNamespace(
+        status=JobStatus.SUCCEEDED,
+        input={},
+        output={
+            "findings": [{"code": "description", "applied": True, "credit": 0}],
+        },
+    )
+    old = card_score(evaluation, criteria, job)
+    assert 100 * old[0] / old[1] == 80
+    assert summary([job])["semantic_weight_percent"] == 20
+    evaluation.context_snapshot = {"semantic_weight_percent": 25}
+    job.input = {"semantic_weight_percent": 25}
+    current = card_score(evaluation, criteria, job)
+    assert round(100 * current[0] / current[1], 2) == 75
+    assert "25%" in current[2][-1]["explanation"]
+    assert summary([job])["semantic_weight_percent"] == 25
+    job.output["findings"][0].update(applied=False, credit=None)
+    assert card_score(evaluation, criteria, job)[:2] == (100, 100)
+    job.output["findings"][0].update(applied=True, credit=0)
+    criteria[0].criterion_snapshot = {"fields": [{"field": "description"}]}
+    assert card_score(evaluation, criteria, job)[:2] == (0, 100)
+
+
+async def test_student_feedback_is_private_and_only_available_after_submission(
+    exercise, db_session
+):
+    e = exercise
+    path = f"student/lessons/{e.lesson['id']}/feedback"
+    assert await e.request("GET", path) == {"submitted": False, "cards": []}
+    await e.request("GET", path, actor="student2", status=404)
+    await e.request("GET", path, actor="teacher", status=403)
+    await e.complete()
+    job = await claim(db_session)
+    output = fake_output(job, 0)
+    output["findings"][0].update(
+        reason="Комментарий ХИХИХАХА не содержит понятных сведений.",
+        answer_quote="ХИХИХАХА",
+        reference_quote="Эталонное решение",
+        recommendation="Опишите, что сообщила бригада.",
+    )
+    assert job.input["semantic_weight_percent"] == 25
+    assert await finish(db_session, job.id, job.worker_id, output, {})
+    assert await e.request("GET", path) == {"submitted": False, "cards": []}
+    await e.complete(1)
+    await e.complete(2)
+    data = await e.request("GET", path)
+    assert data["submitted"] and len(data["cards"]) == 3
+    assert [c["position"] for c in data["cards"]] == [1, 2, 3]
+    assert [c["status"] for c in data["cards"]] == ["succeeded", "queued", "queued"]
+    assert data["cards"][0]["findings"][0]["answer_quote"] == "ХИХИХАХА"
+    assert set(data["cards"][0]) == {"assignment_id", "position", "title", "status", "findings"}
+    await e.request("GET", path, actor="student2", status=404)
+
+
+async def test_student_feedback_includes_failed_and_unstarted_cards(exercise, db_session):
+    from app.models import Lesson
+    from app.services.deadlines import enforce_deadlines
+
+    e = exercise
+    await e.complete()
+    job = await db_session.scalar(select(AIJob))
+    job.status = JobStatus.FAILED
+    job.error = "private backend diagnostics"
+    job.output = fake_output(job)
+    lesson = await db_session.get(Lesson, UUID(e.lesson["id"]))
+    deadline = datetime.now(UTC) + timedelta(seconds=1)
+    lesson.available_until = deadline
+    await db_session.commit()
+    await enforce_deadlines(db_session, lesson, deadline + timedelta(seconds=1))
+    data = await e.request("GET", f"student/lessons/{e.lesson['id']}/feedback")
+    assert [c["status"] for c in data["cards"]] == ["failed", "not_started", "not_started"]
+    assert all(not c["findings"] for c in data["cards"])
+    assert "private" not in str(data)

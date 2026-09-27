@@ -22,7 +22,9 @@ from app.services.generation.prose import (
 )
 
 
-def request(model, prompt, schema, *, seed, temperature, timeout):
+def request(
+    model, prompt, schema, *, seed, temperature, timeout, max_tokens=None, schema_json=None
+):
     if len(prompt) > 10000:
         raise ValueError("Too many facts for the small model context")
     instructions, _, data = prompt.partition("\n")
@@ -34,14 +36,14 @@ def request(model, prompt, schema, *, seed, temperature, timeout):
                 "stream": False,
                 "think": False,
                 "keep_alive": "5m",
-                "format": schema.model_json_schema(),
+                "format": schema_json or schema.model_json_schema(),
                 "messages": [
                     {"role": "system", "content": instructions},
                     {"role": "user", "content": data},
                 ],
                 "options": {
                     "num_ctx": 4096,
-                    "num_predict": 400 if schema is Review else 650,
+                    "num_predict": max_tokens or (400 if schema is Review else 650),
                     "num_thread": settings.llm_threads,
                     "temperature": temperature,
                     "top_p": 0.8,

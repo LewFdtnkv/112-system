@@ -56,10 +56,11 @@ def read_job(job):
     facts = job.input["facts"]
     return GenerationRead(
         id=job.id,
+        kind=job.purpose,
         status=job.status,
         created_at=job.created_at,
         completed_at=job.completed_at,
-        card_template_id=job.card_template_id,
+        card_template_id=job.target_card_id or job.card_template_id,
         title=job.input["card"]["title"],
         incident_name=facts["Тип происшествия"],
         address_text=facts["Адрес"],

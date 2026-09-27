@@ -5,7 +5,15 @@ import anyio
 import pytest
 from sqlalchemy import func, select
 
-from app.models import ClassifierEntry, ClassifierVersion, Lesson, Service, TrainingGroup, User
+from app.models import (
+    ClassifierEntry,
+    ClassifierVersion,
+    Lesson,
+    Service,
+    ServiceProfile,
+    TrainingGroup,
+    User,
+)
 from scripts import seed_demo
 
 
@@ -41,10 +49,16 @@ async def test_seed_from_admin_only_database_and_repeat(
         (TrainingGroup, 1 if with_training else 0),
         (Lesson, 16 if with_training else 0),
         (Service, 211),
+        (ServiceProfile, 211),
         (ClassifierEntry, 51),
         (ClassifierVersion, 1),
     ]:
         assert await db_session.scalar(select(func.count()).select_from(model)) == expected
+    assert first["service_profiles"] == {"service_count": 211, "published_count": 211}
+    service_ids = set(await db_session.scalars(select(Service.id)))
+    profiles = list(await db_session.scalars(select(ServiceProfile)))
+    assert {p.service_id for p in profiles} == service_ids
+    assert all(p.status.value == "published" and len(p.rules["crews"]) == 2 for p in profiles)
     assert first["feature_count"] == 177
     if with_training:
         assert first["training"]["card_count"] == 14

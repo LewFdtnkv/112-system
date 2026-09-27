@@ -18,6 +18,10 @@ from app.schemas.generation import GeneratedText
 from app.services.assessment_memory import worker as memory_worker
 from app.services.authoring.cards import validate_card_definition
 from app.services.card_generation import PROMPT_VERSION
+from app.services.dds_generation import PROMPT_VERSION as DDS_PROMPT
+from app.services.dds_generation import examples as dds_examples
+from app.services.dds_generation import inference as dds_inference
+from app.services.dds_generation import jobs as dds_jobs
 from app.services.generation import examples as generation_examples
 from app.services.generation.llm import compose
 from app.services.generation.narration import fallback
@@ -43,7 +47,10 @@ async def claim(session):
         select(AIJob)
         .where(
             or_(
-                and_(AIJob.purpose == AIPurpose.GENERATION, AIJob.created_by_id.is_not(None)),
+                and_(
+                    AIJob.purpose.in_([AIPurpose.GENERATION, AIPurpose.DDS_GENERATION]),
+                    AIJob.created_by_id.is_not(None),
+                ),
                 AIJob.purpose.in_([AIPurpose.EVALUATION, AIPurpose.RECOMMENDATION]),
             ),
             or_(
@@ -60,6 +67,7 @@ async def claim(session):
         return None
 
     expected_prompt = {
+        AIPurpose.DDS_GENERATION: DDS_PROMPT,
         AIPurpose.EVALUATION: ASSESSMENT_PROMPT,
         AIPurpose.RECOMMENDATION: STUDY_PROMPT,
     }.get(job.purpose, PROMPT_VERSION)
@@ -112,6 +120,8 @@ async def renew(session, job_id, token):
 
 
 def call_model(job):
+    if job.purpose == AIPurpose.DDS_GENERATION:
+        return dds_inference.compose(job)
     if job.purpose == AIPurpose.RECOMMENDATION:
         return recommendation_inference.evaluate(job), {}
     if job.purpose == AIPurpose.EVALUATION:
@@ -122,6 +132,8 @@ def call_model(job):
 
 async def finish(session, job_id, token, text: GeneratedText, metadata):
     target = await session.get(AIJob, job_id)
+    if target and target.purpose == AIPurpose.DDS_GENERATION:
+        return await dds_jobs.finish(session, job_id, token, text, metadata)
     if target and target.purpose == AIPurpose.RECOMMENDATION:
         return await finish_advice(session, job_id, token, text)
     if target and target.purpose == AIPurpose.EVALUATION:
@@ -221,9 +233,20 @@ async def fail(session, job_id, token, error):
         if job.purpose == AIPurpose.EVALUATION
         else "Не удалось подготовить рекомендацию по дальнейшему обучению."
         if job.purpose == AIPurpose.RECOMMENDATION
+        else (
+            "Упражнение ДДС не прошло проверку или не может быть сохранено. "
+            "Карточка сохранена без изменений. Запустите новую генерацию в карточке."
+        )
+        if job.purpose == AIPurpose.DDS_GENERATION
         else public_error(error)
     )
-    job.status = JobStatus.FAILED if job.retry_count >= MAX_ATTEMPTS else JobStatus.QUEUED
+    terminal = job.purpose == AIPurpose.DDS_GENERATION and (
+        isinstance(error, dds_inference.DDSGenerationFailure)
+        or getattr(error, "status_code", None) in (404, 409, 422)
+    )
+    job.status = (
+        JobStatus.FAILED if terminal or job.retry_count >= MAX_ATTEMPTS else JobStatus.QUEUED
+    )
     job.completed_at = datetime.now(UTC) if job.status == JobStatus.FAILED else None
     job.available_at = datetime.now(UTC) + timedelta(seconds=10 * job.retry_count)
     job.worker_id = job.lease_expires_at = None
@@ -247,6 +270,8 @@ async def process(job):
             await recommendation_jobs.prepare(job)
         if job.purpose == AIPurpose.EVALUATION:
             await memory_worker.prepare(job)
+        if job.purpose == AIPurpose.DDS_GENERATION:
+            await dds_examples.prepare(job)
         if job.purpose == AIPurpose.GENERATION:
             await generation_examples.prepare(job)
         text, metadata = await asyncio.to_thread(call_model, job)

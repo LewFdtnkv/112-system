@@ -94,6 +94,24 @@ async def card_read(session: AsyncSession, card: CardTemplate) -> CardRead:
 
 
 async def validate_card_definition(session: AsyncSession, payload: CardCreate) -> list[Service]:
+    from app.services.authoring.card_validation import field_error
+
+    try:
+        return await _validate_card_definition(session, payload)
+    except HTTPException as exc:
+        if exc.status_code in (404, 409, 422):
+            entry = (
+                await session.get(ClassifierEntry, payload.classifier_entry_id)
+                if payload.classifier_entry_id
+                else None
+            )
+            detail = field_error(exc.detail, entry)
+            if detail:
+                raise HTTPException(exc.status_code, detail) from exc
+        raise
+
+
+async def _validate_card_definition(session: AsyncSession, payload: CardCreate) -> list[Service]:
     await published_classifier(session, payload.classifier_version_id)
     from app.schemas.card_flags import check_consistency, check_silent, flags
 
@@ -216,9 +234,12 @@ async def set_generation_example(
     if card.revision != payload.revision:
         raise HTTPException(409, "Карточка изменилась. Обновите её перед подтверждением.")
     if payload.enabled and (
-        not (card.caller_message or "").strip() or len(card.caller_message) > 2500
+        (not (card.caller_message or "").strip() and not card.dds_exercise)
+        or len(card.caller_message or "") > 2500
     ):
-        raise HTTPException(422, "Для образца нужно условие длиной от 1 до 2500 символов.")
+        raise HTTPException(
+            422, "Для образца нужно условие 112 до 2500 символов или упражнение ДДС."
+        )
     if payload.enabled and any(
         card.data.get("additional_fields", {}).get("details", {}).get(key)
         for key in ("noContact", "callDropped")

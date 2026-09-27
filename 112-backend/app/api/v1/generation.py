@@ -48,7 +48,7 @@ async def list_jobs(
 ):
     query = select(AIJob).where(
         AIJob.created_by_id == teacher.id,
-        AIJob.purpose == AIPurpose.GENERATION,
+        AIJob.purpose.in_([AIPurpose.GENERATION, AIPurpose.DDS_GENERATION]),
     )
     if pending_only:
         query = query.where(AIJob.status != JobStatus.SUCCEEDED)
@@ -68,12 +68,16 @@ async def retry(job_id: UUID, session: SessionDep, teacher: TeacherDep):
         .where(
             AIJob.id == job_id,
             AIJob.created_by_id == teacher.id,
-            AIJob.purpose == AIPurpose.GENERATION,
+            AIJob.purpose.in_([AIPurpose.GENERATION, AIPurpose.DDS_GENERATION]),
         )
         .with_for_update()
     )
     if job is None:
         raise HTTPException(404, "Генерация не найдена")
+    if job.purpose == AIPurpose.DDS_GENERATION:
+        raise HTTPException(
+            409, "Откройте карточку и запустите новую генерацию ДДС по актуальным данным."
+        )
     if job.prompt_version != PROMPT_VERSION:
         raise HTTPException(409, "Формат генерации обновлён. Создайте новый пакет карточек.")
     if job.status != JobStatus.FAILED:

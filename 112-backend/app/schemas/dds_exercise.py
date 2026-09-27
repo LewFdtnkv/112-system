@@ -3,7 +3,8 @@
 from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import Field, StringConstraints, model_validator
+from pydantic import Field, StringConstraints, ValidationError, model_validator
+from pydantic_core import PydanticCustomError
 
 from app.schemas.catalog_document import StrictModel
 from app.schemas.dds import CREW_TRANSITIONS, CrewRequirement
@@ -11,6 +12,13 @@ from app.schemas.dds import CREW_TRANSITIONS, CrewRequirement
 Text = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=5000)]
 CrewCode = Annotated[str, Field(pattern=r"^[A-Za-z0-9_-]{1,100}$")]
 CrewStatus = Literal["assigned", "responding", "arrived", "in_progress", "completed", "cancelled"]
+
+
+def invalid_field(path, message):
+    raise ValidationError.from_exception_data(
+        "DDSExercise",
+        [{"type": PydanticCustomError("card_constraint", message), "loc": path, "input": None}],
+    )
 
 
 class PreparedCrewEvent(StrictModel):
@@ -28,14 +36,19 @@ class PreparedCrew(StrictModel):
     def valid_history(self):
         current = None
         previous_time = 86400
-        for event in self.history:
+        for index, event in enumerate(self.history):
             allowed = CREW_TRANSITIONS[current] if current else {"assigned"}
             if event.status not in allowed:
-                raise ValueError(
-                    "История бригады должна начинаться с назначения и соблюдать порядок статусов."
+                invalid_field(
+                    ("history", index, "status"),
+                    "История бригады должна начинаться с назначения и соблюдать порядок статусов.",
                 )
             if event.seconds_before_start > previous_time:
-                raise ValueError("Записи истории должны идти от ранних к поздним.")
+                invalid_field(
+                    ("history", index, "seconds_before_start"),
+                    "Записи истории должны идти от ранних к поздним: число минут до "
+                    "поступления карточки не должно увеличиваться.",
+                )
             current, previous_time = event.status, event.seconds_before_start
         return self
 
@@ -57,13 +70,16 @@ class DDSExercise(StrictModel):
         initial = {c.crew_code: c for c in self.initial_crews}
         goals = {c.crew_code: c.status for c in self.required_crews}
         if len(initial) != len(self.initial_crews) or len(goals) != len(self.required_crews):
-            raise ValueError("Бригады в исходном состоянии и целях не должны повторяться.")
+            raise PydanticCustomError(
+                "card_constraint", "Бригады в исходном состоянии и целях не должны повторяться."
+            )
         informed = {m.crew_code for m in self.messages}
         if not set(goals) <= informed:
-            raise ValueError(
-                "Для каждой учебной цели укажите сообщение по соответствующей бригаде."
+            raise PydanticCustomError(
+                "card_constraint",
+                "Для каждой учебной цели укажите сообщение по соответствующей бригаде.",
             )
-        for code, goal in goals.items():
+        for index, (code, goal) in enumerate(goals.items()):
             history = initial[code].history if code in initial else []
             current = history[-1].status if history else None
             cycle = []
@@ -74,7 +90,11 @@ class DDSExercise(StrictModel):
             if (goal == "cancelled" and current == goal) or (
                 goal != "cancelled" and current != "cancelled" and goal in cycle
             ):
-                raise ValueError("Учебная цель уже выполнена в исходной истории бригады.")
+                invalid_field(
+                    ("required_crews", index, "status"),
+                    "Учебная цель уже выполнена в исходной истории бригады. Выберите "
+                    "следующий этап работы.",
+                )
             pending, seen = [current], set()
             while pending:
                 status = pending.pop()
@@ -83,5 +103,9 @@ class DDSExercise(StrictModel):
                 seen.add(status)
                 pending.extend(CREW_TRANSITIONS[status] if status else ["assigned"])
             if goal not in seen:
-                raise ValueError("Из исходного статуса нельзя достичь учебной цели бригады.")
+                invalid_field(
+                    ("required_crews", index, "status"),
+                    "Из исходного статуса нельзя достичь учебной цели бригады. "
+                    "Измените цель или исходную историю.",
+                )
         return self

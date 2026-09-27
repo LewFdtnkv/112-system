@@ -1,4 +1,4 @@
-"""Загрузить справочник 112; --with-training также создаёт учебный набор на его основе."""
+"""Загрузить ЕКП и профили служб; --with-training добавляет учебные занятия."""
 
 import argparse
 import hashlib
@@ -144,6 +144,7 @@ def run(
     with_training=False,
     recommendation_cards=6,
     with_crew_calls=False,
+    profiles_only=False,
 ) -> dict:
     ensure(
         bool(re.fullmatch(r"[a-z0-9][a-z0-9_-]{0,19}", prefix)),
@@ -159,6 +160,17 @@ def run(
         "БД была заменена; используйте новый файл состояния для нового набора данных",
     )
     state.remember("admin", me["id"])
+
+    import asyncio
+
+    if __package__:
+        from scripts.seed_service_profiles import HTTPProfilesGateway, populate_service_profiles
+    else:
+        from seed_service_profiles import HTTPProfilesGateway, populate_service_profiles
+    if profiles_only:
+        return {
+            "service_profiles": asyncio.run(populate_service_profiles(HTTPProfilesGateway(admin)))
+        }
 
     if __package__:
         from scripts.source_catalog import load_catalog, summary
@@ -187,8 +199,6 @@ def run(
     admin.request("POST", f"admin/classifiers/{classifier_id}/publish")
     result = summary(classifier_id) | {"credentials_file": str(state.path.resolve())}
     if with_training:
-        import asyncio
-
         if __package__:
             from scripts.seed_training import HTTPGateway, populate_training
         else:
@@ -203,6 +213,7 @@ def run(
                 with_crew_calls,
             )
         )
+    result["service_profiles"] = asyncio.run(populate_service_profiles(HTTPProfilesGateway(admin)))
     return result
 
 
@@ -215,6 +226,12 @@ def main():
         "--database",
         action="store_true",
         help="Наполнение через DATABASE_URL; пароль администратора не меняется",
+    )
+    parser.add_argument(
+        "--profiles-only",
+        action="store_true",
+        help="Только добавить недостающие опубликованные профили активных служб; "
+        "не загружать ЕКП, пользователей или занятия",
     )
     parser.add_argument(
         "--with-training",
@@ -234,6 +251,8 @@ def main():
         help="С --with-training: отдельное занятие ДДС с обязательным звонком бригаде",
     )
     args = parser.parse_args()
+    if args.profiles_only and (args.with_training or args.with_crew_calls):
+        parser.error("--profiles-only несовместим с учебным наполнением")
     if args.with_crew_calls and not args.with_training:
         parser.error("--with-crew-calls требует --with-training")
     if args.recommendation_cards != 0 and not 3 <= args.recommendation_cards <= 30:
@@ -248,20 +267,26 @@ def main():
             from scripts.source_catalog import populate_database
 
             async def populate():
-                async with session_factory() as session:
-                    result = await populate_database(session)
-                    if args.with_training:
-                        from sqlalchemy import select
+                from sqlalchemy import select
 
-                        from app.models import User
+                from app.models import User
+                from scripts.seed_service_profiles import (
+                    DatabaseProfilesGateway,
+                    populate_service_profiles,
+                )
+
+                async with session_factory() as session:
+                    admin = await session.scalar(
+                        select(User)
+                        .where(User.is_admin.is_(True), User.is_active.is_(True))
+                        .order_by(User.id)
+                    )
+                    ensure(admin is not None, "Нужна активная учётная запись администратора")
+                    result = {} if args.profiles_only else await populate_database(session)
+                    if args.with_training:
                         from scripts.seed_training import DatabaseGateway, populate_training
                         from scripts.source_catalog import load_catalog
 
-                        admin = await session.scalar(
-                            select(User)
-                            .where(User.is_admin.is_(True), User.is_active.is_(True))
-                            .order_by(User.id)
-                        )
                         state = State(args.state_file, args.base_url.rstrip("/"), args.prefix)
                         previous_admin = state.data["ids"].get("admin")
                         ensure(
@@ -277,6 +302,9 @@ def main():
                             args.recommendation_cards,
                             args.with_crew_calls,
                         )
+                    result["service_profiles"] = await populate_service_profiles(
+                        DatabaseProfilesGateway(session, admin.id)
+                    )
                     return result
 
             result = asyncio.run(populate())
@@ -289,6 +317,7 @@ def main():
                 args.with_training,
                 args.recommendation_cards,
                 args.with_crew_calls,
+                args.profiles_only,
             )
     except (APIError, URLError, OSError, ValueError, RuntimeError) as exc:
         hint = ""

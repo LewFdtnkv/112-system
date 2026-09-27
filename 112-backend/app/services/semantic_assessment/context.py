@@ -8,6 +8,7 @@ from sqlalchemy import select
 from app.models import ServiceProfile
 from app.models.enums import PublicationStatus
 from app.services.learning_scope import field_skill
+from app.services.semantic_assessment.policy import text_weight
 from app.services.semantic_assessment.process import summarize_process
 from app.services.semantic_assessment.prompts import PROMPT_VERSION as PROMPT_VERSION
 
@@ -139,6 +140,7 @@ async def build_context(session, evaluation, check):
     }
     return {
         "version": PROMPT_VERSION,
+        "semantic_weight_percent": text_weight(snapshot),
         "evaluation_id": str(evaluation.id),
         "context_hash": snapshot["context_hash"],
         "criteria": criteria,

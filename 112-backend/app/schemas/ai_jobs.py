@@ -45,6 +45,8 @@ class AIJobPage(BaseModel):
 class AIJobDetail(AIJobItem):
     prompt_version: str
     idempotency_key: UUID
+    target_card_id: UUID | None
+    parent_job_id: UUID | None
     card_template_id: UUID | None
     scenario_version_id: UUID | None
     attempt_id: UUID | None

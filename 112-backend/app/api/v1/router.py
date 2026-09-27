@@ -11,6 +11,7 @@ from app.api.v1.authoring import router as authoring_router
 from app.api.v1.catalog import router as catalog_router
 from app.api.v1.catalog_admin import router as catalog_admin_router
 from app.api.v1.catalog_editor import router as catalog_editor_router
+from app.api.v1.dds_generation import router as dds_generation_router
 from app.api.v1.generation import router as generation_router
 from app.api.v1.groups import router as groups_router
 from app.api.v1.lesson_evaluation import router as lesson_evaluation_router
@@ -36,6 +37,7 @@ protected_router.include_router(activity_router)
 protected_router.include_router(users_router)
 protected_router.include_router(groups_router)
 protected_router.include_router(generation_router)
+protected_router.include_router(dds_generation_router)
 protected_router.include_router(authoring_router)
 protected_router.include_router(catalog_router)
 protected_router.include_router(service_profiles_router)

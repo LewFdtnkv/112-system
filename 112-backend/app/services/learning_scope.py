@@ -2,8 +2,7 @@
 
 from copy import deepcopy
 
-from fastapi import HTTPException
-
+from app.core.validation import reject_field
 from app.schemas.student import DraftData
 from app.services.field_evaluation import summarize
 
@@ -24,6 +23,15 @@ DETAIL_KEYS = {
         "blocked",
         "refusedAmbulance",
     },
+}
+
+
+SKILL_LABELS = {
+    "address": "Адрес",
+    "caller": "Заявитель",
+    "classification": "Тип происшествия",
+    "notification": "Оповещение служб",
+    "description": "Описание происшествия",
 }
 
 
@@ -66,8 +74,9 @@ def validate_exercise(policy, scenario, cards):
                 "required_crews", []
             )
             if not targets:
-                raise HTTPException(
-                    422, "Для занятия ДДС укажите в карточке бригады и цели их работы."
+                reject_field(
+                    "scenario_version_id",
+                    "Для занятия ДДС укажите в карточке бригады и цели их работы.",
                 )
             if focused(policy.model_dump(mode="json")):
                 initial = {
@@ -82,20 +91,21 @@ def validate_exercise(policy, scenario, cards):
                 if skills == {"dds_response"} and any(
                     initial.get(t["crew_code"]) == "cancelled" for t in targets
                 ):
-                    raise HTTPException(
-                        422,
+                    reject_field(
+                        "learning.target_skills",
                         "В исходной истории назначение бригады отменено: "
                         "добавьте навык назначения бригад или выберите другую карточку.",
                     )
                 if "dds_crews" in skills and not assignment_work:
-                    raise HTTPException(
-                        422,
+                    reject_field(
+                        "learning.target_skills",
                         "Все нужные бригады уже назначены: "
                         "выберите отработку статусов или другую карточку.",
                     )
                 if "dds_response" in skills and not response_work:
-                    raise HTTPException(
-                        422, "Для отработки статусов нужна цель после назначения бригады."
+                    reject_field(
+                        "learning.target_skills",
+                        "Для отработки статусов нужна цель после назначения бригады.",
                     )
         return
     if not focused(policy.model_dump(mode="json")):
@@ -116,10 +126,10 @@ def validate_exercise(policy, scenario, cards):
                 "description": bool(data.get("description")),
             }[skill]
             if not present:
-                raise HTTPException(
-                    422,
+                reject_field(
+                    "learning.target_skills",
                     f"Карточка «{card.snapshot.get('title', 'Без названия')}» "
-                    f"не содержит данных для навыка {skill}. "
+                    f"не содержит данных для навыка «{SKILL_LABELS[skill]}». "
                     "Выберите другой сценарий или дополните карточку.",
                 )
 

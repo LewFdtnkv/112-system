@@ -56,4 +56,4 @@ class SemanticSummary(BaseModel):
     applied_criteria: int = 0
     needs_review: int = 0
     policy_version: str = "semantic-v1"
-    semantic_weight_percent: int = 20
+    semantic_weight_percent: int | None = 20

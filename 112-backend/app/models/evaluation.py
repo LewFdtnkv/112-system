@@ -52,6 +52,12 @@ class AIJob(UUIDPrimaryKey, CreatedAt, Base):
     card_template_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("card_templates.id", ondelete="RESTRICT"), unique=True
     )
+    target_card_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("card_templates.id", ondelete="RESTRICT"), index=True
+    )
+    parent_job_id: Mapped[UUID | None] = mapped_column(
+        ForeignKey("ai_jobs.id", ondelete="RESTRICT"), index=True
+    )
     scenario_version_id: Mapped[UUID | None] = mapped_column(
         ForeignKey("scenario_versions.id", ondelete="RESTRICT"), index=True
     )

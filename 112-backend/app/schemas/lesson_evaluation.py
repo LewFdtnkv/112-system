@@ -10,7 +10,7 @@ from app.schemas.authoring import NonblankText
 from app.schemas.catalog import ClassifierEntryRead
 from app.schemas.learning import LearningPolicy, LearningResult
 from app.schemas.numbers import INT32_MAX
-from app.schemas.semantic_assessment import SemanticReview
+from app.schemas.semantic_assessment import SemanticFinding, SemanticReview
 from app.schemas.student import StudentAttemptRead
 
 
@@ -90,3 +90,16 @@ class LessonWorkReview(BaseModel):
     assignments: list[AssignmentReview]
     evaluations: list[LessonGradeRead]
     automatic_check: AutomaticCheckSummary
+
+
+class StudentCardFeedback(BaseModel):
+    assignment_id: UUID
+    position: int
+    title: str
+    status: Literal["queued", "running", "succeeded", "failed", "not_applicable", "not_started"]
+    findings: list[SemanticFinding] = Field(default_factory=list)
+
+
+class StudentLessonFeedback(BaseModel):
+    submitted: bool
+    cards: list[StudentCardFeedback] = Field(default_factory=list)
