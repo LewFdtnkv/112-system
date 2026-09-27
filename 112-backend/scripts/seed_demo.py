@@ -228,6 +228,11 @@ def main():
         help="Наполнение через DATABASE_URL; пароль администратора не меняется",
     )
     parser.add_argument(
+        "--full-demo",
+        action="store_true",
+        help="С --database: полный автономный демонабор с результатами всех учебных форматов",
+    )
+    parser.add_argument(
         "--profiles-only",
         action="store_true",
         help="Только добавить недостающие опубликованные профили активных служб; "
@@ -251,6 +256,11 @@ def main():
         help="С --with-training: отдельное занятие ДДС с обязательным звонком бригаде",
     )
     args = parser.parse_args()
+    if args.full_demo:
+        if not args.database or args.profiles_only:
+            parser.error("--full-demo требует --database и несовместим с --profiles-only")
+        args.with_training = True
+        args.with_crew_calls = True
     if args.profiles_only and (args.with_training or args.with_crew_calls):
         parser.error("--profiles-only несовместим с учебным наполнением")
     if args.with_crew_calls and not args.with_training:
@@ -294,6 +304,10 @@ def main():
                             "БД заменена: укажите новый файл состояния",
                         )
                         state.remember("admin", str(admin.id))
+                        if args.full_demo:
+                            from scripts.seed_full_demo import populate_full_demo
+
+                            populate_training = populate_full_demo
                         result["training"] = await populate_training(
                             DatabaseGateway(session, admin),
                             state,
