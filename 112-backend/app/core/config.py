@@ -15,8 +15,9 @@ class Settings(BaseSettings):
     telephony_ws_url: str = "/sip-ws"
     telephony_media_directory: str = "/home/appuser/telephony"
     telephony_max_call_seconds: int = Field(default=600, ge=30, le=3600)
-    speech_voice: str = "ru-default"
-    speech_generator_version: str = "v1"
+    speech_voice: str = "denis"
+    speech_generator_version: str = "piper-1.8.0-v1:caller"
+    speech_models_directory: str = "/opt/voices"
 
     app_name: str = "System-112 API"
     database_url: PostgresDsn = PostgresDsn(

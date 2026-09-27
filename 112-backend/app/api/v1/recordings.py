@@ -5,6 +5,9 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import FileResponse
 
 from app.api.dependencies import SessionDep, TeacherDep
+from app.schemas.speech import SpeechCreate
+from app.services.speech import authoring
+from app.services.speech.catalog import VOICES
 from app.services.telephony import media, recordings
 
 router = APIRouter(prefix="/telephony/recordings", tags=["recording library"])
@@ -38,6 +41,21 @@ async def upload(
     return await recordings.create_recording(
         session, teacher.id, title.strip(), purpose, await media.read_upload(request)
     )
+
+
+@router.get("/voices")
+async def voices(teacher: TeacherDep):
+    return [{"id": key, "label": label} for key, label in VOICES.items()]
+
+
+@router.post("/synthesize", status_code=202)
+async def synthesize(payload: SpeechCreate, session: SessionDep, teacher: TeacherDep):
+    return await authoring.create(session, teacher.id, payload)
+
+
+@router.post("/{recording_id}/retry")
+async def retry(recording_id: UUID, session: SessionDep, teacher: TeacherDep):
+    return await authoring.retry(session, recording_id, teacher.id)
 
 
 @router.get("/{recording_id}")

@@ -13,7 +13,7 @@ from sqlalchemy.dialects.postgresql import insert
 
 from app.core.config import settings
 from app.core.uploads import read_upload as read_upload_bytes
-from app.models import CallCue, ScenarioCard, SpeechAsset, TrainingContact
+from app.models import CallCue, Recording, ScenarioCard, SpeechAsset, TrainingContact
 from app.services.telephony.voice_pack import greeting_bytes
 
 
@@ -164,7 +164,7 @@ def complete(asset, data):
     asset.leased_until = None
 
 
-async def claim(session):
+async def claim(session, *, versions=None):
     now = datetime.now(UTC)
     asset = await session.scalar(
         select(SpeechAsset)
@@ -174,7 +174,11 @@ async def claim(session):
                 (SpeechAsset.status == "preparing") & (SpeechAsset.leased_until < now),
             ),
             SpeechAsset.attempts < 3,
-            select(CallCue.id).where(CallCue.audio_id == SpeechAsset.id).exists(),
+            or_(
+                select(CallCue.id).where(CallCue.audio_id == SpeechAsset.id).exists(),
+                select(Recording.id).where(Recording.audio_id == SpeechAsset.id).exists(),
+            ),
+            *([SpeechAsset.generator_version.in_(versions)] if versions else []),
         )
         .order_by(SpeechAsset.created_at)
         .with_for_update(skip_locked=True)

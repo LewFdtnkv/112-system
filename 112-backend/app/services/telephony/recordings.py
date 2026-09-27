@@ -33,6 +33,9 @@ def read_recording(row, asset, usages=None):
         created_at=row.created_at,
         status=asset.status,
         duration_seconds=asset.duration_seconds,
+        text=asset.text if asset.voice != "uploaded" else None,
+        voice=asset.voice if asset.voice != "uploaded" else None,
+        error=asset.error,
         usages=usages or [],
     )
 

@@ -24,3 +24,5 @@ state.json
 
 performance/artifacts
 .performance-*.log
+
+.tts-check
