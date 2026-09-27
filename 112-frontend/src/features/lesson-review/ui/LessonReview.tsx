@@ -7,6 +7,7 @@ import { ReviewContent } from "./ReviewContent";
 export function LessonReview({
   lessonId,
   studentId,
+  actions,
   renderProctoring,
   renderCardActions,
 }: LessonReviewProps) {
@@ -23,6 +24,7 @@ export function LessonReview({
     >
       {query.data && (
         <ReviewContent
+          actions={actions}
           data={query.data}
           reload={() => void query.refetch()}
           renderProctoring={renderProctoring}

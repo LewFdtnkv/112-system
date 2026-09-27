@@ -1,4 +1,7 @@
-import { StudentNotificationBell } from "@/features/teaching-messages";
+import {
+  StudentNotificationBell,
+  TeacherMessageAction,
+} from "@/features/teaching-messages";
 import { AccountProfileDialog } from "@/features/account-profile";
 import { useState } from "react";
 import { UserIdentity } from "@/entities/user";
@@ -42,6 +45,7 @@ export const AppHeader = () => {
                   name={session.name ?? session.username ?? "Пользователь"}
                 />
               </Button>
+              {session.roles.includes("teacher") && <TeacherMessageAction />}
               {session.roles.includes("student") && <StudentNotificationBell />}
               <Button
                 className="app-header__logout"

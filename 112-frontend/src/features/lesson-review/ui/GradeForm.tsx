@@ -7,12 +7,12 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import type { GradeFormProps } from "../types/LessonReview";
 
-export function GradeForm({ data, reload }: GradeFormProps) {
+export function GradeForm({ data, reload, onSaved }: GradeFormProps) {
   const client = useQueryClient();
   const latest = data.evaluations.at(-1);
   const [score, setScore] = useState(latest?.score ?? "");
   const [max, setMax] = useState(latest?.max_score ?? "100");
-  const [comment, setComment] = useState(latest?.comment ?? "");
+  const [comment, setComment] = useState("");
   const [requestId, setRequestId] = useState(() => randomUUID());
   const save = useMutation({
     mutationFn: () =>
@@ -24,6 +24,7 @@ export function GradeForm({ data, reload }: GradeFormProps) {
         comment,
       }),
     onSuccess: () => {
+      onSaved?.();
       void client.invalidateQueries({
         queryKey: ["work-review", data.lesson_id, data.student_id],
       });
@@ -46,13 +47,17 @@ export function GradeForm({ data, reload }: GradeFormProps) {
       }}
     >
       <Typography variant="h6" component="h2">
-        Ручное оценивание
+        Пересмотр преподавателем
       </Typography>
       {!data.submitted && (
         <Alert severity="info">
           Выставить оценку можно после сдачи всех карточек.
         </Alert>
       )}
+      <Alert severity="info">
+        Эта оценка станет итоговой. Чтобы ИИ учитывал исправление в будущих
+        проверках, откройте «Исправить вывод ИИ» у нужного критерия карточки.
+      </Alert>
       <Stack direction="row" spacing={2}>
         <TextField
           required

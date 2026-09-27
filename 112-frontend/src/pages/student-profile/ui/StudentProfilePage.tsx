@@ -1,5 +1,5 @@
 import { studentApi } from "@/entities/training";
-import { MessageComposer } from "@/features/teaching-messages";
+import { TeacherMessageAction } from "@/features/teaching-messages";
 import { getApiError } from "@/shared/api";
 import { download } from "@/shared/lib/download";
 import { PageHeader } from "@/shared/ui/PageHeader";
@@ -62,7 +62,7 @@ export function StudentProfilePage() {
               onActivePage={setActivePage}
               onAvailablePage={setAvailablePage}
             />
-            <MessageComposer studentId={studentId!} />
+            <TeacherMessageAction studentId={studentId!} />
             <Typography variant="h6" component="h2">
               Все уроки
             </Typography>

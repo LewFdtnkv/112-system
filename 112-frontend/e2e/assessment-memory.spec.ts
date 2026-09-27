@@ -159,7 +159,7 @@ test("teacher publishes and withdraws an assessment memory example", async ({
     page.getByText("Автоматически в балл не включено."),
   ).toBeVisible();
   await page
-    .getByRole("button", { name: "Сохранить свой разбор" })
+    .getByRole("button", { name: "Исправить вывод ИИ" })
     .first()
     .click();
   await page

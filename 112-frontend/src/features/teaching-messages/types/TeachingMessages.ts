@@ -11,3 +11,7 @@ export type StudentMessageProps = {
   pending: boolean;
   onRead: (id: string) => void;
 };
+
+export type TeacherMessageDialogProps = MessageComposerProps & {
+  onClose: () => void;
+};

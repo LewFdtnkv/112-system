@@ -12,7 +12,9 @@ export function GradeView({ grade }: GradeViewProps) {
           ? "Оценка по правилам и ИИ"
           : grade.method === "rules"
             ? "Автоматическая оценка"
-            : "Оценка преподавателя"}
+            : grade.revision > 1
+              ? "Пересмотрено преподавателем"
+              : "Оценка преподавателя"}
         : {scoreText(grade.score)} / {scoreText(grade.max_score)}
       </Typography>
       <p style={styles.p}>{grade.comment}</p>

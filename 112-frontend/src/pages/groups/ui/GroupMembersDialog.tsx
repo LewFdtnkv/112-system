@@ -2,7 +2,7 @@ import { userKeys, invalidateGroupMembers } from "@/entities/user";
 import { userApi, userName, UserIdentity } from "@/entities/user";
 import { GroupDisband } from "@/features/group-disband";
 import { StudentProfileDialog } from "@/features/student-profile";
-import { MessageComposer } from "@/features/teaching-messages";
+import { TeacherMessageAction } from "@/features/teaching-messages";
 import { getApiError } from "@/shared/api";
 import { PageControls, QueryState } from "@/shared/ui/QueryState";
 import { ServerSelect, type SelectOption } from "@/shared/ui/ServerSelect";
@@ -62,7 +62,7 @@ export function GroupMembersDialog({
             <Button component={Link} to={`/training?group=${group?.id}`}>
               Назначить задание
             </Button>
-            {group && <MessageComposer key={group.id} groupId={group.id} />}
+            {group && <TeacherMessageAction key={group.id} groupId={group.id} />}
             <TextField
               label="Поиск ученика в группе"
               value={search}

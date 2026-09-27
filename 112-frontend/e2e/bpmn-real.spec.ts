@@ -103,6 +103,7 @@ test("BPMN: comments, separate proctoring, automatic deadline and administration
   await expect(page).toHaveURL(/teacher$/);
   await page.goto("/groups");
   await page.getByRole("button", { name: group.name, exact: true }).click();
+  await page.getByRole("button", { name: "Написать группе" }).click();
   await page
     .getByLabel("Объявление для группы")
     .fill("Проверяйте адрес перед оповещением.");
@@ -113,12 +114,17 @@ test("BPMN: comments, separate proctoring, automatic deadline and administration
     fullPage: true,
     animations: "disabled",
   });
+  await page
+    .getByRole("dialog", { name: "Сообщение группе" })
+    .getByRole("button", { name: "Закрыть" })
+    .click();
   await page.getByRole("button", { name: /Ученик Тест · Профиль/ }).click();
   await expect(
     page.getByRole("dialog", { name: "Профиль ученика" }),
   ).toBeVisible();
   await page.getByRole("link", { name: "Подробнее", exact: true }).click();
   await expect(page).toHaveURL(`/teacher/students/${student.id}`);
+  await page.getByRole("button", { name: "Написать ученику" }).click();
   await page
     .getByLabel("Комментарий ученику")
     .fill("Индивидуальная рекомендация.");

@@ -6,7 +6,7 @@ import {
   type ReviewedCard,
 } from "@/features/lesson-review";
 import { ProctoringHistory } from "@/features/proctoring";
-import { MessageComposer } from "@/features/teaching-messages";
+import { TeacherMessageAction } from "@/features/teaching-messages";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { TrainingCardPreview } from "@/widgets/incident-card";
 import { LessonList } from "@/widgets/lesson-list";
@@ -105,12 +105,12 @@ export const TrainingResultPage = () => {
           }
         />
       )}
-      {teacher && params.get("student") && (
-        <MessageComposer studentId={params.get("student")!} />
-      )}
       {sessionId ? (
         teacher && params.get("student") ? (
           <LessonReview
+            actions={
+              <TeacherMessageAction studentId={params.get("student")!} />
+            }
             renderCardActions={(row, rows) => (
               <Stack direction="row" spacing={1}>
                 <Button

@@ -411,14 +411,18 @@ test("real API: authoring, operator drafts, revision conflict, notification and 
     path: info.outputPath("teacher-automatic-audit.png"),
     fullPage: true,
   });
-  await page.getByText("Пересмотр преподавателем", { exact: true }).click();
+  await page
+    .getByRole("button", { name: "Пересмотреть оценку", exact: true })
+    .click();
   await page.getByRole("spinbutton", { name: "Балл", exact: true }).fill("85");
   await page
     .getByLabel("Комментарий преподавателя")
     .fill("Адрес и тип происшествия указаны верно.");
   await page.getByRole("button", { name: "Сохранить оценку" }).click();
   await expect(
-    page.getByRole("heading", { name: "Оценка преподавателя: 85.00 / 100.00" }),
+    page.getByRole("heading", {
+      name: "Пересмотрено преподавателем: 85 / 100",
+    }),
   ).toBeVisible();
   await page.screenshot({
     path: info.outputPath("teacher-review.png"),
@@ -432,7 +436,9 @@ test("real API: authoring, operator drafts, revision conflict, notification and 
   await expect(page).toHaveURL(/student$/);
   await page.goto(`/results/${lessonId}`);
   await expect(
-    page.getByRole("heading", { name: "Оценка преподавателя: 85.00 / 100.00" }),
+    page.getByRole("heading", {
+      name: "Пересмотрено преподавателем: 85 / 100",
+    }),
   ).toBeVisible();
   await page.screenshot({
     path: info.outputPath("student-result.png"),

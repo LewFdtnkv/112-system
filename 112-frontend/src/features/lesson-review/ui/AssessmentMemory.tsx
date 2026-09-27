@@ -13,6 +13,7 @@ import {
   MenuItem,
   Stack,
   Typography,
+  AlertTitle,
 } from "@mui/material";
 import { getApiError } from "@/shared/api";
 import { useMemoryCommands } from "../model/useAssessmentMemory";
@@ -37,12 +38,13 @@ export function AssessmentMemory({
   return (
     <Stack spacing={1}>
       {current && (
-        <Typography variant="body2">
+        <Alert severity="success">
+          <AlertTitle>Исправление сохранено в памяти ИИ</AlertTitle>
           Ваш разбор: {semanticLabels[current.verdict]}. {current.reason}{" "}
           {current.embedded_at
             ? "Сохранён; использование настраивается во вкладке «Память ИИ»."
-            : "Будет подготовлен к поиску при следующей проверке."}
-        </Typography>
+            : "Подготовка к поиску выполняется при новых проверках."}
+        </Alert>
       )}
       <Stack direction="row" spacing={1}>
         <Button
@@ -56,7 +58,7 @@ export function AssessmentMemory({
             });
           }}
         >
-          Сохранить свой разбор
+          {current ? "Изменить исправление ИИ" : "Исправить вывод ИИ"}
         </Button>
         {current && (
           <Button
@@ -76,7 +78,7 @@ export function AssessmentMemory({
         aria-labelledby="assessment-memory-title"
       >
         <DialogTitle id="assessment-memory-title">
-          Разбор для будущих проверок
+          Исправление для будущих проверок
         </DialogTitle>
         {draft && (
           <>
@@ -90,10 +92,15 @@ export function AssessmentMemory({
                 }
               >
                 <Alert severity="info">
-                  Пример будет использоваться только при проверке ваших занятий.
-                  Оценка этой работы не меняется — её можно изменить отдельно.
+                  Разбор попадёт в память ИИ для похожих ответов в ваших будущих
+                  занятиях. ИИ учитывает подходящие примеры, но не обязан
+                  повторять их вердикт. Текущая оценка не меняется: для неё
+                  используйте «Пересмотреть оценку» вверху страницы.
                 </Alert>
                 <Typography>{finding.label}</Typography>
+                <Typography variant="body2">
+                  Вывод ИИ: {semanticLabels[finding.verdict]}. {finding.reason}
+                </Typography>
                 <TextField
                   select
                   name="verdict"
