@@ -76,9 +76,10 @@
         border: 0;
       }
     }
-    > span {
-      flex: 1 1 200px;
+    .training-telephone__contact-name {
+      flex: 0 1 auto;
       min-width: 0;
+      max-width: 420px;
     }
     button {
       display: inline-flex;

@@ -40,11 +40,14 @@ export function TelephoneContacts({
           ))}
         </Select>
       ) : (
-        <span>{name(cue)}</span>
+        <span className="training-telephone__contact-name">
+          Кому: <strong>{name(cue)}</strong>
+        </span>
       )}
       {cue.status !== "ready" && <small>{audioStatusLabels[cue.status]}</small>}
       <button
         className="arm-small-button"
+        title={`${mode === "browser" ? "Позвонить" : "Подготовить звонок"}: ${name(cue)}`}
         disabled={
           !ready || busy || (mode !== "external" && cue.status !== "ready")
         }
@@ -58,7 +61,7 @@ export function TelephoneContacts({
         }
       >
         <CallOutlined aria-hidden="true" />
-        {mode === "browser" ? "Позвонить" : "Выбрать контакт"}
+        {mode === "browser" ? "Позвонить" : "Подготовить звонок"}
       </button>
       {mode !== "external" && !crewCallsRequired && (
         <button

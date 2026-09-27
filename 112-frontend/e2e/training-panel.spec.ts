@@ -193,7 +193,7 @@ test("training panel groups the task and controls without nested incident scroll
     .getByRole("option", { name: "Дежурный диспетчер", exact: true })
     .click();
   await panel
-    .getByRole("button", { name: "Выбрать контакт", exact: true })
+    .getByRole("button", { name: "Подготовить звонок", exact: true })
     .click();
   await expect(panel).toContainText("Наберите 9000");
   expect(command).toMatchObject({
@@ -203,7 +203,7 @@ test("training panel groups the task and controls without nested incident scroll
   });
   await panel.getByRole("button", { name: "Завершить звонок" }).click();
   await expect(
-    panel.getByRole("button", { name: "Выбрать контакт", exact: true }),
+    panel.getByRole("button", { name: "Подготовить звонок", exact: true }),
   ).toBeVisible();
   const last = page.getByRole("button", {
     name: "Признак происшествия 12: Да",
@@ -216,6 +216,35 @@ test("training panel groups the task and controls without nested incident scroll
     path: `docs/screenshots/training-panel/${browserName}-features.png`,
     animations: "disabled",
   });
+  state.cues = [
+    { ...state.cues[0], crew_code: "fire-1", crew_name: "Пожарный расчёт № 1" },
+  ];
+  state.crew_calls_required = true;
+  const contact = panel.locator(".training-telephone__contact-name");
+  await expect(contact).toContainText("Кому: Пожарный расчёт № 1");
+  await panel.scrollIntoViewIfNeeded();
+  const prepare = panel.getByRole("button", {
+    name: "Подготовить звонок",
+    exact: true,
+  });
+  const contactBox = (await contact.boundingBox())!;
+  const buttonBox = (await prepare.boundingBox())!;
+  expect(buttonBox.x - contactBox.x - contactBox.width).toBeGreaterThanOrEqual(
+    0,
+  );
+  expect(buttonBox.x - contactBox.x - contactBox.width).toBeLessThanOrEqual(10);
+  await expect(prepare).toHaveAttribute("title", /Пожарный расчёт № 1/);
+  await page.screenshot({
+    path: `docs/screenshots/training-panel/${browserName}-single-contact.png`,
+    animations: "disabled",
+  });
+  await prepare.click();
+  expect(command).toMatchObject({
+    cue_id: "cue",
+    crew_code: "fire-1",
+    transport: "manual",
+  });
+  await page.getByRole("button", { name: "Завершить звонок" }).click();
   await page.setViewportSize({ width: 390, height: 844 });
   await panel.scrollIntoViewIfNeeded();
   await checkPhoneWidths();
