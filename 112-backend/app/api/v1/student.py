@@ -255,10 +255,11 @@ async def preview_fields(
         classifier_version_id=card.classifier_version_id,
         classifier_entry_id=payload.classifier_entry_id,
         features={"ekp": payload.answers},
+        address_details=payload.address,
     )
     return [
         RecipientRead(service_id=s.id, name=s.name, short_name=s.short_name)
-        for s in await recipients(session, preview_card)
+        for s in await recipients(session, preview_card, require_complete=False)
     ]
 
 

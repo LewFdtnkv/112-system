@@ -3,6 +3,7 @@
 from copy import deepcopy
 
 from app.core.validation import reject_field
+from app.domain.dds_workflow import INACTIVE
 from app.schemas.student import DraftData
 from app.services.field_evaluation import summarize
 
@@ -78,22 +79,35 @@ def validate_exercise(policy, scenario, cards):
                     "scenario_version_id",
                     "Для занятия ДДС укажите в карточке бригады и цели их работы.",
                 )
+            if (exercise or {}).get("workflow") == "crews-v2" and policy.kind in {
+                "practice",
+                "assessment",
+            }:
+                from app.domain.dds_workflow import TERMINAL
+
+                if any(t["status"] not in TERMINAL for t in targets):
+                    reject_field(
+                        "scenario_version_id",
+                        "Для полной ситуации нужны карточки с целью завершить работы "
+                        "или обоснованно отказаться. "
+                        "Промежуточные цели используйте в отработке навыка.",
+                    )
             if focused(policy.model_dump(mode="json")):
                 initial = {
                     c["crew_code"]: c["history"][-1]["status"]
                     for c in (exercise or {}).get("initial_crews", [])
                 }
                 assignment_work = any(
-                    initial.get(t["crew_code"]) in (None, "cancelled") or t["status"] == "cancelled"
+                    initial.get(t["crew_code"]) in {None, *INACTIVE} or t["status"] == "cancelled"
                     for t in targets
                 )
                 response_work = any(t["status"] not in {"assigned", "cancelled"} for t in targets)
                 if skills == {"dds_response"} and any(
-                    initial.get(t["crew_code"]) == "cancelled" for t in targets
+                    initial.get(t["crew_code"]) in INACTIVE for t in targets
                 ):
                     reject_field(
                         "learning.target_skills",
-                        "В исходной истории назначение бригады отменено: "
+                        "В исходной истории назначение завершено отказом или отменой: "
                         "добавьте навык назначения бригад или выберите другую карточку.",
                     )
                 if "dds_crews" in skills and not assignment_work:

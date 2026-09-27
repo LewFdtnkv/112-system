@@ -3,7 +3,10 @@ from app.services.learning_hints.policy import GOALS
 
 
 def dds_task(read, goals):
-    from app.schemas.dds import CREW_LABELS, CREW_TRANSITIONS
+    from app.domain.dds_workflow import transitions
+    from app.schemas.dds import CREW_LABELS
+
+    graph = transitions(read.dds.get("workflow"))
 
     crews = {c["crew_code"]: c for c in read.dds["crews"]}
     for goal in goals:
@@ -47,7 +50,7 @@ def dds_task(read, goals):
                 if current in seen:
                     continue
                 seen.add(current)
-                for status in sorted(CREW_TRANSITIONS[current]):
+                for status in sorted(graph[current]):
                     queue.append((status, path + [status]))
             if not route:
                 return (
@@ -64,7 +67,11 @@ def dds_task(read, goals):
                 GOALS["dds_response"],
                 f"Откройте карандаш бригады «{goal['name']}». "
                 "По сообщению бригады в нижней панели выберите следующий статус; "
-                "комментарий необязателен.",
+                + (
+                    "добавьте текст записи по сведениям задания."
+                    if read.dds.get("workflow") == "crews-v2"
+                    else "комментарий необязателен."
+                ),
                 f"Для бригады «{goal['name']}» следующий шаг: «{CREW_LABELS[route[0]]}». "
                 f"Основание — сведения задания.",
             )

@@ -284,3 +284,28 @@ def test_model_schema_restricts_keys_and_rejects_duplicates():
 async def test_prepared_crews_do_not_need_a_contact_for_a_new_call(teaching):
     _, _, job = await enqueue(teaching, crew_calls_required=True)
     assert job["status"] == "queued"
+
+
+async def test_refusal_generation_requires_teacher_reason(teaching):
+    t = teaching
+    card = await t.post("cards", t.card_payload)
+    payload = {
+        "request_id": str(uuid4()),
+        "revision": 1,
+        "service_profile_id": str(t.profile.id),
+        "initial_status": "assigned",
+        "target_status": "not_accepted",
+    }
+    error = await t.post(f"cards/{card['id']}/dds-generations", payload, expected=422)
+    assert error["detail"][0]["loc"] == ["body", "reason"]
+    result = await t.post(
+        f"cards/{card['id']}/dds-generations",
+        payload | {"reason": "Нет оборудования для устранения утечки"},
+        expected=202,
+    )
+    job = await t.db_session.get(AIJob, UUID(result["id"]))
+    plan = job.input["plan"]
+    assert plan["exercise"]["workflow"] == "crews-v2"
+    assert "Нет оборудования" in plan["slots"][-1]["meaning"]
+    output = inference.assemble(plan, draft(job))
+    assert output.required_crews[0].status == "not_accepted"

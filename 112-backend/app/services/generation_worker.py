@@ -15,6 +15,7 @@ from app.models import AIJob, CardTemplate, CardTemplateRecipient, User
 from app.models.enums import AIPurpose, JobStatus
 from app.schemas.authoring import CardCreate
 from app.schemas.generation import GeneratedText
+from app.services import group_reports
 from app.services.assessment_memory import worker as memory_worker
 from app.services.authoring.cards import validate_card_definition
 from app.services.card_generation import PROMPT_VERSION
@@ -51,7 +52,9 @@ async def claim(session):
                     AIJob.purpose.in_([AIPurpose.GENERATION, AIPurpose.DDS_GENERATION]),
                     AIJob.created_by_id.is_not(None),
                 ),
-                AIJob.purpose.in_([AIPurpose.EVALUATION, AIPurpose.RECOMMENDATION]),
+                AIJob.purpose.in_(
+                    [AIPurpose.EVALUATION, AIPurpose.RECOMMENDATION, AIPurpose.GROUP_RECOMMENDATION]
+                ),
             ),
             or_(
                 and_(AIJob.status == JobStatus.QUEUED, AIJob.available_at <= now),
@@ -70,6 +73,7 @@ async def claim(session):
         AIPurpose.DDS_GENERATION: DDS_PROMPT,
         AIPurpose.EVALUATION: ASSESSMENT_PROMPT,
         AIPurpose.RECOMMENDATION: STUDY_PROMPT,
+        AIPurpose.GROUP_RECOMMENDATION: group_reports.PROMPT_VERSION,
     }.get(job.purpose, PROMPT_VERSION)
     if job.prompt_version != expected_prompt:
         job.status, job.completed_at = JobStatus.FAILED, now
@@ -78,7 +82,7 @@ async def claim(session):
             "Сохранена оценка по правилам."
             if job.purpose == AIPurpose.EVALUATION
             else "Версия рекомендаций обновлена; задача больше не поддерживается."
-            if job.purpose == AIPurpose.RECOMMENDATION
+            if job.purpose in {AIPurpose.RECOMMENDATION, AIPurpose.GROUP_RECOMMENDATION}
             else "Формат генерации обновлён. Создайте новый пакет карточек."
         )
         job.worker_id = job.lease_expires_at = None
@@ -122,7 +126,7 @@ async def renew(session, job_id, token):
 def call_model(job):
     if job.purpose == AIPurpose.DDS_GENERATION:
         return dds_inference.compose(job)
-    if job.purpose == AIPurpose.RECOMMENDATION:
+    if job.purpose in {AIPurpose.RECOMMENDATION, AIPurpose.GROUP_RECOMMENDATION}:
         return recommendation_inference.evaluate(job), {}
     if job.purpose == AIPurpose.EVALUATION:
         return assessment_inference.evaluate(job), {}
@@ -134,6 +138,8 @@ async def finish(session, job_id, token, text: GeneratedText, metadata):
     target = await session.get(AIJob, job_id)
     if target and target.purpose == AIPurpose.DDS_GENERATION:
         return await dds_jobs.finish(session, job_id, token, text, metadata)
+    if target and target.purpose == AIPurpose.GROUP_RECOMMENDATION:
+        return await group_reports.finish(session, job_id, token, text)
     if target and target.purpose == AIPurpose.RECOMMENDATION:
         return await finish_advice(session, job_id, token, text)
     if target and target.purpose == AIPurpose.EVALUATION:
@@ -232,7 +238,7 @@ async def fail(session, job_id, token, error):
         "Сохранена оценка по правилам."
         if job.purpose == AIPurpose.EVALUATION
         else "Не удалось подготовить рекомендацию по дальнейшему обучению."
-        if job.purpose == AIPurpose.RECOMMENDATION
+        if job.purpose in {AIPurpose.RECOMMENDATION, AIPurpose.GROUP_RECOMMENDATION}
         else (
             "Упражнение ДДС не прошло проверку или не может быть сохранено. "
             "Карточка сохранена без изменений. Запустите новую генерацию в карточке."
@@ -266,7 +272,7 @@ async def heartbeat(job_id, token):
 async def process(job):
     beat = asyncio.create_task(heartbeat(job.id, job.worker_id))
     try:
-        if job.purpose == AIPurpose.RECOMMENDATION:
+        if job.purpose in {AIPurpose.RECOMMENDATION, AIPurpose.GROUP_RECOMMENDATION}:
             await recommendation_jobs.prepare(job)
         if job.purpose == AIPurpose.EVALUATION:
             await memory_worker.prepare(job)

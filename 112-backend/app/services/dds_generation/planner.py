@@ -4,19 +4,22 @@ import random
 
 from fastapi import HTTPException
 
+from app.domain.dds_workflow import PATH, required_path
 from app.schemas.dds_exercise import DDSExercise
 from app.services.authoring.catalog_access import published_profile
 from app.services.dds.exercise import validate_profile
 from app.services.service_profiles import profile_read
 
-PATH = ["assigned", "responding", "arrived", "in_progress", "completed"]
 MEANINGS = {
+    "accepted": "Руководитель подтвердил принятие карточки бригадой в работу.",
+    "not_accepted": "Бригада не приняла карточку.",
+    "refused": "Бригада отказывается продолжать принятые работы.",
     "assigned": "Назначить бригаду для работы по поступившей карточке.",
     "responding": "Бригада выехала к месту происшествия.",
     "arrived": "Бригада прибыла к месту происшествия.",
     "in_progress": "Бригада приступила к работам по карточке.",
     "completed": "Бригада завершила работы по карточке.",
-    "cancelled": "Поручение отменить назначение этой бригады. Причина не задана.",
+    "cancelled": "Поручение отменить назначение этой бригады. ",
 }
 
 
@@ -42,16 +45,28 @@ async def plan(session, card, recipients, request, seed):
     rng = random.Random(seed)
     if not request.crew_codes:
         crews = rng.sample(crews, 1)
+    if (
+        request.target_status in {"not_accepted", "refused", "cancelled"}
+        and not (request.reason or "").strip()
+    ):
+        from app.core.validation import reject_field
+
+        reject_field("reason", "Укажите причину отказа или отмены — она станет частью условия.")
     # Validate every fixed combination before enqueueing, not inside the worker.
     combinations = [
         (start, end)
         for start in ["unassigned", *PATH[:-1]]
-        for end in [*PATH, "cancelled"]
+        for end in ([request.target_status] if request.target_status else PATH)
         if (request.initial_status is None or start == request.initial_status)
         and (request.target_status is None or end == request.target_status)
         and (
-            end == "cancelled"
-            or (PATH.index(end) > (-1 if start == "unassigned" else PATH.index(start)))
+            (end == "cancelled")
+            or (end == "not_accepted" and start in {"unassigned", "assigned"})
+            or (end == "refused")
+            or (
+                end in PATH
+                and PATH.index(end) > (-1 if start == "unassigned" else PATH.index(start))
+            )
         )
     ]
     if not combinations:
@@ -71,8 +86,8 @@ async def plan(session, card, recipients, request, seed):
         done = [] if start == "unassigned" else PATH[: PATH.index(start) + 1]
         remaining = (
             PATH[len(done) : PATH.index(end) + 1]
-            if end != "cancelled"
-            else (["assigned"] if not done else []) + ["cancelled"]
+            if end in PATH
+            else [status for status in required_path(end) if status not in done]
         )
         history = []
         for i, status in enumerate(done):
@@ -104,7 +119,12 @@ async def plan(session, card, recipients, request, seed):
                     "crew": crew.name,
                     "status": status,
                     "kind": "message",
-                    "meaning": MEANINGS[status],
+                    "meaning": MEANINGS[status]
+                    + (
+                        f" Причина: {request.reason}"
+                        if status in {"not_accepted", "refused", "cancelled"}
+                        else ""
+                    ),
                 }
             )
     exercise = DDSExercise.model_validate(

@@ -20,6 +20,7 @@ pytestmark = pytest.mark.anyio
 
 def exercise(profile_id):
     return {
+        "workflow": "crews-v1",
         "service_profile_id": profile_id,
         "crew_calls_required": True,
         "initial_crews": [

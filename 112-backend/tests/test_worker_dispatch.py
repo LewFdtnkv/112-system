@@ -40,9 +40,12 @@ def test_worker_dispatches_generation_assessment_and_recommendations(monkeypatch
             AIPurpose.DDS_GENERATION: ("dds", {}),
             AIPurpose.EVALUATION: ("assessment", {}),
             AIPurpose.RECOMMENDATION: ("advice", {}),
+            AIPurpose.GROUP_RECOMMENDATION: ("advice", {}),
         }[purpose]
     )
-    assert calls == [purpose]
+    assert calls == [
+        AIPurpose.RECOMMENDATION if purpose == AIPurpose.GROUP_RECOMMENDATION else purpose
+    ]
 
 
 @pytest.mark.anyio
@@ -78,7 +81,9 @@ async def test_worker_prepares_only_the_context_required_by_its_job(monkeypatch,
     monkeypatch.setattr(worker, "finish", finished)
     monkeypatch.setattr(worker, "fail", failed)
     await worker.process(job)
-    assert recommendation.await_count == (purpose == AIPurpose.RECOMMENDATION)
+    assert recommendation.await_count == (
+        purpose in {AIPurpose.RECOMMENDATION, AIPurpose.GROUP_RECOMMENDATION}
+    )
     assert assessment.await_count == (purpose == AIPurpose.EVALUATION)
     assert generation.await_count == (purpose == AIPurpose.GENERATION)
     assert dds.await_count == (purpose == AIPurpose.DDS_GENERATION)

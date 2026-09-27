@@ -24,6 +24,7 @@ from app.schemas.student import (
     StudentAssignmentRead,
     StudentLessonRead,
 )
+from app.services.dds.timing import timing
 from app.services.dds_delivery import execution_for
 from app.services.learning import learning_result
 from app.services.lesson_clock import execution_deadline
@@ -90,6 +91,7 @@ async def lesson_work(session: AsyncSession, lesson: Lesson, student_id: UUID) -
                 ),
                 scheduled_at=assignment.scheduled_at,
                 received_at=assignment.released_at,
+                dds_timing=timing(attempt) if attempt else None,
                 first_opened_at=attempt.first_opened_at if attempt else None,
                 first_response_at=attempt.first_response_at if attempt else None,
                 response_norm_seconds=attempt.settings_snapshot.get("response_norm_seconds")

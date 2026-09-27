@@ -27,7 +27,11 @@ async def selected_entry(session: AsyncSession, card: IncidentCard) -> Classifie
 
 
 async def recipients(
-    session: AsyncSession, card: IncidentCard, entry_id: UUID | None = None
+    session: AsyncSession,
+    card: IncidentCard,
+    entry_id: UUID | None = None,
+    *,
+    require_complete=True,
 ) -> list[Service]:
     if entry_id is None:
         entry = await selected_entry(session, card)
@@ -55,7 +59,14 @@ async def recipients(
         raise HTTPException(status_code=409, detail="Active prepared service routes are required")
 
     selected = {
-        r.service_id for r in applicable_routes(entry, [r for r, _ in routes], card.features)
+        r.service_id
+        for r in applicable_routes(
+            entry,
+            [r for r, _ in routes],
+            card.features,
+            getattr(card, "address_details", {}),
+            require_complete=require_complete,
+        )
     }
     return [service for route, service in routes if route.service_id in selected]
 

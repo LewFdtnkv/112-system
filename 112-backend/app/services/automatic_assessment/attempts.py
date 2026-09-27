@@ -69,8 +69,8 @@ async def assess_attempt(session, attempt, card_read):
             if attempt.settings_snapshot["dds_policy"].get("required_crews"):
                 policy_snapshot["version"] = "dds-crews-v2"
                 policy_snapshot["weights"]["dds_assignment"] = 20
-            if attempt.settings_snapshot["dds_policy"].get("workflow") == "crews-v1":
-                policy_snapshot["version"] = "dds-crew-workflow-v1"
+            if attempt.settings_snapshot["dds_policy"].get("workflow") in {"crews-v1", "crews-v2"}:
+                policy_snapshot["version"] = attempt.settings_snapshot["dds_policy"]["workflow"]
                 policy_snapshot["weights"] = {c["code"]: float(c["max_score"]) for c in criteria}
             snapshot["dds"] = card_read.dds
             snapshot["dds_policy"] = attempt.settings_snapshot["dds_policy"]

@@ -173,7 +173,8 @@ async def enqueue(session, teacher_id: UUID, request: GenerationCreate):
         plan["mode"] = p.mode
         if "phrases" in plan:
             rng.shuffle(plan["phrases"])
-        recommended = applicable_routes(entry, routes_by_entry[entry.id], {"ekp": answers})
+        address, address_text = resolve_address(p, plan, rng)
+        recommended = applicable_routes(entry, routes_by_entry[entry.id], {"ekp": answers}, address)
         service_ids = (
             p.service_ids if p.service_ids is not None else [r.service_id for r in recommended]
         )
@@ -181,7 +182,6 @@ async def enqueue(session, teacher_id: UUID, request: GenerationCreate):
             raise HTTPException(409, "Маршрут ЕКП содержит отключённую службу")
 
         name, gender_label, age, phone = resolve_caller(p, plan, rng)
-        address, address_text = resolve_address(p, plan, rng)
         features = {f.label: answers[f.key] for f in definitions if f.key in answers}
         facts = {
             "Тип происшествия": entry.display_name or entry.name,

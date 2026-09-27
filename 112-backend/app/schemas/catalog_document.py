@@ -60,6 +60,29 @@ class RouteDefinition(StrictModel):
     service_code: str = Field(pattern=r"^[a-z0-9_-]{1,50}$")
     is_main: bool = False
     when: dict[str, FeatureAnswer] = Field(default_factory=dict, max_length=30)
+    addresses: list[
+        dict[
+            Literal[
+                "country",
+                "region",
+                "locality",
+                "district",
+                "area",
+                "street",
+                "house",
+                "building",
+                "structure",
+                "object",
+            ],
+            Title,
+        ]
+    ] = Field(default_factory=list, max_length=100, exclude_if=lambda value: not value)
+
+    @model_validator(mode="after")
+    def valid_addresses(self):
+        if any(not group for group in self.addresses):
+            raise ValueError("Укажите хотя бы одну часть адреса в территориальном условии.")
+        return self
 
 
 def validate_feature_dependencies(features):
@@ -100,7 +123,9 @@ class EntryDefinition(EntryPresentation, StrictModel):
                     raise ValueError("An array route condition must contain at least one option")
         if not self.notification_required and self.routes:
             raise ValueError("Non-notifying types cannot have service routes")
-        if self.notification_required and not any(not r.when for r in self.routes):
+        if self.notification_required and not any(
+            not r.when and not r.addresses for r in self.routes
+        ):
             raise ValueError("At least one unconditional route is required")
         if sum(r.is_main for r in self.routes) > 1:
             raise ValueError("Only one main service is allowed")
@@ -137,3 +162,7 @@ class CatalogClone(StrictModel):
 class RoutePreview(StrictModel):
     classifier_entry_id: UUID
     answers: dict[str, FeatureAnswer] = Field(default_factory=dict, max_length=30)
+    address: dict[
+        Annotated[str, StringConstraints(max_length=50)],
+        Annotated[str, StringConstraints(max_length=255)],
+    ] = Field(default_factory=dict, max_length=30)

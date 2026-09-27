@@ -66,13 +66,14 @@ async def export_document(session, version):
         }
     grouped = {}
     for route, service in pairs:
-        if route.conditions and set(route.conditions) != {"when"}:
+        if route.conditions and set(route.conditions) - {"when", "addresses"}:
             raise HTTPException(409, "Unsupported classifier condition format")
         grouped.setdefault(route.entry_id, []).append(
             {
                 "service_code": service.code,
                 "is_main": route.is_main,
                 "when": route.conditions.get("when", {}),
+                "addresses": route.conditions.get("addresses", []),
             }
         )
     return CatalogDocument(
@@ -122,7 +123,11 @@ async def write_entry(session, version_id, item, services, *, entry=None, row=1)
                 service_id=services[r.service_code].id,
                 service_name=services[r.service_code].name,
                 is_main=r.is_main,
-                conditions={"when": r.when} if r.when else {},
+                conditions={"when": r.when, "addresses": r.addresses}
+                if r.addresses
+                else {"when": r.when}
+                if r.when
+                else {},
             )
             for r in item.routes
         ]

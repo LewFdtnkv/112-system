@@ -2,6 +2,7 @@
 
 from fastapi import APIRouter
 
+from .group_reports import router as group_reports_router
 from .groups import router as groups_router
 from .messages import router as messages_router
 from .proctoring import router as proctoring_router
@@ -16,3 +17,5 @@ router.include_router(students_router)
 router.include_router(reports_router)
 router.include_router(user_audit_router)
 router.include_router(proctoring_router)
+
+router.include_router(group_reports_router)

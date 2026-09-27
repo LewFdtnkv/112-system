@@ -208,7 +208,7 @@ async def test_local_training_uses_source_catalog_and_repeats(db_session, tmp_pa
                 assert bool(data["address_details"]) == (kind == "review")
                 assert bool(started["card"]["classifier_entry_id"]) == (kind == "skill_practice")
             else:
-                assert started["dds"]["workflow"] == "crews-v1"
+                assert started["dds"]["workflow"] == "crews-v2"
                 assert bool(started["dds"]["crews"]) == (kind == "review")
     from uuid import UUID
 

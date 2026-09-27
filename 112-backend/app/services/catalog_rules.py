@@ -1,7 +1,12 @@
 from fastapi import HTTPException
 from pydantic import ValidationError
 
-from app.schemas.catalog_document import FeatureDefinition, validate_feature_dependencies
+from app.domain.address_routes import address_matches
+from app.schemas.catalog_document import (
+    FeatureDefinition,
+    RouteDefinition,
+    validate_feature_dependencies,
+)
 
 
 def feature_definitions(entry):
@@ -67,19 +72,27 @@ def condition_matches(expected, actual):
     return type(expected) is type(actual) and expected == actual
 
 
-def applicable_routes(entry, routes, features):
+def applicable_routes(entry, routes, features, address=None, *, require_complete=True):
     definitions = feature_definitions(entry)
     answers = (features or {}).get("ekp", {})
-    validate_answers(definitions, answers)
+    validate_answers(definitions, answers, require_complete=require_complete)
     by_key = {f.key: f for f in definitions}
     result = []
     for route in routes:
         if not route.conditions:
             result.append(route)
             continue
-        if set(route.conditions) != {"when"} or not isinstance(route.conditions["when"], dict):
+        if set(route.conditions) - {"when", "addresses"} or not isinstance(
+            route.conditions.get("when", {}), dict
+        ):
             raise HTTPException(409, "Unsupported classifier condition format")
-        conditions = route.conditions["when"]
+        try:
+            rule = RouteDefinition.model_validate({"service_code": "route", **route.conditions})
+        except ValidationError as exc:
+            raise HTTPException(409, "Invalid address route") from exc
+        if not address_matches(rule.addresses, address):
+            continue
+        conditions = rule.when
         if any(
             k not in by_key or not by_key[k].accepts(v) or v == [] for k, v in conditions.items()
         ):

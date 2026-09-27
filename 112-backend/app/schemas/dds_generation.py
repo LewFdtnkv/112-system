@@ -15,9 +15,10 @@ class DDSGenerationCreate(StrictModel):
     service_profile_id: UUID
     crew_codes: list[CrewCode] | None = Field(default=None, min_length=1, max_length=2)
     initial_status: (
-        Literal["unassigned", "assigned", "responding", "arrived", "in_progress"] | None
+        Literal["unassigned", "assigned", "accepted", "responding", "arrived", "in_progress"] | None
     ) = None
     target_status: CrewStatus | None = None
+    reason: str | None = Field(default=None, max_length=2000)
     crew_calls_required: bool = False
     replace_existing: bool = False
 

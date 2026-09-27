@@ -147,8 +147,15 @@ async def _validate_card_definition(session: AsyncSession, payload: CardCreate) 
     selected = set(payload.recipient_service_ids)
     allowed = {route.service_id for route in routes}
     required = {route.service_id for route in routes if not route.conditions}
-    if entry.conditions.get("format") in ("boolean-features-v1", "typed-features-v1"):
-        required = {r.service_id for r in applicable_routes(entry, routes, payload.data.features)}
+    if entry.conditions.get("format") in ("boolean-features-v1", "typed-features-v1") or any(
+        r.conditions.get("addresses") for r in routes
+    ):
+        required = {
+            r.service_id
+            for r in applicable_routes(
+                entry, routes, payload.data.features, payload.data.address_details
+            )
+        }
         allowed = required
     if payload.use_recommended_recipients and (not required <= selected or not selected <= allowed):
         raise HTTPException(422, "Recipients must follow the selected classifier routes")

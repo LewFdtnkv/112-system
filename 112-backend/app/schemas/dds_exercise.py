@@ -6,12 +6,23 @@ from uuid import UUID
 from pydantic import Field, StringConstraints, ValidationError, model_validator
 from pydantic_core import PydanticCustomError
 
+from app.domain.dds_workflow import INACTIVE
 from app.schemas.catalog_document import StrictModel
 from app.schemas.dds import CREW_TRANSITIONS, CrewRequirement
 
 Text = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=5000)]
 CrewCode = Annotated[str, Field(pattern=r"^[A-Za-z0-9_-]{1,100}$")]
-CrewStatus = Literal["assigned", "responding", "arrived", "in_progress", "completed", "cancelled"]
+CrewStatus = Literal[
+    "assigned",
+    "accepted",
+    "not_accepted",
+    "responding",
+    "arrived",
+    "in_progress",
+    "completed",
+    "refused",
+    "cancelled",
+]
 
 
 def invalid_field(path, message):
@@ -37,7 +48,13 @@ class PreparedCrew(StrictModel):
         current = None
         previous_time = 86400
         for index, event in enumerate(self.history):
-            allowed = CREW_TRANSITIONS[current] if current else {"assigned"}
+            from app.domain.dds_workflow import TRANSITIONS
+
+            allowed = (
+                (CREW_TRANSITIONS.get(current, set()) | TRANSITIONS.get(current, set()))
+                if current
+                else {"assigned"}
+            )
             if event.status not in allowed:
                 invalid_field(
                     ("history", index, "status"),
@@ -59,6 +76,7 @@ class CrewReport(StrictModel):
 
 
 class DDSExercise(StrictModel):
+    workflow: Literal["crews-v1", "crews-v2"] = "crews-v2"
     service_profile_id: UUID
     initial_crews: list[PreparedCrew] = Field(default_factory=list, max_length=100)
     required_crews: list[CrewRequirement] = Field(min_length=1, max_length=100)
@@ -67,6 +85,27 @@ class DDSExercise(StrictModel):
 
     @model_validator(mode="after")
     def remaining_work(self):
+        from app.domain.dds_workflow import transitions
+
+        graph = transitions(self.workflow)
+        for ci, crew in enumerate(self.initial_crews):
+            previous = None
+            for ei, event in enumerate(crew.history):
+                if event.status not in (graph[previous] if previous else {"assigned"}):
+                    invalid_field(
+                        ("initial_crews", ci, "history", ei, "status"),
+                        "Недопустимый переход статуса бригады.",
+                    )
+                if (
+                    self.workflow == "crews-v2"
+                    and event.status != "assigned"
+                    and not event.comment.strip()
+                ):
+                    invalid_field(
+                        ("initial_crews", ci, "history", ei, "comment"),
+                        "Укажите текст записи; для отказа — причину.",
+                    )
+                previous = event.status
         initial = {c.crew_code: c for c in self.initial_crews}
         goals = {c.crew_code: c.status for c in self.required_crews}
         if len(initial) != len(self.initial_crews) or len(goals) != len(self.required_crews):
@@ -87,8 +126,8 @@ class DDSExercise(StrictModel):
                 if event.status == "assigned":
                     cycle = []
                 cycle.append(event.status)
-            if (goal == "cancelled" and current == goal) or (
-                goal != "cancelled" and current != "cancelled" and goal in cycle
+            if (goal in INACTIVE and current == goal) or (
+                goal not in INACTIVE and current not in INACTIVE and goal in cycle
             ):
                 invalid_field(
                     ("required_crews", index, "status"),
@@ -101,7 +140,7 @@ class DDSExercise(StrictModel):
                 if status in seen:
                     continue
                 seen.add(status)
-                pending.extend(CREW_TRANSITIONS[status] if status else ["assigned"])
+                pending.extend(graph[status] if status else ["assigned"])
             if goal not in seen:
                 invalid_field(
                     ("required_crews", index, "status"),

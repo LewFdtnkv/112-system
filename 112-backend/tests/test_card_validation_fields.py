@@ -11,6 +11,7 @@ pytestmark = pytest.mark.anyio
 
 def dds(profile_id):
     return {
+        "workflow": "crews-v1",
         "service_profile_id": str(profile_id),
         "initial_crews": [],
         "required_crews": [{"crew_code": "main", "status": "arrived"}],

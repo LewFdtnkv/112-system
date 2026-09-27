@@ -29,7 +29,7 @@ from app.services.student.reads import attempt_read
 
 async def act(session, attempt_id, student_id, data):
     attempt, lesson, response = await owned_dds(session, attempt_id, student_id)
-    if attempt.settings_snapshot["dds_policy"].get("workflow") == "crews-v1":
+    if attempt.settings_snapshot["dds_policy"].get("workflow") in {"crews-v1", "crews-v2"}:
         raise HTTPException(409, "В этом занятии меняются только статусы бригад.")
     existing = await session.scalar(
         select(AttemptEvent).where(

@@ -1,1 +1,1 @@
-PROMPT_VERSION = "dds-generation-v1"
+PROMPT_VERSION = "dds-generation-v2"

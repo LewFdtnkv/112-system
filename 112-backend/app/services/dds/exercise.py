@@ -4,6 +4,7 @@ from datetime import timedelta
 
 from fastapi import HTTPException
 
+from app.domain.dds_workflow import INACTIVE
 from app.models import CrewAssignment
 from app.models.enums import EventActor
 from app.schemas.dds_exercise import DDSExercise
@@ -29,7 +30,7 @@ async def validate_profile(session, exercise: DDSExercise, recipient_ids):
     if exercise.crew_calls_required:
         contacts = {c.code: c for c in data.contacts}
         for goal in exercise.required_crews:
-            if goal.status == "cancelled" or initial.get(goal.crew_code) not in (None, "cancelled"):
+            if goal.status == "cancelled" or initial.get(goal.crew_code) not in {None, *INACTIVE}:
                 continue
             contact = contacts.get(active[goal.crew_code].contact_code)
             if not contact or contact.target_service_id != profile.service_id:
@@ -51,7 +52,7 @@ def policy_for(exercise):
         "и организуйте начальную работу необходимых бригад."
     )
     return {
-        "workflow": "crews-v1",
+        "workflow": data.workflow,
         "crew_calls_required": data.crew_calls_required,
         "required_crews": [g.model_dump() for g in data.required_crews],
         "steps": [{"status": "completed", "message": briefing, "crew_number": None}],

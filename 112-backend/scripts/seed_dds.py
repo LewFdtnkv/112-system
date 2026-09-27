@@ -47,6 +47,7 @@ def card_exercise(profile_id, *, continuing=False, phone=False):
             }
             for status, seconds, message in (
                 ("assigned", 300, "Расчёт назначен, руководитель оповещён предыдущей сменой."),
+                ("accepted", 240, "Карточка принята в работу."),
                 ("responding", 180, "Расчёт выехал."),
                 ("arrived", 60, "Прибыли по адресу."),
             )
@@ -58,6 +59,7 @@ def card_exercise(profile_id, *, continuing=False, phone=False):
         [STEPS[0]["message"]] if phone else [s["message"] for s in STEPS[3 if continuing else 0 :]]
     )
     return {
+        "workflow": "crews-v2",
         "service_profile_id": str(profile_id),
         "initial_crews": [{"crew_code": "fire-1", "history": history}] if history else [],
         "required_crews": [{"crew_code": "fire-1", "status": "assigned" if phone else "completed"}],
@@ -103,7 +105,7 @@ async def populate_dds(
     for i, source in enumerate(source_cards or [], start=1):
         dds_card_ids.append(
             await create(
-                f"dds-card-v2-{i}",
+                f"dds-card-v3-{i}",
                 "cards",
                 source
                 | {
@@ -115,7 +117,7 @@ async def populate_dds(
             )
         )
     scenario_id = await create(
-        "dds-scenario-v2",
+        "dds-scenario-v3",
         "scenarios",
         {
             "title": f"{prefix}: ДДС — пожар и работа расчёта",
@@ -145,7 +147,7 @@ async def populate_dds(
         ("active", "ДДС — практика работы с расчётами"),
     ):
         lesson_id = await create(
-            f"dds-lesson-v2-{kind}",
+            f"dds-lesson-v3-{kind}",
             "lessons/start",
             {
                 "request_id": str(
@@ -210,7 +212,7 @@ async def populate_crew_call_lesson(
     phone_cards = (
         [
             await create(
-                "dds-phone-card-v2",
+                "dds-phone-card-v3",
                 "cards",
                 source_cards[0]
                 | {
@@ -224,7 +226,7 @@ async def populate_crew_call_lesson(
         else card_ids[:1]
     )
     phone_scenario = await create(
-        "dds-phone-scenario-v2",
+        "dds-phone-scenario-v3",
         "scenarios",
         {
             "title": f"{prefix}: ДДС — передать задачу руководителю",
@@ -245,14 +247,14 @@ async def populate_crew_call_lesson(
         },
     )
     return await create(
-        "dds-phone-lesson-v2",
+        "dds-phone-lesson-v3",
         "lessons/start",
         {
             "request_id": str(uuid5(NAMESPACE_URL, f"source-demo/{prefix}/{phone_scenario}/phone")),
             "group_id": group_id,
             "scenario_version_id": phone_scenario,
             "title": f"{prefix}: ДДС — звонок руководителю бригады",
-            "learning": {"kind": "practice"},
+            "learning": {"kind": "skill_practice", "target_skills": ["dds_crews"]},
         },
     )
 
@@ -276,7 +278,7 @@ async def complete_attempt(gateway, attempt):
         status = step["status"]
         if status in {h["status"] for h in attempt["dds"]["history"]}:
             continue
-        if status != "accepted":
+        if status != "accepted" or attempt["dds"].get("workflow") == "crews-v2":
             crew = next((c for c in attempt["dds"]["crews"] if c["crew_code"] == "fire-1"), None)
             if crew is None:
                 await command(
@@ -285,7 +287,7 @@ async def complete_attempt(gateway, attempt):
                 crew = next(c for c in attempt["dds"]["crews"] if c["crew_code"] == "fire-1")
             if status not in {h["status"] for h in crew["history"]}:
                 await command("crews", status, step["message"])
-        if attempt["dds"].get("workflow") != "crews-v1":
+        if attempt["dds"].get("workflow") not in {"crews-v1", "crews-v2"}:
             await command("actions", status, step["message"])
     await gateway.command(attempt["id"], "submit", {"revision": attempt["dds"]["revision"]})
 

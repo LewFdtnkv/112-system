@@ -234,6 +234,8 @@ async def test_generation_claims_are_exclusive_across_connections():
                         purpose=AIPurpose.GENERATION,
                         created_by_id=owner_id,
                         idempotency_key=uuid4(),
+                        # Test locking, not host/VM clock synchronization.
+                        available_at=datetime.now(UTC) - timedelta(minutes=1),
                         prompt_version=PROMPT_VERSION,
                         input={},
                     )

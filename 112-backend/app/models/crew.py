@@ -28,9 +28,14 @@ class CrewAssignment(UUIDPrimaryKey, Base):
             ondelete="RESTRICT",
         ),
         UniqueConstraint("response_id", "crew_code"),
+        CheckConstraint(
+            "status NOT IN ('not_accepted','refused') OR length(btrim(comment)) > 0",
+            name="refusal_reason",
+        ),
         CheckConstraint("revision > 0", name="positive_revision"),
         CheckConstraint(
-            "status IN ('assigned','responding','arrived','in_progress','completed','cancelled')",
+            "status IN ('assigned','accepted','not_accepted','responding','arrived',"
+            "'in_progress','completed','refused','cancelled')",
             name="valid_status",
         ),
     )

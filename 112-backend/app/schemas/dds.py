@@ -3,6 +3,7 @@ from uuid import UUID
 
 from pydantic import Field, StringConstraints, model_validator
 
+from app.domain.dds_workflow import CREW_TRANSITIONS as CREW_TRANSITIONS
 from app.schemas.catalog_document import StrictModel
 from app.schemas.numbers import INT32_MAX
 
@@ -39,22 +40,32 @@ class DDSStep(StrictModel):
 
 class CrewRequirement(StrictModel):
     crew_code: str = Field(pattern=r"^[A-Za-z0-9_-]{1,100}$")
-    status: Literal["assigned", "responding", "arrived", "in_progress", "completed", "cancelled"]
+    status: Literal[
+        "assigned",
+        "accepted",
+        "not_accepted",
+        "responding",
+        "arrived",
+        "in_progress",
+        "completed",
+        "refused",
+        "cancelled",
+    ]
 
 
 class DDSPolicy(StrictModel):
-    workflow: Literal["service-v1", "crews-v1"] = "service-v1"
+    workflow: Literal["service-v1", "crews-v1", "crews-v2"] = "service-v1"
     crew_calls_required: bool = False
     steps: list[DDSStep] = Field(min_length=1, max_length=7)
     required_crews: list[CrewRequirement] = Field(default_factory=list, max_length=100)
 
     @model_validator(mode="after")
     def valid_steps(self):
-        if self.crew_calls_required and self.workflow != "crews-v1":
+        if self.crew_calls_required and self.workflow not in {"crews-v1", "crews-v2"}:
             raise ValueError("Crew calls require the crew workflow")
         if len({c.crew_code for c in self.required_crews}) != len(self.required_crews):
             raise ValueError("Required crews must not repeat")
-        if self.workflow == "crews-v1":
+        if self.workflow in {"crews-v1", "crews-v2"}:
             if not self.required_crews or any(not step.message.strip() for step in self.steps):
                 raise ValueError("Crew exercises require messages and crew goals")
             return self
@@ -87,14 +98,6 @@ class DDSFinish(StrictModel):
     revision: int = Field(ge=1, le=INT32_MAX, strict=True)
 
 
-CREW_TRANSITIONS = {
-    "assigned": {"responding", "cancelled"},
-    "responding": {"arrived", "cancelled"},
-    "arrived": {"in_progress", "completed", "cancelled"},
-    "in_progress": {"completed", "cancelled"},
-    "completed": set(),
-    "cancelled": {"assigned"},
-}
 CREW_LABELS = {**STATUS_LABELS, "assigned": "Назначена", "cancelled": "Назначение отменено"}
 
 
@@ -103,6 +106,16 @@ class CrewCommand(StrictModel):
     revision: int = Field(ge=1, le=INT32_MAX, strict=True)
     information_event_id: UUID
     crew_code: str = Field(pattern=r"^[A-Za-z0-9_-]{1,100}$")
-    status: Literal["assigned", "responding", "arrived", "in_progress", "completed", "cancelled"]
+    status: Literal[
+        "assigned",
+        "accepted",
+        "not_accepted",
+        "responding",
+        "arrived",
+        "in_progress",
+        "completed",
+        "refused",
+        "cancelled",
+    ]
     crew_number: str | None = Field(default=None, max_length=100)
     comment: Annotated[str, StringConstraints(strip_whitespace=True, max_length=10000)] = ""

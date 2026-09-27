@@ -9,6 +9,7 @@ from app.models import (
 )
 from app.services.activity import owned_student
 from app.services.exports import export_rows
+from app.services.report_data import card_results, detail_sheets
 from app.services.views import lesson_rows_query
 
 router = APIRouter(tags=["activity"])
@@ -63,4 +64,5 @@ async def report(
         ],
         format,
         "training-report",
+        extra_sheets=detail_sheets(await card_results(session, data)),
     )

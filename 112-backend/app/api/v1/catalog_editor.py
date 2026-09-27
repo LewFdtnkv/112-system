@@ -121,7 +121,16 @@ async def detail(version_id: UUID, entry_id: UUID, session: SessionDep, admin: A
             "response_scenario": entry.response_scenario,
             "features": feature_definitions(entry),
             "routes": [
-                {"service_code": s.code, "is_main": r.is_main, "when": r.conditions.get("when", {})}
+                {
+                    "service_code": s.code,
+                    "is_main": r.is_main,
+                    "when": r.conditions.get("when", {}),
+                    **(
+                        {"addresses": r.conditions["addresses"]}
+                        if r.conditions.get("addresses")
+                        else {}
+                    ),
+                }
                 for r, s in pairs
             ],
         },

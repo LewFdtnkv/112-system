@@ -154,7 +154,7 @@ async def publish_classifier(session: AsyncSession, version_id: UUID, admin_id: 
             if not route.conditions:
                 continue
             if (
-                set(route.conditions) != {"when"}
+                set(route.conditions) - {"when", "addresses"}
                 or not isinstance(route.conditions["when"], dict)
                 or not set(route.conditions["when"]) <= set(definitions)
                 or any(
@@ -163,6 +163,9 @@ async def publish_classifier(session: AsyncSession, version_id: UUID, admin_id: 
                 )
             ):
                 raise HTTPException(409, "Invalid classifier route conditions")
+    from app.services.catalog_editor import export_document
+
+    await export_document(session, version)  # Validates address groups before publication.
     version.revision += 1
     version.status = PublicationStatus.PUBLISHED
     version.approved_by_id = admin_id

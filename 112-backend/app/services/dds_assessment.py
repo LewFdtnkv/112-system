@@ -24,7 +24,7 @@ def crew_goal_met(crew, expected):
 
 
 def check_dds(policy, read):
-    if policy.get("workflow") == "crews-v1":
+    if policy.get("workflow") in {"crews-v1", "crews-v2"}:
         return check_crew_exercise(policy, read)
     history = read.dds["history"]
     fields = []
@@ -108,9 +108,10 @@ def criteria_dds(check):
         ("dds_status", "dds.status.", 80, "Статусы ДДС по сообщениям задания"),
         ("dds_crew", "dds.crew.", 20, "Номер наряда"),
         ("dds_assignment", "dds.assignment.", 20, "Назначение и результат работы бригад"),
+        ("dds_timing", "dds.timing.", 10, "Своевременность открытия и первой записи"),
         ("dds_notification", "dds.notification.", 20, "Оповещение руководителей бригад"),
     ]:
-        fields = [f for f in check.fields if f.field.startswith(prefix)]
+        fields = [f for f in check.fields if f.field.startswith(prefix) and f.scored]
         if fields:
             correct = sum(f.status == "matched" for f in fields)
             criteria.append(
@@ -213,6 +214,15 @@ def check_crew_exercise(policy, read):
                     status="matched" if completed else "missing",
                 )
             )
+    if policy.get("workflow") == "crews-v2":
+        from app.services.dds.qa4_assessment import completion_checks, timing_checks
+
+        if read.learning.kind in {"practice", "assessment"}:
+            # Replace the single target-state check with the mandatory path.
+            fields = [f for f in fields if not f.field.startswith("dds.status.")]
+            fields.extend(completion_checks(policy, crews, names))
+        fields.extend(timing_checks(read))
+        return summarize(fields)
     norm = read.dds.get("reaction_norm_seconds")
     if norm is not None:
         response_at = read.dds.get("first_decision_at")

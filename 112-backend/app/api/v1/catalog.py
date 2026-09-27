@@ -14,6 +14,7 @@ from app.schemas.catalog import (
     ServiceProfileRead,
     ServiceRead,
 )
+from app.schemas.catalog_document import RoutePreview
 from app.schemas.service_profile import ProfileRead
 from app.services.authoring.catalog_access import published_classifier, published_profile
 from app.services.service_profiles import profile_read
@@ -153,3 +154,22 @@ async def list_profiles(
             .offset(offset)
         )
     )
+
+
+@router.post("/classifiers/{version_id}/recipients-preview")
+async def preview_recipients(
+    version_id: UUID, payload: RoutePreview, session: SessionDep, teacher: TeacherDep
+):
+    from types import SimpleNamespace
+
+    from app.services.student.routing import recipients
+
+    await published_classifier(session, version_id)
+    card = SimpleNamespace(
+        classifier_version_id=version_id,
+        classifier_entry_id=payload.classifier_entry_id,
+        features={"ekp": payload.answers},
+        address_details=payload.address,
+    )
+    services = await recipients(session, card, require_complete=False)
+    return [{"service_id": s.id, "name": s.name, "short_name": s.short_name} for s in services]

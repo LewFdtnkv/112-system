@@ -1,6 +1,7 @@
 from fastapi import HTTPException
 from sqlalchemy import select
 
+from app.domain.dds_workflow import INACTIVE
 from app.models import (
     IncidentCard,
     ServiceProfile,
@@ -86,7 +87,9 @@ async def initialize(session, attempt, scenario, source, now):
 
         learning = attempt.settings_snapshot["learning"]
         skills = skills_for(learning, "dds")
-        effective = (raw if exercise else policy.model_dump(mode="json")) | {"workflow": "crews-v1"}
+        effective = (raw if exercise else policy.model_dump(mode="json")) | {
+            "workflow": raw.get("workflow", "crews-v1") if exercise else "crews-v1"
+        }
         if "dds_response" not in skills:
             prepared = {
                 c["crew_code"]: c["history"][-1]["status"]
@@ -95,7 +98,7 @@ async def initialize(session, attempt, scenario, source, now):
             effective["required_crews"] = [
                 {**r, "status": "cancelled" if r["status"] == "cancelled" else "assigned"}
                 for r in effective["required_crews"]
-                if prepared.get(r["crew_code"]) in (None, "cancelled") or r["status"] == "cancelled"
+                if prepared.get(r["crew_code"]) in {None, *INACTIVE} or r["status"] == "cancelled"
             ]
         attempt.settings_snapshot = attempt.settings_snapshot | {"dds_policy": effective}
         if focused(learning):

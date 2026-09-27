@@ -40,7 +40,16 @@ def select_ids(data, invoke=None):
     }
     content = {"skills": data["profile"]["skills"], "candidates": skills, "materials": materials}
     prompt = [
-        {"role": "system", "content": SYSTEM},
+        {
+            "role": "system",
+            "content": SYSTEM
+            + (
+                " Результаты относятся к группе. Выбирай занятия для группы; "
+                "числа уже рассчитаны сервером."
+                if data["profile"].get("group")
+                else ""
+            ),
+        },
         {"role": "user", "content": json.dumps(content, ensure_ascii=False)},
     ]
     if sum(len(m["content"]) for m in prompt) > 10000:

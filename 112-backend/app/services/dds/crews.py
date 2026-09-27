@@ -5,9 +5,10 @@ from datetime import UTC, datetime
 from fastapi import HTTPException
 from sqlalchemy import select
 
+from app.core.validation import reject_field
+from app.domain.dds_workflow import transitions
 from app.models import AttemptEvent, CrewAssignment
 from app.models.enums import AttemptStatus, EventActor, LessonStatus
-from app.schemas.dds import CREW_TRANSITIONS
 from app.services.audit import append_event
 from app.services.dds.access import owned_dds
 from app.services.student.reads import attempt_read
@@ -30,9 +31,10 @@ async def act(session, attempt_id, student_id, data):
         raise HTTPException(409, "This attempt is no longer editable")
     if response.revision != data.revision:
         raise HTTPException(409, "DDS response revision is stale; reload the card")
-    if attempt.settings_snapshot["dds_policy"].get(
-        "workflow"
-    ) != "crews-v1" and response.status.value not in {
+    if attempt.settings_snapshot["dds_policy"].get("workflow") not in {
+        "crews-v1",
+        "crews-v2",
+    } and response.status.value not in {
         "accepted",
         "responding",
         "arrived",
@@ -65,8 +67,21 @@ async def act(session, attempt_id, student_id, data):
         )
     if scope and "dds_response" not in scope and data.status not in {"assigned", "cancelled"}:
         raise HTTPException(422, "В этом упражнении отрабатывается только назначение бригад.")
+    policy = attempt.settings_snapshot["dds_policy"]
+    graph = transitions(policy.get("workflow"))
+    if (
+        policy.get("workflow") == "crews-v2"
+        and data.status != "assigned"
+        and not data.comment.strip()
+    ):
+        reject_field(
+            "comment",
+            "Укажите причину отказа или отмены."
+            if data.status in {"not_accepted", "refused", "cancelled"}
+            else "Добавьте текст записи о работе бригады.",
+        )
     previous = row.status if row else None
-    allowed = CREW_TRANSITIONS[row.status] if row else {"assigned"}
+    allowed = graph[row.status] if row else {"assigned"}
     if data.status not in allowed:
         raise HTTPException(422, "Invalid crew status transition")
     if row is None:
@@ -81,6 +96,12 @@ async def act(session, attempt_id, student_id, data):
     # Only a valid student command counts; prepared assignments never start reaction timing.
     if attempt.settings_snapshot.get("delivery") == "dds-stream-v1":
         attempt.first_response_at = attempt.first_response_at or datetime.now(UTC)
+    if (
+        policy.get("workflow") == "crews-v2"
+        and data.status not in {"assigned", "cancelled"}
+        and data.comment.strip()
+    ):
+        attempt.first_record_at = attempt.first_record_at or datetime.now(UTC)
     # All crew and service edits participate in one optimistic concurrency boundary.
     response.revision += 1
     await session.flush()

@@ -104,7 +104,7 @@ def credits_for(evaluation, criteria, semantic):
                 "dds_crews"
                 if path.startswith(("dds.assignment.", "dds.notification."))
                 else "dds_response"
-                if path.startswith("dds.status.") or path.startswith("dds.crew.")
+                if path.startswith(("dds.status.", "dds.crew.", "dds.timing."))
                 else field_skill(path)
             )
             if skill not in LABELS or skill == "description" or path == "address_text":

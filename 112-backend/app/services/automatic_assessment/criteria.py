@@ -1,6 +1,8 @@
 from decimal import ROUND_HALF_UP, Decimal
 
 GROUPS = {
+    "dds_timing": "Нормативы открытия и первой записи",
+    "dds_notification": "Оповещение руководителей бригад",
     "dds_status": "Статусы ДДС по сообщениям задания",
     "dds_crew": "Номер наряда",
     "dds_assignment": "Назначение и результат работы бригад",

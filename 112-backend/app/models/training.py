@@ -150,6 +150,7 @@ class Attempt(UUIDPrimaryKey, Base):
     )
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     first_opened_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    first_record_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     first_response_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     end_reason: Mapped[str | None] = mapped_column(Text)

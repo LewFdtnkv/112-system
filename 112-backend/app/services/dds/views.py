@@ -1,11 +1,13 @@
 from sqlalchemy import func, select
 
+from app.domain.dds_workflow import transitions
 from app.models import (
     AttemptEvent,
     CrewAssignment,
     ResponseEvent,
 )
-from app.schemas.dds import CREW_TRANSITIONS, STATUS_LABELS, TRANSITIONS
+from app.schemas.dds import STATUS_LABELS, TRANSITIONS
+from app.services.dds.timing import timing
 from app.services.lesson_clock import elapsed_seconds
 from app.services.telephony.crew_notifications import notifications
 
@@ -45,15 +47,19 @@ async def context(session, attempt, responses):
     )
     crews = await crew_context(session, attempt)
     requirements = attempt.settings_snapshot["dds_policy"].get("required_crews", [])
-    crew_workflow = attempt.settings_snapshot["dds_policy"].get("workflow") == "crews-v1"
+    crew_workflow = attempt.settings_snapshot["dds_policy"].get("workflow") in {
+        "crews-v1",
+        "crews-v2",
+    }
     calls = await notifications(session, attempt, crews)
     return {
+        "timing": timing(attempt),
         "crew_messages": attempt.settings_snapshot["dds_policy"]
         .get("card_exercise", {})
         .get("messages", []),
         "card_exercise": bool(attempt.settings_snapshot["dds_policy"].get("card_exercise")),
         "crew_calls": calls,
-        "workflow": "crews-v1" if crew_workflow else "service-v1",
+        "workflow": attempt.settings_snapshot["dds_policy"].get("workflow", "service-v1"),
         "crews": crews,
         "crew_goals": []
         if crew_workflow
@@ -165,7 +171,9 @@ async def crew_context(session, attempt):
             ),
             "crew_number": row.crew_number,
             "comment": row.comment,
-            "allowed_statuses": sorted(CREW_TRANSITIONS[row.status]),
+            "allowed_statuses": sorted(
+                transitions(attempt.settings_snapshot["dds_policy"].get("workflow"))[row.status]
+            ),
             "history": [
                 {
                     "id": str(e.id),
