@@ -9,11 +9,14 @@ root = Path("/etc/asterisk")
 password = os.environ["ARI_PASSWORD"]
 address = os.environ.get("SIP_PUBLIC_ADDRESS", "127.0.0.1")
 ip_address(address)
-local_net = os.environ.get("SIP_LOCAL_NET", "172.16.0.0/12")
+container_address = ip_address(socket.gethostbyname(socket.gethostname()))
+# Published UDP traffic arrives through Docker's gateway, including host clients.
+# Treating the whole bridge subnet as local leaks the container IP into SIP/SDP.
+local_net = os.environ.get("SIP_LOCAL_NET", "auto") or "auto"
+if local_net == "auto":
+    local_net = f"{container_address}/{container_address.max_prefixlen}"
 ip_network(local_net)
-ice_address = str(
-    ip_address(os.environ.get("SIP_ICE_ADDRESS", socket.gethostbyname(socket.gethostname())))
-)
+ice_address = str(ip_address(os.environ.get("SIP_ICE_ADDRESS", str(container_address))))
 for value in (password, address, local_net):
     if any(char in value for char in "\r\n;[]"):
         raise ValueError("Invalid configuration value")

@@ -33,7 +33,7 @@ services:
     environment:
       ARI_PASSWORD: ${ARI_PASSWORD:-}
       SIP_PUBLIC_ADDRESS: ${SIP_PUBLIC_ADDRESS:-127.0.0.1}
-      SIP_LOCAL_NET: ${SIP_LOCAL_NET:-172.16.0.0/12}
+      SIP_LOCAL_NET: ${SIP_LOCAL_NET:-auto}
     ports:
       - "${SIP_BIND_ADDRESS:-127.0.0.1}:5060:5060/udp"
       - "${SIP_BIND_ADDRESS:-127.0.0.1}:10000-10100:10000-10100/udp"
