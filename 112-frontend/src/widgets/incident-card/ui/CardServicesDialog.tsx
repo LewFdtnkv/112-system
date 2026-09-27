@@ -6,11 +6,11 @@ import { Dialog, DialogContent, DialogTitle } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { useId, useState } from "react";
 import type { Props } from "../types/CardServicesDialog";
-import { useIncidentCardStore } from "../model/IncidentCardContext";
+import { useIncidentCardContext } from "../model/IncidentCardContext";
 
 export function CardServicesDialog({ open, onClose }: Props) {
   const titleId = useId();
-  const editor = useIncidentCardStore((state) => state.editor);
+  const editor = useIncidentCardContext().editor;
   const {
     fields,
     remote,

@@ -1,5 +1,5 @@
 import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
-import { catalogApi } from "@/entities/training";
+import { catalogApi } from "@/entities/catalog";
 import { ServerSelect } from "@/shared/ui/ServerSelect";
 import { Button, Paper, Stack } from "@mui/material";
 import { styles } from "../styles/ProfileForm";

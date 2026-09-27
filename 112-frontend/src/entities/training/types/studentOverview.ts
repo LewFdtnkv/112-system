@@ -1,4 +1,5 @@
-import type { LessonRow, Page, UserDetail } from "../model/types";
+import type { LessonRow, Page } from "../model/types";
+import type { UserDetail } from "@/entities/user/@x/training";
 export interface PerformanceTrack {
   track: "training" | "assessment";
   graded_lessons: number;

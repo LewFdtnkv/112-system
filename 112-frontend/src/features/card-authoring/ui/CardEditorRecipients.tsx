@@ -1,7 +1,7 @@
+import { catalogLookupApi } from "@/entities/catalog";
 import { ValidationField } from "@/shared/ui/form-validation";
 import { QueryState } from "@/shared/ui/QueryState";
 import { ServerSelect } from "@/shared/ui/ServerSelect";
-import { cardApi } from "@/entities/training";
 import { Alert, Checkbox, Chip, FormControlLabel, Stack } from "@mui/material";
 import { styles } from "../styles/CardEditor";
 import type { CardEditorPanelProps } from "../types/CardEditorPanels";
@@ -85,10 +85,12 @@ export function CardEditorRecipients({
                 setManualRecipients([...manualRecipients, value]);
             }}
             load={async (query, signal) =>
-              (await cardApi.services(query, signal)).map((service) => ({
-                id: service.id,
-                label: service.name,
-              }))
+              (await catalogLookupApi.services(query, signal)).map(
+                (service) => ({
+                  id: service.id,
+                  label: service.name,
+                }),
+              )
             }
           />
           <Stack direction="row" sx={styles.stack}>

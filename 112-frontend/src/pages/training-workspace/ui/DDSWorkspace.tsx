@@ -3,7 +3,7 @@ import { TrainingPanel } from "./TrainingPanel";
 import { DDSArrivalStatus } from "./DDSArrivalStatus";
 import { Telephone } from "@/features/telephone";
 import { LearningHelp } from "@/features/learning-assistance";
-import { DDSWorkspaceStoreProvider } from "../model/DDSWorkspaceContext";
+import { DDSWorkspaceProvider } from "../model/DDSWorkspaceContext";
 import { crewStatusLabels } from "@/entities/training";
 import { attemptCard } from "@/features/incident-editing";
 import { getApiError } from "@/shared/api";
@@ -19,7 +19,7 @@ export function DDSWorkspace(props: DDSWorkspaceProps) {
   const { attempt, dds, completed, elapsed, error, busy, reload, close } =
     workspace;
   return (
-    <DDSWorkspaceStoreProvider value={workspace}>
+    <DDSWorkspaceProvider value={workspace}>
       <IncidentCardDialog
         card={attemptCard(attempt)}
         log={[]}
@@ -162,6 +162,6 @@ export function DDSWorkspace(props: DDSWorkspaceProps) {
         responseFooter={<DDSFooter />}
       />
       <DDSStatusEditor />
-    </DDSWorkspaceStoreProvider>
+    </DDSWorkspaceProvider>
   );
 }

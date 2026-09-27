@@ -1,9 +1,6 @@
-import {
-  activityApi,
-  percentText,
-  userName,
-  UserIdentity,
-} from "@/entities/training";
+import { studentApi } from "@/entities/training";
+import { percentText } from "@/entities/training";
+import { userName, UserIdentity } from "@/entities/user";
 import { getStudentProfilePath } from "@/shared/config/routes";
 import { QueryState } from "@/shared/ui/QueryState";
 import {
@@ -25,7 +22,7 @@ export function StudentProfileDialog({
 }: StudentProfileDialogProps) {
   const query = useQuery({
     queryKey: ["student-overview", studentId, 0],
-    queryFn: ({ signal }) => activityApi.overview(studentId, 0, signal),
+    queryFn: ({ signal }) => studentApi.overview(studentId, 0, signal),
   });
   return (
     <Dialog

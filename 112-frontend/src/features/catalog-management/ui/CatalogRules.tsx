@@ -1,6 +1,6 @@
 import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
 import { ValidatedForm } from "@/shared/ui/form-validation";
-import { catalogApi } from "@/entities/training";
+import { catalogApi } from "@/entities/catalog";
 import { getApiError } from "@/shared/api";
 import { rowAction } from "@/shared/lib/rowAction";
 import { useDebounced } from "@/shared/lib/useDebounced";

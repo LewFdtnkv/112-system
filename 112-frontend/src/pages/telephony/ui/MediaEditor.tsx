@@ -35,8 +35,9 @@ export function MediaEditor({ cue }: { cue: MediaCue }) {
         />
       </div>
       <ValidatedForm
+        form={form}
         error={update.error}
-        onSubmit={form.handleSubmit((data) => update.mutate(data))}
+        onValid={(data) => update.mutate(data)}
       >
         <TextField
           fullWidth

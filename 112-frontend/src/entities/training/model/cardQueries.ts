@@ -1,4 +1,4 @@
-import { queryOptions } from "@tanstack/react-query";
+import { queryOptions, type QueryClient } from "@tanstack/react-query";
 import { cardApi } from "../api/cardApi";
 import { generationApi } from "../api/generationApi";
 
@@ -8,6 +8,7 @@ export const cardKeys = {
   list: (query: string, page: number) => ["cards", query, page] as const,
   detail: (id: string | undefined) => ["card", id] as const,
   options: ["card-options"] as const,
+  ddsGenerations: (id: string) => ["dds-generations", id] as const,
   routes: (versionId: string | undefined, entryId: string | undefined) =>
     ["routes", versionId, entryId] as const,
   generations: ["card-generations"] as const,
@@ -42,3 +43,12 @@ export const cardGenerationOptionsQueryOptions = () =>
     queryKey: cardKeys.generationOptions,
     queryFn: ({ signal }) => generationApi.options(signal),
   });
+
+/** Invalidate all views of a changed card, including scenario selectors. */
+export function invalidateCard(client: QueryClient, id?: string) {
+  return Promise.all([
+    client.invalidateQueries({ queryKey: cardKeys.all }),
+    client.invalidateQueries({ queryKey: id ? cardKeys.detail(id) : ["card"] }),
+    client.invalidateQueries({ queryKey: cardKeys.options }),
+  ]);
+}

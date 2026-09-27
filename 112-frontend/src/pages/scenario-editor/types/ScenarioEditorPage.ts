@@ -22,8 +22,20 @@ export type ScenarioCardsFieldsProps = {
 };
 
 export type ScenarioDdsSettingsProps = {
-  form: ScenarioInput;
   profile: SelectOption | null;
-  onChange: (form: ScenarioInput) => void;
   onProfileChange: (profile: SelectOption | null) => void;
 };
+
+export type ScenarioEditorState = {
+  form: ScenarioInput;
+  profile: SelectOption | null;
+  choice: SelectOption | null;
+  rows: { card: SelectOption; delay: number }[];
+};
+export type ScenarioEditorAction =
+  | { type: "form"; value: ScenarioInput }
+  | { type: "profile" | "choice"; value: SelectOption | null }
+  | { type: "add" }
+  | { type: "remove"; index: number }
+  | { type: "move"; index: number; step: number }
+  | { type: "delay"; index: number; value: number };

@@ -1,7 +1,10 @@
 import type { CardData } from "./card";
 import type { LearningPolicy } from "./learning";
 import type { DDSContext } from "../model/catalogTypes";
-import type { ClassifierEntry, Recipient } from "./catalog";
+import type {
+  ClassifierEntry,
+  Recipient,
+} from "@/entities/catalog/@x/training";
 
 export interface Attempt {
   pauses?: { start: string; end: string | null }[];

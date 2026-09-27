@@ -1,5 +1,5 @@
 import { FieldErrors } from "@/shared/ui/form-validation";
-import { IncidentCardStoreProvider } from "../model/IncidentCardContext";
+import { IncidentCardProvider } from "../model/IncidentCardContext";
 import { useIncidentEditor } from "@/features/incident-editing";
 import { FieldFeedbackContext } from "@/shared/ui/arm/FieldFeedback";
 import { Dialog, DialogTitle } from "@mui/material";
@@ -86,7 +86,7 @@ function IncidentCardForm(props: IncidentCardFormProps) {
     onClose();
   };
   return (
-    <IncidentCardStoreProvider value={{ editor, disabled }}>
+    <IncidentCardProvider value={{ editor, disabled }}>
       <FieldErrors
         issues={editor.fieldIssues}
         focusKey={editor.validationAttempt}
@@ -207,6 +207,6 @@ function IncidentCardForm(props: IncidentCardFormProps) {
           setModal={setModal}
         />
       </FieldErrors>
-    </IncidentCardStoreProvider>
+    </IncidentCardProvider>
   );
 }

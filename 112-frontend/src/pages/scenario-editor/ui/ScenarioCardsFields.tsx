@@ -1,5 +1,5 @@
 import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
-import { cardApi } from "@/entities/training";
+import { cardKeys, cardApi } from "@/entities/training";
 import { ServerSelect } from "@/shared/ui/ServerSelect";
 import { Button, Paper, Stack, Typography } from "@mui/material";
 import { styles } from "../styles/ScenarioEditorPage";
@@ -27,7 +27,7 @@ export function ScenarioCardsFields({
       </Typography>
       <ServerSelect
         label="Карточка из библиотеки"
-        queryKey={["card-options", role, profileId]}
+        queryKey={[...cardKeys.options, role, profileId]}
         value={choice}
         onChange={onChoiceChange}
         load={async (query, signal) =>

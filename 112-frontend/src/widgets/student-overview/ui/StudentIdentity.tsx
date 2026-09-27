@@ -1,4 +1,4 @@
-import { UserPhoto, userName } from "@/entities/training";
+import { UserPhoto, userName } from "@/entities/user";
 import type { StudentIdentityProps } from "../types/StudentOverviewPanel";
 export function StudentIdentity({ user, groups }: StudentIdentityProps) {
   return (

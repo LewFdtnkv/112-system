@@ -1,6 +1,7 @@
+import { userKeys } from "@/entities/user";
 import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
 import { ValidatedForm } from "@/shared/ui/form-validation";
-import { userApi, type GroupItem } from "@/entities/training";
+import { userApi, type GroupItem } from "@/entities/user";
 import { GroupDisband } from "@/features/group-disband";
 import { rowAction } from "@/shared/lib/rowAction";
 import { PageHeader } from "@/shared/ui/PageHeader";
@@ -25,7 +26,7 @@ export const GroupsPage = () => {
   const [page, setPage] = useState(0);
   const [group, setGroup] = useState<GroupItem | null>(null);
   const groups = useQuery({
-    queryKey: ["groups", page, search],
+    queryKey: [...userKeys.groups, page, search],
     queryFn: ({ signal }) =>
       userApi.groups({ q: search, offset: page * 20 }, signal),
   });
@@ -33,8 +34,8 @@ export const GroupsPage = () => {
     mutationFn: () => userApi.createGroup(name),
     onSuccess: () => {
       setName("");
-      void client.invalidateQueries({ queryKey: ["groups"] });
-      void client.invalidateQueries({ queryKey: ["group-options"] });
+      void client.invalidateQueries({ queryKey: userKeys.groups });
+      void client.invalidateQueries({ queryKey: userKeys.groupOptions });
     },
   });
   const openGroup = (item: GroupItem) => setGroup(item);

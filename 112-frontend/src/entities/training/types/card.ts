@@ -1,5 +1,8 @@
 import type { DDSCardExercise } from "./ddsExercise";
-import type { ClassifierEntry, Recipient } from "./catalog";
+import type {
+  ClassifierEntry,
+  Recipient,
+} from "@/entities/catalog/@x/training";
 
 export interface CardData {
   caller_name?: string | null;

@@ -1,4 +1,4 @@
-import { activityApi } from "@/entities/training";
+import { userAuditApi } from "@/entities/user";
 import { getApiError } from "@/shared/api";
 import { download } from "@/shared/lib/download";
 import { PageControls, QueryState } from "@/shared/ui/QueryState";
@@ -23,12 +23,12 @@ export function UserActivityDialog({
   const [page, setPage] = useState(0);
   const query = useQuery({
     queryKey: ["user-activity", userId, page],
-    queryFn: () => activityApi.activity(userId, page * 20),
+    queryFn: () => userAuditApi.activity(userId, page * 20),
   });
   const exportLog = useMutation({
     mutationFn: async (format: "txt" | "xlsx") =>
       download(
-        await activityApi.activityExport(userId, format),
+        await userAuditApi.activityExport(userId, format),
         `user-activity.${format}`,
       ),
   });

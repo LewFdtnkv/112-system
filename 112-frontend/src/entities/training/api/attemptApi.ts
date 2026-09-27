@@ -4,14 +4,16 @@ import type {
   Attempt,
   AuditPage,
   CardData,
-  ClassifierEntry,
   ClientObservation,
   Page,
+} from "../model/types";
+import type {
+  ClassifierEntry,
   Recipient,
   Service,
-} from "../model/types";
-import type { Params } from "../types/trainingApi";
-import { apiGet as get, apiId as id } from "./apiClient";
+} from "@/entities/catalog/@x/training";
+import type { Params } from "@/shared/types/query";
+import { apiGet as get, apiId as id } from "@/shared/api/apiClient";
 
 /** Student attempt reads and commands. */
 export const attemptApi = {

@@ -1,4 +1,4 @@
-import { catalogApi } from "@/entities/training";
+import { catalogApi } from "@/entities/catalog";
 import { useMutation } from "@tanstack/react-query";
 
 export function useCatalogImport(onImported: () => void) {

@@ -1,3 +1,4 @@
+import { userKeys } from "@/entities/user";
 import {
   CatalogFiles,
   CatalogRules,
@@ -14,7 +15,7 @@ export const CatalogsPage = () => {
   const client = useQueryClient();
   const [selected, setSelected] = useState<string>();
   const refresh = () => {
-    void client.invalidateQueries({ queryKey: ["admin-summary"] });
+    void client.invalidateQueries({ queryKey: userKeys.statistics });
     void client.invalidateQueries({ queryKey: ["admin-classifiers"] });
     void client.invalidateQueries({ queryKey: ["classifier-options"] });
   };

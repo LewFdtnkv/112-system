@@ -5,8 +5,8 @@ import type {
   LessonStart,
   StudentLesson,
 } from "../model/types";
-import type { Params } from "../types/trainingApi";
-import { apiGet as get, apiId as id } from "./apiClient";
+import type { Params } from "@/shared/types/query";
+import { apiGet as get, apiId as id } from "@/shared/api/apiClient";
 
 /** Lesson lifecycle: lists, assignment start, and the student's lesson view. */
 export const lessonApi = {

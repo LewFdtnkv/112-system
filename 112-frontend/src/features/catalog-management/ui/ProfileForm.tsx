@@ -1,6 +1,6 @@
 import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
 import { ValidatedForm } from "@/shared/ui/form-validation";
-import { catalogApi, serviceProfileApi } from "@/entities/training";
+import { catalogApi, serviceProfileApi } from "@/entities/catalog";
 import { ServerSelect } from "@/shared/ui/ServerSelect";
 import { Alert, Button } from "@mui/material";
 import { useMutation } from "@tanstack/react-query";

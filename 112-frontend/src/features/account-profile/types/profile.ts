@@ -1,4 +1,4 @@
-import type { UserDetail, UserUpdate } from "@/entities/training";
+import type { UserDetail, UserUpdate } from "@/entities/user";
 export type ProfileValues = Pick<
   UserUpdate,
   "first_name" | "last_name" | "middle_name"

@@ -1,3 +1,4 @@
+import { userKeys } from "@/entities/user";
 import { analyticsApi } from "@/entities/training";
 import { AccountStatistics } from "@/features/account-statistics";
 import { routePaths } from "@/shared/config/routes";
@@ -8,7 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 export const AdminDashboardPage = () => {
   const query = useQuery({
-    queryKey: ["admin-summary"],
+    queryKey: userKeys.statistics,
     queryFn: ({ signal }) => analyticsApi.adminSummary(signal),
   });
   return (

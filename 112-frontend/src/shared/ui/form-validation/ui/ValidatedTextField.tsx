@@ -1,11 +1,13 @@
 import { TextField, type TextFieldProps } from "@mui/material";
-import { useId } from "react";
-import { useFieldIssue } from "../model/ValidationContext";
+import { useEffect, useId } from "react";
+import { useFieldIssue, useValidation } from "../model/ValidationContext";
 
 export function ValidatedTextField(props: TextFieldProps) {
   const generated = useId();
   const name = props.name || props.id || generated;
   const issue = useFieldIssue(name);
+  const register = useValidation()?.register;
+  useEffect(() => register?.(name, {}), [register, name]);
   return (
     <TextField
       {...props}

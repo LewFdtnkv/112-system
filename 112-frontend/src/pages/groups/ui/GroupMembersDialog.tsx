@@ -1,4 +1,5 @@
-import { userApi, userName, UserIdentity } from "@/entities/training";
+import { userKeys, invalidateGroupMembers } from "@/entities/user";
+import { userApi, userName, UserIdentity } from "@/entities/user";
 import { GroupDisband } from "@/features/group-disband";
 import { StudentProfileDialog } from "@/features/student-profile";
 import { MessageComposer } from "@/features/teaching-messages";
@@ -33,7 +34,7 @@ export function GroupMembersDialog({
   const [profile, setProfile] = useState<string | null>(null);
   const [moveStudent, setMoveStudent] = useState<string | null>(null);
   const members = useQuery({
-    queryKey: ["group-members", group?.id, page, search],
+    queryKey: [...userKeys.members, group?.id, page, search],
     queryFn: ({ signal }) =>
       userApi.users(
         { q: search, group_id: group!.id, offset: page * 20 },
@@ -45,9 +46,7 @@ export function GroupMembersDialog({
     mutationFn: () => userApi.addStudent(group!.id, student!.id),
     onSuccess: () => {
       setStudent(null);
-      void client.invalidateQueries({ queryKey: ["groups"] });
-      void client.invalidateQueries({ queryKey: ["group-options"] });
-      void client.invalidateQueries({ queryKey: ["group-members"] });
+      void invalidateGroupMembers(client);
     },
   });
   const close = () => {
@@ -74,7 +73,7 @@ export function GroupMembersDialog({
             />
             <ServerSelect
               label="Ученик"
-              queryKey={["student-options"]}
+              queryKey={userKeys.options}
               value={student}
               onChange={setStudent}
               load={async (query, signal) =>

@@ -13,7 +13,7 @@ import {
   Typography,
 } from "@mui/material";
 import { stationModeLabels } from "@/entities/telephony";
-import { UserIdentity, userName } from "@/entities/training";
+import { UserIdentity, userName } from "@/entities/user";
 import type { StationInput } from "@/entities/telephony";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { getApiError } from "@/shared/api";
@@ -47,10 +47,11 @@ export function StationsPage() {
       </Typography>
       {error && <Alert severity="error">{getApiError(error).message}</Alert>}
       <ValidatedForm
+        form={form}
         direction="row"
         error={create.error}
         className="telephony-page__form"
-        onSubmit={form.handleSubmit((data) => {
+        onValid={(data) => {
           create.mutate(
             {
               ...data,
@@ -59,7 +60,7 @@ export function StationsPage() {
             },
             { onSuccess: () => form.reset() },
           );
-        })}
+        }}
       >
         <TextField
           label="Название рабочего места"

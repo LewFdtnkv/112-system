@@ -24,14 +24,6 @@ export interface Message {
   group_name: string | null;
 }
 
-export interface Activity {
-  id: string;
-  occurred_at: string;
-  kind: string;
-  actor_id: string | null;
-  reason: string;
-}
-
 export interface ProctoringEvent {
   id: string;
   kind: string;

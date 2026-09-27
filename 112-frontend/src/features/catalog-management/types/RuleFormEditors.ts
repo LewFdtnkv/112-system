@@ -1,4 +1,4 @@
-import type { CatalogRule } from "@/entities/training";
+import type { CatalogRule } from "@/entities/catalog";
 
 export type RuleFormChange = (form: CatalogRule) => void;
 

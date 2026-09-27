@@ -5,11 +5,13 @@ import type {
   ScenarioInput,
   ScenarioItem,
 } from "../model/types";
-import type { Params } from "../types/trainingApi";
-import { apiGet as get, apiId as id } from "./apiClient";
+import type { Params } from "@/shared/types/query";
+import { apiGet as get, apiId as id } from "@/shared/api/apiClient";
 
 /** Scenario listing, details and versioned saving. */
 export const scenarioApi = {
+  remove: (id: string) =>
+    backendApi.delete(`scenarios/${id}`).json<{ result: string }>(),
   list: (params: Params, signal?: AbortSignal) =>
     get<Page<ScenarioItem>>("views/scenarios", params, signal),
   get: (versionId: string, signal?: AbortSignal) =>

@@ -1,15 +1,12 @@
 import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
 import { ValidatedForm, ValidationField } from "@/shared/ui/form-validation";
 import { scenarioApi, type ScenarioInput } from "@/entities/training";
-import { routePaths } from "@/shared/config/routes";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { QueryState } from "@/shared/ui/QueryState";
-import { type SelectOption } from "@/shared/ui/ServerSelect";
 import { Alert, Button, MenuItem, Stack } from "@mui/material";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { useScenarioCards } from "../model/useScenarioCards";
+import { useQuery } from "@tanstack/react-query";
+import { useParams } from "react-router-dom";
+import { useScenarioEditor } from "../model/useScenarioEditor";
 import type { EditorProps } from "../types/ScenarioEditorPage";
 import { AssessmentPolicyFields } from "./AssessmentPolicyFields";
 import { ScenarioCardsFields } from "./ScenarioCardsFields";
@@ -44,73 +41,22 @@ export const ScenarioEditorPage = () => {
 };
 
 function Editor({ initial }: EditorProps) {
-  const navigate = useNavigate();
-  const client = useQueryClient();
-  const [form, setForm] = useState<ScenarioInput>(() => ({
-    title: initial?.title ?? "",
-    assessment_policy: initial?.assessment_policy ?? {
-      version: "weighted-fields-v1",
-      weights: {
-        classification: 25,
-        notification: 25,
-        address: 30,
-        caller: 10,
-        victims: 10,
-      },
-    },
-    category: initial?.category ?? "",
-    difficulty: initial?.difficulty ?? "basic",
-    duration_minutes: initial?.duration_minutes ?? 15,
-    norm_seconds: initial?.norm_seconds ?? 30,
-    instructions: initial?.instructions ?? "",
-    status: initial?.status ?? "draft",
-    role: initial?.role ?? "operator_112",
-    card_ids: [],
-    service_profile_id: initial?.service_profile_id ?? null,
-    dds_policy: null,
-  }));
-  const schedule = useScenarioCards(initial);
-  const [profile, setProfile] = useState<SelectOption | null>(() =>
-    initial?.service_profile_id
-      ? { id: initial.service_profile_id, label: "Назначенный профиль ДДС" }
-      : null,
-  );
-  const save = useMutation({
-    mutationFn: () =>
-      scenarioApi.save(
-        {
-          ...form,
-          card_ids: schedule.cards.map((card) => card.id),
-          arrival_offsets_seconds:
-            form.role === "dds"
-              ? schedule.offsets
-              : schedule.cards.map(() => 0),
-          dds_policy: null,
-          service_profile_id:
-            form.role === "dds" ? (profile?.id ?? null) : null,
-        },
-        initial?.id,
-      ),
-    onSuccess: () => {
-      void client.invalidateQueries({ queryKey: ["scenarios"] });
-      void client.invalidateQueries({ queryKey: ["scenario-options"] });
-      navigate(routePaths.scenarios);
-    },
-  });
+  const {
+    form,
+    profile,
+    schedule,
+    save,
+    setForm,
+    setProfile,
+    validate,
+    submit,
+  } = useScenarioEditor({ initial });
   return (
     <ValidatedForm
       error={save.error}
+      validate={validate}
       spacing={2}
-      onSubmit={(event) => {
-        event.preventDefault();
-        if (
-          !initial ||
-          window.confirm(
-            "Сохранить новую версию сценария? Назначенные задания сохранят прежнюю версию.",
-          )
-        )
-          save.mutate();
-      }}
+      onSubmit={submit}
     >
       {initial && (
         <Alert severity="info">
@@ -120,12 +66,7 @@ function Editor({ initial }: EditorProps) {
       )}
       <ScenarioMetadataFields form={form} onChange={setForm} />
       {form.role === "dds" && (
-        <ScenarioDdsSettings
-          form={form}
-          profile={profile}
-          onChange={setForm}
-          onProfileChange={setProfile}
-        />
+        <ScenarioDdsSettings profile={profile} onProfileChange={setProfile} />
       )}
       <TextField
         name="instructions"
@@ -146,19 +87,24 @@ function Editor({ initial }: EditorProps) {
             : undefined
         }
       >
-        <ScenarioCardsFields
-          role={form.role}
-          profileId={profile?.id}
-          cards={schedule.cards}
-          choice={schedule.choice}
-          delays={schedule.delays}
-          offsets={schedule.offsets}
-          onChoiceChange={schedule.setChoice}
-          onAdd={schedule.add}
-          onRemove={schedule.remove}
-          onMove={schedule.move}
-          onDelayChange={schedule.changeDelay}
-        />
+        <ValidationField
+          name="arrival_offsets_seconds"
+          label="Расписание карточек"
+        >
+          <ScenarioCardsFields
+            role={form.role}
+            profileId={profile?.id}
+            cards={schedule.cards}
+            choice={schedule.choice}
+            delays={schedule.delays}
+            offsets={schedule.offsets}
+            onChoiceChange={schedule.setChoice}
+            onAdd={schedule.add}
+            onRemove={schedule.remove}
+            onMove={schedule.move}
+            onDelayChange={schedule.changeDelay}
+          />
+        </ValidationField>
       </ValidationField>
       <TextField
         name="status"

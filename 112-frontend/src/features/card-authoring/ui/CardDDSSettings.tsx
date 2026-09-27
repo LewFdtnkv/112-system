@@ -1,4 +1,4 @@
-import { serviceProfileApi } from "@/entities/training";
+import { catalogKeys, serviceProfileApi } from "@/entities/catalog";
 import { ServerSelect } from "@/shared/ui/ServerSelect";
 import {
   Alert,
@@ -52,7 +52,7 @@ export function CardDDSSettings({ value, onChange }: CardDDSSettingsProps) {
             name="dds_exercise.service_profile_id"
             required
             label="Профиль службы ДДС"
-            queryKey={["profiles"]}
+            queryKey={catalogKeys.profiles}
             value={
               value.service_profile_id
                 ? {

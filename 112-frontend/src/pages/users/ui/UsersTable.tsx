@@ -1,4 +1,4 @@
-import { UserIdentity, userName } from "@/entities/training";
+import { UserIdentity, userName } from "@/entities/user";
 import { rowAction } from "@/shared/lib/rowAction";
 import { PageControls } from "@/shared/ui/QueryState";
 import {

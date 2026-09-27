@@ -1,4 +1,4 @@
-import type { ProfileInput } from "@/entities/training";
+import type { ProfileInput } from "@/entities/catalog";
 
 export type ProfileFormChange = (form: ProfileInput) => void;
 export type ProfileTerritoriesProps = {

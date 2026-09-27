@@ -6,6 +6,6 @@ export interface IncidentCardContextValue {
   disabled: boolean;
 }
 
-export interface IncidentCardStoreProviderProps extends PropsWithChildren {
+export interface IncidentCardProviderProps extends PropsWithChildren {
   value: IncidentCardContextValue;
 }

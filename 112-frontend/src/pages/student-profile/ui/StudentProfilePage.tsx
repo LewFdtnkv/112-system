@@ -1,4 +1,4 @@
-import { activityApi } from "@/entities/training";
+import { studentApi } from "@/entities/training";
 import { MessageComposer } from "@/features/teaching-messages";
 import { getApiError } from "@/shared/api";
 import { download } from "@/shared/lib/download";
@@ -17,7 +17,7 @@ export function StudentProfilePage() {
   const profile = useQuery({
     queryKey: ["student-overview", studentId, activePage, availablePage],
     queryFn: ({ signal }) =>
-      activityApi.overview(
+      studentApi.overview(
         studentId!,
         activePage * 6,
         signal,
@@ -27,7 +27,7 @@ export function StudentProfilePage() {
     refetchInterval: 15000,
   });
   const report = useMutation({
-    mutationFn: () => activityApi.report("xlsx", { student_id: studentId }),
+    mutationFn: () => studentApi.report("xlsx", { student_id: studentId }),
     onSuccess: (blob) => download(blob, "student-report.xlsx"),
   });
   return (

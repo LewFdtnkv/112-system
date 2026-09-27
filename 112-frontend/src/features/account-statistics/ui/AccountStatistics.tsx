@@ -1,4 +1,4 @@
-import { activityApi } from "@/entities/training";
+import { userAuditApi } from "@/entities/user";
 import { getApiError } from "@/shared/api";
 import { download } from "@/shared/lib/download";
 import { QueryState } from "@/shared/ui/QueryState";
@@ -22,12 +22,12 @@ const roles: Record<string, string> = {
 export function AccountStatistics() {
   const query = useQuery({
     queryKey: ["account-statistics"],
-    queryFn: activityApi.statistics,
+    queryFn: userAuditApi.statistics,
     refetchInterval: 15000,
   });
   const logs = useMutation({
     mutationFn: async () =>
-      download(await activityApi.systemLogs(), "system-requests.txt"),
+      download(await userAuditApi.systemLogs(), "system-requests.txt"),
   });
   return (
     <Stack spacing={2}>

@@ -1,4 +1,4 @@
-import type { GroupItem } from "@/entities/training";
+import type { GroupItem } from "@/entities/user";
 
 export type GroupMembersDialogProps = {
   group: GroupItem | null;

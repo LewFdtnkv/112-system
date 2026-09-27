@@ -1,7 +1,7 @@
 import { getApiError } from "@/shared/api";
 import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
 import { ValidatedForm } from "@/shared/ui/form-validation";
-import { catalogApi } from "@/entities/training";
+import { catalogApi } from "@/entities/catalog";
 import { rowAction } from "@/shared/lib/rowAction";
 import { PageControls, QueryState } from "@/shared/ui/QueryState";
 import {

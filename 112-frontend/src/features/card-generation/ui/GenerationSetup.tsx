@@ -1,5 +1,6 @@
 import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
-import { cardApi, type FeatureDefinition } from "@/entities/training";
+import type { FeatureDefinition } from "@/entities/training";
+import { catalogLookupApi } from "@/entities/catalog";
 import { randomUUID as createUuid } from "@/shared/lib/uuid";
 import { ServerSelect, type SelectOption } from "@/shared/ui/ServerSelect";
 import { Alert, Chip, MenuItem, Stack } from "@mui/material";
@@ -61,7 +62,7 @@ export function GenerationSetup({ model }: CardGenerationPanelProps) {
           queryKey={["generation-classifiers"]}
           load={async (q, signal) => [
             random,
-            ...(await cardApi.classifiers(q, signal)).map((v) => ({
+            ...(await catalogLookupApi.classifiers(q, signal)).map((v) => ({
               id: v.id,
               label: v.label,
             })),
@@ -81,7 +82,7 @@ export function GenerationSetup({ model }: CardGenerationPanelProps) {
           queryKey={["generation-entries", model.version?.id]}
           load={async (q, signal) => [
             random,
-            ...(await cardApi.entries(model.version!.id, { q }, signal)).map(
+            ...(await catalogLookupApi.entries(model.version!.id, { q }, signal)).map(
               (v) => ({
                 id: v.id,
                 label: v.display_name || v.name,
@@ -115,7 +116,7 @@ export function GenerationSetup({ model }: CardGenerationPanelProps) {
             value={model.serviceChoice}
             queryKey={["generation-services"]}
             load={async (q, signal) =>
-              (await cardApi.services(q, signal)).map((s) => ({
+              (await catalogLookupApi.services(q, signal)).map((s) => ({
                 id: s.id,
                 label: `${s.short_name || s.code} — ${s.name}`,
               }))

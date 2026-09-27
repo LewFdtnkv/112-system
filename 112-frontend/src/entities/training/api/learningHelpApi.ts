@@ -1,4 +1,4 @@
-import { apiId as id, apiPost as post } from "./apiClient";
+import { apiId as id, apiPost as post } from "@/shared/api/apiClient";
 
 export const learningHelpApi = {
   hint: (

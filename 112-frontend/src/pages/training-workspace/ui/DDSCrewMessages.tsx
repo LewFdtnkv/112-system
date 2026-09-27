@@ -1,11 +1,11 @@
-import { useDDSWorkspaceStore } from "../model/DDSWorkspaceContext";
+import { useDDSWorkspaceContext } from "../model/DDSWorkspaceContext";
 import type { DDSCrewMessagesProps } from "../types/DDSCrewMessages";
 
 export function DDSCrewMessages({
   crewCode,
   unassignedOnly,
 }: DDSCrewMessagesProps) {
-  const dds = useDDSWorkspaceStore((state) => state.dds);
+  const dds = useDDSWorkspaceContext().dds;
   const messages = (dds.crew_messages ?? []).filter((m) =>
     crewCode
       ? m.crew_code === crewCode

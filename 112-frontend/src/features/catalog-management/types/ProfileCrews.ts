@@ -1,4 +1,4 @@
-import type { CrewDefinition, ProfileInput } from "@/entities/training";
+import type { CrewDefinition, ProfileInput } from "@/entities/catalog";
 
 export interface ProfileCrewsProps {
   value: CrewDefinition[];

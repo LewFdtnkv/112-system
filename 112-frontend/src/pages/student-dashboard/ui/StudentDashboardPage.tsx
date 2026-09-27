@@ -1,4 +1,4 @@
-import { activityApi } from "@/entities/training";
+import { studentApi } from "@/entities/training";
 import { StudentMessages } from "@/features/teaching-messages";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { QueryState } from "@/shared/ui/QueryState";
@@ -13,12 +13,7 @@ export const StudentDashboardPage = () => {
   const profile = useQuery({
     queryKey: ["student-overview", "me", activePage, availablePage],
     queryFn: ({ signal }) =>
-      activityApi.overview(
-        undefined,
-        activePage * 6,
-        signal,
-        availablePage * 6,
-      ),
+      studentApi.overview(undefined, activePage * 6, signal, availablePage * 6),
     refetchInterval: 15000,
   });
   return (

@@ -1,4 +1,5 @@
-import { userApi, type UserItem } from "@/entities/training";
+import { userKeys } from "@/entities/user";
+import { userApi, type UserItem } from "@/entities/user";
 import { AccountStatistics } from "@/features/account-statistics";
 import { useDebounced } from "@/shared/lib/useDebounced";
 import { PageHeader } from "@/shared/ui/PageHeader";
@@ -19,7 +20,7 @@ export const UsersPage = () => {
   const [creating, setCreating] = useState(false);
   const queryText = useDebounced(search);
   const query = useQuery({
-    queryKey: ["users", queryText, role, page],
+    queryKey: [...userKeys.users, queryText, role, page],
     queryFn: ({ signal }) =>
       userApi.users({ q: queryText, role, offset: page * 20 }, signal),
   });

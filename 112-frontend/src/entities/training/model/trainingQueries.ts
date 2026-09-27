@@ -2,7 +2,7 @@ import { queryOptions, useQuery, useQueryClient } from "@tanstack/react-query";
 import { lessonApi } from "../api/lessonApi";
 import { attemptApi } from "../api/attemptApi";
 import type { Attempt } from "../types/attempt";
-import type { Params } from "../types/trainingApi";
+import type { Params } from "@/shared/types/query";
 
 export const trainingKeys = {
   attempt: (id: string) => ["attempt", id] as const,

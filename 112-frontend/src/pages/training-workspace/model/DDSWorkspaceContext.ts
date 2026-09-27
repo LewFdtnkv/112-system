@@ -1,39 +1,20 @@
-import {
-  createContext,
-  createElement,
-  useContext,
-  useLayoutEffect,
-  useState,
-} from "react";
-import { useStore } from "zustand";
-import { createStore, type StoreApi } from "zustand/vanilla";
+import { createContext, createElement, useContext } from "react";
 import type {
   DDSWorkspaceContextValue,
-  DDSWorkspaceStoreProviderProps,
+  DDSWorkspaceProviderProps,
 } from "../types/DDSControls";
 
-const DDSWorkspaceStoreContext =
-  createContext<StoreApi<DDSWorkspaceContextValue> | null>(null);
+const Context = createContext<DDSWorkspaceContextValue | null>(null);
 
-export function DDSWorkspaceStoreProvider({
+export function DDSWorkspaceProvider({
   value,
   children,
-}: DDSWorkspaceStoreProviderProps) {
-  const [store] = useState(() => createStore(() => value));
-  useLayoutEffect(() => {
-    store.setState(value, true);
-  }, [store, value]);
-  return createElement(
-    DDSWorkspaceStoreContext.Provider,
-    { value: store },
-    children,
-  );
+}: DDSWorkspaceProviderProps) {
+  return createElement(Context.Provider, { value }, children);
 }
 
-export function useDDSWorkspaceStore<T>(
-  selector: (state: DDSWorkspaceContextValue) => T,
-) {
-  const store = useContext(DDSWorkspaceStoreContext);
-  if (!store) throw new Error("DDS controls require DDSWorkspaceStoreProvider");
-  return useStore(store, selector);
+export function useDDSWorkspaceContext() {
+  const value = useContext(Context);
+  if (!value) throw new Error("Controls require DDSWorkspaceProvider");
+  return value;
 }

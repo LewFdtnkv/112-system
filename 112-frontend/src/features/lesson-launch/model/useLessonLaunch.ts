@@ -1,5 +1,6 @@
 import {
   lessonApi,
+  trainingKeys,
   scenarioApi,
   scenarioDifficultyLabel,
   type ScenarioItem,
@@ -15,7 +16,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 
 export function useLessonLaunch() {
   const [params] = useSearchParams();
-  const [group, setGroup] = useState<SelectOption | null>(() =>
+  const [group, updateGroup] = useState<SelectOption | null>(() =>
     params.get("group")
       ? { id: params.get("group")!, label: "Выбранная группа" }
       : null,
@@ -23,11 +24,11 @@ export function useLessonLaunch() {
   const [targets, setTargets] = useState<
     { id: string; label: string; kind: "group" | "student" }[]
   >([]);
-  const [from, setFrom] = useState("");
-  const [until, setUntil] = useState("");
+  const [from, updateFrom] = useState("");
+  const [until, updateUntil] = useState("");
   const [confirm, setConfirm] = useState(false);
-  const [student, setStudent] = useState<SelectOption | null>(null);
-  const [scenario, setScenario] = useState<SelectOption | null>(() =>
+  const [student, updateStudent] = useState<SelectOption | null>(null);
+  const [scenario, updateScenario] = useState<SelectOption | null>(() =>
     params.get("scenario")
       ? {
           id: params.get("scenario")!,
@@ -52,8 +53,8 @@ export function useLessonLaunch() {
         ? "Загрузка…"
         : scenarioDifficultyLabel(difficulty);
   const [learning, updateLearning] = useState(defaultLearningPolicy);
-  const [limit, setLimit] = useState("");
-  const [title, setTitle] = useState("");
+  const [limit, updateLimit] = useState("");
+  const [title, updateTitle] = useState("");
   const [requestId, setRequestId] = useState(() => randomUUID());
   const client = useQueryClient();
   const navigate = useNavigate();
@@ -80,13 +81,78 @@ export function useLessonLaunch() {
         ...(limit ? { time_limit_seconds: Number(limit) * 60 } : {}),
       }),
     onSuccess: (lesson) => {
-      void client.invalidateQueries({ queryKey: ["lessons"] });
+      void client.invalidateQueries({ queryKey: trainingKeys.lessons });
       navigate(getTrainingSessionPath(lesson.id));
     },
   });
+  const changed = () => setRequestId(randomUUID());
+  const setGroup = (value: SelectOption | null) => {
+    updateGroup(value);
+    updateStudent(null);
+    changed();
+  };
+  const setStudent = (value: SelectOption | null) => {
+    updateStudent(value);
+    changed();
+  };
+  const setScenario = (value: SelectOption | null) => {
+    updateScenario(value);
+    updateLearning((previous) => ({ ...previous, target_skills: [] }));
+    changed();
+  };
+  const setFrom = (value: string) => {
+    updateFrom(value);
+    changed();
+  };
+  const setUntil = (value: string) => {
+    updateUntil(value);
+    changed();
+  };
+  const setLimit = (value: string) => {
+    updateLimit(value);
+    changed();
+  };
+  const setTitle = (value: string) => {
+    updateTitle(value);
+    changed();
+  };
   const setLearning = (value: LearningPolicy) => {
     updateLearning(value);
-    setRequestId(randomUUID());
+    changed();
+  };
+  const addTarget = () => {
+    const value = student ?? group;
+    if (!value) return;
+    const kind = student ? "student" : "group";
+    setTargets((previous) =>
+      previous.some((target) => target.id === value.id && target.kind === kind)
+        ? previous
+        : [...previous, { ...value, kind }],
+    );
+    changed();
+  };
+  const removeTarget = (id: string, kind: "group" | "student") => {
+    setTargets((previous) =>
+      previous.filter((target) => target.id !== id || target.kind !== kind),
+    );
+    changed();
+  };
+  const validate = () => {
+    if (until && from && new Date(until) <= new Date(from))
+      return [
+        {
+          path: "available_until",
+          message: "Дата окончания должна быть позже даты начала.",
+        },
+      ];
+    if (until && new Date(until).getTime() <= Date.now())
+      return [
+        {
+          path: "available_until",
+          message: "Дата окончания уже прошла. Укажите будущую дату.",
+        },
+      ];
+    return [];
   };
   const learningValid =
     !["skill_practice", "review"].includes(learning.kind) ||
@@ -97,7 +163,9 @@ export function useLessonLaunch() {
     group,
     setGroup,
     targets,
-    setTargets,
+    addTarget,
+    removeTarget,
+    validate,
     from,
     setFrom,
     until,
@@ -115,7 +183,7 @@ export function useLessonLaunch() {
     setLimit,
     title,
     setTitle,
-    setRequestId,
+
     mutation,
   };
 }

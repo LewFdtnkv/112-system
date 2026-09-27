@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { userApi } from "@/entities/training";
+import { userApi } from "@/entities/user";
 import { useProfileCache } from "./useProfileCache";
 import type { ProfileFormProps, ProfileValues } from "../types/profile";
 export function useProfileForm({ user, onClose }: ProfileFormProps) {

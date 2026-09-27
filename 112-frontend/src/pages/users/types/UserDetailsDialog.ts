@@ -1,4 +1,4 @@
-import { type UserDetail } from "@/entities/training";
+import { type UserDetail } from "@/entities/user";
 export type UserDetailsDialogProps = {
   userId: string;
   onClose: () => void;

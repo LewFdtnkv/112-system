@@ -1,10 +1,15 @@
+import type {
+  FieldValues,
+  SubmitHandler,
+  UseFormReturn,
+} from "react-hook-form";
 import type { StackProps } from "@mui/material";
 import type { FormEventHandler, ReactNode } from "react";
 
 import type { ApiFieldError } from "@/shared/types/types";
 export type FieldIssue = ApiFieldError;
 export type FieldRule = {
-  validate: () => string | undefined;
+  validate?: () => string | undefined;
   disabled?: boolean;
 };
 export type ValidationContextValue = {
@@ -12,12 +17,14 @@ export type ValidationContextValue = {
   clear: (path: string) => void;
   register: (path: string, rule: FieldRule) => () => void;
 };
-export type ValidatedFormProps = Omit<
+export type ValidatedFormProps<T extends FieldValues = FieldValues> = Omit<
   StackProps<"form">,
   "onSubmit" | "component" | "ref"
 > & {
   error?: unknown;
-  onSubmit: FormEventHandler<HTMLFormElement>;
+  form?: UseFormReturn<T>;
+  onValid?: SubmitHandler<T>;
+  onSubmit?: FormEventHandler<HTMLFormElement>;
   validate?: () => FieldIssue[];
 };
 export type ValidationFieldProps = {

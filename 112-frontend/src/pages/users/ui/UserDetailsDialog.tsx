@@ -1,3 +1,4 @@
+import { userKeys } from "@/entities/user";
 import {
   ProfileFields,
   ProfilePhotoUpload,
@@ -5,7 +6,7 @@ import {
 } from "@/features/account-profile";
 import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
 import { ValidatedForm } from "@/shared/ui/form-validation";
-import { userApi, type UserUpdate } from "@/entities/training";
+import { userApi, type UserUpdate } from "@/entities/user";
 import { QueryState } from "@/shared/ui/QueryState";
 import {
   Alert,
@@ -33,7 +34,7 @@ import { accountDate, roleLabels } from "../model/accountDisplay";
 export function UserDetailsDialog({ userId, onClose }: UserDetailsDialogProps) {
   const [resetPassword, setResetPassword] = useState(false);
   const query = useQuery({
-    queryKey: ["user", userId],
+    queryKey: [...userKeys.user, userId],
     queryFn: ({ signal }) => userApi.get(userId, signal),
   });
   return (

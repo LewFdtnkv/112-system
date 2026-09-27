@@ -70,7 +70,15 @@ export function focusIssue(root: HTMLElement | null, path?: string) {
   const fields = Array.from(
     root.querySelectorAll<HTMLElement>("[data-validation-field]"),
   );
-  const field = fields.find((e) => e.dataset.validationField === path);
+  const field = fields
+    .filter((e) => {
+      const name = e.dataset.validationField!;
+      return name === path || path.startsWith(`${name}.`);
+    })
+    .sort(
+      (a, b) =>
+        b.dataset.validationField!.length - a.dataset.validationField!.length,
+    )[0];
   for (
     let parent = field?.parentElement;
     parent && root.contains(parent);

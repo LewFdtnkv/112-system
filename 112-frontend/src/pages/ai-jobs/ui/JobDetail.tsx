@@ -1,5 +1,5 @@
 import { jobPurposes, jobStatuses, jobMethods } from "@/entities/ai-job";
-import { UserIdentity } from "@/entities/training";
+import { UserIdentity } from "@/entities/user";
 import { QueryState } from "@/shared/ui/QueryState";
 import {
   Alert,

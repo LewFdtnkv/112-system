@@ -1,46 +1,26 @@
-import {
-  createContext,
-  createElement,
-  useContext,
-  useLayoutEffect,
-  useState,
-} from "react";
-import { useStore } from "zustand";
-import { createStore, type StoreApi } from "zustand/vanilla";
+import { createContext, createElement, useContext } from "react";
 import type {
   IncidentCardContextValue,
-  IncidentCardStoreProviderProps,
+  IncidentCardProviderProps,
 } from "../types/IncidentCardContext";
 
-const IncidentCardStoreContext =
-  createContext<StoreApi<IncidentCardContextValue> | null>(null);
+const Context = createContext<IncidentCardContextValue | null>(null);
 
-export function IncidentCardStoreProvider({
+export function IncidentCardProvider({
   value,
   children,
-}: IncidentCardStoreProviderProps) {
-  const [store] = useState(() => createStore(() => value));
-  useLayoutEffect(() => {
-    store.setState(value, true);
-  }, [store, value]);
-  return createElement(
-    IncidentCardStoreContext.Provider,
-    { value: store },
-    children,
-  );
+}: IncidentCardProviderProps) {
+  return createElement(Context.Provider, { value }, children);
 }
 
-export function useIncidentCardStore<T>(
-  selector: (state: IncidentCardContextValue) => T,
-) {
-  const store = useContext(IncidentCardStoreContext);
-  if (!store) throw new Error("Card panels require IncidentCardStoreProvider");
-  return useStore(store, selector);
+export function useIncidentCardContext() {
+  const value = useContext(Context);
+  if (!value) throw new Error("Controls require IncidentCardProvider");
+  return value;
 }
 
 export function useCardSkillDisabled(skill: string) {
-  const editor = useIncidentCardStore((state) => state.editor);
-  const disabled = useIncidentCardStore((state) => state.disabled);
+  const { editor, disabled } = useIncidentCardContext();
   return (
     disabled ||
     (!!editor.remote.editableSkills &&

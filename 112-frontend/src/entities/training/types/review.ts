@@ -1,7 +1,10 @@
 import type { LearningPolicy, LearningResult } from "./learning";
 import type { CardData } from "./card";
 import type { Attempt } from "./attempt";
-import type { ClassifierEntry, Recipient } from "./catalog";
+import type {
+  ClassifierEntry,
+  Recipient,
+} from "@/entities/catalog/@x/training";
 
 export interface Grade {
   method?: "rules" | "teacher" | "hybrid";

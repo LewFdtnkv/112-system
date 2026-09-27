@@ -1,4 +1,4 @@
-import { type ProfileInput, type ServiceProfile } from "@/entities/training";
+import { type ProfileInput, type ServiceProfile } from "@/entities/catalog";
 export type ProfileFormProps = {
   initial: ProfileInput;
   existing?: ServiceProfile;

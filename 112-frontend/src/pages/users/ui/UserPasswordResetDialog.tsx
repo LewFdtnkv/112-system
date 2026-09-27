@@ -19,10 +19,10 @@ export function UserPasswordResetDialog({
   onClose,
 }: UserPasswordResetDialogProps) {
   const resetPassword = useResetUserPassword(user.id);
-  const { register, getValues, handleSubmit, reset } =
-    useForm<PasswordResetValues>({
-      defaultValues: { temporary_password: "", confirmation: "" },
-    });
+  const form = useForm<PasswordResetValues>({
+    defaultValues: { temporary_password: "", confirmation: "" },
+  });
+  const { register, getValues, reset } = form;
   const { ref: passwordRef, ...passwordField } = register("temporary_password");
   const { ref: confirmationRef, ...confirmationField } =
     register("confirmation");
@@ -48,6 +48,7 @@ export function UserPasswordResetDialog({
           </Stack>
         ) : (
           <ValidatedForm
+            form={form}
             spacing={2}
             error={resetPassword.error}
             validate={() =>
@@ -55,11 +56,11 @@ export function UserPasswordResetDialog({
                 ? [{ path: "confirmation", message: "Пароли не совпадают." }]
                 : []
             }
-            onSubmit={handleSubmit((values) =>
+            onValid={(values) =>
               resetPassword.mutate(values.temporary_password, {
                 onSuccess: () => reset(),
-              }),
-            )}
+              })
+            }
           >
             <Alert severity="info">
               Все сеансы пользователя будут завершены. До смены временного

@@ -1,5 +1,5 @@
 import { Alert, Button, Typography } from "@mui/material";
-import { UserPhoto } from "@/entities/training";
+import { UserPhoto } from "@/entities/user";
 import { getApiError } from "@/shared/api";
 import { useProfilePhoto } from "../model/useProfilePhoto";
 import type { ProfilePhotoProps } from "../types/profile";

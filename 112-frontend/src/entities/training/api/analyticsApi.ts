@@ -1,6 +1,6 @@
 import type { Analytics } from "../model/types";
-import type { Params } from "../types/trainingApi";
-import { apiGet as get } from "./apiClient";
+import type { Params } from "@/shared/types/query";
+import { apiGet as get } from "@/shared/api/apiClient";
 
 /** Aggregate analytics and administrator dashboard counters. */
 export const analyticsApi = {

@@ -1,6 +1,6 @@
 import {
   useCardSkillDisabled,
-  useIncidentCardStore,
+  useIncidentCardContext,
 } from "../model/IncidentCardContext";
 import type { Props } from "../types/CardClassification";
 import { CardCategorySearch } from "./CardCategorySearch";
@@ -8,7 +8,7 @@ import { CardClassificationQuestionnaire } from "./CardClassificationQuestionnai
 import { CardClassificationView } from "./CardClassificationView";
 
 export function CardClassification({ viewing }: Props) {
-  const editor = useIncidentCardStore((state) => state.editor);
+  const editor = useIncidentCardContext().editor;
   const disabled = useCardSkillDisabled("classification");
   const { fields, setDetail } = editor;
   const categoryName =

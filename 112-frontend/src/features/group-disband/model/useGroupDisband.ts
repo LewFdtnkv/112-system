@@ -1,4 +1,4 @@
-import { userApi } from "@/entities/training";
+import { userApi, invalidateGroupMembers } from "@/entities/user";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import type { GroupDisbandProps } from "../types/GroupDisband";
@@ -11,17 +11,7 @@ export function useGroupDisband({ group, onDisbanded }: GroupDisbandProps) {
     onSuccess: () => {
       setOpen(false);
       onDisbanded?.();
-      for (const key of [
-        "groups",
-        "group-options",
-        "transfer-group-options",
-        "group-members",
-        "group-students",
-        "users",
-        "student-profile",
-        "student-overview",
-      ])
-        void client.invalidateQueries({ queryKey: [key] });
+      void invalidateGroupMembers(client);
     },
   });
   return {

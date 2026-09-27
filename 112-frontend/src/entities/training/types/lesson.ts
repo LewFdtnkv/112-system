@@ -1,5 +1,5 @@
 import type { LearningPolicy } from "./learning";
-import type { Page } from "./pagination";
+import type { Page } from "@/shared/types/pagination";
 
 export interface LessonRow {
   time_limit_seconds?: number | null;

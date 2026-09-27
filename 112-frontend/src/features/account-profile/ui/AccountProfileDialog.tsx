@@ -1,3 +1,4 @@
+import { userKeys } from "@/entities/user";
 import { useQuery } from "@tanstack/react-query";
 import {
   Button,
@@ -6,7 +7,7 @@ import {
   DialogTitle,
   Typography,
 } from "@mui/material";
-import { userApi } from "@/entities/training";
+import { userApi } from "@/entities/user";
 import { QueryState } from "@/shared/ui/QueryState";
 import { ValidatedForm } from "@/shared/ui/form-validation";
 import { ProfilePhotoUpload } from "./ProfilePhotoUpload";
@@ -16,7 +17,7 @@ import type { ProfileDialogProps, ProfileFormProps } from "../types/profile";
 import "../styles/profile.scss";
 export function AccountProfileDialog({ onClose }: ProfileDialogProps) {
   const query = useQuery({
-    queryKey: ["own-profile"],
+    queryKey: userKeys.ownProfile,
     queryFn: () => userApi.me(),
   });
   return (

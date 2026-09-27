@@ -1,4 +1,4 @@
-import type { CatalogRule } from "@/entities/training";
+import type { CatalogRule } from "@/entities/catalog";
 
 export const normalizeCatalogRule = (rule: CatalogRule): CatalogRule => ({
   ...rule,

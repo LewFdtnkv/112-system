@@ -1,3 +1,5 @@
+import { proctoringApi } from "@/entities/training";
+import { messageApi } from "@/entities/training";
 import { defaultLearningPolicy } from "@/entities/training";
 import { telephonyApi } from "@/entities/telephony";
 import "@testing-library/jest-dom/vitest";
@@ -13,7 +15,6 @@ import userEvent from "@testing-library/user-event";
 import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import {
-  activityApi,
   attemptApi,
   lessonApi,
   trainingKeys,
@@ -50,13 +51,13 @@ beforeEach(() => {
     cues: [],
     calls: [],
   });
-  vi.spyOn(activityApi, "messages").mockResolvedValue({
+  vi.spyOn(messageApi, "messages").mockResolvedValue({
     items: [],
     total: 0,
     limit: 20,
     offset: 0,
   });
-  vi.spyOn(activityApi, "proctoring").mockResolvedValue(new Response());
+  vi.spyOn(proctoringApi, "proctoring").mockResolvedValue(new Response());
   vi.spyOn(lessonApi, "studentLesson").mockResolvedValue(lesson);
   vi.spyOn(attemptApi, "get").mockResolvedValue(structuredClone(initial));
   vi.spyOn(attemptApi, "entries").mockResolvedValue([]);

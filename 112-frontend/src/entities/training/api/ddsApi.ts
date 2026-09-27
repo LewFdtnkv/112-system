@@ -1,6 +1,6 @@
 import type { Attempt } from "../model/types";
 import type { CrewCommand } from "../model/catalogTypes";
-import { apiId as id, apiPost as post } from "./apiClient";
+import { apiId as id, apiPost as post } from "@/shared/api/apiClient";
 
 /** DDS crew commands and submission for a student attempt. */
 export const ddsApi = {

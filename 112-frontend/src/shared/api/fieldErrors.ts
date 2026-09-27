@@ -1,9 +1,12 @@
+import { getStructuredApiFieldErrors } from "./structuredFieldErrors";
 import { isHTTPError } from "ky";
 import type { ApiFieldError } from "../types/types";
 
 export function getApiFieldErrors(error: unknown): ApiFieldError[] {
   if (!isHTTPError(error)) return [];
   const detail = (error.data as { detail?: unknown } | undefined)?.detail;
+  const structured = getStructuredApiFieldErrors(error);
+  if (structured.length) return structured;
   const rows = Array.isArray(detail)
     ? detail
     : detail &&
@@ -37,7 +40,11 @@ export function getApiFieldErrors(error: unknown): ApiFieldError[] {
       {
         path,
         message:
-          row.type === "generation_constraint" && typeof row.msg === "string"
+          [
+            "generation_constraint",
+            "card_constraint",
+            "form_constraint",
+          ].includes(row.type ?? "") && typeof row.msg === "string"
             ? row.msg
             : (messages[row.type ?? ""] ?? "Проверьте значение этого поля."),
       },

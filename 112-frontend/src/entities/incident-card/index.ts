@@ -1,4 +1,3 @@
-export { demoIncidents } from "./model/demoIncidents";
 export {
   countFilledFields,
   emptyCardFields,

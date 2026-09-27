@@ -1,6 +1,6 @@
 import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
 import { ValidatedForm } from "@/shared/ui/form-validation";
-import { userApi, type UserCreate } from "@/entities/training";
+import { userApi, invalidateUser, type UserCreate } from "@/entities/user";
 import { Button, Dialog, DialogTitle, MenuItem } from "@mui/material";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -37,9 +37,7 @@ export function UserCreateDialog({ open, onClose }: UserCreateDialogProps) {
     onSuccess: () => {
       setForm(blank);
       onClose();
-      void client.invalidateQueries({ queryKey: ["users"] });
-      void client.invalidateQueries({ queryKey: ["student-options"] });
-      void client.invalidateQueries({ queryKey: ["admin-summary"] });
+      void invalidateUser(client);
     },
   });
   return (

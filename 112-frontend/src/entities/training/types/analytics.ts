@@ -1,4 +1,4 @@
-import type { Page } from "./pagination";
+import type { Page } from "@/shared/types/pagination";
 
 export interface Analytics {
   total: number;

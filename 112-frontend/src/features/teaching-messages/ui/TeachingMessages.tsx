@@ -1,7 +1,7 @@
+import { messageApi } from "@/entities/training";
 import { getApiError } from "@/shared/api";
 import { useStudentMessages } from "../model/useStudentMessages";
 import { StudentMessage } from "./StudentMessage";
-import { activityApi } from "@/entities/training";
 import {
   ValidatedForm,
   ValidatedTextField as TextField,
@@ -20,7 +20,7 @@ export function MessageComposer({ groupId, studentId }: MessageComposerProps) {
   const [text, setText] = useState("");
   const send = useMutation({
     mutationFn: () =>
-      activityApi.send(
+      messageApi.send(
         text,
         groupId ? { group_id: groupId } : { student_id: studentId },
       ),

@@ -1,7 +1,7 @@
 import { StudentNotificationBell } from "@/features/teaching-messages";
 import { AccountProfileDialog } from "@/features/account-profile";
 import { useState } from "react";
-import { UserIdentity } from "@/entities/training";
+import { UserIdentity } from "@/entities/user";
 import LogoutIcon from "@mui/icons-material/Logout";
 import SupportAgentIcon from "@mui/icons-material/SupportAgent";
 import { Button } from "@mui/material";

@@ -1,8 +1,10 @@
 import {
   serviceProfileApi,
+  catalogKeys,
+  invalidateProfiles,
   type ProfileInput,
   type ServiceProfile,
-} from "@/entities/training";
+} from "@/entities/catalog";
 import { getApiError } from "@/shared/api";
 import { rowAction } from "@/shared/lib/rowAction";
 import { PageControls, QueryState } from "@/shared/ui/QueryState";
@@ -49,20 +51,16 @@ export function ProfilesPanel() {
   const [selected, setSelected] = useState<string>();
   const [fresh, setFresh] = useState(false);
   const query = useQuery({
-    queryKey: ["admin-profiles", page],
+    queryKey: catalogKeys.adminProfileList(undefined, page),
     queryFn: ({ signal }) =>
       serviceProfileApi.adminList({ offset: page * 20 }, signal),
   });
   const detail = useQuery({
-    queryKey: ["admin-profile", selected],
+    queryKey: catalogKeys.adminProfile(selected),
     enabled: !!selected,
     queryFn: ({ signal }) => serviceProfileApi.adminGet(selected!, signal),
   });
-  const refresh = () => {
-    void client.invalidateQueries({ queryKey: ["admin-profiles"] });
-    void client.invalidateQueries({ queryKey: ["admin-profile"] });
-    void client.invalidateQueries({ queryKey: ["profiles"] });
-  };
+  const refresh = () => { void invalidateProfiles(client); };
   const publish = useMutation({
     mutationFn: (id: string) => serviceProfileApi.publish(id),
     onSuccess: refresh,

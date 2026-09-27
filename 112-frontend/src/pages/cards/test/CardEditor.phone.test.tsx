@@ -6,6 +6,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
 import { cardApi, type CardTemplate } from "@/entities/training";
+import { catalogLookupApi } from "@/entities/catalog";
 import { CardEditor } from "@/features/card-authoring";
 
 vi.setConfig({ testTimeout: 20_000 });
@@ -61,8 +62,8 @@ function renderEditor() {
 let updateCard: ReturnType<typeof vi.spyOn>;
 
 beforeEach(() => {
-  vi.spyOn(cardApi, "routes").mockResolvedValue([]);
-  vi.spyOn(cardApi, "classifiers").mockResolvedValue([]);
+  vi.spyOn(catalogLookupApi, "routes").mockResolvedValue([]);
+  vi.spyOn(catalogLookupApi, "classifiers").mockResolvedValue([]);
   updateCard = vi.spyOn(cardApi, "update").mockResolvedValue(card as never);
 });
 afterEach(cleanup);

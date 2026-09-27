@@ -20,13 +20,8 @@ export const crewStatusLabels: Record<string, string> = {
 };
 
 export type {
-  CatalogRule,
-  CatalogVersion,
   DDSContext,
   DDSPolicy,
-  ProfileInput,
-  ServiceProfile,
-  CrewDefinition,
   CrewAssignment,
   CrewCommand,
   DDSHistoryEntry,

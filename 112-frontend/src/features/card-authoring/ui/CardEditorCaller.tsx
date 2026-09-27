@@ -1,5 +1,4 @@
 import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
-import { emptyIncidentAddress } from "@/entities/incident-card";
 import { LocationPicker } from "@/shared/ui/location-picker";
 import MapOutlinedIcon from "@mui/icons-material/MapOutlined";
 import {
@@ -149,14 +148,7 @@ function DialogMap({
   onClose: () => void;
   open: boolean;
 }) {
-  const {
-    form,
-    location,
-    setAddress,
-    setForm,
-    setLocation,
-    structuredAddress,
-  } = editor;
+  const { form, location, confirmLocation, structuredAddress } = editor;
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
       <DialogTitle id="template-card-map-title">Карта происшествия</DialogTitle>
@@ -165,24 +157,7 @@ function DialogMap({
           initial={location}
           initialAddress={structuredAddress || form.address_text}
           onConfirm={({ point, address: found }) => {
-            setLocation(point);
-            if (found) {
-              setAddress({
-                ...emptyIncidentAddress,
-                country: found.country || "Россия",
-                region: found.administrativeAreas[0] ?? "",
-                locality: found.localities.at(-1) ?? "",
-                district: found.district,
-                area: found.area,
-                street: found.street,
-                house: found.house,
-                building: found.building,
-                structure: found.structure,
-                apartment: found.apartment,
-                description: found.addressLine,
-              });
-              setForm({ ...form, address_text: found.addressLine });
-            }
+            confirmLocation({ point, address: found });
             onClose();
           }}
           onCancel={onClose}

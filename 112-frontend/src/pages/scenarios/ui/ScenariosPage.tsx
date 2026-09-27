@@ -1,5 +1,4 @@
 import {
-  activityApi,
   scenarioApi,
   scenarioDifficultyLabel,
   type ScenarioItem,
@@ -35,7 +34,7 @@ export const ScenariosPage = () => {
   const client = useQueryClient();
   const [remove, setRemove] = useState<ScenarioItem | null>(null);
   const deletion = useMutation({
-    mutationFn: () => activityApi.deleteScenario(remove!.id),
+    mutationFn: () => scenarioApi.remove(remove!.id),
     onSuccess: () => {
       setRemove(null);
       void client.invalidateQueries({ queryKey: ["scenarios"] });

@@ -1,6 +1,6 @@
 import { ValidationField } from "@/shared/ui/form-validation";
 import {
-  useIncidentCardStore,
+  useIncidentCardContext,
   useCardSkillDisabled,
 } from "../model/IncidentCardContext";
 import { emptyIncidentAddress, formatAddress } from "@/entities/incident-card";
@@ -12,8 +12,8 @@ import {
 } from "@/shared/ui/arm";
 import type { Props } from "../types/CardAddressPanel";
 export function CardAddressPanel({ viewing, onMap, onTranslate }: Props) {
-  const editor = useIncidentCardStore((state) => state.editor);
-  const disabled = useIncidentCardStore((state) => state.disabled);
+  const editor = useIncidentCardContext().editor;
+  const disabled = useIncidentCardContext().disabled;
   const callerDisabled = useCardSkillDisabled("caller");
   const addressDisabled = useCardSkillDisabled("address");
   const descriptionDisabled = useCardSkillDisabled("description");

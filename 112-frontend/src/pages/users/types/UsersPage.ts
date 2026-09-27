@@ -1,4 +1,4 @@
-import type { UserItem } from "@/entities/training";
+import type { UserItem } from "@/entities/user";
 
 export type UserFiltersProps = {
   search: string;

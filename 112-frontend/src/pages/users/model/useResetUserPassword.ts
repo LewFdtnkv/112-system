@@ -1,4 +1,4 @@
-import { userApi } from "@/entities/training";
+import { userApi, invalidateUser } from "@/entities/user";
 import { useAuthStore } from "@/entities/user";
 import { routePaths } from "@/shared/config/routes";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -16,8 +16,7 @@ export function useResetUserPassword(userId: string) {
         navigate(routePaths.login, { replace: true });
         return;
       }
-      for (const key of ["user", "users", "user-activity", "admin-summary"])
-        void client.invalidateQueries({ queryKey: [key] });
+      void invalidateUser(client);
     },
   });
 }

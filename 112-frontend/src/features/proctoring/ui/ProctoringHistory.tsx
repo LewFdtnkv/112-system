@@ -1,4 +1,4 @@
-import { activityApi } from "@/entities/training";
+import { proctoringApi } from "@/entities/training";
 import { PageControls, QueryState } from "@/shared/ui/QueryState";
 import { Alert, Stack, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
@@ -14,7 +14,7 @@ export function ProctoringHistory({ attemptId }: ProctoringHistoryProps) {
   const [page, setPage] = useState(0);
   const query = useQuery({
     queryKey: ["proctoring", attemptId, page],
-    queryFn: () => activityApi.proctoringHistory(attemptId, page * 20),
+    queryFn: () => proctoringApi.proctoringHistory(attemptId, page * 20),
     refetchInterval: 5000,
   });
   return (

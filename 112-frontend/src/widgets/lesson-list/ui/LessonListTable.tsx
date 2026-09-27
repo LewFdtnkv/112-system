@@ -4,8 +4,8 @@ import {
   lessonPercent,
   percentText,
   workStatusLabels,
-  UserIdentity,
 } from "@/entities/training";
+import { UserIdentity } from "@/entities/user";
 import {
   getStudentTrainingWorkspacePath,
   getTrainingResultPath,

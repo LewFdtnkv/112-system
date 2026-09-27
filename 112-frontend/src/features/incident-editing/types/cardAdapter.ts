@@ -1,4 +1,5 @@
-import type { CardData, ClassifierEntry, Recipient } from "@/entities/training";
+import type { CardData } from "@/entities/training";
+import type { ClassifierEntry, Recipient } from "@/entities/catalog";
 export interface ReferenceCardSource {
   id: string;
   display_number?: number;

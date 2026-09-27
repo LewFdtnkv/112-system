@@ -1,4 +1,5 @@
-import { activityApi, userApi } from "@/entities/training";
+import { userKeys } from "@/entities/user";
+import { userApi, invalidateGroupMembers } from "@/entities/user";
 import { getApiError } from "@/shared/api";
 import { ServerSelect, type SelectOption } from "@/shared/ui/ServerSelect";
 import {
@@ -25,18 +26,11 @@ export function GroupTransferDialog({
   const change = useMutation({
     mutationFn: (remove: boolean) =>
       remove
-        ? activityApi.remove(groupId, studentId!)
-        : activityApi.transfer(groupId, studentId!, target!.id),
+        ? userApi.remove(groupId, studentId!)
+        : userApi.transfer(groupId, studentId!, target!.id),
     onSuccess: () => {
       setTarget(null);
-      for (const key of [
-        "groups",
-        "group-options",
-        "group-members",
-        "student-profile",
-        "student-overview",
-      ])
-        void client.invalidateQueries({ queryKey: [key] });
+      void invalidateGroupMembers(client);
       onChanged();
       onClose();
     },
@@ -51,7 +45,7 @@ export function GroupTransferDialog({
           </Alert>
           <ServerSelect
             label="Другая группа"
-            queryKey={["transfer-group-options"]}
+            queryKey={userKeys.transferGroups}
             value={target}
             onChange={setTarget}
             load={async (query, signal) =>

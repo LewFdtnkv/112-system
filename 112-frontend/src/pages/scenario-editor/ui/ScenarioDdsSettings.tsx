@@ -1,12 +1,10 @@
-import { serviceProfileApi } from "@/entities/training";
+import { catalogKeys, serviceProfileApi } from "@/entities/catalog";
 import { ServerSelect } from "@/shared/ui/ServerSelect";
 import { Alert } from "@mui/material";
 import type { ScenarioDdsSettingsProps } from "../types/ScenarioEditorPage";
 
 export function ScenarioDdsSettings({
-  form,
   profile,
-  onChange,
   onProfileChange,
 }: ScenarioDdsSettingsProps) {
   return (
@@ -20,15 +18,9 @@ export function ScenarioDdsSettings({
         name="service_profile_id"
         required
         label="Профиль службы"
-        queryKey={["profiles"]}
+        queryKey={catalogKeys.profiles}
         value={profile}
-        onChange={(next) => {
-          onProfileChange(next);
-          onChange({
-            ...form,
-            dds_policy: null,
-          });
-        }}
+        onChange={onProfileChange}
         load={async (query, signal) =>
           (await serviceProfileApi.list(query, signal)).map((profile) => ({
             id: profile.id,

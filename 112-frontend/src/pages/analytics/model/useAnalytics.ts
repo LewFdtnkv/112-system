@@ -1,4 +1,5 @@
-import { activityApi, analyticsApi } from "@/entities/training";
+import { studentApi } from "@/entities/training";
+import { analyticsApi } from "@/entities/training";
 import { download } from "@/shared/lib/download";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -6,7 +7,7 @@ import { useState } from "react";
 export function useAnalytics() {
   const exportReport = useMutation({
     mutationFn: async () =>
-      download(await activityApi.report("xlsx"), "training-report.xlsx"),
+      download(await studentApi.report("xlsx"), "training-report.xlsx"),
   });
   const [page, setPage] = useState(0);
   const [track, setTrack] = useState("training");

@@ -1,9 +1,9 @@
-import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
-import { cardApi, type FeatureDefinition } from "@/entities/training";
+import { catalogLookupApi } from "@/entities/catalog";
 import {
-  activeFeatureDefinitions,
-  updateFeatureAnswer,
-} from "@/shared/lib/featureValues";
+  ValidationField,
+  ValidatedTextField as TextField,
+} from "@/shared/ui/form-validation";
+import { activeFeatureDefinitions } from "@/shared/lib/featureValues";
 import { FeatureInput } from "@/shared/ui/FeatureInput";
 import { ServerSelect } from "@/shared/ui/ServerSelect";
 import { Button } from "@mui/material";
@@ -19,12 +19,8 @@ export function CardEditorRouting({
     answers,
     features,
     save,
-    setAnswers,
+    setAnswer,
     setEntry,
-    setFeatures,
-    setManualRecipients,
-    setNotificationRequired,
-    setOptional,
     setVersion,
     setVictims,
     silent,
@@ -50,20 +46,14 @@ export function CardEditorRouting({
         label="Опубликованная версия ЕКП"
         queryKey={["classifier-options"]}
         value={version}
-        onChange={(value) => {
-          setVersion(value);
-          setEntry(null);
-          setNotificationRequired(true);
-          setFeatures([]);
-          setAnswers({});
-          setOptional([]);
-          setManualRecipients(null);
-        }}
+        onChange={setVersion}
         load={async (query, signal) =>
-          (await cardApi.classifiers(query, signal)).map((classifier) => ({
-            id: classifier.id,
-            label: classifier.label,
-          }))
+          (await catalogLookupApi.classifiers(query, signal)).map(
+            (classifier) => ({
+              id: classifier.id,
+              label: classifier.label,
+            }),
+          )
         }
       />
       <ServerSelect
@@ -73,25 +63,16 @@ export function CardEditorRouting({
         queryKey={["entry-options-with-features", version?.id]}
         disabled={!version || silent}
         value={editor.entry}
-        onChange={(value) => {
-          setEntry(value);
-          const metadata = value?.metadata as
-            | {
-                features?: FeatureDefinition[];
-                notification_required?: boolean;
-              }
-            | undefined;
-          setFeatures(metadata?.features ?? []);
-          setNotificationRequired(metadata?.notification_required !== false);
-          setAnswers({});
-          setOptional([]);
-          setManualRecipients(null);
-        }}
+        onChange={setEntry}
         load={async (query, signal) => {
-          const rows = await cardApi.entries(version!.id, { q: query }, signal);
+          const rows = await catalogLookupApi.entries(
+            version!.id,
+            { q: query },
+            signal,
+          );
           return rows.map((entry) => ({
             id: entry.id,
-            label: `${entry.code} — ${entry.name}`,
+            label: entry.display_name || entry.name,
             metadata: {
               features: entry.conditions.features ?? [],
               notification_required: entry.notification_required,
@@ -99,19 +80,17 @@ export function CardEditorRouting({
           }));
         }}
       />
-      {!silent &&
-        activeFeatureDefinitions(features, answers).map((feature) => (
-          <FeatureInput
-            key={feature.key}
-            feature={feature}
-            value={answers[feature.key]}
-            onChange={(value) =>
-              setAnswers(
-                updateFeatureAnswer(features, answers, feature.key, value),
-              )
-            }
-          />
-        ))}
+      <ValidationField name="data.features.ekp" label="Признаки происшествия">
+        {!silent &&
+          activeFeatureDefinitions(features, answers).map((feature) => (
+            <FeatureInput
+              key={feature.key}
+              feature={feature}
+              value={answers[feature.key]}
+              onChange={(value) => setAnswer(feature.key, value)}
+            />
+          ))}
+      </ValidationField>
       <CardEditorRecipients editor={editor} initial={initial} />
       {save.error && initial && onReload && (
         <Button onClick={onReload}>Загрузить актуальную карточку</Button>

@@ -61,6 +61,12 @@ for (const file of files(root)) {
   const from = identity(file);
   for (const node of source.statements) {
     if (
+      parts[0] === "entities" &&
+      parts[2] === "@x" &&
+      !(ts.isExportDeclaration(node) && node.isTypeOnly)
+    )
+      fail("entity cross-contracts must contain only type exports");
+    if (
       !test &&
       (ts.isInterfaceDeclaration(node) || ts.isTypeAliasDeclaration(node)) &&
       !parts.includes("types")
@@ -91,17 +97,32 @@ for (const file of files(root)) {
       if (target) {
         const to = identity(target);
         const same = from.layer === to.layer && from.slice === to.slice;
+        // Entity relationships expose DTOs only, to a named consumer slice.
+        const crossContract =
+          from.layer === "entities" &&
+          to.layer === "entities" &&
+          relative(target)[2] === "@x" &&
+          path.basename(target) === `${from.slice}.ts` &&
+          ts.isImportDeclaration(node) &&
+          (node.importClause?.isTypeOnly ||
+            (node.importClause?.namedBindings &&
+              ts.isNamedImports(node.importClause.namedBindings) &&
+              node.importClause.namedBindings.elements.every(
+                (element) => element.isTypeOnly,
+              )));
         if (from.level >= 0 && to.level >= 0 && from.level < to.level)
           fail(`upward dependency: ${specifier.text}`);
         if (
           from.level > 0 &&
           from.layer !== "app" &&
           from.layer === to.layer &&
-          !same
+          !same &&
+          !crossContract
         )
           fail(`cross-slice dependency: ${specifier.text}`);
         if (
           !same &&
+          !crossContract &&
           to.level > 0 &&
           to.layer !== "app" &&
           relative(target).length > 2 &&

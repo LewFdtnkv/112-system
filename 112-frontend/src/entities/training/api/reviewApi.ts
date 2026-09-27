@@ -1,5 +1,9 @@
 import type { Grade, GradeInput, WorkReview } from "../model/types";
-import { apiGet as get, apiId as id, apiPost as post } from "./apiClient";
+import {
+  apiGet as get,
+  apiId as id,
+  apiPost as post,
+} from "@/shared/api/apiClient";
 
 /** Teacher review and student evaluation endpoints. */
 export const reviewApi = {

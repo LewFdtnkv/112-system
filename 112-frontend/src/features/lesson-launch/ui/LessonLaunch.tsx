@@ -1,13 +1,9 @@
+import { userKeys } from "@/entities/user";
 import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
-import { ValidatedForm, ValidationField } from "@/shared/ui/form-validation";
-import {
-  scenarioApi,
-  scenarioDifficultyLabel,
-  userApi,
-  userName,
-} from "@/entities/training";
+import { ValidatedForm } from "@/shared/ui/form-validation";
+import { scenarioApi, scenarioDifficultyLabel } from "@/entities/training";
+import { userApi, userName } from "@/entities/user";
 import { getApiError } from "@/shared/api";
-import { randomUUID } from "@/shared/lib/uuid";
 import { DateTimeField } from "@/shared/ui/DateTimeField";
 import { ServerSelect } from "@/shared/ui/ServerSelect";
 import {
@@ -31,7 +27,9 @@ export function LessonLaunch() {
     group,
     setGroup,
     targets,
-    setTargets,
+    addTarget,
+    removeTarget,
+    validate,
     from,
     setFrom,
     until,
@@ -49,14 +47,14 @@ export function LessonLaunch() {
     setLimit,
     title,
     setTitle,
-    setRequestId,
+
     mutation,
   } = useLessonLaunch();
   return (
     <ValidatedForm
       error={mutation.error}
+      validate={validate}
       spacing={2}
-      onChange={() => setRequestId(randomUUID())}
       onSubmit={(e) => {
         e.preventDefault();
         if (learningValid) setConfirm(true);
@@ -67,13 +65,9 @@ export function LessonLaunch() {
         name="group_id"
         required={!targets.length}
         label="Группа"
-        queryKey={["group-options"]}
+        queryKey={userKeys.groupOptions}
         value={group}
-        onChange={(v) => {
-          setGroup(v);
-          setStudent(null);
-          setRequestId(randomUUID());
-        }}
+        onChange={setGroup}
         load={async (q, signal) =>
           (await userApi.groups({ q }, signal)).items.map((item) => ({
             id: item.id,
@@ -83,13 +77,10 @@ export function LessonLaunch() {
       />
       <ServerSelect
         label="Ученик (пусто — вся группа)"
-        queryKey={["group-students", group?.id]}
+        queryKey={[...userKeys.groupStudents, group?.id]}
         disabled={!group}
         value={student}
-        onChange={(v) => {
-          setStudent(v);
-          setRequestId(randomUUID());
-        }}
+        onChange={setStudent}
         load={async (q, signal) =>
           (
             await userApi.users(
@@ -99,19 +90,7 @@ export function LessonLaunch() {
           ).items.map((item) => ({ id: item.id, label: userName(item) }))
         }
       />
-      <Button
-        disabled={!group}
-        onClick={() => {
-          const value = student ?? group!;
-          const kind = student ? "student" : "group";
-          setTargets((previous) =>
-            previous.some((t) => t.id === value.id && t.kind === kind)
-              ? previous
-              : [...previous, { ...value, kind }],
-          );
-          setRequestId(randomUUID());
-        }}
-      >
+      <Button disabled={!group} onClick={addTarget}>
         Добавить выбранную группу / ученика в получатели
       </Button>
       <Stack direction="row" sx={styles.stack}>
@@ -119,10 +98,7 @@ export function LessonLaunch() {
           <Chip
             key={`${t.kind}:${t.id}`}
             label={`${t.kind === "group" ? "Группа" : "Ученик"}: ${t.label}`}
-            onDelete={() => {
-              setTargets(targets.filter((v) => v !== t));
-              setRequestId(randomUUID());
-            }}
+            onDelete={() => removeTarget(t.id, t.kind)}
           />
         ))}
       </Stack>
@@ -138,11 +114,7 @@ export function LessonLaunch() {
         label="Готовый сценарий"
         queryKey={["scenario-options"]}
         value={scenario}
-        onChange={(v) => {
-          setScenario(v);
-          setLearning({ ...learning, target_skills: [] });
-          setRequestId(randomUUID());
-        }}
+        onChange={setScenario}
         load={async (q, signal) =>
           (
             await scenarioApi.list({ q, status: "published" }, signal)
@@ -169,10 +141,7 @@ export function LessonLaunch() {
         name="available_from"
         label="Дата и время начала"
         value={from}
-        onChange={(value) => {
-          setFrom(value);
-          setRequestId(randomUUID());
-        }}
+        onChange={setFrom}
         helperText="Пусто — доступно сразу. Время вашего браузера."
       />
       <DateTimeField
@@ -180,37 +149,21 @@ export function LessonLaunch() {
         label="Дата и время окончания"
         value={until}
         min={from || undefined}
-        onChange={(value) => {
-          setUntil(value);
-          setRequestId(randomUUID());
-        }}
+        onChange={setUntil}
         helperText="Пусто — без общей даты окончания. По окончании срока непройденные карточки учитываются как 0."
       />
-      <ValidationField
-        name="learning.target_skills"
-        label="Навыки"
-        validate={() =>
-          !learningValid
-            ? "Выберите навыки для отработки. Проверьте совместимость выбранных навыков."
-            : undefined
-        }
-      >
-        <LearningSettings
-          value={learning}
-          onChange={setLearning}
-          role={scenarioRole}
-        />
-      </ValidationField>
+      <LearningSettings
+        value={learning}
+        onChange={setLearning}
+        role={scenarioRole}
+      />
       <TextField
         name="time_limit_seconds"
         label="Время на занятие, минут (необязательно)"
         type="number"
         helperText="Пусто — можно делать паузы. С лимитом время идёт с начала занятия, в том числе после выхода."
         value={limit}
-        onChange={(e) => {
-          setLimit(e.target.value);
-          setRequestId(randomUUID());
-        }}
+        onChange={(e) => setLimit(e.target.value)}
         slotProps={{ htmlInput: { min: 1, max: 1440 } }}
       />
       <Button type="submit" variant="contained" disabled={mutation.isPending}>

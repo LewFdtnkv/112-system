@@ -1,4 +1,5 @@
-import { activityApi, type FocusKind } from "@/entities/training";
+import { proctoringApi } from "@/entities/training";
+import { type FocusKind } from "@/entities/training";
 import { randomUUID } from "@/shared/lib/uuid";
 import { useEffect, useState } from "react";
 
@@ -18,7 +19,7 @@ export function useProctoring(attemptId: string | undefined, active: boolean) {
       sending = true;
       const batch = queue.slice(0, 20);
       try {
-        await activityApi.proctoring(attemptId, batch);
+        await proctoringApi.proctoring(attemptId, batch);
         queue = queue.slice(batch.length);
         if (!disposed) setFailed(false);
       } catch {

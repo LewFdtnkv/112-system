@@ -1,4 +1,5 @@
-import { activityApi, UserIdentity } from "@/entities/training";
+import { proctoringApi } from "@/entities/training";
+import { UserIdentity } from "@/entities/user";
 import { ProctoringHistory } from "@/features/proctoring";
 import { rowAction } from "@/shared/lib/rowAction";
 import { PageControls, QueryState } from "@/shared/ui/QueryState";
@@ -23,7 +24,7 @@ export function ProctoringMonitor() {
   const [attempt, setAttempt] = useState<string | null>(null);
   const query = useQuery({
     queryKey: ["proctoring-monitor", page],
-    queryFn: () => activityApi.monitoring(page * 20),
+    queryFn: () => proctoringApi.monitoring(page * 20),
     refetchInterval: 5000,
   });
   return (

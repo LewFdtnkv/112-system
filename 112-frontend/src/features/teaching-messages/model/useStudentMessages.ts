@@ -1,11 +1,11 @@
-import { activityApi } from "@/entities/training";
+import { messageApi } from "@/entities/training";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 
 export function useMessageSummary() {
   return useQuery({
     queryKey: ["messages", "summary"],
-    queryFn: ({ signal }) => activityApi.messageSummary(signal),
+    queryFn: ({ signal }) => messageApi.messageSummary(signal),
     refetchInterval: 15000,
   });
 }
@@ -16,12 +16,12 @@ export function useStudentMessages(compact: boolean, unreadOnly = false) {
   const query = useQuery({
     queryKey: ["messages", { page, includeAdvice: !compact, unreadOnly }],
     queryFn: ({ signal }) =>
-      activityApi.messages(page * 20, !compact, signal, unreadOnly),
+      messageApi.messages(page * 20, !compact, signal, unreadOnly),
     refetchOnMount: unreadOnly ? "always" : true,
     refetchInterval: compact ? 5000 : 15000,
   });
   const read = useMutation({
-    mutationFn: activityApi.readMessage,
+    mutationFn: messageApi.readMessage,
     onSuccess: () => {
       if (unreadOnly && page > 0 && query.data?.items.length === 1)
         setPage(page - 1);
@@ -35,7 +35,7 @@ export function useRecommendationFeedback(id: string) {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (helpful: boolean) =>
-      activityApi.recommendationFeedback(id, helpful),
+      messageApi.recommendationFeedback(id, helpful),
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: ["messages"] });
     },

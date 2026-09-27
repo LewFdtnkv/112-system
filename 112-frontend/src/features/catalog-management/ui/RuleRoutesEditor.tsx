@@ -1,4 +1,4 @@
-import { catalogApi } from "@/entities/training";
+import { catalogApi } from "@/entities/catalog";
 import { FeatureInput } from "@/shared/ui/FeatureInput";
 import { ServerSelect } from "@/shared/ui/ServerSelect";
 import {
