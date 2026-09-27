@@ -102,11 +102,20 @@ export function DDSStatusEditor() {
             }}
           />
           <ArmField
-            name="message"
-            label={isCrew ? "Комментарий бригады" : "Комментарий ДДС"}
+            name="comment"
+            label={
+              ["not_accepted", "refused", "cancelled"].includes(w.status)
+                ? "Причина отказа или отмены"
+                : isCrew
+                  ? "Комментарий бригады"
+                  : "Комментарий ДДС"
+            }
             placeholder="Комментарий"
             value={w.comment}
-            required={!isCrew}
+            required={
+              !isCrew ||
+              (w.dds.workflow === "crews-v2" && w.status !== "assigned")
+            }
             maxLength={10000}
             disabled={w.busy}
             onChange={(e) => {

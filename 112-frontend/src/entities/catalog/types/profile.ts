@@ -16,6 +16,7 @@ export interface CatalogRule {
     service_code: string;
     is_main: boolean;
     when: Record<string, FeatureValue>;
+    addresses?: Record<string, string>[];
   }[];
 }
 

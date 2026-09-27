@@ -29,6 +29,8 @@ export function useAttemptEditor(
     writes.initialFields.ekpAnswers ?? {},
   );
   const debouncedAnswers = useDebounced(answers);
+  const [address, setAddress] = useState(writes.initialFields.address);
+  const debouncedAddress = useDebounced(address);
   const [now, setNow] = useState(() => Date.now());
   const completed = attempt.status !== "in_progress";
   const audit = useAttemptAudit(
@@ -60,18 +62,21 @@ export function useAttemptEditor(
       ? initial.classifier_entry
       : null);
   const recipients = useQuery({
-    queryKey: ["recipients", attempt.id, selected?.id, debouncedAnswers],
+    queryKey: [
+      "recipients",
+      attempt.id,
+      selected?.id,
+      debouncedAnswers,
+      debouncedAddress,
+    ],
     queryFn: ({ signal }) =>
-      ["boolean-features-v1", "typed-features-v1"].includes(
-        String(selected?.conditions?.format),
-      )
-        ? attemptApi.previewRecipients(
-            attempt.id,
-            selected!.id,
-            debouncedAnswers,
-            signal,
-          )
-        : attemptApi.recipients(attempt.id, selected!.id, signal),
+      attemptApi.previewRecipients(
+        attempt.id,
+        selected!.id,
+        debouncedAnswers,
+        signal,
+        { ...debouncedAddress },
+      ),
     enabled: !!selected && !completed,
   });
   const save = async (fields: IncidentCardFields) => {
@@ -108,6 +113,11 @@ export function useAttemptEditor(
         setActivity(Date.now());
       }
       writes.observe(fields);
+      setAddress((previous) =>
+        JSON.stringify(previous) === JSON.stringify(fields.address)
+          ? previous
+          : fields.address,
+      );
       audit.observe(fields);
       setAnswers((previous) =>
         JSON.stringify(previous) === JSON.stringify(fields.ekpAnswers ?? {})

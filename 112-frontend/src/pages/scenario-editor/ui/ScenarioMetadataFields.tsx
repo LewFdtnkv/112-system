@@ -3,7 +3,7 @@ import {
   scenarioDifficultyLabels,
   type ScenarioInput,
 } from "@/entities/training";
-import { MenuItem, Stack } from "@mui/material";
+import { Alert, MenuItem, Stack } from "@mui/material";
 import { styles } from "../styles/ScenarioEditorPage";
 import type { ScenarioMetadataFieldsProps } from "../types/ScenarioEditorPage";
 
@@ -58,25 +58,25 @@ export function ScenarioMetadataFields({
             onChange({ ...form, duration_minutes: Number(event.target.value) })
           }
         />
-        <TextField
-          name="norm_seconds"
-          type="number"
-          label={
-            form.role === "dds"
-              ? "Норматив первой реакции, с"
-              : "Учебный ориентир, с"
-          }
-          helperText={
-            form.role === "dds"
-              ? "От поступления до первого ручного статуса бригады. Без автоматического штрафа."
-              : "Для таймера, не автоматической оценки"
-          }
-          slotProps={{ htmlInput: { min: 5, max: 600 } }}
-          value={form.norm_seconds}
-          onChange={(event) =>
-            onChange({ ...form, norm_seconds: Number(event.target.value) })
-          }
-        />
+        {form.role === "dds" ? (
+          <Alert severity="info">
+            Для новых карточек ДДС: открыть за 30 секунд, внести первый статус с
+            текстом за 3 минуты от поступления. Это не срок завершения работ.
+            Ранее назначенные занятия сохраняют свои правила.
+          </Alert>
+        ) : (
+          <TextField
+            name="norm_seconds"
+            type="number"
+            label="Учебный ориентир, с"
+            helperText="Для таймера, не автоматической оценки"
+            slotProps={{ htmlInput: { min: 5, max: 600 } }}
+            value={form.norm_seconds}
+            onChange={(event) =>
+              onChange({ ...form, norm_seconds: Number(event.target.value) })
+            }
+          />
+        )}
       </Stack>
     </>
   );

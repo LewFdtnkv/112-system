@@ -58,10 +58,11 @@ export const attemptApi = {
     entryId: string,
     answers: Record<string, FeatureValue>,
     signal?: AbortSignal,
+    address: Record<string, string> = {},
   ) =>
     backendApi
       .post(`student/attempts/${id(attemptId)}/recipients-preview`, {
-        json: { classifier_entry_id: entryId, answers },
+        json: { classifier_entry_id: entryId, answers, address },
         signal,
       })
       .json<Recipient[]>(),

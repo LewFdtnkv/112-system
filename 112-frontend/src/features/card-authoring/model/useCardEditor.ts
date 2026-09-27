@@ -1,9 +1,10 @@
+import { useDebounced } from "@/shared/lib/useDebounced";
 import { catalogLookupApi } from "@/entities/catalog";
 import { formatAddress } from "@/entities/incident-card";
 import { cardApi, cardKeys, invalidateCard } from "@/entities/training";
 import { matchesFeature, type FeatureValue } from "@/shared/lib/featureValues";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRef, useReducer } from "react";
+import { useRef, useReducer, useMemo } from "react";
 import { usePhoneInput } from "@/entities/phone";
 import type { CardEditorProps } from "../types/CardEditor";
 import { cardEditorReducer } from "./cardEditorReducer";
@@ -51,19 +52,53 @@ export function useCardEditor({ onClose, initial }: CardEditorProps) {
       catalogLookupApi.routes(version!.id, entry!.id, signal),
     enabled: !!version && !!entry,
   });
-  const recipients = (routes.data ?? [])
-    .filter(
-      (r) =>
-        !Object.keys(r.conditions).length ||
-        (features.length
-          ? Object.entries(
-              (r.conditions.when ?? {}) as Record<string, FeatureValue>,
-            ).every(([key, v]) => matchesFeature(answers[key], v))
-          : optional.includes(r.service_id)),
-    )
-    .map((r) => r.service_id);
+  const addressRules = routes.data?.some(
+    (r) =>
+      Array.isArray(r.conditions.addresses) &&
+      r.conditions.addresses.length > 0,
+  );
+  const routeInput = useDebounced(
+    useMemo(() => ({ address, answers }), [address, answers]),
+  );
+  const preview = useQuery({
+    queryKey: [
+      ...cardKeys.routes(version?.id, entry?.id),
+      "preview",
+      routeInput,
+    ],
+    queryFn: ({ signal }) =>
+      catalogLookupApi.preview(
+        version!.id,
+        entry!.id,
+        routeInput.answers,
+        routeInput.address,
+        signal,
+      ),
+    enabled: !!version && !!entry && !!addressRules,
+  });
+  const recipients = addressRules
+    ? (preview.data ?? []).map((r) => r.service_id)
+    : (routes.data ?? [])
+        .filter(
+          (r) =>
+            !Object.keys(r.conditions).length ||
+            (features.length
+              ? Object.entries(
+                  (r.conditions.when ?? {}) as Record<string, FeatureValue>,
+                ).every(([key, v]) => matchesFeature(answers[key], v))
+              : optional.includes(r.service_id)),
+        )
+        .map((r) => r.service_id);
   const save = useMutation({
     mutationFn: () => {
+      if (
+        !manualRecipients &&
+        addressRules &&
+        (preview.isFetching ||
+          preview.error ||
+          JSON.stringify(routeInput) !== JSON.stringify({ address, answers }))
+      )
+        throw new Error("Дождитесь обновления списка служб по адресу.");
       const body = buildCardTemplateInput({
         initial,
         form,

@@ -1,7 +1,7 @@
 import type { ServiceProfile } from "@/entities/catalog/@x/training";
 export interface DDSPolicy {
   crew_calls_required?: boolean;
-  workflow?: "service-v1" | "crews-v1";
+  workflow?: "service-v1" | "crews-v1" | "crews-v2";
   steps: { status: string; message: string; crew_number: string | null }[];
   required_crews?: { crew_code: string; status: string }[];
 }
@@ -40,10 +40,19 @@ export interface CrewAssignment {
   history: DDSHistoryEntry[];
 }
 
+export interface DDSTimingMeasure {
+  at: string | null;
+  seconds: number;
+  norm_seconds: number;
+  state: "waiting" | "overdue" | "missing" | "late" | "on_time";
+}
+export type DDSTiming = Record<"opening" | "first_record", DDSTimingMeasure>;
+
 export interface DDSContext {
+  timing?: DDSTiming | null;
   card_exercise?: boolean;
   crew_messages?: { crew_code: string; message: string }[];
-  workflow?: "crews-v1" | "service-v1";
+  workflow?: "crews-v1" | "crews-v2" | "service-v1";
   crews?: CrewAssignment[];
   crew_goals?: { crew_code: string; name: string; status: string }[];
   profile: ServiceProfile;

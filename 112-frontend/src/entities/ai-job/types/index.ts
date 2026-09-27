@@ -1,6 +1,6 @@
 export type AIJobStatus = "queued" | "running" | "succeeded" | "failed";
 export type AIJobPurpose =
-  "generation" | "dds_generation" | "evaluation" | "recommendation";
+  "generation" | "dds_generation" | "evaluation" | "recommendation" | "group_recommendation";
 export interface AIJobItem {
   id: string;
   purpose: AIJobPurpose;

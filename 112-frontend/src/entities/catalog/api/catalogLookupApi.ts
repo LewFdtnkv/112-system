@@ -1,3 +1,6 @@
+import { backendApi } from "@/shared/api";
+import type { FeatureValue } from "@/shared/types/features";
+import type { Recipient } from "../types/catalog";
 import type {
   Classifier,
   ClassifierEntry,
@@ -7,6 +10,19 @@ import type {
 import type { Params } from "@/shared/types/query";
 import { apiGet as get, apiId as id } from "@/shared/api/apiClient";
 export const catalogLookupApi = {
+  preview: (
+    versionId: string,
+    entryId: string,
+    answers: Record<string, FeatureValue>,
+    address: object,
+    signal?: AbortSignal,
+  ) =>
+    backendApi
+      .post(`classifiers/${id(versionId)}/recipients-preview`, {
+        json: { classifier_entry_id: entryId, answers, address },
+        signal,
+      })
+      .json<Recipient[]>(),
   services: (query: string, signal?: AbortSignal) =>
     get<Service[]>("services", { q: query, limit: 20 }, signal),
   classifiers: (query: string, signal?: AbortSignal) =>

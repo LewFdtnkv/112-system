@@ -75,6 +75,20 @@ export function DDSGeneration({ card }: DDSGenerationProps) {
               error={m.save.error}
               onSubmit={() => m.save.mutate()}
             >
+              {["not_accepted", "refused", "cancelled"].includes(
+                p.target_status ?? "",
+              ) && (
+                <ValidatedTextField
+                  disabled={m.save.isPending}
+                  name="reason"
+                  label="Причина отказа или отмены"
+                  required
+                  helperText="Эта причина будет сообщена ученику в условии."
+                  value={p.reason ?? ""}
+                  onChange={(e) => m.change({ reason: e.target.value })}
+                  slotProps={{ htmlInput: { maxLength: 2000 } }}
+                />
+              )}
               <fieldset
                 className="dds-generation__form"
                 disabled={m.save.isPending}

@@ -1,3 +1,4 @@
+import { DDSTimingClocks } from "./DDSTimingClocks";
 import { LeaveLessonButton } from "./LeaveLessonButton";
 import { TrainingPanel } from "./TrainingPanel";
 import { DDSReactionClock } from "./DDSReactionClock";
@@ -62,12 +63,16 @@ export function DDSWorkspace(props: DDSWorkspaceProps) {
             condition={text.condition}
             instruction={text.instruction}
             aside={
-              <DDSReactionClock
-                elapsed={elapsed}
-                norm={dds.reaction_norm_seconds}
-                responded={!!dds.first_decision_at}
-                completed={completed}
-              />
+              dds.timing ? (
+                <DDSTimingClocks attempt={attempt} now={workspace.now} />
+              ) : (
+                <DDSReactionClock
+                  elapsed={elapsed}
+                  norm={dds.reaction_norm_seconds}
+                  responded={!!dds.first_decision_at}
+                  completed={completed}
+                />
+              )
             }
             reference={
               <details>

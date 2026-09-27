@@ -4,6 +4,7 @@ export interface DDSGenerationInput {
   service_profile_id: string;
   crew_codes: string[] | null;
   initial_status: string | null;
+  reason?: string | null;
   target_status: string | null;
   crew_calls_required: boolean;
   replace_existing: boolean;

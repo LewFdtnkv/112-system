@@ -5,6 +5,7 @@ export interface PreparedCrewEvent {
   comment: string;
 }
 export interface DDSCardExercise {
+  workflow?: "crews-v1" | "crews-v2";
   service_profile_id: string;
   initial_crews: { crew_code: string; history: PreparedCrewEvent[] }[];
   required_crews: { crew_code: string; status: string }[];

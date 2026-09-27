@@ -11,6 +11,9 @@ export const ddsStatusLabels: Record<string, string> = {
 };
 
 export const crewStatusLabels: Record<string, string> = {
+  accepted: "Принята",
+  not_accepted: "Не принята",
+  refused: "Отказ от выполнения работ",
   assigned: "Назначена",
   responding: "Начало реагирования",
   arrived: "Прибытие",

@@ -16,7 +16,7 @@ export function ddsPanelText(attempt: Attempt) {
       .join("\n\n");
   const dds = attempt.dds!;
   const condition = unique(
-    [dds.workflow === "crews-v1" ? "" : dds.goal, dds.information?.message]
+    [dds.workflow?.startsWith("crews-") ? "" : dds.goal, dds.information?.message]
       .filter(Boolean)
       .join("\n\n") || dds.goal,
   );

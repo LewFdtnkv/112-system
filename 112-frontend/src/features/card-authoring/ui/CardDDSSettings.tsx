@@ -31,6 +31,7 @@ export function CardDDSSettings({
               onChange(
                 enabled
                   ? {
+                      workflow: "crews-v2",
                       service_profile_id: "",
                       initial_crews: [],
                       required_crews: [],
@@ -52,7 +53,9 @@ export function CardDDSSettings({
             <Alert severity="info">
               История — уже выполненные до начала занятия действия. Новые
               сообщения показываются у бригад: ученик сам вносит следующие
-              статусы. Исходная история не приносит баллы.
+              статусы с текстом. Исходная история не приносит баллы. Для полной
+              ситуации укажите сообщения до завершения работ или причину отказа;
+              промежуточная цель подходит для отработки навыка.
             </Alert>
             <ServerSelect
               name="dds_exercise.service_profile_id"

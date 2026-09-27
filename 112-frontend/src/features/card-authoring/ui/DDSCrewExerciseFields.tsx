@@ -1,3 +1,4 @@
+import { nextPreparedStatus } from "../model/preparedHistory";
 import { crewStatusLabels } from "@/entities/training";
 import {
   ValidationField,
@@ -69,11 +70,19 @@ export function DDSCrewExerciseFields({
                         )
                       }
                     >
-                      {Object.entries(crewStatusLabels).map(([key, label]) => (
-                        <MenuItem key={key} value={key}>
-                          {label}
-                        </MenuItem>
-                      ))}
+                      {Object.entries(crewStatusLabels)
+                        .filter(
+                          ([key]) =>
+                            value.workflow !== "crews-v1" ||
+                            !["accepted", "not_accepted", "refused"].includes(
+                              key,
+                            ),
+                        )
+                        .map(([key, label]) => (
+                          <MenuItem key={key} value={key}>
+                            {label}
+                          </MenuItem>
+                        ))}
                     </TextField>
                     <TextField
                       sx={styles.field}
@@ -124,6 +133,10 @@ export function DDSCrewExerciseFields({
                     name={`dds_exercise.initial_crews.${initialIndex}.history.${i}.comment`}
                     slotProps={{ htmlInput: { maxLength: 5000 } }}
                     label="Комментарий в исходной истории"
+                    required={
+                      value.workflow !== "crews-v1" &&
+                      event.status !== "assigned"
+                    }
                     multiline
                     value={event.comment}
                     onChange={(e) =>
@@ -140,12 +153,17 @@ export function DDSCrewExerciseFields({
           </Stack>
         </ValidationField>
         <Button
-          disabled={history.length >= 30}
+          disabled={
+            history.length >= 30 || history.at(-1)?.status === "completed"
+          }
           onClick={() =>
             setHistory([
               ...history,
               {
-                status: history.length ? "responding" : "assigned",
+                status: nextPreparedStatus(
+                  history.at(-1)?.status,
+                  value.workflow,
+                ),
                 seconds_before_start:
                   history.at(-1)?.seconds_before_start ?? 5 * 60,
                 comment: "",
@@ -182,11 +200,17 @@ export function DDSCrewExerciseFields({
           <MenuItem value="">
             Только исходная история, без учебной цели
           </MenuItem>
-          {Object.entries(crewStatusLabels).map(([key, label]) => (
-            <MenuItem key={key} value={key}>
-              {label}
-            </MenuItem>
-          ))}
+          {Object.entries(crewStatusLabels)
+            .filter(
+              ([key]) =>
+                value.workflow !== "crews-v1" ||
+                !["accepted", "not_accepted", "refused"].includes(key),
+            )
+            .map(([key, label]) => (
+              <MenuItem key={key} value={key}>
+                {label}
+              </MenuItem>
+            ))}
         </TextField>
         {goal && (
           <TextField

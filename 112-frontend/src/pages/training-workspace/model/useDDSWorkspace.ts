@@ -33,11 +33,14 @@ export function useDDSWorkspace({
   const [now, setNow] = useState(Date.now);
   const dds = attempt.dds!;
   const completed = attempt.status !== "in_progress";
+  const clockStopped =
+    completed ||
+    (dds.timing ? !!dds.timing.first_record.at : !!dds.first_decision_at);
   useEffect(() => {
-    if (completed || dds.first_decision_at) return;
+    if (clockStopped) return;
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
-  }, [completed, dds.first_decision_at]);
+  }, [clockStopped]);
   const update = (value: Attempt) => {
     snapshot.update(value);
     setEditing(false);
@@ -111,6 +114,7 @@ export function useDDSWorkspace({
         : now,
   );
   return {
+    now,
     highlight,
     setHighlight,
     activity,

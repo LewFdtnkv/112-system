@@ -1,3 +1,4 @@
+import { RouteAddressFields } from "./RouteAddressFields";
 import { ValidationField } from "@/shared/ui/form-validation";
 import { catalogApi } from "@/entities/catalog";
 import { FeatureInput } from "@/shared/ui/FeatureInput";
@@ -69,6 +70,19 @@ export function RuleRoutesEditor({
                       })
                     }
                   />
+                }
+              />
+              <RouteAddressFields
+                value={route.addresses ?? []}
+                editable={editable}
+                name={`entry.routes.${index}.addresses`}
+                onChange={(addresses) =>
+                  onChange({
+                    ...form,
+                    routes: form.routes.map((r, i) =>
+                      i === index ? { ...r, addresses } : r,
+                    ),
+                  })
                 }
               />
               <span>Все выбранные условия должны выполняться:</span>

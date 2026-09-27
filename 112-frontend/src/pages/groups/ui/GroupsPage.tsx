@@ -1,3 +1,4 @@
+import { GroupAnalysis } from "@/features/group-analysis";
 import { userKeys } from "@/entities/user";
 import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
 import { ValidatedForm } from "@/shared/ui/form-validation";
@@ -98,6 +99,7 @@ export const GroupsPage = () => {
                     </TableCell>
                     <TableCell>{item.student_count}</TableCell>
                     <TableCell align="right">
+                      <GroupAnalysis groupId={item.id} groupName={item.name} />
                       <GroupDisband
                         group={item}
                         onDisbanded={() => setPage(0)}

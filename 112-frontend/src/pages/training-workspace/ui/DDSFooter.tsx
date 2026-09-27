@@ -16,7 +16,7 @@ export function DDSFooter() {
     : undefined;
   const canManage =
     !completed &&
-    (dds.workflow === "crews-v1" ||
+    (dds.workflow?.startsWith("crews-") ||
       ["accepted", "responding", "arrived", "in_progress"].includes(
         dds.status,
       ));

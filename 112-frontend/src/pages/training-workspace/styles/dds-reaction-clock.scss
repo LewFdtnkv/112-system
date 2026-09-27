@@ -38,3 +38,15 @@
     }
   }
 }
+
+.dds-timing-clocks {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: repeat(2, 191px);
+  align-items: start;
+}
+@media (max-width: 600px) {
+  .dds-timing-clocks {
+    grid-template-columns: 1fr;
+  }
+}

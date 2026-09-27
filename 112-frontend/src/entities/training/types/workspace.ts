@@ -18,6 +18,7 @@ export interface Assignment {
   scheduled_at?: string | null;
   received_at?: string | null;
   first_opened_at?: string | null;
+  dds_timing?: import("./catalogTypes").DDSTiming | null;
   first_response_at?: string | null;
   response_norm_seconds?: number | null;
   deadline_at?: string | null;

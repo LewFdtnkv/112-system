@@ -3,6 +3,7 @@ import type { DDSReactionClockProps } from "../types/DDSReactionClock";
 import "../styles/dds-reaction-clock.scss";
 
 export function DDSReactionClock({
+  label,
   elapsed,
   norm,
   responded,
@@ -13,9 +14,9 @@ export function DDSReactionClock({
   return (
     <div
       className={`dds-reaction-clock${late ? " is-overdue" : ""}`}
-      aria-label="Таймер первой реакции"
+      aria-label={label ? `Таймер: ${label}` : "Таймер первой реакции"}
     >
-      <span>Первая реакция</span>
+      <span>{label ?? "Первая реакция"}</span>
       <strong>{formatDuration(elapsed)}</strong>
       <span>
         {norm != null
@@ -24,10 +25,16 @@ export function DDSReactionClock({
       </span>
       <span>
         {missing
-          ? "Статус не введён"
+          ? label
+            ? "Не выполнено"
+            : "Статус не введён"
           : responded
-            ? "Первый статус введён"
-            : "До первого статуса"}
+            ? label
+              ? "Выполнено"
+              : "Первый статус введён"
+            : label
+              ? "Ожидание"
+              : "До первого статуса"}
       </span>
       {late && <span>Норматив нарушен</span>}
     </div>
