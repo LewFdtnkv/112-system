@@ -44,6 +44,15 @@
   th {
     background: #edf3f7;
   }
+  &__password {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .MuiIconButton-root {
+      flex-shrink: 0;
+    }
+  }
   &__secret {
     user-select: text;
     overflow-wrap: anywhere;

@@ -17,6 +17,7 @@ import { UserIdentity, userName } from "@/entities/user";
 import type { StationInput } from "@/entities/telephony";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { getApiError } from "@/shared/api";
+import { SipPassword } from "./SipPassword";
 import { useStations } from "../model/useStations";
 import "../styles/telephony.scss";
 export function StationsPage() {
@@ -208,9 +209,7 @@ export function StationsPage() {
             <Stack spacing={1}>
               <Typography>Сервер: {credentials.data.domain}</Typography>
               <Typography>Логин: {credentials.data.username}</Typography>
-              <Typography className="telephony-page__secret">
-                Пароль: {credentials.data.password}
-              </Typography>
+              <SipPassword password={credentials.data.password} />
               <Typography>
                 Порт: 5060 / UDP. Учебный номер: 9000. В браузере настройки
                 применяются автоматически.
