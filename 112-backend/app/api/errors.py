@@ -74,6 +74,9 @@ def public_error(detail: Any) -> dict:
                 or _VALIDATION_MESSAGES.get(kind, "Проверьте значение этого поля.")
             )
             issues.append({"path": ".".join(path), "message": text, "code": kind})
+    if isinstance(detail, dict) and isinstance(detail.get("message"), str):
+        if message := _message(detail["message"]):
+            result["message"] = message
     if issues:
         result["field_errors"] = issues
     return result

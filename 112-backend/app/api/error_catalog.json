@@ -90,6 +90,10 @@
     ]
   },
   "messages": {
+    "File must not exceed 1 MiB": "Файл должен быть не больше 1 МБ.",
+    "Choose a valid PNG or JPEG photo up to 16 megapixels": "Выберите неповреждённую фотографию PNG или JPEG до 16 мегапикселей.",
+    "Required: PCM WAV, mono, 8000 Hz, 16 bit, 0.1–600 seconds": "Выберите неповреждённый WAV: PCM, моно, 8000 Гц, 16 бит, длительностью от 0,1 секунды.",
+    "Invalid classifier JSON": "Не удалось прочитать справочник. Выберите JSON-файл в формате примера ЕКП.",
     "Group is disbanded": "Группа расформирована. Создайте или выберите другую группу.",
     "Accept the service response before managing crews": "Сначала примите карточку своей службой. Завершённое реагирование менять нельзя.",
     "Complete or cancel active crew assignments first": "Сначала завершите работы назначенных бригад или отмените их назначения с комментарием.",

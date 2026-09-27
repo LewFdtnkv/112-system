@@ -1,0 +1,37 @@
+[
+  {
+    "file": "valid.png",
+    "status": 204,
+    "message": null
+  },
+  {
+    "file": "fake.png",
+    "status": 422,
+    "message": "Выберите неповреждённую фотографию PNG или JPEG до 16 мегапикселей."
+  },
+  {
+    "file": "truncated.png",
+    "status": 422,
+    "message": "Выберите неповреждённую фотографию PNG или JPEG до 16 мегапикселей."
+  },
+  {
+    "file": "bad-crc.png",
+    "status": 422,
+    "message": "Выберите неповреждённую фотографию PNG или JPEG до 16 мегапикселей."
+  },
+  {
+    "file": "large.png",
+    "status": 413,
+    "message": "Файл должен быть не больше 1 МБ."
+  },
+  {
+    "file": "fake.json",
+    "status": 422,
+    "message": "Не удалось прочитать справочник. Выберите JSON-файл в формате примера ЕКП."
+  },
+  {
+    "file": "large.json",
+    "status": 413,
+    "message": "Файл должен быть не больше 1 МБ."
+  }
+]

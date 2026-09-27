@@ -12,10 +12,9 @@ from sqlalchemy import or_, select
 from sqlalchemy.dialects.postgresql import insert
 
 from app.core.config import settings
+from app.core.uploads import read_upload as read_upload_bytes
 from app.models import CallCue, ScenarioCard, SpeechAsset, TrainingContact
 from app.services.telephony.voice_pack import greeting_bytes
-
-MAX_BYTES = 10_000_000
 
 
 def directory():
@@ -106,16 +105,13 @@ async def prepare_scenario(session, scenario):
 
 
 async def read_upload(request: Request):
-    data = bytearray()
-    async for chunk in request.stream():
-        data.extend(chunk)
-        if len(data) > MAX_BYTES:
-            raise HTTPException(413, "WAV must not exceed 10 MB")
-    return bytes(data)
+    return await read_upload_bytes(request.stream())
 
 
 def store_wav(data):
     try:
+        if len(data) < 12 or int.from_bytes(data[4:8], "little") + 8 != len(data):
+            raise ValueError()
         with wave.open(io.BytesIO(data)) as wav:
             if (wav.getnchannels(), wav.getsampwidth(), wav.getframerate(), wav.getcomptype()) != (
                 1,
@@ -125,10 +121,10 @@ def store_wav(data):
             ):
                 raise ValueError()
             duration = wav.getnframes() / 8000
-            frames = wav.readframes(wav.getnframes())
+            frames = wav.readframes(wav.getnframes() + 1)
             if not 0.1 <= duration <= 600 or len(frames) != wav.getnframes() * 2:
                 raise ValueError()
-    except (wave.Error, EOFError, ValueError):
+    except (wave.Error, EOFError, ValueError, RuntimeError, OSError):
         raise HTTPException(
             422, "Required: PCM WAV, mono, 8000 Hz, 16 bit, 0.1–600 seconds"
         ) from None

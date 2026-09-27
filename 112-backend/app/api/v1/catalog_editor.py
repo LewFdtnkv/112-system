@@ -7,6 +7,7 @@ from sqlalchemy import func, select
 
 from app.api.dependencies import AdminDep, SessionDep
 from app.api.pagination import Limit, Offset
+from app.core.uploads import read_upload
 from app.models import ClassifierEntry
 from app.schemas.catalog_admin import ClassifierAdminRead
 from app.schemas.catalog_document import CatalogClone, CatalogDocument, EntryUpdate
@@ -18,13 +19,9 @@ router = APIRouter(prefix="/admin/classifiers", tags=["catalog files and rules"]
 @router.post("/import", response_model=ClassifierAdminRead, status_code=201)
 async def upload(request: Request, session: SessionDep, admin: AdminDep):
     # Raw JSON upload avoids buffering an unbounded multipart attachment.
-    raw = bytearray()
-    async for chunk in request.stream():
-        raw.extend(chunk)
-        if len(raw) > 8 * 1024 * 1024:
-            raise HTTPException(413, "Classifier file exceeds 8 MiB")
+    raw = await read_upload(request.stream())
     try:
-        document = CatalogDocument.model_validate_json(bytes(raw).decode("utf-8-sig"))
+        document = CatalogDocument.model_validate_json(raw.decode("utf-8-sig"))
     except (ValidationError, UnicodeDecodeError) as exc:
         errors = (
             exc.errors(include_url=False, include_context=False, include_input=False)

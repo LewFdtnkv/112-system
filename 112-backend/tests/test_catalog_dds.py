@@ -1,4 +1,5 @@
 from copy import deepcopy
+from datetime import timedelta
 from types import SimpleNamespace
 from uuid import UUID, uuid4
 
@@ -6,7 +7,14 @@ import pytest
 from sqlalchemy import func, select
 from test_teacher_api import teaching as teaching
 
-from app.models import AttemptEvent, ClassifierVersion, Evaluation, ResponseEvent, Service
+from app.models import (
+    AttemptEvent,
+    ClassifierVersion,
+    Evaluation,
+    ResponseEvent,
+    Service,
+    ServiceProfile,
+)
 from app.schemas.catalog_document import CatalogDocument
 
 pytestmark = pytest.mark.anyio
@@ -168,7 +176,7 @@ async def test_profile_directories_versions_and_rights(api, teaching):
     await api("POST", "admin/service-profiles", invalid, status=422)
 
 
-async def test_admin_profiles_filter_by_service_before_pagination(api, teaching):
+async def test_admin_profiles_filter_by_service_before_pagination(api, teaching, db_session):
     other = await api(
         "POST", "admin/services", {"code": uuid4().hex, "name": "Другая служба"}, status=201
     )
@@ -180,6 +188,11 @@ async def test_admin_profiles_filter_by_service_before_pagination(api, teaching)
     first = await api("POST", "admin/service-profiles", data, status=201)
     await api("POST", f"admin/service-profiles/{first['id']}/publish")
     second = await api("POST", "admin/service-profiles", data, status=201)
+    # All requests share one outer test transaction, so PostgreSQL now() is identical.
+    # Give the earlier profile an earlier timestamp rather than relying on random UUID order.
+    first_row = await db_session.get(ServiceProfile, UUID(first["id"]))
+    first_row.created_at -= timedelta(seconds=1)
+    await db_session.flush()
     await api("POST", "admin/service-profiles", data | {"service_id": other["id"]}, status=201)
     path = f"admin/service-profiles?service_id={teaching.service.id}&limit=1&q=Общий"
     page = await api("GET", path)
