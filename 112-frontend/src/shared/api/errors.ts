@@ -1,3 +1,4 @@
+import { FileValidationError, UPLOAD_SIZE_MESSAGE } from "@/shared/lib/uploads";
 import { isHTTPError, isNetworkError, isTimeoutError } from "ky";
 
 import type { ApiErrorInfo } from "./types";
@@ -5,6 +6,9 @@ import type { ApiErrorInfo } from "./types";
 import { getApiFieldErrors } from "./fieldErrors";
 
 export const getApiError = (error: unknown): ApiErrorInfo => {
+  if (error instanceof FileValidationError)
+    return { kind: "unknown", message: error.message };
+
   if (isHTTPError(error)) {
     const body = error.data as { message?: unknown } | undefined;
     const message =
@@ -21,7 +25,7 @@ export const getApiError = (error: unknown): ApiErrorInfo => {
         (message ??
           (
             {
-              413: "JSON-файл превышает допустимый размер 8 МБ.",
+              413: UPLOAD_SIZE_MESSAGE,
               403: "Недостаточно прав для этого действия.",
               404: "Запись не найдена или недоступна.",
               409: "Данные изменились или такая запись уже существует. Обновите список и проверьте введённые значения.",

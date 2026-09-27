@@ -37,11 +37,11 @@ describe("photo framing", () => {
     ).toMatch(/PNG или JPEG/);
     expect(
       validatePhoto(
-        new File([new Uint8Array(2_000_001)], "file.png", {
+        new File([new Uint8Array(1024 * 1024 + 1)], "file.png", {
           type: "image/png",
         }),
       ),
-    ).toMatch(/2 МБ/);
+    ).toMatch(/1 МБ/);
     expect(
       validatePhoto(new File(["image"], "file.png", { type: "image/png" })),
     ).toBeNull();

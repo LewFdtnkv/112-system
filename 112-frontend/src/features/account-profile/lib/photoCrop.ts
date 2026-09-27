@@ -1,3 +1,4 @@
+import { MAX_UPLOAD_BYTES, UPLOAD_SIZE_MESSAGE } from "@/shared/lib/uploads";
 import type { PhotoPosition } from "../types/photoCrop";
 
 export const PHOTO_SIZE = 512;
@@ -65,6 +66,6 @@ export async function cropPhoto(
 export function validatePhoto(file: File) {
   if (!["image/png", "image/jpeg"].includes(file.type))
     return "Выберите фотографию в формате PNG или JPEG.";
-  if (file.size > 2_000_000) return "Фотография должна быть не больше 2 МБ.";
+  if (file.size > MAX_UPLOAD_BYTES) return UPLOAD_SIZE_MESSAGE;
   return null;
 }

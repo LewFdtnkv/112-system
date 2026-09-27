@@ -63,7 +63,7 @@ export function MediaEditor({ cue }: { cue: MediaCue }) {
             variant="outlined"
             disabled={upload.isPending}
           >
-            {upload.isPending ? "Загрузка…" : "Загрузить WAV"}
+            {upload.isPending ? "Загрузка…" : "Загрузить WAV (до 1 МБ)"}
             <input
               hidden
               type="file"

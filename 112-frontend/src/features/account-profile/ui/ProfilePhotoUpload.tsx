@@ -28,7 +28,7 @@ export function ProfilePhotoUpload(props: ProfilePhotoProps) {
         />
       </Button>
       <Typography variant="caption">
-        PNG или JPEG, до 2 МБ. Перед сохранением можно настроить положение и
+        PNG или JPEG, до 1 МБ. Перед сохранением можно настроить положение и
         масштаб.
       </Typography>
       {photo && (

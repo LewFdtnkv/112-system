@@ -12,7 +12,7 @@ export function CatalogFiles({ onImported }: CatalogFilesProps) {
         уроков.
       </Alert>
       <Button component="label" disabled={upload.isPending}>
-        Загрузить JSON-файл
+        Загрузить JSON-файл (до 1 МБ)
         <input
           hidden
           aria-label="Загрузить ЕКП JSON"
@@ -33,11 +33,7 @@ export function CatalogFiles({ onImported }: CatalogFilesProps) {
         Скачать пример JSON
       </Button>
       {upload.error && (
-        <Alert severity="error">
-          {upload.error.message === "Файл больше 8 МБ"
-            ? upload.error.message
-            : getApiError(upload.error).message}
-        </Alert>
+        <Alert severity="error">{getApiError(upload.error).message}</Alert>
       )}
       {upload.isSuccess && (
         <Alert severity="success">Черновик ЕКП загружен</Alert>

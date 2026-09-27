@@ -1,3 +1,4 @@
+import { validateUploadSize } from "@/shared/lib/uploads";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { telephonyApi } from "@/entities/telephony";
@@ -26,7 +27,10 @@ export function useMediaEditor(cueId: string) {
     onSuccess: refresh,
   });
   const upload = useMutation({
-    mutationFn: (file: File) => telephonyApi.upload(cueId, file),
+    mutationFn: async (file: File) => {
+      validateUploadSize(file);
+      return telephonyApi.upload(cueId, file);
+    },
     onSuccess: refresh,
   });
   const preview = useMutation({

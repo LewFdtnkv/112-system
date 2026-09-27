@@ -1,10 +1,11 @@
+import { validateUploadSize } from "@/shared/lib/uploads";
 import { catalogApi } from "@/entities/catalog";
 import { useMutation } from "@tanstack/react-query";
 
 export function useCatalogImport(onImported: () => void) {
   return useMutation({
     mutationFn: async (file: File) => {
-      if (file.size > 8 * 1024 * 1024) throw new Error("Файл больше 8 МБ");
+      validateUploadSize(file);
       return catalogApi.import(await file.text());
     },
     onSuccess: onImported,
