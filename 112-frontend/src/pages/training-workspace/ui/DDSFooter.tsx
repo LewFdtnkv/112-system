@@ -4,6 +4,7 @@ import { useDDSWorkspaceContext } from "../model/DDSWorkspaceContext";
 import { DDSCrewMessages } from "./DDSCrewMessages";
 import { DDSResponseHistory } from "./DDSResponseHistory";
 import { DDSTile } from "./DDSTile";
+import { DDSFinishAction } from "./DDSFinishAction";
 
 export function DDSFooter() {
   const w = useDDSWorkspaceContext();
@@ -70,23 +71,7 @@ export function DDSFooter() {
         </div>
       )}
       <div className="arm-footer-tools">
-        {!completed && dds.can_finish && (
-          <button
-            className="arm-save"
-            data-learning-target="submit"
-            disabled={busy}
-            onClick={() => {
-              if (
-                window.confirm(
-                  "Завершить упражнение? Невыполненные действия будут учтены в оценке.",
-                )
-              )
-                w.finish.mutate();
-            }}
-          >
-            Завершить упражнение
-          </button>
-        )}
+        <DDSFinishAction />
         <ArmIconButton
           icon="close"
           label="Закрыть карточку ДДС"

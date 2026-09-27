@@ -589,6 +589,10 @@ test("real API: EKP file roundtrip, rule editing, profile publication and DDS ex
   await page
     .getByRole("button", { name: "Завершить упражнение", exact: true })
     .click();
+  await page
+    .getByRole("dialog", { name: "Завершить упражнение?", exact: true })
+    .getByRole("button", { name: "Завершить", exact: true })
+    .click();
   await expect(
     page.getByText("Упражнение завершено. Автоматическая оценка сохранена."),
   ).toBeVisible();
