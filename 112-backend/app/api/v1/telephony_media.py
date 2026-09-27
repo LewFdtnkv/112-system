@@ -67,6 +67,7 @@ async def update_cue(cue_id: UUID, payload: AudioUpdate, session: SessionDep, te
     cue = await owned_cue(session, cue_id, teacher.id)
     asset = await media.asset_for(session, payload.text, payload.voice, payload.generator_version)
     cue.audio_id = asset.id
+    cue.audio_variants = []
     if asset.status == "failed":
         asset.status, asset.attempts, asset.error = "queued", 0, None
     await session.commit()
@@ -83,6 +84,7 @@ async def upload(cue_id: UUID, request: Request, session: SessionDep, teacher: T
     asset = await media.asset_for(session, source.text, source.voice, f"upload:{key}")
     media.complete(asset, data)
     cue.audio_id = asset.id
+    cue.audio_variants = []
     await session.commit()
     return asset_read(asset)
 

@@ -17,6 +17,7 @@ from pydantic import (
 
 from app.models.enums import LessonStatus, PublicationStatus, TrainingMode, TrainingRole
 from app.schemas.assessment import AssessmentPolicy
+from app.schemas.card_audio import CardAudio
 from app.schemas.card_flags import validate_count, validate_flags
 from app.schemas.catalog import ClassifierEntryRead
 from app.schemas.dds import DDSPolicy
@@ -53,6 +54,7 @@ class CardData(BaseModel):
 class CardDefinition(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
+    audio: CardAudio = Field(default_factory=CardAudio)
     dds_exercise: DDSExercise | None = None
     title: Title
     classifier_version_id: UUID

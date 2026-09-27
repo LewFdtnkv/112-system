@@ -71,26 +71,31 @@ async def prepare_scenario(session, scenario):
         else []
     )
     for card in cards:
+        from app.services.telephony.recording_selection import frozen_variants
+
+        variants = await frozen_variants(session, card.snapshot.get("audio"), role=scenario.role)
         # Only student-visible messages; never feed hidden answers into call audio.
         message = card.snapshot.get("caller_message") or scenario.caller_message or ""
         targets = [("caller", "Заявитель", message)]
+        exercise = card.snapshot.get("dds_exercise")
+        policy = exercise if exercise is not None else scenario.completion_rules.get("dds", {})
+        crew_calls = scenario.role == "dds" and policy.get("crew_calls_required", False)
         if scenario.role == "dds":
-            message = "\n".join(
-                step["message"]
-                for step in scenario.completion_rules.get("dds", {}).get("steps", [])
-            )
+            message = "\n".join(step["message"] for step in policy.get("steps", []))
             targets = [(c.code, c.name, message) for c in contacts]
         for key, name, text in targets:
-            if not text.strip():
-                continue
-            if scenario.role == "dds" and scenario.completion_rules.get("dds", {}).get(
-                "crew_calls_required"
-            ):
+            if variants:
+                from uuid import UUID
+
+                asset = await session.get(SpeechAsset, UUID(variants[0]["audio_id"]))
+            elif crew_calls:
                 greeting, data = greeting_bytes()
                 asset = await asset_for(session, greeting, "crew-voice-pack", "crew-dialogue-v1")
                 complete(asset, data)
-            else:
+            elif text.strip():
                 asset = await asset_for(session, text)
+            else:
+                continue
             await session.execute(
                 insert(CallCue)
                 .values(
@@ -99,6 +104,7 @@ async def prepare_scenario(session, scenario):
                     contact_key=key,
                     contact_name=name,
                     audio_id=asset.id,
+                    audio_variants=variants,
                 )
                 .on_conflict_do_nothing(index_elements=["scenario_card_id", "contact_key"])
             )
@@ -108,7 +114,7 @@ async def read_upload(request: Request):
     return await read_upload_bytes(request.stream())
 
 
-def store_wav(data):
+def store_wav(data, *, max_duration=600):
     try:
         if len(data) < 12 or int.from_bytes(data[4:8], "little") + 8 != len(data):
             raise ValueError()
@@ -128,6 +134,8 @@ def store_wav(data):
         raise HTTPException(
             422, "Required: PCM WAV, mono, 8000 Hz, 16 bit, 0.1–600 seconds"
         ) from None
+    if duration > max_duration:
+        raise HTTPException(422, "Приветствие или подтверждение должно длиться не более 20 секунд")
     # Strip arbitrary metadata and guarantee Asterisk-compatible RIFF/PCM.
     buffer = io.BytesIO()
     with wave.open(buffer, "wb") as wav:

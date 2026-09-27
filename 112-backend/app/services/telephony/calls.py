@@ -1,6 +1,6 @@
 import hashlib
 from datetime import UTC, datetime, timedelta
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from fastapi import HTTPException
 from sqlalchemy import select
@@ -137,6 +137,11 @@ async def new_call(
 ):
     if "dds_policy" in attempt.settings_snapshot and cue.contact_key == "caller":
         raise HTTPException(422, "Звонки заявителю не входят в занятия ДДС")
+    # Stable for this attempt/contact, independent of process restarts and retries.
+    variants = cue.audio_variants or [{"audio_id": str(cue.audio_id)}]
+    index = int(hashlib.sha256(f"{attempt.id}:{cue.id}".encode()).hexdigest(), 16) % len(variants)
+    variant = variants[index]
+    asset = await session.get(SpeechAsset, UUID(variant["audio_id"]))
     dialogue = None
     if required(attempt):
         if direction != "outgoing" or transport != "manual":
@@ -147,8 +152,25 @@ async def new_call(
                 "Для проверки речи нужен Asterisk; внешний адаптер пока передаёт только соединение",
             )
         binding = await selected_crew(session, attempt, cue.contact_key, crew_code)
-        dialogue = choose_dialogue() | binding
-    asset = await session.get(SpeechAsset, cue.audio_id)
+        if variant.get("acknowledgment_id"):
+            acknowledgment = await session.get(SpeechAsset, UUID(variant["acknowledgment_id"]))
+            if (
+                acknowledgment.status != "ready"
+                or not acknowledgment.file_key
+                or not audio_path(acknowledgment.file_key).is_file()
+            ):
+                raise HTTPException(
+                    409, "Запись подтверждения недоступна. Обратитесь к преподавателю"
+                )
+            dialogue = {
+                "version": "crew-dialogue-v1",
+                "phase": "pending",
+                "voice": f"recorded-{index + 1}",
+                "greeting": asset.file_key,
+                "acknowledgment": acknowledgment.file_key,
+            } | binding
+        else:
+            dialogue = choose_dialogue() | binding
     if require_audio and (
         asset.status != "ready" or not asset.file_key or not audio_path(asset.file_key).is_file()
     ):

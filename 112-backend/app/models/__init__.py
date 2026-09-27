@@ -27,6 +27,7 @@ from app.models.lesson_execution import LessonExecution
 from app.models.scenario import AnswerKey, Scenario, ScenarioVersion
 from app.models.telephony import (
     CallCue,
+    Recording,
     SpeechAsset,
     TelephonyEvent,
     TelephonyStation,
@@ -44,6 +45,7 @@ from app.models.user import User
 
 __all__ = [
     "CallCue",
+    "Recording",
     "SpeechAsset",
     "TelephonyEvent",
     "TelephonyStation",

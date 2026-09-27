@@ -130,6 +130,22 @@ class CallCue(UUIDPrimaryKey, Base):
     contact_key: Mapped[str] = mapped_column(String(100))
     contact_name: Mapped[str] = mapped_column(String(255))
     audio_id: Mapped[UUID] = mapped_column(ForeignKey("speech_assets.id"))
+    audio_variants: Mapped[list] = mapped_column(JSONB, default=list, server_default="[]")
+
+
+class Recording(UUIDPrimaryKey, CreatedAt, Base):
+    __tablename__ = "recordings"
+    __table_args__ = (
+        CheckConstraint("purpose IN ('caller', 'greeting', 'acknowledgment')", name="purpose"),
+    )
+    created_by_id: Mapped[UUID] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT"), index=True
+    )
+    title: Mapped[str] = mapped_column(String(255))
+    purpose: Mapped[str] = mapped_column(String(16))
+    audio_id: Mapped[UUID] = mapped_column(
+        ForeignKey("speech_assets.id", ondelete="RESTRICT"), index=True
+    )
 
 
 class TelephonyEvent(UUIDPrimaryKey, CreatedAt, Base):

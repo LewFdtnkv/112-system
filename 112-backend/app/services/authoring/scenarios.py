@@ -234,6 +234,9 @@ async def create_scenario(
                 position=position,
                 arrival_offset_seconds=payload.arrival_offsets_seconds[position - 1],
                 snapshot={
+                    "audio": {"crew_variants": (card.audio or {}).get("crew_variants", [])}
+                    if payload.role == TrainingRole.DDS
+                    else {"caller_ids": (card.audio or {}).get("caller_ids", [])},
                     "dds_exercise": card.dds_exercise if payload.role == TrainingRole.DDS else None,
                     "title": card.title,
                     "instructions": card.instructions,

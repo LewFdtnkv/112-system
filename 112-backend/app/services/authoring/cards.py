@@ -60,6 +60,7 @@ async def card_read(session: AsyncSession, card: CardTemplate) -> CardRead:
     job = await session.scalar(select(AIJob).where(AIJob.card_template_id == card.id))
     inference = (job.output or {}).get("inference", {}) if job else {}
     return CardRead(
+        audio=card.audio,
         dds_exercise=card.dds_exercise,
         generation_example=card.generation_example,
         generated_by_ai=job is not None,
@@ -170,12 +171,22 @@ async def _validate_card_definition(session: AsyncSession, payload: CardCreate) 
 
 
 async def create_card(session: AsyncSession, teacher_id: UUID, payload: CardCreate) -> CardRead:
+    from app.services.telephony.recordings import validate_selection
+
+    await validate_selection(session, teacher_id, payload.audio)
     recipients = await validate_card_definition(session, payload)
     card = CardTemplate(
         created_by_id=teacher_id,
         **payload.model_dump(
-            exclude={"recipient_service_ids", "data", "use_recommended_recipients", "dds_exercise"}
+            exclude={
+                "recipient_service_ids",
+                "data",
+                "use_recommended_recipients",
+                "dds_exercise",
+                "audio",
+            }
         ),
+        audio=payload.audio.model_dump(mode="json"),
         dds_exercise=payload.dds_exercise.model_dump(mode="json") if payload.dds_exercise else None,
         data=payload.data.model_dump(mode="json"),
     )
@@ -199,6 +210,9 @@ async def update_card(
     )
     if used is not None:
         raise HTTPException(409, "Used cards cannot be edited")
+    from app.services.telephony.recordings import validate_selection
+
+    await validate_selection(session, teacher_id, payload.audio)
     recipients = await validate_card_definition(session, payload)
     for key, value in payload.model_dump(
         exclude={
@@ -207,9 +221,11 @@ async def update_card(
             "use_recommended_recipients",
             "data",
             "dds_exercise",
+            "audio",
         }
     ).items():
         setattr(card, key, value)
+    card.audio = payload.audio.model_dump(mode="json")
     card.dds_exercise = (
         payload.dds_exercise.model_dump(mode="json") if payload.dds_exercise else None
     )
