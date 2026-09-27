@@ -11,6 +11,7 @@ import type { EditorProps } from "../types/ScenarioEditorPage";
 import { AssessmentPolicyFields } from "./AssessmentPolicyFields";
 import { ScenarioCardsFields } from "./ScenarioCardsFields";
 import { ScenarioDdsSettings } from "./ScenarioDdsSettings";
+import { ConfirmDialog } from "@/shared/ui/ConfirmDialog";
 import { ScenarioMetadataFields } from "./ScenarioMetadataFields";
 
 export const ScenarioEditorPage = () => {
@@ -50,6 +51,9 @@ function Editor({ initial }: EditorProps) {
     setProfile,
     validate,
     submit,
+    selectionChange,
+    confirmSelectionChange,
+    cancelSelectionChange,
   } = useScenarioEditor({ initial });
   return (
     <ValidatedForm
@@ -64,82 +68,111 @@ function Editor({ initial }: EditorProps) {
           условия.
         </Alert>
       )}
-      <ScenarioMetadataFields form={form} onChange={setForm} />
-      {form.role === "dds" && (
-        <ScenarioDdsSettings profile={profile} onProfileChange={setProfile} />
-      )}
-      <TextField
-        name="instructions"
-        label="Инструкция ученику"
-        helperText="Общие требования ко всем карточкам сценария. Не повторяйте условия отдельных карточек и памятку службы; если дополнительных требований нет, оставьте поле пустым."
-        multiline
-        minRows={3}
-        value={form.instructions}
-        onChange={(event) =>
-          setForm({ ...form, instructions: event.target.value })
-        }
+      <ConfirmDialog
+        open={!!selectionChange}
+        title="Изменить настройки сценария?"
+        description="При смене роли или профиля службы список выбранных карточек и расписание очистятся. Остальные поля сохранятся."
+        confirmLabel="Изменить"
+        onConfirm={confirmSelectionChange}
+        onCancel={cancelSelectionChange}
       />
-      <ValidationField
-        name="card_ids"
-        label="Карточки сценария"
-        validate={() =>
-          !schedule.cards.length
-            ? "Добавьте хотя бы одну карточку в сценарий."
-            : undefined
-        }
-      >
-        <ValidationField
-          name="arrival_offsets_seconds"
-          label="Расписание карточек"
-        >
-          <ScenarioCardsFields
-            role={form.role}
-            profileId={profile?.id}
-            cards={schedule.cards}
-            delays={schedule.delays}
-            offsets={schedule.offsets}
-            onAdd={schedule.add}
-            onRemove={schedule.remove}
-            onMove={schedule.move}
-            onDelayChange={schedule.changeDelay}
-          />
-        </ValidationField>
-      </ValidationField>
       <TextField
-        name="status"
+        name="role"
         select
-        label="Статус публикации"
-        value={form.status}
+        required
+        label="Учебная роль"
+        value={form.role}
+        helperText="Сначала выберите, для какого оператора создаётся сценарий."
         onChange={(event) =>
           setForm({
             ...form,
-            status: event.target.value as ScenarioInput["status"],
+            role: event.target.value as ScenarioInput["role"],
           })
         }
       >
-        <MenuItem value="draft">Черновик</MenuItem>
-        <MenuItem value="published">Опубликован</MenuItem>
+        <MenuItem value="operator_112">Оператор 112</MenuItem>
+        <MenuItem value="dds">Диспетчер ДДС</MenuItem>
       </TextField>
-      {form.role === "dds" ? (
-        <Alert severity="info">
-          Автооценка ДДС проверяет статусы по сообщениям и заданные номера
-          нарядов. Если заданы цели бригад, их выполнение учитывается отдельно,
-          независимо от порядка работы разных бригад. Итог приводится к 100%.
-          Смысл комментариев проверяется ИИ с возможностью проверки
-          преподавателем. Норматив первой реакции отражается отдельно, без
-          автоматического штрафа.
-        </Alert>
-      ) : (
-        <AssessmentPolicyFields
-          value={form.assessment_policy!}
-          onChange={(assessment_policy) =>
-            setForm({ ...form, assessment_policy })
-          }
-        />
+      {form.role === "dds" && (
+        <ScenarioDdsSettings profile={profile} onProfileChange={setProfile} />
       )}
-      <Button type="submit" variant="contained" disabled={save.isPending}>
-        Сохранить сценарий
-      </Button>
+      {(form.role === "operator_112" || (form.role === "dds" && profile)) && (
+        <>
+          <ScenarioMetadataFields form={form} onChange={setForm} />
+          <TextField
+            name="instructions"
+            label="Инструкция ученику"
+            helperText="Общие требования ко всем карточкам сценария. Не повторяйте условия отдельных карточек и памятку службы; если дополнительных требований нет, оставьте поле пустым."
+            multiline
+            minRows={3}
+            value={form.instructions}
+            onChange={(event) =>
+              setForm({ ...form, instructions: event.target.value })
+            }
+          />
+          <ValidationField
+            name="card_ids"
+            label="Карточки сценария"
+            validate={() =>
+              !schedule.cards.length
+                ? "Добавьте хотя бы одну карточку в сценарий."
+                : undefined
+            }
+          >
+            <ValidationField
+              name="arrival_offsets_seconds"
+              label="Расписание карточек"
+            >
+              <ScenarioCardsFields
+                role={form.role}
+                profileId={profile?.id}
+                cards={schedule.cards}
+                delays={schedule.delays}
+                offsets={schedule.offsets}
+                onAdd={schedule.add}
+                onRemove={schedule.remove}
+                onMove={schedule.move}
+                onDelayChange={schedule.changeDelay}
+              />
+            </ValidationField>
+          </ValidationField>
+          <TextField
+            name="status"
+            select
+            label="Статус публикации"
+            value={form.status}
+            onChange={(event) =>
+              setForm({
+                ...form,
+                status: event.target.value as ScenarioInput["status"],
+              })
+            }
+          >
+            <MenuItem value="draft">Черновик</MenuItem>
+            <MenuItem value="published">Опубликован</MenuItem>
+          </TextField>
+          {form.role === "dds" ? (
+            <Alert severity="info">
+              Автооценка ДДС проверяет статусы по сообщениям и заданные номера
+              нарядов. Если заданы цели бригад, их выполнение учитывается
+              отдельно, независимо от порядка работы разных бригад. Итог
+              приводится к 100%. Смысл комментариев проверяется ИИ с
+              возможностью проверки преподавателем. Норматив первой реакции
+              отражается отдельно, без автоматического штрафа.
+            </Alert>
+          ) : (
+            <AssessmentPolicyFields
+              value={form.assessment_policy!}
+              onChange={(assessment_policy) =>
+                setForm({ ...form, assessment_policy })
+              }
+            />
+          )}
+          <Button type="submit" variant="contained" disabled={save.isPending}>
+            Сохранить сценарий
+          </Button>
+        </>
+      )}
     </ValidatedForm>
   );
 }

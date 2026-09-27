@@ -265,14 +265,16 @@ test("real API: EKP file roundtrip, rule editing, profile publication and DDS ex
   await expect(page).toHaveURL(/teacher$/);
   await page.goto("/scenarios/new");
   await page
-    .getByRole("textbox", { name: "Название сценария", exact: true })
-    .fill(`ДДС сценарий ${suffix}`);
-  await page
     .getByRole("combobox", { name: "Учебная роль", exact: true })
     .click();
   await page
     .getByRole("option", { name: "Диспетчер ДДС", exact: true })
     .click();
+  await choose(page, "Профиль службы", profileName);
+  await page
+    .getByRole("textbox", { name: "Название сценария", exact: true })
+    .fill(`ДДС сценарий ${suffix}`);
+
   await page
     .getByRole("textbox", { name: "Сообщение ученику на этапе 1", exact: true })
     .fill("Карточка относится к ответственности вашей службы. Примите её.");
@@ -286,7 +288,6 @@ test("real API: EKP file roundtrip, rule editing, profile publication and DDS ex
       exact: true,
     })
     .fill("УЧ-42");
-  await choose(page, "Профиль службы", profileName);
   await page
     .getByRole("combobox", {
       name: "Цель для бригады «Аварийная бригада»",

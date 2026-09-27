@@ -6,6 +6,7 @@ export interface SelectOption {
 
 export type ServerSelectProps = {
   label: string;
+  noOptionsText?: string;
   name?: string;
   required?: boolean;
   validate?: () => string | undefined;

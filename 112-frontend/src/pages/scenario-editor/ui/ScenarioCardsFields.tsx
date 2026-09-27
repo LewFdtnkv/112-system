@@ -27,9 +27,14 @@ export function ScenarioCardsFields({
       <ServerSelect
         label="Карточка из библиотеки"
         queryKey={[...cardKeys.options, role, profileId]}
-        key={cards.length}
+        key={`${role}:${profileId ?? ""}:${cards.length}`}
         value={null}
-        disabled={cards.length >= 100}
+        noOptionsText={
+          role === "dds"
+            ? "Для выбранного профиля службы пока нет карточек. Создайте карточку ДДС с этим профилем в разделе «Карточки»."
+            : undefined
+        }
+        disabled={cards.length >= 100 || (role === "dds" && !profileId)}
         onChange={(card) => {
           if (card) onAdd(card);
         }}

@@ -32,7 +32,7 @@ export function scenarioEditorInitial(
       norm_seconds: initial?.norm_seconds ?? 30,
       instructions: initial?.instructions ?? "",
       status: initial?.status ?? "draft",
-      role: initial?.role ?? "operator_112",
+      role: initial?.role ?? "",
       card_ids: [],
       service_profile_id: initial?.service_profile_id ?? null,
       dds_policy: null,
@@ -58,11 +58,23 @@ export function scenarioEditorReducer(
 ): ScenarioEditorState {
   switch (action.type) {
     case "form":
-      return { ...state, form: action.value };
+      return action.value.role === state.form.role
+        ? { ...state, form: action.value }
+        : {
+            ...state,
+            form: {
+              ...action.value,
+              service_profile_id: null,
+              dds_policy: null,
+            },
+            profile: null,
+            rows: [],
+          };
     case "profile":
       return {
         ...state,
         profile: action.value,
+        rows: action.value?.id === state.profile?.id ? state.rows : [],
         form: { ...state.form, dds_policy: null },
       };
     case "add":

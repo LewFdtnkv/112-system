@@ -1,10 +1,13 @@
 import type { ScenarioDetail, ScenarioInput } from "@/entities/training";
 import type { SelectOption } from "@/shared/ui/ServerSelect";
+export type ScenarioEditorForm = Omit<ScenarioInput, "role"> & {
+  role: ScenarioInput["role"] | "";
+};
 export type EditorProps = { initial?: ScenarioDetail };
 
 export type ScenarioMetadataFieldsProps = {
-  form: ScenarioInput;
-  onChange: (form: ScenarioInput) => void;
+  form: ScenarioEditorForm;
+  onChange: (form: ScenarioEditorForm) => void;
 };
 
 export type ScenarioCardsFieldsProps = {
@@ -25,12 +28,12 @@ export type ScenarioDdsSettingsProps = {
 };
 
 export type ScenarioEditorState = {
-  form: ScenarioInput;
+  form: ScenarioEditorForm;
   profile: SelectOption | null;
   rows: { card: SelectOption; delay: number }[];
 };
 export type ScenarioEditorAction =
-  | { type: "form"; value: ScenarioInput }
+  | { type: "form"; value: ScenarioEditorForm }
   | { type: "profile"; value: SelectOption | null }
   | { type: "add"; card: SelectOption }
   | { type: "remove"; index: number }

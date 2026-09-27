@@ -78,21 +78,6 @@ export function ScenarioMetadataFields({
           }
         />
       </Stack>
-      <TextField
-        name="role"
-        select
-        label="Учебная роль"
-        value={form.role}
-        onChange={(event) =>
-          onChange({
-            ...form,
-            role: event.target.value as ScenarioInput["role"],
-          })
-        }
-      >
-        <MenuItem value="operator_112">Оператор 112</MenuItem>
-        <MenuItem value="dds">Диспетчер ДДС</MenuItem>
-      </TextField>
     </>
   );
 }

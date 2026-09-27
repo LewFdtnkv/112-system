@@ -7,6 +7,7 @@ import { useState } from "react";
 import type { ServerSelectProps } from "./types/index";
 export function ServerSelect({
   label,
+  noOptionsText,
   name,
   required = false,
   validate,
@@ -44,7 +45,10 @@ export function ServerSelect({
         filterOptions={(options) => options}
         loading={query.isFetching}
         noOptionsText={
-          query.error ? "Ошибка загрузки" : "Совпадений нет. Уточните поиск."
+          query.error
+            ? "Ошибка загрузки"
+            : (!debounced.trim() && noOptionsText) ||
+              "Совпадений нет. Уточните поиск."
         }
         onInputChange={(_, text, reason) => {
           if (reason === "input" || reason === "clear") setSearch(text);

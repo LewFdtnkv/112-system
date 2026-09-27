@@ -219,6 +219,7 @@ test("real API: authoring, operator drafts, revision conflict, notification and 
   });
   await page.getByRole("button", { name: "Закрыть", exact: true }).click();
   await page.goto("/scenarios/new");
+  await select(page, "Учебная роль", "Оператор 112");
   await page.getByLabel("Название сценария").fill(`Сценарий ${suffix}`);
   await page.getByLabel("Категория", { exact: true }).fill("Пожар");
   await select(page, "Карточка из библиотеки", `Пожар ${suffix}`);

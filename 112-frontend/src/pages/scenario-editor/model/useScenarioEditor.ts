@@ -1,10 +1,14 @@
-import { useReducer } from "react";
+import { useReducer, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { scenarioApi, type ScenarioInput } from "@/entities/training";
+import { scenarioApi } from "@/entities/training";
 import { routePaths } from "@/shared/config/routes";
 import type { SelectOption } from "@/shared/ui/ServerSelect";
-import type { EditorProps } from "../types/ScenarioEditorPage";
+import type {
+  EditorProps,
+  ScenarioEditorForm,
+  ScenarioEditorAction,
+} from "../types/ScenarioEditorPage";
 import {
   arrivalOffsets,
   scenarioEditorInitial,
@@ -20,6 +24,12 @@ export function useScenarioEditor({ initial }: EditorProps) {
     scenarioEditorInitial,
   );
   const { form, profile, rows } = state;
+  const [selectionChange, setSelectionChange] =
+    useState<ScenarioEditorAction | null>(null);
+  const changeSelection = (action: ScenarioEditorAction, changed: boolean) => {
+    if (changed && rows.length) setSelectionChange(action);
+    else dispatch(action);
+  };
   const schedule = {
     cards: rows.map((row) => row.card),
     delays: rows.map((row) => row.delay),
@@ -32,10 +42,13 @@ export function useScenarioEditor({ initial }: EditorProps) {
       dispatch({ type: "delay", index, value }),
   };
   const save = useMutation({
-    mutationFn: () =>
-      scenarioApi.save(
+    mutationFn: () => {
+      if (!form.role || (form.role === "dds" && !profile))
+        throw new Error("Выберите учебную роль и профиль службы для ДДС.");
+      return scenarioApi.save(
         {
           ...form,
+          role: form.role,
           card_ids: schedule.cards.map((card) => card.id),
           arrival_offsets_seconds:
             form.role === "dds"
@@ -46,7 +59,8 @@ export function useScenarioEditor({ initial }: EditorProps) {
             form.role === "dds" ? (profile?.id ?? null) : null,
         },
         initial?.id,
-      ),
+      );
+    },
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: ["scenarios"] });
       void client.invalidateQueries({ queryKey: ["scenario-options"] });
@@ -59,10 +73,23 @@ export function useScenarioEditor({ initial }: EditorProps) {
     profile,
     schedule,
     save,
-    setForm: (value: ScenarioInput) => dispatch({ type: "form", value }),
+    selectionChange,
+    confirmSelectionChange: () => {
+      if (selectionChange) dispatch(selectionChange);
+      setSelectionChange(null);
+    },
+    cancelSelectionChange: () => setSelectionChange(null),
+    setForm: (value: ScenarioEditorForm) =>
+      changeSelection({ type: "form", value }, value.role !== form.role),
     setProfile: (value: SelectOption | null) =>
-      dispatch({ type: "profile", value }),
+      changeSelection({ type: "profile", value }, value?.id !== profile?.id),
     validate: () => {
+      if (!form.role)
+        return [{ path: "role", message: "Выберите учебную роль." }];
+      if (form.role === "dds" && !profile)
+        return [
+          { path: "service_profile_id", message: "Выберите профиль службы." },
+        ];
       const index =
         form.role === "dds"
           ? schedule.offsets.findIndex(
@@ -79,6 +106,7 @@ export function useScenarioEditor({ initial }: EditorProps) {
           ];
     },
     submit: () => {
+      if (!form.role || (form.role === "dds" && !profile)) return;
       if (
         !initial ||
         window.confirm(

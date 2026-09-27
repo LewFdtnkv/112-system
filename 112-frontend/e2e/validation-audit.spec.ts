@@ -63,9 +63,9 @@ test("DDS schedule and incompatible cards have actionable errors", async ({
   });
   await login(page);
   await page.goto("/scenarios/new");
-  await page.getByLabel("Название сценария").fill("Работа пожарной службы");
   await choose(page, "Учебная роль", "Диспетчер ДДС");
   await choose(page, "Профиль службы", "Пожарная служба");
+  await page.getByLabel("Название сценария").fill("Работа пожарной службы");
   for (let n = 0; n < 2; n++) {
     await choose(page, "Карточка из библиотеки", "Пожар в квартире");
   }

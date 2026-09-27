@@ -25,15 +25,27 @@ for (const role of ["dds", "operator_112"]) {
     await page.getByRole("button", { name: "Войти", exact: true }).click();
     await expect(page).toHaveURL(/teacher$/);
     await page.goto("/scenarios/new");
-    await page
-      .getByLabel("Название сценария")
-      .fill("Работа с несколькими карточками");
     const choose = async (label: string, name: string) => {
       await page.getByRole("combobox", { name: label, exact: true }).click();
       await page.getByRole("option", { name, exact: true }).click();
     };
-    await choose("Учебная роль", "Диспетчер ДДС");
-    await choose("Профиль службы", "Пожарная служба");
+    await expect(page.getByLabel("Название сценария")).toHaveCount(0);
+    await expect(
+      page.getByRole("combobox", { name: "Учебная роль", exact: true }),
+    ).not.toContainText(/Оператор 112|Диспетчер ДДС/);
+    await choose(
+      "Учебная роль",
+      role === "dds" ? "Диспетчер ДДС" : "Оператор 112",
+    );
+    if (role === "dds") {
+      await expect(
+        page.getByRole("combobox", { name: "Карточка из библиотеки" }),
+      ).toHaveCount(0);
+      await choose("Профиль службы", "Пожарная служба");
+    }
+    await page
+      .getByLabel("Название сценария")
+      .fill("Работа с несколькими карточками");
     for (const card of cards) {
       await choose("Карточка из библиотеки", card.title);
       await expect(
@@ -50,8 +62,10 @@ for (const role of ["dds", "operator_112"]) {
       page.getByRole("button", { name: "Добавить карточку", exact: true }),
     ).toHaveCount(0);
     const delays = page.getByLabel("Через сколько секунд после предыдущей");
-    await delays.nth(0).fill("45");
-    await delays.nth(1).fill("90");
+    if (role === "dds") {
+      await delays.nth(0).fill("45");
+      await delays.nth(1).fill("90");
+    }
     await page
       .getByRole("button", { name: "Вверх: Утечка газа", exact: true })
       .click();
@@ -59,9 +73,10 @@ for (const role of ["dds", "operator_112"]) {
       .getByRole("button", { name: "Убрать", exact: true })
       .first()
       .click();
-    await expect(page.getByLabel("Первая карточка — сразу")).toHaveValue("0");
-    await expect(delays).toHaveValue("90");
-    if (role === "operator_112") await choose("Учебная роль", "Оператор 112");
+    if (role === "dds") {
+      await expect(page.getByLabel("Первая карточка — сразу")).toHaveValue("0");
+      await expect(delays).toHaveValue("90");
+    }
     await page
       .getByLabel("Инструкция ученику")
       .fill("Обработайте поступившие карточки.");
