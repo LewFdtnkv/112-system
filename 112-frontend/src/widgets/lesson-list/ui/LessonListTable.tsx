@@ -147,9 +147,9 @@ export function LessonListTable({
                   {row.score !== null && (
                     <small>
                       {row.evaluation_method === "hybrid"
-                        ? "Правила + ИИ"
+                        ? "Правила, ИИ"
                         : row.evaluation_method === "rules"
-                          ? "Автоматически"
+                          ? "Правила"
                           : "Преподаватель"}
                     </small>
                   )}
