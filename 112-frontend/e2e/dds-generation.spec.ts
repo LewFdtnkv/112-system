@@ -49,7 +49,7 @@ for (const width of [1440, 390]) {
           sent = r.request().postDataJSON();
           jobs = [
             {
-              id: "job",
+              id: `job-${jobs.length + 1}`,
               kind: "dds_generation",
               status: "queued",
               title: card.title,
@@ -59,6 +59,7 @@ for (const width of [1440, 390]) {
               services: [profile.name],
               created_at: new Date().toISOString(),
             },
+            ...jobs,
           ];
           return r.fulfill({ status: 202, json: jobs[0] });
         }
@@ -66,7 +67,20 @@ for (const width of [1440, 390]) {
       }
       if (path === "card-generations")
         return r.fulfill({
-          json: { items: jobs, total: jobs.length, offset: 0, limit: 10 },
+          json: {
+            items: jobs.filter(
+              (job) =>
+                job.status !== "succeeded" &&
+                !jobs.some(
+                  (newer) =>
+                    newer.status === "succeeded" &&
+                    String(newer.created_at) > String(job.created_at),
+                ),
+            ),
+            total: jobs[0]?.status === "succeeded" ? 0 : jobs.length,
+            offset: 0,
+            limit: 10,
+          },
         });
       if (path === "service-profiles") return r.fulfill({ json: [profile] });
       if (path === "service-profiles/profile")
@@ -134,5 +148,36 @@ for (const width of [1440, 390]) {
       path: `docs/screenshots/dds-generation/failure-${width}.png`,
       animations: "disabled",
     });
+    const firstRequestId = sent?.request_id;
+    await page
+      .getByRole("button", {
+        name: "Сгенерировать упражнение ДДС",
+        exact: true,
+      })
+      .click();
+    await page
+      .getByRole("button", { name: "Запустить генерацию ДДС", exact: true })
+      .click();
+    await expect.poll(() => jobs.length).toBe(2);
+    expect(sent?.request_id).not.toBe(firstRequestId);
+    await expect(page.getByText(/Генерация ДДС в очереди/)).toBeVisible();
+    jobs[0] = { ...jobs[0], status: "succeeded" };
+    await expect(page.getByText(/Упражнение ДДС подготовлено/)).toBeVisible({
+      timeout: 10000,
+    });
+    await expect(
+      page.getByText(/Упражнение ДДС не прошло проверку/),
+    ).toHaveCount(0);
+    await page.screenshot({
+      path: `docs/screenshots/dds-generation/retry-success-${width}.png`,
+      animations: "disabled",
+    });
+    await page.reload();
+    await expect(
+      page.getByRole("button", { name: card.title, exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Ошибка генерации", { exact: true }),
+    ).toHaveCount(0);
   });
 }

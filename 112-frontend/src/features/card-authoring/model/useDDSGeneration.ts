@@ -49,6 +49,7 @@ export function useDDSGeneration(card: CardTemplate) {
         revision: card.revision,
       }),
     onSuccess: async () => {
+      change({});
       await Promise.all([
         client.invalidateQueries({
           queryKey: cardKeys.ddsGenerations(card.id),
