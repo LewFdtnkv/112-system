@@ -1,0 +1,7 @@
+{
+  "image": "system112-performance-baseline:a1eb098",
+  "workers": 1,
+  "profile": "ReadCapacity",
+  "users": 20,
+  "exit_code": 0
+}

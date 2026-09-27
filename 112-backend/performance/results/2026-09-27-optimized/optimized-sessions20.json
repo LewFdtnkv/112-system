@@ -1,0 +1,245 @@
+{
+  "total": {
+    "name": "Aggregated",
+    "method": "",
+    "requests": 1458,
+    "failures": 0,
+    "rps": 16.250875078668773,
+    "p95_ms": 47,
+    "p99_ms": 150.0,
+    "max_ms": 640.2081249980256
+  },
+  "routes": [
+    {
+      "name": "setup/target-guard",
+      "method": "GET",
+      "requests": 20,
+      "failures": 0,
+      "rps": 0.22292009710108057,
+      "p95_ms": 640.0,
+      "p99_ms": 640.0,
+      "max_ms": 640.2081249980256
+    },
+    {
+      "name": "auth/login",
+      "method": "POST",
+      "requests": 20,
+      "failures": 0,
+      "rps": 0.22292009710108057,
+      "p95_ms": 170.0,
+      "p99_ms": 170.0,
+      "max_ms": 173.303792020306
+    },
+    {
+      "name": "lesson/start",
+      "method": "POST",
+      "requests": 20,
+      "failures": 0,
+      "rps": 0.22292009710108057,
+      "p95_ms": 160.0,
+      "p99_ms": 160.0,
+      "max_ms": 163.94729097373784
+    },
+    {
+      "name": "dds/journal",
+      "method": "GET",
+      "requests": 302,
+      "failures": 0,
+      "rps": 3.366093466226317,
+      "p95_ms": 33,
+      "p99_ms": 78,
+      "max_ms": 115.23662495892495
+    },
+    {
+      "name": "dds/open",
+      "method": "POST",
+      "requests": 20,
+      "failures": 0,
+      "rps": 0.22292009710108057,
+      "p95_ms": 49,
+      "p99_ms": 49,
+      "max_ms": 48.586374963633716
+    },
+    {
+      "name": "operator_112/journal",
+      "method": "GET",
+      "requests": 115,
+      "failures": 0,
+      "rps": 1.2817905583312132,
+      "p95_ms": 42,
+      "p99_ms": 78,
+      "max_ms": 83.90074997441843
+    },
+    {
+      "name": "operator_112/open",
+      "method": "POST",
+      "requests": 115,
+      "failures": 0,
+      "rps": 1.2817905583312132,
+      "p95_ms": 60,
+      "p99_ms": 98,
+      "max_ms": 104.53579196473584
+    },
+    {
+      "name": "dds/assigned",
+      "method": "POST",
+      "requests": 20,
+      "failures": 0,
+      "rps": 0.22292009710108057,
+      "p95_ms": 53,
+      "p99_ms": 53,
+      "max_ms": 53.24008298339322
+    },
+    {
+      "name": "112/classifier",
+      "method": "GET",
+      "requests": 111,
+      "failures": 0,
+      "rps": 1.2372065389109972,
+      "p95_ms": 29,
+      "p99_ms": 46,
+      "max_ms": 93.46970799379051
+    },
+    {
+      "name": "112/save",
+      "method": "PUT",
+      "requests": 111,
+      "failures": 0,
+      "rps": 1.2372065389109972,
+      "p95_ms": 25,
+      "p99_ms": 41,
+      "max_ms": 47.07099997904152
+    },
+    {
+      "name": "dds/accepted",
+      "method": "POST",
+      "requests": 20,
+      "failures": 0,
+      "rps": 0.22292009710108057,
+      "p95_ms": 41,
+      "p99_ms": 41,
+      "max_ms": 40.562500013038516
+    },
+    {
+      "name": "112/routing",
+      "method": "POST",
+      "requests": 109,
+      "failures": 0,
+      "rps": 1.2149145292008892,
+      "p95_ms": 34,
+      "p99_ms": 43,
+      "max_ms": 104.50174997095019
+    },
+    {
+      "name": "112/audit",
+      "method": "POST",
+      "requests": 109,
+      "failures": 0,
+      "rps": 1.2149145292008892,
+      "p95_ms": 30,
+      "p99_ms": 45,
+      "max_ms": 61.10624998109415
+    },
+    {
+      "name": "dds/responding",
+      "method": "POST",
+      "requests": 20,
+      "failures": 0,
+      "rps": 0.22292009710108057,
+      "p95_ms": 43,
+      "p99_ms": 43,
+      "max_ms": 42.815249995328486
+    },
+    {
+      "name": "operator_112/submit",
+      "method": "POST",
+      "requests": 106,
+      "failures": 0,
+      "rps": 1.1814765146357271,
+      "p95_ms": 55,
+      "p99_ms": 72,
+      "max_ms": 72.47270795051008
+    },
+    {
+      "name": "lesson/leave",
+      "method": "POST",
+      "requests": 20,
+      "failures": 0,
+      "rps": 0.22292009710108057,
+      "p95_ms": 49,
+      "p99_ms": 49,
+      "max_ms": 48.87266701553017
+    },
+    {
+      "name": "student/dashboard",
+      "method": "GET",
+      "requests": 20,
+      "failures": 0,
+      "rps": 0.22292009710108057,
+      "p95_ms": 110.0,
+      "p99_ms": 110.0,
+      "max_ms": 105.45533400727436
+    },
+    {
+      "name": "lesson/resume",
+      "method": "POST",
+      "requests": 20,
+      "failures": 0,
+      "rps": 0.22292009710108057,
+      "p95_ms": 72,
+      "p99_ms": 72,
+      "max_ms": 71.81037496775389
+    },
+    {
+      "name": "dds/arrived",
+      "method": "POST",
+      "requests": 20,
+      "failures": 0,
+      "rps": 0.22292009710108057,
+      "p95_ms": 47,
+      "p99_ms": 47,
+      "max_ms": 46.86887498246506
+    },
+    {
+      "name": "dds/in_progress",
+      "method": "POST",
+      "requests": 20,
+      "failures": 0,
+      "rps": 0.22292009710108057,
+      "p95_ms": 40,
+      "p99_ms": 40,
+      "max_ms": 39.86079205060378
+    },
+    {
+      "name": "dds/completed",
+      "method": "POST",
+      "requests": 20,
+      "failures": 0,
+      "rps": 0.22292009710108057,
+      "p95_ms": 43,
+      "p99_ms": 43,
+      "max_ms": 42.65249997843057
+    },
+    {
+      "name": "dds/submit",
+      "method": "POST",
+      "requests": 20,
+      "failures": 0,
+      "rps": 0.22292009710108057,
+      "p95_ms": 56,
+      "p99_ms": 56,
+      "max_ms": 56.14504194818437
+    },
+    {
+      "name": "lesson/presence",
+      "method": "POST",
+      "requests": 100,
+      "failures": 0,
+      "rps": 1.1146004855054028,
+      "p95_ms": 28,
+      "p99_ms": 47,
+      "max_ms": 46.84570798417553
+    }
+  ],
+  "exit_code": 0
+}

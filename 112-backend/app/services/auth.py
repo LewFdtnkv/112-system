@@ -54,9 +54,14 @@ async def authenticate(session: AsyncSession, token: str) -> Identity:
         user_id, session_id = decode_access_token(token)
     except InvalidTokenError as exc:
         raise unauthorized() from exc
-    return validate_identity(
-        await session.get(User, user_id), await session.get(AuthSession, session_id)
-    )
+    pair = (
+        await session.execute(
+            select(User, AuthSession)
+            .join(AuthSession, AuthSession.user_id == User.id)
+            .where(User.id == user_id, AuthSession.id == session_id)
+        )
+    ).one_or_none()
+    return validate_identity(*pair) if pair else validate_identity(None, None)
 
 
 async def lock_user(session: AsyncSession, user_id: UUID) -> User | None:

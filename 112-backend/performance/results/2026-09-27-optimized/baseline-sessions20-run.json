@@ -1,0 +1,9 @@
+{
+  "image": "system112-performance-baseline:a1eb098",
+  "workers": 1,
+  "profile": "sessions20",
+  "exit_code": 1,
+  "dds_interval": 60,
+  "students": 100,
+  "cards_per_role": 20
+}

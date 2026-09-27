@@ -37,6 +37,8 @@ services:
       db: {condition: service_healthy}
   api:
     build: ..
+    image: ${PERF_API_IMAGE:-system112-performance-api}
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "${PERF_API_WORKERS:-4}"]
     environment: *environment
     cpus: 4
     mem_limit: 2g

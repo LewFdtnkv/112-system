@@ -4,10 +4,11 @@ import json
 import logging
 import os
 from datetime import UTC, datetime
-from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from time import perf_counter
 from uuid import uuid4
+
+from concurrent_log_handler import ConcurrentRotatingFileHandler
 
 LOG_DIRECTORY = Path(os.environ.get("SYSTEM_LOG_DIRECTORY", "var/log"))
 logger = logging.getLogger("system112.requests")
@@ -15,7 +16,8 @@ logger = logging.getLogger("system112.requests")
 
 def configure_request_log():
     LOG_DIRECTORY.mkdir(parents=True, exist_ok=True)
-    handler = RotatingFileHandler(
+    # Created by lifespan inside each Uvicorn worker, never shared across a fork.
+    handler = ConcurrentRotatingFileHandler(
         LOG_DIRECTORY / "requests.log", maxBytes=5_000_000, backupCount=3, encoding="utf-8"
     )
     logger.addHandler(handler)

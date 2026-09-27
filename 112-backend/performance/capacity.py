@@ -103,9 +103,8 @@ async def run(args):
             lag_max = 0
             start = time.perf_counter()
 
-            async def request(actor, attempt, path):
+            async def request(actor, attempt, path, scheduled_at):
                 label = "PUT card" if attempt else path
-                begin = time.perf_counter()
                 try:
                     if attempt:
                         payload = {
@@ -139,7 +138,8 @@ async def run(args):
                             attempt = body
                 except (httpx.HTTPError, ValueError, KeyError) as exc:
                     status, valid = type(exc).__name__, False
-                elapsed = time.perf_counter() - begin
+                # Include dispatch jitter rather than hiding it from latency percentiles.
+                elapsed = time.perf_counter() - scheduled_at
                 totals.add(elapsed, status, valid)
                 routes.setdefault(label, Metrics()).add(elapsed, status, valid)
                 if args.mode == "writes" and valid:
@@ -151,8 +151,9 @@ async def run(args):
                 await asyncio.sleep(max(0, due - time.perf_counter()))
                 now = time.perf_counter()
                 lag_max = max(lag_max, now - due)
-                # Discard missed arrivals, do not hide generator saturation in a catch-up burst.
-                missed = min(planned - scheduled, max(0, int((now - due) * rate)))
+                # Linux timers have ~1 ms granularity. Permit bounded dispatch jitter,
+                # but discard arrivals over 50 ms late instead of an unbounded catch-up burst.
+                missed = min(planned - scheduled, max(0, int((now - due - 0.05) * rate)))
                 dropped += missed
                 generator_dropped += missed
                 scheduled += missed
@@ -177,7 +178,9 @@ async def run(args):
                     ],
                     weights=[20, 30, 30, 20],
                 )[0]
-                task = asyncio.create_task(request(actor, attempt, path))
+                task = asyncio.create_task(
+                    request(actor, attempt, path, start + (scheduled - 1) / rate)
+                )
                 tasks.add(task)
                 task.add_done_callback(tasks.discard)
                 sent += 1
@@ -238,7 +241,7 @@ def main():
     parser.add_argument("--rates", type=int, nargs="+", default=[100, 250, 500, 1000, 1500])
     parser.add_argument("--seconds", type=int, default=60)
     parser.add_argument("--users", type=int, default=100)
-    parser.add_argument("--inflight", type=int, default=500)
+    parser.add_argument("--inflight", type=int, default=2000)
     parser.add_argument("--mode", choices=["reads", "writes"], default="reads")
     parser.add_argument("--output", default="performance/artifacts/capacity.json")
     args = parser.parse_args()

@@ -4,7 +4,7 @@ import asyncio
 import logging
 from datetime import UTC, datetime
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from app.models import Assignment, Attempt, Lesson, LessonExecution
 from app.models.enums import AttemptStatus, LessonStatus
@@ -49,22 +49,31 @@ async def enforce_deadlines(session, lesson, now=None):
             execution.ended_at = deadline
             changed = True
     if lesson.status == LessonStatus.ACTIVE:
-        changed = await release_due(session, lesson, now) or changed
-    assignments = list(
-        await session.scalars(select(Assignment).where(Assignment.lesson_id == lesson.id))
-    )
-    attempts = list(
-        await session.scalars(
-            select(Attempt)
-            .join(Assignment)
-            .where(
-                Assignment.lesson_id == lesson.id,
-            )
-            .order_by(Attempt.id)
-        )
-    )
+        changed = await release_due(session, lesson, now, executions=executions) or changed
     by_student = {e.student_id: e for e in executions}
     expired = lesson.available_until is not None and now >= lesson.available_until
+    due_students = [
+        e.student_id
+        for e in executions
+        if (deadline := execution_deadline(lesson, e)) is not None and now >= deadline
+    ]
+    # Hydrate full attempts (including large snapshots) only when they need closing.
+    attempts = (
+        list(
+            await session.scalars(
+                select(Attempt)
+                .join(Assignment)
+                .where(
+                    Assignment.lesson_id == lesson.id,
+                    Attempt.status == AttemptStatus.IN_PROGRESS,
+                    True if expired else Attempt.student_id.in_(due_students),
+                )
+                .order_by(Attempt.id)
+            )
+        )
+        if expired or due_students
+        else []
+    )
     for attempt in attempts:
         execution = by_student.get(attempt.student_id)
         deadline = execution_deadline(lesson, execution)
@@ -84,25 +93,37 @@ async def enforce_deadlines(session, lesson, now=None):
                 publish=False,
             )
             changed = True
+    # One bounded row per student instead of ORM instances for every card, followed by
+    # repeated Python scans of the whole lesson for every execution.
+    await session.flush()
+    progress = (
+        await session.execute(
+            select(
+                Assignment.student_id,
+                func.count(func.distinct(Assignment.id)).label("cards"),
+                func.count(Attempt.id).label("attempts"),
+                func.count(Attempt.id).filter(Attempt.status.in_(TERMINAL)).label("terminal"),
+                func.max(Attempt.ended_at).label("ended_at"),
+            )
+            .outerjoin(Attempt, Attempt.assignment_id == Assignment.id)
+            .where(Assignment.lesson_id == lesson.id)
+            .group_by(Assignment.student_id)
+        )
+    ).all()
+    progress_by_student = {p.student_id: p for p in progress}
     for execution in executions:
-        student_attempts = [a for a in attempts if a.student_id == execution.student_id]
-        count = sum(a.student_id == execution.student_id for a in assignments)
+        student = progress_by_student.get(execution.student_id)
         if (
             not execution.ended_at
-            and count
-            and len(student_attempts) == count
-            and all(a.status in TERMINAL for a in student_attempts)
+            and student
+            and student.cards == student.attempts == student.terminal
         ):
-            execution.ended_at = max(a.ended_at for a in student_attempts)
+            execution.ended_at = student.ended_at
             changed = True
     if (
         expired
         or (executions and all(e.ended_at for e in executions))
-        or (
-            assignments
-            and len(attempts) == len(assignments)
-            and all(a.status in TERMINAL for a in attempts)
-        )
+        or (progress and all(p.cards == p.attempts == p.terminal for p in progress))
     ):
         lesson.status = LessonStatus.FINISHED
         lesson.started_at = lesson.started_at or lesson.available_from or now
@@ -110,8 +131,14 @@ async def enforce_deadlines(session, lesson, now=None):
         changed = True
     if changed:
         await session.flush()
-        for student_id in {a.student_id for a in assignments}:
-            await publish_lesson_result(session, lesson, student_id)
+        for student in progress:
+            execution = by_student.get(student.student_id)
+            if (
+                lesson.status == LessonStatus.FINISHED
+                or (execution and execution.ended_at)
+                or student.cards == student.attempts == student.terminal
+            ):
+                await publish_lesson_result(session, lesson, student.student_id)
         await session.commit()
     return changed
 

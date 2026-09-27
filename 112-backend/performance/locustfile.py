@@ -41,6 +41,33 @@ def exit_status(environment, **_):
             )
             environment.process_exit_code = 1
 
+    if output := os.environ.get("PERF_SUMMARY"):
+
+        def summarize(stat):
+            return {
+                "name": stat.name,
+                "method": stat.method,
+                "requests": stat.num_requests,
+                "failures": stat.num_failures,
+                "rps": stat.total_rps,
+                "p95_ms": stat.get_response_time_percentile(0.95),
+                "p99_ms": stat.get_response_time_percentile(0.99),
+                "max_ms": stat.max_response_time,
+                "response_times": stat.response_times,
+            }
+
+        Path(output).write_text(
+            json.dumps(
+                {
+                    "total": summarize(environment.stats.total),
+                    "routes": [summarize(s) for s in environment.stats.entries.values()],
+                    "exit_code": environment.process_exit_code or 0,
+                },
+                indent=2,
+            )
+            + "\n"
+        )
+
 
 class Base(FastHttpUser):
     abstract = True
@@ -296,6 +323,38 @@ class LoginBurst(Base):
             check=lambda t: not t["must_change_password"],
         )
         self.auth_headers = {"Authorization": "Bearer " + token["access_token"]}
+
+
+class ReadCapacity(Base):
+    """Saturation cross-check with a fast client, without artificial think time.
+
+    Closed-loop achieved throughput, not proof that an offered open-loop rate is safe.
+    Same 20/30/30/20 read mix as capacity.py; login/setup remain separately named.
+    """
+
+    wait_time = between(0, 0)
+
+    def on_start(self):
+        if not ACCOUNTS:
+            raise RuntimeError("Increase seed --users for ReadCapacity")
+        _, account = ACCOUNTS.popleft()
+        self.login(account)
+
+    @task(2)
+    def profile(self):
+        self.call("GET", "users/me", check=lambda data: "username" in data)
+
+    @task(3)
+    def overview(self):
+        self.call("GET", "student/overview", check=lambda data: "performance" in data)
+
+    @task(3)
+    def lessons(self):
+        self.call("GET", "views/student/lessons", check=lambda data: "items" in data)
+
+    @task(2)
+    def messages(self):
+        self.call("GET", "student/messages/summary", check=lambda data: "unread_count" in data)
 
 
 @events.user_error.add_listener

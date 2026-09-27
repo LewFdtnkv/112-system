@@ -1,0 +1,7 @@
+{
+  "image": "system112-performance-api",
+  "workers": 4,
+  "profile": "ReadCapacity",
+  "users": 20,
+  "exit_code": 0
+}
