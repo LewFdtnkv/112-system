@@ -1,5 +1,5 @@
 export const memoryKindLabels = {
-  text: "Текст карточки",
+  text: "Поля карточки",
   services: "Дополнительные службы",
   dds: "Комментарии ДДС",
 };

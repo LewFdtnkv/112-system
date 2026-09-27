@@ -8,6 +8,12 @@ export interface SemanticFinding {
   recommendation: string;
   reference_quote: string;
   answer_quote: string;
+  rule_adjustment?: {
+    field: string;
+    before: number;
+    after: number;
+    action: "increase" | "keep" | "decrease";
+  } | null;
 }
 
 export interface SemanticSummary {

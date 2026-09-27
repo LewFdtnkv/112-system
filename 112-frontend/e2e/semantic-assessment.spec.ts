@@ -11,6 +11,23 @@ const summary = {
   needs_review: 1,
   semantic_weight_percent: 20,
 };
+const ruleFinding = {
+  code: "rule.address_details.street",
+  label: "Улица",
+  verdict: "correct" as const,
+  credit: 1,
+  applied: true,
+  reason: "Сокращение «ул.» не меняет название улицы.",
+  recommendation: "",
+  reference_quote: "улица Правды",
+  answer_quote: "ул. Правды",
+  rule_adjustment: {
+    field: "address_details.street",
+    before: 0,
+    after: 0.25,
+    action: "increase" as const,
+  },
+};
 const grade = {
   id: "grade",
   method: "hybrid",
@@ -51,6 +68,18 @@ test("semantic assessment: teacher sees evidence, uncertainty and preserved ARM"
   );
   const attempt = {
     ...business.currentAttempt(),
+    card: {
+      ...business.currentAttempt().card,
+      data: {
+        ...business.currentAttempt().card.data,
+        address_text: "Москва, улица Правды, дом 12",
+        address_details: {
+          locality: "Москва",
+          street: "ул. Правды",
+          house: "12",
+        },
+      },
+    },
     status: "completed",
     ended_at: "2026-09-23T14:00:00Z",
   };
@@ -58,12 +87,30 @@ test("semantic assessment: teacher sees evidence, uncertainty and preserved ARM"
     assignment_id: "assignment",
     position: 1,
     attempt,
-    automatic_check: null,
+    automatic_check: {
+      fields: [
+        {
+          field: "address_details.street",
+          label: "Улица",
+          expected: "Правды",
+          actual: "ул. Правды",
+          status: "different",
+          scored: true,
+        },
+      ],
+    },
     source_classifier_entry: attempt.classifier_entry,
     source_snapshot: {
       title: "Пожар с пострадавшим",
-      caller_message: "На кухне дым из розетки, мужчина обжёг руку.",
-      data: attempt.card.data,
+      caller_message:
+        "На кухне дым из розетки, мужчина обжёг руку. Москва, улица Правды, дом 12.",
+      data: {
+        ...attempt.card.data,
+        address_details: {
+          ...attempt.card.data.address_details,
+          street: "Правды",
+        },
+      },
       recipients: attempt.recipient_services,
     },
     semantic_review: {
@@ -86,6 +133,7 @@ test("semantic assessment: teacher sees evidence, uncertainty and preserved ARM"
         ],
       },
       findings: [
+        ruleFinding,
         {
           code: "additional_services",
           label: "Дополнительные службы",
@@ -130,6 +178,7 @@ test("semantic assessment: teacher sees evidence, uncertainty and preserved ARM"
   await page.getByLabel("Логин").fill("teacher");
   await page.getByLabel("Пароль", { exact: true }).fill("password");
   await page.getByRole("button", { name: "Войти" }).click();
+  await expect(page).toHaveURL(/teacher$/);
   await page.goto("/results/lesson?student=demo-student-1");
   await expect(
     page.getByRole("heading", { name: "Смысловая проверка ИИ" }),
@@ -140,19 +189,24 @@ test("semantic assessment: teacher sees evidence, uncertainty and preserved ARM"
   await expect(
     page.getByText("Автоматически в балл не включено."),
   ).toBeVisible();
+  await expect(
+    page.getByText(
+      "Балл за поле: 0% → 25% его веса. Пересмотр ИИ учтён в оценке.",
+    ),
+  ).toBeVisible();
   await page
     .getByText("Процесс выполнения и подсказки", { exact: true })
     .click();
   await page.setViewportSize({ width: 1440, height: 1080 });
   await page.screenshot({
-    path: "docs/screenshots/interface-copy/assessment-teacher.png",
+    path: "docs/screenshots/rule-review/assessment-teacher.png",
     fullPage: true,
     animations: "disabled",
   });
   await page.getByRole("button", { name: "Ответ в АРМ", exact: true }).click();
   await expect(page.getByLabel("Навигация по карточкам работы")).toBeVisible();
   await page.screenshot({
-    path: "docs/screenshots/interface-copy/assessment-arm.png",
+    path: "docs/screenshots/rule-review/assessment-arm.png",
     fullPage: false,
     animations: "disabled",
   });
@@ -161,19 +215,52 @@ test("semantic assessment: teacher sees evidence, uncertainty and preserved ARM"
 test("semantic assessment: student sees incomplete grade and recommendations", async ({
   page,
 }) => {
+  await page.route("**/api/v1/student/lessons/lesson", (route) =>
+    route.fulfill({
+      json: { work_status: "submitted", learning: defaultLearningPolicy() },
+    }),
+  );
   await page.route("**/api/v1/student/lessons/lesson/evaluation", (route) =>
     route.fulfill({ json: grade }),
+  );
+  await page.route("**/api/v1/student/lessons/lesson/feedback", (route) =>
+    route.fulfill({
+      json: {
+        submitted: true,
+        cards: [
+          {
+            assignment_id: "assignment",
+            position: 1,
+            title: "Пожар с пострадавшим",
+            status: "succeeded",
+            findings: [ruleFinding],
+          },
+        ],
+      },
+    }),
   );
   await page.goto("/login");
   await page.getByLabel("Логин").fill("student1");
   await page.getByLabel("Пароль", { exact: true }).fill("password");
   await page.getByRole("button", { name: "Войти" }).click();
+  await expect(page).toHaveURL(/student$/);
   await page.goto("/results/lesson");
   await expect(page.getByText("Что повторить")).toBeVisible();
+  await expect(
+    page.getByText(
+      "Балл за поле: 0% → 25% его веса. Пересмотр ИИ учтён в оценке.",
+    ),
+  ).toBeVisible();
   await expect(page.getByText(/Смысловая проверка неполная/)).toBeVisible();
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.screenshot({
-    path: "docs/screenshots/interface-copy/assessment-student.png",
+    path: "docs/screenshots/rule-review/assessment-student.png",
+    fullPage: true,
+    animations: "disabled",
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({
+    path: "docs/screenshots/rule-review/assessment-student-mobile.png",
     fullPage: true,
     animations: "disabled",
   });
