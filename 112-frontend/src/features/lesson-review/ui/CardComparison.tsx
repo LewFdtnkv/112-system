@@ -18,10 +18,13 @@ function Verdict({ field, submitted }: VerdictProps) {
 }
 export function CardComparison({ row, actions }: CardComparisonProps) {
   const [layout, setLayout] = useState<"paired" | "tiles" | "table">("table");
-  const [issuesOnly, setIssuesOnly] = useState(false);
+  const [issuesOnly, setIssuesOnly] = useState(true);
   const allFields = comparisonFields(row);
   const fields = allFields.filter(
-    (f) => !issuesOnly || !["matched", "unscored"].includes(f.status),
+    (f) =>
+      !row.automatic_check ||
+      !issuesOnly ||
+      !["matched", "unscored"].includes(f.status),
   );
   const groups = [...new Set(fields.map((f) => f.group))];
   const submitted = row.attempt?.status !== "in_progress";

@@ -1,6 +1,8 @@
 import { backendApi } from "@/shared/api";
 import type {
   AssessmentMemory,
+  MemoryExampleInput,
+  MemoryCriterion,
   MemoryLibraryItem,
   MemoryLibraryPage,
   MemoryLibraryFilter,
@@ -14,6 +16,14 @@ function path(target: AssessmentMemoryTarget) {
   return `lessons/${id(target.lessonId)}/students/${id(target.studentId)}/attempts/${id(target.attemptId)}/assessment-memory`;
 }
 export const assessmentMemoryApi = {
+  criteria: (signal?: AbortSignal) =>
+    backendApi
+      .get("assessment-memory/criteria", { signal })
+      .json<MemoryCriterion[]>(),
+  create: (input: MemoryExampleInput) =>
+    backendApi
+      .post("assessment-memory", { json: input })
+      .json<MemoryLibraryItem>(),
   library: (filter: MemoryLibraryFilter, signal?: AbortSignal) => {
     const { kind, ...rest } = filter;
     return backendApi

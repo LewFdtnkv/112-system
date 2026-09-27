@@ -55,3 +55,13 @@ export interface MemoryLibraryFilter {
   include_removed: boolean;
   offset: number;
 }
+
+export interface MemoryCriterion {
+  code: string;
+  label: string;
+  kind: MemoryLibraryItem["kind"];
+}
+export interface MemoryExampleInput extends AssessmentMemoryInput {
+  condition: string;
+  answer: string;
+}

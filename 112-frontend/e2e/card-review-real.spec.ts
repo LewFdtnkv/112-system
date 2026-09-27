@@ -243,9 +243,9 @@ test("compare four card review layouts and inspect immutable ARM answers", async
       animations: "disabled",
     });
   }
-  await comparison
-    .getByRole("button", { name: "Только расхождения и проверка" })
-    .click();
+  await expect(
+    comparison.getByRole("button", { name: "Показать все поля" }),
+  ).toHaveAttribute("aria-pressed", "true");
   await expect(comparison.getByRole("table")).not.toContainText(
     "Анна Смирнова",
   );
@@ -339,9 +339,7 @@ test("compare four card review layouts and inspect immutable ARM answers", async
   await page
     .getByRole("textbox", { name: "Название карточки", exact: true })
     .fill("Учебный пожар");
-  await page
-    .getByLabel("Сообщение заявителя")
-    .fill(card.caller_message);
+  await page.getByLabel("Сообщение заявителя").fill(card.caller_message);
   await page.getByLabel("Общая инструкция ученику").fill(card.instructions);
   await page
     .getByLabel("ФИО заявителя", { exact: true })

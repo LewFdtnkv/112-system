@@ -55,6 +55,7 @@ export type CardListItem = Pick<
   | "scenario_count"
   | "classifier_label"
   | "generated_by_ai"
+  | "generation_example"
 > & { incident_name: string; address_text: string; recipients: Recipient[] };
 
 export type CardTemplateInput = Pick<
