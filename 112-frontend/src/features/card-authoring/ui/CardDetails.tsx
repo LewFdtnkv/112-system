@@ -1,3 +1,4 @@
+import { CardAudio } from "./CardAudio";
 import { Button } from "@mui/material";
 import { CardDataFields, type FeatureDefinition } from "@/entities/training";
 import type { CardDetailsProps } from "../types/CardSections";
@@ -63,9 +64,15 @@ export function CardDetails({ card, onPreview }: CardDetailsProps) {
           {card.caller_message ||
             "Сообщение не задано. Для сценария оператора 112 его нужно заполнить."}
         </p>
+        {!!card.audio?.caller_ids.length && (
+          <CardAudio kind="caller" value={card.audio} />
+        )}
       </CardRoleSection>
       <CardRoleSection kind="dds">
         <CardDDSDetails card={card} />
+        {card.dds_exercise?.crew_calls_required && card.audio && (
+          <CardAudio kind="crew" value={card.audio} />
+        )}
         <DDSGeneration card={card} />
       </CardRoleSection>
     </CardSections>

@@ -1,48 +1,108 @@
-import { Alert, MenuItem, Stack, TextField, Typography } from "@mui/material";
+import {
+  Alert,
+  Stack,
+  TextField,
+  Typography,
+  Table,
+  TableContainer,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+  TablePagination,
+  CircularProgress,
+} from "@mui/material";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { getApiError } from "@/shared/api";
-import { useMedia } from "../model/useMedia";
-import { MediaEditor } from "./MediaEditor";
+import { RecordingPreview } from "@/entities/recording";
+import { useRecordingLibrary } from "../model/useRecordingLibrary";
 import "../styles/telephony.scss";
+
+const purposes = {
+  caller: "Заявитель · 112",
+  greeting: "Бригада · приветствие",
+  acknowledgment: "Бригада · подтверждение",
+};
+
 export function TelephoneMediaPage() {
-  const { version, setVersion, scenarios, media } = useMedia();
-  const error = scenarios.error || media.error;
+  const { page, setPage, query, search, recordings } = useRecordingLibrary();
   return (
     <Stack spacing={2} className="telephony-page">
       <PageHeader title="Записи учебных звонков" />
       <Typography>
-        Подготовьте речь собеседников до занятия. Можно загрузить готовую запись
-        или передать текст подключённому генератору. Готовые записи используются
-        повторно без ожидания синтеза.
+        Загружайте и выбирайте записи в карточке: сообщение заявителя — в
+        разделе «Оператор 112», голоса бригад — в разделе «Оператор ДДС». Здесь
+        можно прослушать записи и посмотреть, где они используются.
       </Typography>
-      <Alert severity="info">
-        Формат записи: WAV PCM, 8000 Гц, моно, 16 бит, до 10 минут. Без
-        подключённого генератора используйте «Загрузить WAV». В этой версии
-        собеседник воспроизводит запись; речь ученика не распознаётся.
-      </Alert>
       <TextField
-        label="Сценарий"
-        select
-        value={version}
-        onChange={(event) => setVersion(event.target.value)}
-      >
-        <MenuItem value="">Выберите сценарий</MenuItem>
-        {scenarios.data?.items.map((scenario) => (
-          <MenuItem key={scenario.id} value={scenario.id}>
-            {scenario.title} · {scenario.role === "dds" ? "ДДС" : "112"}
-          </MenuItem>
-        ))}
-      </TextField>
-      {error && <Alert severity="error">{getApiError(error).message}</Alert>}
-      {media.data?.map((cue) => (
-        <MediaEditor key={`${cue.id}:${cue.audio.id}`} cue={cue} />
-      ))}
-      {version && media.data?.length === 0 && (
+        label="Найти запись"
+        value={query}
+        onChange={(e) => search(e.target.value)}
+      />
+      {recordings.error && (
+        <Alert severity="error">{getApiError(recordings.error).message}</Alert>
+      )}
+      {recordings.isPending && (
+        <CircularProgress aria-label="Загрузка записей" />
+      )}
+      <TableContainer>
+        <Table aria-label="Библиотека записей" className="recordings-table">
+          <TableHead>
+            <TableRow>
+              <TableCell>Запись</TableCell>
+              <TableCell>Назначение</TableCell>
+              <TableCell>Используется</TableCell>
+              <TableCell>Прослушивание</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {recordings.data?.items.map((r) => (
+              <TableRow key={r.id}>
+                <TableCell>{r.title}</TableCell>
+                <TableCell>{purposes[r.purpose]}</TableCell>
+                <TableCell>
+                  {r.usages.length
+                    ? r.usages.map((u) => (
+                        <Typography key={`${u.kind}:${u.id}`} variant="body2">
+                          {u.kind === "card" ? "Карточка" : "Сценарий"}:{" "}
+                          {u.title}
+                        </Typography>
+                      ))
+                    : "Пока не используется"}
+                </TableCell>
+                <TableCell>
+                  {r.status === "ready" ? (
+                    <RecordingPreview
+                      id={r.id}
+                      label={`Прослушать · ${Math.round(r.duration_seconds ?? 0)} с`}
+                    />
+                  ) : (
+                    "Запись ещё не подготовлена"
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+      {!recordings.isPending && recordings.data?.total === 0 && (
         <Typography>
-          У карточек этого сценария нет текста собеседника или учебных
-          контактов.
+          {query
+            ? "По запросу ничего не найдено."
+            : "Записей пока нет. Добавьте первую в редакторе карточки."}
         </Typography>
       )}
+      <TablePagination
+        component="div"
+        count={recordings.data?.total ?? 0}
+        page={page}
+        rowsPerPage={20}
+        rowsPerPageOptions={[20]}
+        labelDisplayedRows={({ from, to, count }) =>
+          `${from}–${to} из ${count}`
+        }
+        onPageChange={(_, value) => setPage(value)}
+      />
     </Stack>
   );
 }

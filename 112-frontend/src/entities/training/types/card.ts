@@ -1,3 +1,4 @@
+import type { CardAudio } from "@/entities/recording/@x/training";
 import type { DDSCardExercise } from "./ddsExercise";
 import type {
   ClassifierEntry,
@@ -17,6 +18,7 @@ export interface CardData {
 }
 
 export interface CardTemplate {
+  audio?: CardAudio;
   dds_exercise?: DDSCardExercise | null;
   generation_example?: boolean;
   generated_by_ai?: boolean;
@@ -57,6 +59,7 @@ export type CardListItem = Pick<
 
 export type CardTemplateInput = Pick<
   CardTemplate,
+  | "audio"
   | "dds_exercise"
   | "title"
   | "classifier_version_id"

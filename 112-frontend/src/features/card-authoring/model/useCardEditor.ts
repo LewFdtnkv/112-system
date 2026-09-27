@@ -20,6 +20,7 @@ export function useCardEditor({ onClose, initial }: CardEditorProps) {
     cardEditorInitial,
   );
   const {
+    audio,
     ddsExercise,
     location,
     address,
@@ -80,6 +81,7 @@ export function useCardEditor({ onClose, initial }: CardEditorProps) {
         location,
       });
       body.dds_exercise = ddsExercise;
+      body.audio = audio;
       return initial
         ? cardApi.update(initial.id, {
             ...body,
@@ -102,6 +104,9 @@ export function useCardEditor({ onClose, initial }: CardEditorProps) {
     caller_phone: "Телефон заявителя",
   };
   return {
+    audio,
+    setAudio: (value: CardEditorState["audio"]) =>
+      dispatch({ type: "audio", value }),
     ddsExercise,
     setDDSExercise: (value: CardEditorState["ddsExercise"]) =>
       dispatch({ type: "ddsExercise", value }),

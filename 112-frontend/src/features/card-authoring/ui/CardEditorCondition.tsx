@@ -1,3 +1,4 @@
+import { CardAudio } from "./CardAudio";
 import type { CardEditorPanelProps } from "../types/CardEditorPanels";
 import { CardEditorTextFields } from "./CardEditorTextFields";
 
@@ -17,6 +18,11 @@ export function CardEditorCondition({
         Эталонное решение ему не показывается. Если карточка нужна только для
         ДДС, сообщение заявителя можно оставить пустым.
       </p>
+      <CardAudio
+        kind="caller"
+        value={editor.audio}
+        onChange={editor.setAudio}
+      />
     </>
   );
 }

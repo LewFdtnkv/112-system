@@ -19,6 +19,7 @@ export function cardEditorInitial(
   initial: CardEditorProps["initial"],
 ): CardEditorState {
   return {
+    audio: initial?.audio ?? { caller_ids: [], crew_variants: [] },
     ddsExercise: initial?.dds_exercise ?? null,
     location: mapPoint(initial?.data.additional_fields?.location),
     address: {

@@ -1,3 +1,5 @@
+import { useIsMutating } from "@tanstack/react-query";
+import { CardAudio } from "./CardAudio";
 import { ValidatedForm } from "@/shared/ui/form-validation";
 import { Button, Stack } from "@mui/material";
 import { useCardEditor } from "../model/useCardEditor";
@@ -9,6 +11,7 @@ import { CardEditorTextFields } from "./CardEditorTextFields";
 import { CardRoleSection, CardSections } from "./CardSections";
 
 export function CardEditor({ onClose, initial, onReload }: CardEditorProps) {
+  const uploading = useIsMutating({ mutationKey: ["recording-upload"] }) > 0;
   const editor = useCardEditor({ onClose, initial });
   const { callerPhone, phoneRef, save } = editor;
   return (
@@ -17,6 +20,7 @@ export function CardEditor({ onClose, initial, onReload }: CardEditorProps) {
       className="template-editor"
       onSubmit={(event) => {
         event.preventDefault();
+        if (uploading) return;
         if (callerPhone.invalid) {
           callerPhone.reveal();
           phoneRef.current?.focus();
@@ -58,12 +62,19 @@ export function CardEditor({ onClose, initial, onReload }: CardEditorProps) {
             value={editor.ddsExercise}
             onChange={editor.setDDSExercise}
           />
+          {editor.ddsExercise?.crew_calls_required && (
+            <CardAudio
+              kind="crew"
+              value={editor.audio}
+              onChange={editor.setAudio}
+            />
+          )}
         </CardRoleSection>
       </CardSections>
       <Stack className="template-editor-actions" direction="row" spacing={2}>
         <Button
           type="submit"
-          disabled={save.isPending || editor.routes.isFetching}
+          disabled={save.isPending || editor.routes.isFetching || uploading}
         >
           {initial ? "Сохранить изменения" : "Сохранить карточку"}
         </Button>

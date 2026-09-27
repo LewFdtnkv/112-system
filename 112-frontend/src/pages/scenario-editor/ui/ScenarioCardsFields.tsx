@@ -1,3 +1,4 @@
+import { ScenarioCardRecordings } from "./ScenarioCardRecordings";
 import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
 import { cardKeys, cardApi } from "@/entities/training";
 import { ServerSelect } from "@/shared/ui/ServerSelect";
@@ -72,6 +73,7 @@ export function ScenarioCardsFields({
             </Button>
             <Button onClick={() => onRemove(index)}>Убрать</Button>
           </Stack>
+          <ScenarioCardRecordings id={card.id} role={role} />
           {role === "dds" && (
             <TextField
               name={`arrival_offsets_seconds.${index}`}

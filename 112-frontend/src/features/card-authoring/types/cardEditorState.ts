@@ -1,3 +1,4 @@
+import type { CardAudio } from "@/entities/recording";
 import type { DDSCardExercise, FeatureDefinition } from "@/entities/training";
 import type { LocationPickerProps } from "@/shared/ui/location-picker";
 import type { FeatureValue } from "@/shared/lib/featureValues";
@@ -10,6 +11,7 @@ export type CardEditorState = Omit<
   CardTemplatePayloadArgs,
   "initial" | "recipients" | "silent" | "structuredAddress"
 > & {
+  audio: CardAudio;
   ddsExercise: DDSCardExercise | null;
   notificationRequired: boolean;
   features: FeatureDefinition[];
@@ -20,6 +22,7 @@ export type CardEditorAction =
   | {
       [
         K in
+          | "audio"
           | "address"
           | "person"
           | "ddsExercise"
@@ -30,6 +33,7 @@ export type CardEditorAction =
           | "victims"
       ]: { type: K; value: CardEditorState[K] };
     }[
+      | "audio"
       | "address"
       | "person"
       | "ddsExercise"
