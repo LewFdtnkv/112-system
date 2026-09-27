@@ -1,4 +1,5 @@
 import { useAnalytics } from "../model/useAnalytics";
+import { ErrorAnalytics } from "@/features/error-analytics";
 import { getApiError } from "@/shared/api";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { PageControls, QueryState } from "@/shared/ui/QueryState";
@@ -7,6 +8,7 @@ import {
   Button,
   Stack,
   Table,
+  TableContainer,
   TableBody,
   TableCell,
   TableHead,
@@ -36,6 +38,13 @@ export const AnalyticsPage = () => {
         <ToggleButton value="training">Тренировки</ToggleButton>
         <ToggleButton value="assessment">Контрольные занятия</ToggleButton>
       </ToggleButtonGroup>
+      <ErrorAnalytics key={track} track={track} />
+      <Typography variant="h5" component="h2">
+        Итоги по сценариям
+      </Typography>
+      <Typography color="text.secondary">
+        Все группы и весь период выбранного раздела занятий.
+      </Typography>
       <Button
         disabled={exportReport.isPending}
         onClick={() => exportReport.mutate()}
@@ -50,7 +59,7 @@ export const AnalyticsPage = () => {
       <Alert severity="info">
         Учтены автоматические оценки и последние пересмотры преподавателя.
         Средний результат приведён к процентам от максимального балла. Оценка ИИ
-        пока не подключена.
+        учитывается после завершения проверки.
       </Alert>
       <QueryState
         pending={query.isPending}
@@ -66,32 +75,34 @@ export const AnalyticsPage = () => {
                 ? "—"
                 : `${query.data.average_score_percent.toFixed(1)}%`}
             </Typography>
-            <Table aria-label="Аналитика по сценариям">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Сценарий</TableCell>
-                  <TableCell>Работ</TableCell>
-                  <TableCell>Сданы</TableCell>
-                  <TableCell>Оценены</TableCell>
-                  <TableCell>Средний результат</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {query.data.scenarios.items.map((s) => (
-                  <TableRow key={s.scenario_version_id}>
-                    <TableCell>{s.title}</TableCell>
-                    <TableCell>{s.total}</TableCell>
-                    <TableCell>{s.submitted}</TableCell>
-                    <TableCell>{s.graded}</TableCell>
-                    <TableCell>
-                      {s.average_score_percent === null
-                        ? "—"
-                        : `${s.average_score_percent.toFixed(1)}%`}
-                    </TableCell>
+            <TableContainer>
+              <Table aria-label="Аналитика по сценариям">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Сценарий</TableCell>
+                    <TableCell>Работ</TableCell>
+                    <TableCell>Сданы</TableCell>
+                    <TableCell>Оценены</TableCell>
+                    <TableCell>Средний результат</TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHead>
+                <TableBody>
+                  {query.data.scenarios.items.map((s) => (
+                    <TableRow key={s.scenario_version_id}>
+                      <TableCell>{s.title}</TableCell>
+                      <TableCell>{s.total}</TableCell>
+                      <TableCell>{s.submitted}</TableCell>
+                      <TableCell>{s.graded}</TableCell>
+                      <TableCell>
+                        {s.average_score_percent === null
+                          ? "—"
+                          : `${s.average_score_percent.toFixed(1)}%`}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
             <PageControls
               total={query.data.scenarios.total}
               page={page}

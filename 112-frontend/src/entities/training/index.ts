@@ -5,6 +5,7 @@ export { attemptApi } from "./api/attemptApi";
 export { scenarioApi } from "./api/scenarioApi";
 export { reviewApi } from "./api/reviewApi";
 export { analyticsApi } from "./api/analyticsApi";
+export type { ErrorAnalytics, ErrorCard } from "./types/errorAnalytics";
 export { ddsApi } from "./api/ddsApi";
 
 export { learningHelpApi } from "./api/learningHelpApi";
