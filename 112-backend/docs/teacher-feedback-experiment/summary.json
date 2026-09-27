@@ -1,0 +1,124 @@
+{
+  "model": "qwen3:4b-instruct-2507-q4_K_M",
+  "evaluations": 12,
+  "llm_calls": 24,
+  "seconds": {
+    "min": 66.11,
+    "max": 143.29,
+    "median": 112.47,
+    "sum": 1323.92
+  },
+  "cases": [
+    {
+      "case": "smoke-or-fire",
+      "teacher_verdict": "correct",
+      "teacher_reason": "Здесь «пожар» — повод для выезда по дыму, а не утверждение, что заявитель видел пламя.",
+      "comment_characters": 86,
+      "foreign_teacher_excluded": true,
+      "stages": {
+        "baseline": {
+          "verdict": "incorrect",
+          "applied": true,
+          "seconds": 117.97,
+          "teacher_example_used": false,
+          "teacher_comment_in_prompt": false
+        },
+        "after_feedback": {
+          "verdict": "correct",
+          "applied": true,
+          "seconds": 92.28,
+          "teacher_example_used": true,
+          "teacher_comment_in_prompt": true
+        },
+        "after_feedback_repeat": {
+          "verdict": "correct",
+          "applied": true,
+          "seconds": 66.11,
+          "teacher_example_used": true,
+          "teacher_comment_in_prompt": true
+        },
+        "after_withdrawal": {
+          "verdict": "incorrect",
+          "applied": true,
+          "seconds": 122.68,
+          "teacher_example_used": false,
+          "teacher_comment_in_prompt": false
+        }
+      }
+    },
+    {
+      "case": "arrival-at-barrier",
+      "teacher_verdict": "incorrect",
+      "teacher_reason": "Прибыли к шлагбауму, а не к месту аварии. Комментарий это скрывает.",
+      "comment_characters": 67,
+      "foreign_teacher_excluded": true,
+      "stages": {
+        "baseline": {
+          "verdict": "correct",
+          "applied": true,
+          "seconds": 101.75,
+          "teacher_example_used": false,
+          "teacher_comment_in_prompt": false
+        },
+        "after_feedback": {
+          "verdict": "incorrect",
+          "applied": true,
+          "seconds": 143.29,
+          "teacher_example_used": true,
+          "teacher_comment_in_prompt": true
+        },
+        "after_feedback_repeat": {
+          "verdict": "incorrect",
+          "applied": true,
+          "seconds": 124.4,
+          "teacher_example_used": true,
+          "teacher_comment_in_prompt": true
+        },
+        "after_withdrawal": {
+          "verdict": "correct",
+          "applied": true,
+          "seconds": 131.46,
+          "teacher_example_used": false,
+          "teacher_comment_in_prompt": false
+        }
+      }
+    },
+    {
+      "case": "false-unconscious-control",
+      "teacher_verdict": "correct",
+      "teacher_reason": "Зачесть: главное, что ученик понял необходимость скорой. Состояние сознания здесь неважно.",
+      "comment_characters": 90,
+      "foreign_teacher_excluded": true,
+      "stages": {
+        "baseline": {
+          "verdict": "incorrect",
+          "applied": true,
+          "seconds": 106.97,
+          "teacher_example_used": false,
+          "teacher_comment_in_prompt": false
+        },
+        "after_feedback": {
+          "verdict": "incorrect",
+          "applied": true,
+          "seconds": 88.88,
+          "teacher_example_used": true,
+          "teacher_comment_in_prompt": true
+        },
+        "after_feedback_repeat": {
+          "verdict": "incorrect",
+          "applied": true,
+          "seconds": 90.08,
+          "teacher_example_used": true,
+          "teacher_comment_in_prompt": true
+        },
+        "after_withdrawal": {
+          "verdict": "incorrect",
+          "applied": true,
+          "seconds": 138.05,
+          "teacher_example_used": false,
+          "teacher_comment_in_prompt": false
+        }
+      }
+    }
+  ]
+}
