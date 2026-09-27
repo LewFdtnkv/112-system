@@ -1,0 +1,163 @@
+{
+  "cases": 18,
+  "verdict_matches": 18,
+  "action_matches": 18,
+  "technical_failures": 0,
+  "unexpected_changes": 0,
+  "missed_corrections": 0,
+  "increases": 5,
+  "decreases": 5,
+  "unchanged": 8,
+  "cases_detail": [
+    {
+      "case": "street_abbreviation",
+      "expected_verdict": "correct",
+      "verdict": "correct",
+      "expected_action": "increase",
+      "action": "increase",
+      "seconds": 110.96
+    },
+    {
+      "case": "house_wrong",
+      "expected_verdict": "incorrect",
+      "verdict": "incorrect",
+      "expected_action": "keep",
+      "action": "keep",
+      "seconds": 31.3
+    },
+    {
+      "case": "house_reference_wrong",
+      "expected_verdict": "incorrect",
+      "verdict": "incorrect",
+      "expected_action": "decrease",
+      "action": "decrease",
+      "seconds": 42.95
+    },
+    {
+      "case": "house_control",
+      "expected_verdict": "correct",
+      "verdict": "correct",
+      "expected_action": "keep",
+      "action": "keep",
+      "seconds": 22.37
+    },
+    {
+      "case": "victims_inferred",
+      "expected_verdict": "correct",
+      "verdict": "correct",
+      "expected_action": "increase",
+      "action": "increase",
+      "seconds": 47.38
+    },
+    {
+      "case": "victims_reference_wrong",
+      "expected_verdict": "incorrect",
+      "verdict": "incorrect",
+      "expected_action": "decrease",
+      "action": "decrease",
+      "seconds": 78.16
+    },
+    {
+      "case": "age_unknown",
+      "expected_verdict": "uncertain",
+      "verdict": "uncertain",
+      "expected_action": "keep",
+      "action": "keep",
+      "seconds": 37.74
+    },
+    {
+      "case": "age_owner",
+      "expected_verdict": "incorrect",
+      "verdict": "incorrect",
+      "expected_action": "keep",
+      "action": "keep",
+      "seconds": 21.28
+    },
+    {
+      "case": "name_order",
+      "expected_verdict": "correct",
+      "verdict": "correct",
+      "expected_action": "increase",
+      "action": "increase",
+      "seconds": 52.56
+    },
+    {
+      "case": "missing_street",
+      "expected_verdict": "incorrect",
+      "verdict": "incorrect",
+      "expected_action": "keep",
+      "action": "keep",
+      "seconds": 32.91
+    },
+    {
+      "case": "feature_negation",
+      "expected_verdict": "incorrect",
+      "verdict": "incorrect",
+      "expected_action": "keep",
+      "action": "keep",
+      "seconds": 17.83
+    },
+    {
+      "case": "student_injection",
+      "expected_verdict": "incorrect",
+      "verdict": "incorrect",
+      "expected_action": "keep",
+      "action": "keep",
+      "seconds": 24.67
+    },
+    {
+      "case": "holdout_locality",
+      "expected_verdict": "correct",
+      "verdict": "correct",
+      "expected_action": "increase",
+      "action": "increase",
+      "seconds": 47.87
+    },
+    {
+      "case": "holdout_phone_reference_wrong",
+      "expected_verdict": "incorrect",
+      "verdict": "incorrect",
+      "expected_action": "decrease",
+      "action": "decrease",
+      "seconds": 70.4
+    },
+    {
+      "case": "holdout_vehicle",
+      "expected_verdict": "correct",
+      "verdict": "correct",
+      "expected_action": "increase",
+      "action": "increase",
+      "seconds": 56.46
+    },
+    {
+      "case": "holdout_age_control",
+      "expected_verdict": "correct",
+      "verdict": "correct",
+      "expected_action": "keep",
+      "action": "keep",
+      "seconds": 19.53
+    },
+    {
+      "case": "holdout_type_reference_wrong",
+      "expected_verdict": "incorrect",
+      "verdict": "incorrect",
+      "expected_action": "decrease",
+      "action": "decrease",
+      "seconds": 81.68
+    },
+    {
+      "case": "holdout_array_reference_wrong",
+      "expected_verdict": "incorrect",
+      "verdict": "incorrect",
+      "expected_action": "decrease",
+      "action": "decrease",
+      "seconds": 62.46
+    }
+  ],
+  "median_seconds": 45.17,
+  "min_seconds": 17.83,
+  "max_seconds": 110.96,
+  "model": "qwen3:4b-instruct-2507-q4_K_M",
+  "threads": 2,
+  "limitations": "Небольшая авторская инженерная выборка, не случайная выборка реальных работ. Время на общем стенде под другой тестовой нагрузкой, не benchmark производительности."
+}

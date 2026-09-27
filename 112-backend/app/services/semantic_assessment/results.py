@@ -9,6 +9,8 @@ from app.models import AIJob, Assignment, Attempt, CriterionResult, Evaluation, 
 from app.models.enums import AIPurpose, EvaluationMethod, JobStatus
 from app.schemas.semantic_assessment import SemanticReview, SemanticSummary
 from app.services.semantic_assessment.policy import text_weight
+from app.services.semantic_assessment.rule_review import VERSION as RULE_REVIEW_VERSION
+from app.services.semantic_assessment.rule_review import apply
 
 
 async def jobs_for(session, attempt_ids):
@@ -32,7 +34,11 @@ def summary(jobs):
     weights = {text_weight(j.input) for j in jobs}
     return SemanticSummary(
         semantic_weight_percent=next(iter(weights)) if len(weights) == 1 else None,
-        policy_version="semantic-v2" if weights - {20} else "semantic-v1",
+        policy_version="semantic-v3-rule-review"
+        if any(j.input.get("rule_review_policy") == RULE_REVIEW_VERSION for j in jobs)
+        else "semantic-v2"
+        if weights - {20}
+        else "semantic-v1",
         status="pending"
         if pending
         else "not_applicable"
@@ -86,7 +92,14 @@ def card_score(evaluation, criteria, job):
                 item = next(c for c in adjustments if c["code"] == "notification")
                 item["score"] = float(awarded)
                 item["explanation"] = finding["reason"]
-    text = [f for f in findings if f["code"] != "additional_services"]
+    if getattr(evaluation, "context_snapshot", {}).get("rule_review_policy") == RULE_REVIEW_VERSION:
+        score += apply(evaluation, criteria, job, findings, adjustments)
+    rule_codes = {
+        c["code"] for c in getattr(job, "input", {}).get("criteria", []) if "rule_check" in c
+    }
+    text = [
+        f for f in findings if f["code"] != "additional_services" and f["code"] not in rule_codes
+    ]
     # Unresolved criteria have no invented credit. Formal results remain explicitly partial.
     if text and all(f["applied"] for f in text):
         credit = sum(Decimal(str(f["credit"])) for f in text) / len(text)

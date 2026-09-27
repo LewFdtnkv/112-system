@@ -2,7 +2,9 @@
 
 import json
 
-PROMPT_VERSION = "semantic-v3-scoped"
+from app.services.semantic_assessment import rule_prompts
+
+PROMPT_VERSION = "semantic-v4-rule-review"
 
 EXAMPLES = {
     "text": [
@@ -159,6 +161,7 @@ verdict=incorrect, confidence=0.99; НЕ ставь confidence=0 только и
 
 
 def messages(criterion, facts, verification=False):
+    rule = criterion.get("review_mode") == "rule"
     retrieved = criterion.get("_retrieved_examples", [])
     examples = (
         [{k: e[k] for k in ("condition", "answer", "verdict", "reason")} for e in retrieved]
@@ -172,11 +175,21 @@ def messages(criterion, facts, verification=False):
     # on final brigade state instead of the optional comment written at an earlier step.
     if criterion["kind"] == "dds":
         examples = EXAMPLES["dds"][:2] + examples[:2] if retrieved else EXAMPLES["dds"]
-    data = {k: v for k, v in criterion.items() if not k.startswith("_")}
+    if rule:
+        examples = rule_prompts.EXAMPLES + examples[:2] if retrieved else rule_prompts.EXAMPLES
+    data = {k: v for k, v in criterion.items() if not k.startswith("_") and k != "rule_check"}
+    if rule:
+        data.pop("reference", None)
     return [
         {
             "role": "system",
-            "content": (DDS_SYSTEM if criterion["kind"] == "dds" else SYSTEM)
+            "content": (
+                rule_prompts.SYSTEM
+                if rule
+                else DDS_SYSTEM
+                if criterion["kind"] == "dds"
+                else SYSTEM
+            )
             + (
                 "\nПримеры из памяти показывают способ проверки, а не факты текущего вызова. "
                 "Не переноси их обстоятельства и вердикты на текущий ответ. "
@@ -197,6 +210,9 @@ def messages(criterion, facts, verification=False):
             "content": "Разобранные примеры:\n"
             + json.dumps(examples, ensure_ascii=False)
             + "\nПроверяемые данные:\n"
-            + json.dumps({"criterion": data, "other_card_fields": facts}, ensure_ascii=False),
+            + json.dumps(
+                {"criterion": data, "other_card_fields": {} if rule else facts},
+                ensure_ascii=False,
+            ),
         },
     ]

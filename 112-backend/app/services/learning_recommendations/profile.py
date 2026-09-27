@@ -16,6 +16,7 @@ from app.models import (
 )
 from app.models.enums import AIPurpose, EvaluationMethod
 from app.services.learning_scope import field_skill
+from app.services.semantic_assessment.rule_review import field_adjustments
 
 LABELS = {
     "address": "Заполнение адреса",
@@ -95,6 +96,8 @@ def aggregate(observations):
 
 def credits_for(evaluation, criteria, semantic):
     credits = defaultdict(list)
+    findings = (semantic.output or {}).get("findings", []) if semantic else []
+    corrections = field_adjustments(evaluation, semantic, findings)
     for criterion in criteria:
         for field in criterion.criterion_snapshot.get("fields", []):
             if not field.get("scored"):
@@ -109,14 +112,21 @@ def credits_for(evaluation, criteria, semantic):
             )
             if skill not in LABELS or skill == "description" or path == "address_text":
                 continue  # Presence is not evidence of semantic quality.
-            credits[skill].append(float(field["status"] == "matched"))
+            credit = float(field["status"] == "matched")
+            correction = corrections.get(path)
+            if correction and correction["before"] == credit:
+                credit = correction["after"]
+            credits[skill].append(credit)
     if semantic:
         if any(c["code"] == "additional_services" for c in semantic.input.get("criteria", [])):
             # A failed/pending semantic job has no findings at all. Its formal penalty
             # for additional recipients still cannot prove a skill error.
             credits.pop("notification", None)
-        for finding in (semantic.output or {}).get("findings", []):
+        rule_codes = {c["code"] for c in semantic.input.get("criteria", []) if "rule_check" in c}
+        for finding in findings:
             code = finding["code"]
+            if code in rule_codes:
+                continue  # Already included in the original field, not an extra text criterion.
             if code == "additional_services":
                 # Unresolved extra recipients must not become an accusation of a wrong service.
                 credits.pop("notification", None)
@@ -129,16 +139,20 @@ def credits_for(evaluation, criteria, semantic):
     return {skill: sum(values) / len(values) for skill, values in credits.items() if values}
 
 
-def issues_for(criteria, credits):
+def issues_for(criteria, credits, corrections=None):
     """Name repeated exact field discrepancies, never copy answer values into advice."""
     issues = defaultdict(list)
     for criterion in criteria:
         for field in criterion.criterion_snapshot.get("fields", []):
             path = field["field"]
             skill = field_skill(path)
+            credit = float(field["status"] == "matched")
+            correction = (corrections or {}).get(path)
+            if correction and correction["before"] == credit:
+                credit = correction["after"]
             if (
                 field.get("scored")
-                and field["status"] != "matched"
+                and credit < 0.999
                 and skill in credits
                 and credits[skill] < 0.999
                 and path not in {"address_text", "description"}
@@ -209,12 +223,16 @@ async def build_profile(session, student_id, role):
             continue  # Guided examples never prove independent proficiency.
         assisted = snapshot.get("assistance", {}).get("issued_count", 0) > 0
         credits = credits_for(evaluation, criteria[evaluation.id], semantic.get(attempt.id))
+        job = semantic.get(attempt.id)
+        corrections = field_adjustments(
+            evaluation, job, (job.output or {}).get("findings", []) if job else []
+        )
         observations.append(
             {
                 "lesson_id": str(assignment.lesson_id),
                 "assisted": assisted,
                 "credits": credits,
-                "issues": issues_for(criteria[evaluation.id], credits),
+                "issues": issues_for(criteria[evaluation.id], credits, corrections),
             }
         )
         sources[str(assignment.lesson_id)] = str(accepted[assignment.lesson_id].id)

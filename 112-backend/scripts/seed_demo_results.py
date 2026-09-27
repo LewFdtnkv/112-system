@@ -144,17 +144,20 @@ async def semantic_fixture(session, attempt_id, variant):
     for criterion in job.input["criteria"]:
         # Uncertain examples illustrate the review queue without inventing deductions.
         uncertain = variant == 2
+        credit = criterion.get("rule_check", {}).get("credit", 1)
         findings.append(
             {
                 "code": criterion["code"],
                 "label": criterion["label"],
-                "verdict": "uncertain" if uncertain else "correct",
-                "credit": None if uncertain else 1,
+                "verdict": "uncertain" if uncertain else "correct" if credit else "incorrect",
+                "credit": None if uncertain else credit,
                 "applied": not uncertain,
                 "reason": "Демонстрационный разбор, модель не вызывалась. "
                 + (
                     "Неполный ответ оставлен преподавателю для проверки."
                     if uncertain
+                    else "Сохранён балл формальной проверки поля."
+                    if "rule_check" in criterion
                     else "В учебном примере сохранены существенные факты условия."
                 ),
                 "recommendation": "Сравните ответ с условием и разбором преподавателя.",

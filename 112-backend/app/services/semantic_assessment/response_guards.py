@@ -4,6 +4,22 @@ import re
 
 
 def normalize_recommendation(criterion, decision):
+    if criterion.get("review_mode") == "rule":
+        label = criterion["label"]
+        recommendation = (
+            ""
+            if decision.verdict == "correct"
+            else f"Попросите преподавателя уточнить сведения для поля «{label}»."
+            if decision.verdict == "uncertain"
+            else f"Сверьте поле «{label}» со сведениями из условия. "
+            "Ориентируйтесь на цитату в разборе."
+        )
+        return decision.model_copy(update={"recommendation": recommendation}), {
+            "recommendation_guard": {
+                "reason": "Structured-field advice must not invent corrected values",
+                "original": decision.recommendation,
+            }
+        }
     if criterion["code"] != "description" or decision.verdict not in ("incorrect", "partial"):
         return decision, {}
     numeric_answer = bool(re.fullmatch(r"[\d\s.,+\-]+", criterion.get("answer", "")))

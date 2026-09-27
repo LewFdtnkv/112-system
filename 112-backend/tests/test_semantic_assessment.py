@@ -140,8 +140,10 @@ def fake_output(job, credit=1):
             {
                 "code": c["code"],
                 "label": c["label"],
-                "verdict": "correct" if credit == 1 else "incorrect",
-                "credit": credit,
+                "verdict": "correct"
+                if c.get("rule_check", {}).get("credit", credit) == 1
+                else "incorrect",
+                "credit": c.get("rule_check", {}).get("credit", credit),
                 "applied": True,
                 "reason": "Проверено тестом.",
                 "recommendation": "",
@@ -184,6 +186,48 @@ async def test_submit_enqueues_once_and_worker_publishes_new_revision(exercise, 
     assert await db_session.scalar(
         select(Evaluation.id).where(Evaluation.method == EvaluationMethod.AI).limit(1)
     )
+
+
+async def test_rule_review_is_frozen_published_and_visible_to_both_roles(exercise, db_session):
+    e = exercise
+    for index in range(3):
+        await e.complete(index)
+    for _ in range(3):
+        job = await claim(db_session)
+        assert job.input["rule_review_policy"] == "rule-review-v1"
+        rules = [c for c in job.input["criteria"] if "rule_check" in c]
+        assert rules and all(c["rule_check"]["field"] != "recipients" for c in rules)
+        # A readable classifier name, not a UUID or the uninformative placeholder.
+        classifier = next(c for c in rules if c["code"] == "rule.classifier_entry_id")
+        assert classifier["reference"] != "Тип из эталона"
+        output = fake_output(job)
+        for finding in output["findings"]:
+            if finding["code"] == classifier["code"]:
+                finding.update(verdict="incorrect", credit=0, rule_adjustment={"after": 1000})
+        assert await finish(db_session, job.id, job.worker_id, output, {})
+        published = next(f for f in job.output["findings"] if f["code"] == classifier["code"])
+        assert published["rule_adjustment"]["before"] == 1
+        assert published["rule_adjustment"]["after"] == 0.75
+    grade = await e.request("GET", f"student/lessons/{e.lesson['id']}/evaluation")
+    assert Decimal(grade["score"]) < 100
+    assert grade["assessment_details"]["policy_version"] == "semantic-v3-rule-review"
+    classification = next(
+        c for c in grade["assessment_details"]["criteria"] if c["code"] == "classification"
+    )
+    assert classification["score"] < classification["max_score"]
+    work = await e.request(
+        "GET",
+        f"lessons/{e.lesson['id']}/students/{e.t.accounts['student'].id}/work",
+        actor="teacher",
+    )
+    findings = work["assignments"][0]["semantic_review"]["findings"]
+    assert any(
+        f.get("rule_adjustment", {}).get("action") == "decrease"
+        for f in findings
+        if f.get("rule_adjustment")
+    )
+    feedback = await e.request("GET", f"student/lessons/{e.lesson['id']}/feedback")
+    assert feedback["cards"][0]["findings"] == findings
 
 
 async def test_hybrid_keeps_unstarted_cards_at_zero(exercise, db_session):

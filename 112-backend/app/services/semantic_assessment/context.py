@@ -5,12 +5,14 @@ from uuid import UUID
 
 from sqlalchemy import select
 
-from app.models import ServiceProfile
+from app.models import ClassifierEntry, ServiceProfile
 from app.models.enums import PublicationStatus
 from app.services.learning_scope import field_skill
 from app.services.semantic_assessment.policy import text_weight
 from app.services.semantic_assessment.process import summarize_process
 from app.services.semantic_assessment.prompts import PROMPT_VERSION as PROMPT_VERSION
+from app.services.semantic_assessment.rule_review import VERSION as RULE_REVIEW_VERSION
+from app.services.semantic_assessment.rule_review import eligible
 
 
 def compact(value):
@@ -42,6 +44,31 @@ async def build_context(session, evaluation, check):
 
     if not snapshot.get("dds"):
         fields = {f.field: f for f in check.fields}
+        if snapshot.get("rule_review_policy") == RULE_REVIEW_VERSION:
+            entry_id = source.get("classifier_entry_id")
+            entry = await session.get(ClassifierEntry, UUID(entry_id)) if entry_id else None
+            for field in check.fields:
+                if not field.scored or not eligible(field.field):
+                    continue
+                reference = field.expected
+                if field.field == "classifier_entry_id" and entry:
+                    reference = entry.name
+                # Use human-readable values; preserve the exact formal outcome separately.
+                labels = {"male": "Мужской", "female": "Женский", "unknown": "Неизвестен"}
+                gender = field.field.endswith(".callerGender")
+                add(
+                    "rule." + field.field,
+                    field.label,
+                    labels.get(reference, reference) if gender else reference,
+                    (labels.get(field.actual, field.actual) if gender else field.actual)
+                    or "Не заполнено",
+                    review_mode="rule",
+                    rule_check={
+                        "field": field.field,
+                        "status": field.status,
+                        "credit": int(field.status == "matched"),
+                    },
+                )
         for path in (
             "description",
             "address_text",
@@ -141,6 +168,7 @@ async def build_context(session, evaluation, check):
     return {
         "version": PROMPT_VERSION,
         "semantic_weight_percent": text_weight(snapshot),
+        "rule_review_policy": snapshot.get("rule_review_policy"),
         "evaluation_id": str(evaluation.id),
         "context_hash": snapshot["context_hash"],
         "criteria": criteria,

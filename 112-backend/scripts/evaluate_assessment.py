@@ -154,6 +154,7 @@ def main():
                         "criteria": [criterion],
                         "submitted_facts": row.get("submitted_facts", {}),
                         "process": row.get("process", {}),
+                        "rule_review_policy": row.get("rule_review_policy"),
                     },
                 ),
                 invoke=recorded_call,

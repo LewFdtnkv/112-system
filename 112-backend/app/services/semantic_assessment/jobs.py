@@ -13,6 +13,7 @@ from app.models.enums import AIPurpose, EvaluationMethod, EvaluationStatus, JobS
 from app.services.audit import append_event
 from app.services.semantic_assessment.context import PROMPT_VERSION, build_context
 from app.services.semantic_assessment.results import publish_result, review
+from app.services.semantic_assessment.rule_review import annotate
 
 
 async def retry(session, attempt):
@@ -111,6 +112,7 @@ async def finish(session, job_id, token, output):
     # Revalidate the worker output; identity and criteria cannot come from a model.
     from app.schemas.semantic_assessment import SemanticFinding
 
+    output = {**output, "findings": annotate(job.input, output["findings"])}
     findings = [SemanticFinding.model_validate(f) for f in output["findings"]]
     if [f.code for f in findings] != [c["code"] for c in job.input["criteria"]]:
         raise ValueError("Unexpected semantic criteria")

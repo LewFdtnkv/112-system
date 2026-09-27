@@ -1,0 +1,122 @@
+[
+  {
+    "case": "holdout_locality",
+    "expected": "correct",
+    "expected_action": "increase",
+    "rule_review_policy": "rule-review-v1",
+    "criterion": {
+      "code": "rule.address_details.locality",
+      "label": "Населённый пункт",
+      "kind": "text",
+      "review_mode": "rule",
+      "situation": "Прорвало трубу. Я в городе Зеленоград, корпус 1204.",
+      "reference": "Зеленоград",
+      "answer": "г. Зеленоград",
+      "rule_check": {
+        "field": "address_details.locality",
+        "status": "different",
+        "credit": 0
+      }
+    }
+  },
+  {
+    "case": "holdout_phone_reference_wrong",
+    "expected": "incorrect",
+    "expected_action": "decrease",
+    "rule_review_policy": "rule-review-v1",
+    "criterion": {
+      "code": "rule.caller_phone",
+      "label": "Телефон заявителя",
+      "kind": "text",
+      "review_mode": "rule",
+      "situation": "Для обратной связи записали телефон 89161234567.",
+      "reference": "89161234576",
+      "answer": "89161234576",
+      "rule_check": {
+        "field": "caller_phone",
+        "status": "matched",
+        "credit": 1
+      }
+    }
+  },
+  {
+    "case": "holdout_vehicle",
+    "expected": "correct",
+    "expected_action": "increase",
+    "rule_review_policy": "rule-review-v1",
+    "criterion": {
+      "code": "rule.features.ekp.vehicle",
+      "label": "Тип транспорта",
+      "kind": "text",
+      "review_mode": "rule",
+      "situation": "В тоннеле задымился легковой автомобиль. Это не автобус, водитель вышел.",
+      "reference": "Автобус",
+      "answer": "Легковой автомобиль",
+      "rule_check": {
+        "field": "features.ekp.vehicle",
+        "status": "different",
+        "credit": 0
+      }
+    }
+  },
+  {
+    "case": "holdout_age_control",
+    "expected": "correct",
+    "expected_action": "keep",
+    "rule_review_policy": "rule-review-v1",
+    "criterion": {
+      "code": "rule.additional_fields.details.callerAge",
+      "label": "Возраст заявителя",
+      "kind": "text",
+      "review_mode": "rule",
+      "situation": "Мне 29 лет, зовут Николай. Передо мной пожилой мужчина упал с лестницы.",
+      "reference": "29",
+      "answer": "29",
+      "rule_check": {
+        "field": "additional_fields.details.callerAge",
+        "status": "matched",
+        "credit": 1
+      }
+    }
+  },
+  {
+    "case": "holdout_type_reference_wrong",
+    "expected": "incorrect",
+    "expected_action": "decrease",
+    "rule_review_policy": "rule-review-v1",
+    "criterion": {
+      "code": "rule.classifier_entry_id",
+      "label": "Тип происшествия",
+      "kind": "text",
+      "review_mode": "rule",
+      "situation": "Горит деревянный сарай во дворе. Машин рядом нет, столкновения не было.",
+      "reference": "ДТП",
+      "answer": "ДТП",
+      "rule_check": {
+        "field": "classifier_entry_id",
+        "status": "matched",
+        "credit": 1
+      }
+    }
+  },
+  {
+    "case": "holdout_array_reference_wrong",
+    "expected": "incorrect",
+    "expected_action": "decrease",
+    "rule_review_policy": "rule-review-v1",
+    "criterion": {
+      "code": "rule.features.ekp.patient",
+      "label": "Состояние пострадавшего",
+      "kind": "text",
+      "review_mode": "rule",
+      "situation": "Мужчина в сознании, отвечает на вопросы и самостоятельно дышит.",
+      "reference": "Без сознания, Дышит",
+      "answer": "Без сознания, Дышит",
+      "rule_check": {
+        "field": "features.ekp.patient",
+        "status": "matched",
+        "credit": 1
+      }
+    }
+  }
+]

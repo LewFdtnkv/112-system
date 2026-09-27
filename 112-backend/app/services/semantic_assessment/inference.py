@@ -11,6 +11,7 @@ from app.services.semantic_assessment.evidence import explicitly_conflicting, re
 from app.services.semantic_assessment.prompts import messages
 from app.services.semantic_assessment.recovery import AssessmentFailure, fingerprint, restore
 from app.services.semantic_assessment.response_guards import normalize_recommendation
+from app.services.semantic_assessment.rule_review import adjustment, annotate
 
 CREDIT = {"correct": 1.0, "partial": 0.5, "incorrect": 0.0}
 
@@ -74,7 +75,9 @@ def call(criterion, facts, model, verification=False):
 
 
 def supported(decision, criterion):
-    reference = criterion["situation"] + "\n" + criterion["reference"]
+    reference = criterion["situation"]
+    if criterion.get("review_mode") != "rule":
+        reference += "\n" + criterion["reference"]
     return (
         decision.verdict != "uncertain"
         and decision.confidence >= 0.85
@@ -133,7 +136,7 @@ def _evaluate(job, invoke, results, trace):
         examples = list(retrieval.get("examples", {}).get(original["code"], []))
         # DDS keeps two fixed scope examples and at most two retrieved examples.
         # Report only examples that can actually reach the prompt.
-        if original["kind"] == "dds":
+        if original["kind"] == "dds" or original.get("review_mode") == "rule":
             examples = examples[:2]
         criterion = original | {"_retrieved_examples": examples}
         while examples and sum(len(m["content"]) for m in messages(criterion, facts, True)) > 8000:
@@ -205,7 +208,17 @@ def _evaluate(job, invoke, results, trace):
             }
         )
         accepted = supported(first, criterion)
-        if accepted:
+        changes_rule = (
+            adjustment(criterion, {"applied": accepted, "credit": CREDIT.get(first.verdict)})[
+                "action"
+            ]
+            != "keep"
+            if "rule_check" in criterion
+            else True
+        )
+        # Repeat calls only when a structured-field decision would change its rule score.
+        # Unchanged formal results do not need two model calls per field.
+        if accepted and changes_rule:
             second, metrics = invoke(criterion, facts, job.model_version, True)
             trace.append(
                 {
@@ -231,7 +244,7 @@ def _evaluate(job, invoke, results, trace):
             )
         )
     return {
-        "findings": [r.model_dump() for r in results],
+        "findings": annotate(job.input, [r.model_dump() for r in results]),
         "trace": trace,
         "retrieval": {
             "status": retrieval.get("status", "disabled"),

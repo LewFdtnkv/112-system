@@ -20,6 +20,7 @@ from app.services.field_evaluation import check_fields
 from app.services.learning_scope import scoped_check
 from app.services.semantic_assessment.jobs import enqueue
 from app.services.semantic_assessment.policy import DEFAULT_TEXT_WEIGHT_PERCENT
+from app.services.semantic_assessment.rule_review import VERSION as RULE_REVIEW_VERSION
 
 
 async def assess_attempt(session, attempt, card_read):
@@ -56,6 +57,7 @@ async def assess_attempt(session, attempt, card_read):
         snapshot = {
             "instructions": card_read.instructions,
             "semantic_weight_percent": DEFAULT_TEXT_WEIGHT_PERCENT,
+            "rule_review_policy": RULE_REVIEW_VERSION if card_read.role != "dds" else None,
             "role": card_read.role,
             "learning": attempt.settings_snapshot.get("learning", {}),
             "policy": policy_snapshot,

@@ -4,6 +4,7 @@ from uuid import UUID, uuid4
 
 import pytest
 from sqlalchemy import func, select
+from test_semantic_assessment import fake_output
 
 from app.core.security import hash_password
 from app.models import AIJob, LearningGuide, LessonEvaluation, TeachingMessage, User
@@ -13,6 +14,7 @@ from app.services.learning_recommendations.inference import evaluate, validate
 from app.services.learning_recommendations.jobs import enqueue, finish, schedule
 from app.services.learning_recommendations.materials import retrieve
 from app.services.learning_recommendations.profile import aggregate, build_profile, credits_for
+from app.services.semantic_assessment.jobs import finish as finish_assessment
 from scripts.seed_demo import State
 from scripts.seed_training import DatabaseGateway, populate_training
 from scripts.source_catalog import load_catalog, populate_database
@@ -103,6 +105,11 @@ async def evidence(db_client, db_session, tmp_path):
     )
     student_id = UUID(state.data["ids"]["source-training-student"])
     teacher_id = UUID(state.data["ids"]["source-training-teacher"])
+    # Structured skill exercises now also receive a semantic job. Recommendations
+    # must wait for its terminal result; offline fixtures keep the formal field credit.
+    while job := await claim(db_session):
+        assert job.purpose == AIPurpose.EVALUATION
+        assert await finish_assessment(db_session, job.id, job.worker_id, fake_output(job))
     pair = (
         await db_client.post(
             "/api/v1/auth/login",
@@ -205,9 +212,10 @@ async def test_seed_profile_job_message_access_and_invalidation(evidence, db_ses
     await schedule(session)
     assert await session.scalar(select(func.count()).select_from(TeachingMessage)) == 1
     grade = await session.scalar(
-        select(LessonEvaluation).where(
-            LessonEvaluation.lesson_id == UUID(e.result["recommendations"]["lesson_ids"][0])
-        )
+        select(LessonEvaluation)
+        .where(LessonEvaluation.lesson_id == UUID(e.result["recommendations"]["lesson_ids"][0]))
+        .order_by(LessonEvaluation.revision.desc())
+        .limit(1)
     )
     session.add(
         LessonEvaluation(
@@ -233,9 +241,10 @@ async def test_late_job_cannot_publish_after_teacher_override(evidence, db_sessi
     e, session = evidence, db_session
     job = await ready_job(session, e.student_id)
     grade = await session.scalar(
-        select(LessonEvaluation).where(
-            LessonEvaluation.lesson_id == UUID(e.result["recommendations"]["lesson_ids"][0])
-        )
+        select(LessonEvaluation)
+        .where(LessonEvaluation.lesson_id == UUID(e.result["recommendations"]["lesson_ids"][0]))
+        .order_by(LessonEvaluation.revision.desc())
+        .limit(1)
     )
     session.add(
         LessonEvaluation(

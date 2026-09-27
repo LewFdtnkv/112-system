@@ -16,6 +16,13 @@ class SemanticDecision(BaseModel):
     recommendation: str = Field(max_length=500)
 
 
+class RuleAdjustment(BaseModel):
+    field: str
+    before: float = Field(ge=0, le=1)
+    after: float = Field(ge=0, le=1)
+    action: Literal["increase", "keep", "decrease"]
+
+
 class SemanticFinding(BaseModel):
     code: str
     label: str
@@ -26,6 +33,7 @@ class SemanticFinding(BaseModel):
     recommendation: str = ""
     reference_quote: str = ""
     answer_quote: str = ""
+    rule_adjustment: RuleAdjustment | None = None
 
     @model_validator(mode="after")
     def coherent(self):
