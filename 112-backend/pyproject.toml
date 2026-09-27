@@ -28,6 +28,10 @@ dev = [
     "pytest>=8,<10",
     "ruff>=0.9,<1",
 ]
+tts = [
+    "piper-tts==1.8.0",
+    "scipy==1.17.1",
+]
 
 [tool.uv]
 package = false

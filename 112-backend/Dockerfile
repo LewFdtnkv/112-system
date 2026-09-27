@@ -29,7 +29,7 @@ CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 
 FROM dependencies AS speech-dependencies
 USER root
-RUN uv pip install --python /app/.venv/bin/python --no-cache piper-tts==1.8.0 scipy==1.17.1
+RUN uv sync --frozen --no-dev --group tts --no-cache
 COPY scripts/voices/download.py /app/download-voices.py
 RUN python /app/download-voices.py /opt/voices
 

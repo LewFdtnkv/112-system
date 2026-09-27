@@ -1,4 +1,4 @@
-"""Offline build tool; install piper-tts==1.8.0 and scipy in a disposable container."""
+"""Offline build tool; install dependencies with uv sync --locked --no-dev --group tts."""
 
 import argparse
 import hashlib
