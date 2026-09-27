@@ -14,7 +14,7 @@ import {
 } from "@mui/material";
 import { PageHeader } from "@/shared/ui/PageHeader";
 import { getApiError } from "@/shared/api";
-import { RecordingPreview } from "@/entities/recording";
+import { RecordingStatus } from "@/entities/recording";
 import { useRecordingLibrary } from "../model/useRecordingLibrary";
 import "../styles/telephony.scss";
 
@@ -30,9 +30,10 @@ export function TelephoneMediaPage() {
     <Stack spacing={2} className="telephony-page">
       <PageHeader title="Записи учебных звонков" />
       <Typography>
-        Загружайте и выбирайте записи в карточке: сообщение заявителя — в
-        разделе «Оператор 112», голоса бригад — в разделе «Оператор ДДС». Здесь
-        можно прослушать записи и посмотреть, где они используются.
+        Загружайте записи или создавайте их из текста в карточке: сообщение
+        заявителя — в разделе «Оператор 112», голоса бригад — в разделе
+        «Оператор ДДС». Здесь можно прослушать записи и посмотреть, где они
+        используются.
       </Typography>
       <TextField
         label="Найти запись"
@@ -71,14 +72,7 @@ export function TelephoneMediaPage() {
                     : "Пока не используется"}
                 </TableCell>
                 <TableCell>
-                  {r.status === "ready" ? (
-                    <RecordingPreview
-                      id={r.id}
-                      label={`Прослушать · ${Math.round(r.duration_seconds ?? 0)} с`}
-                    />
-                  ) : (
-                    "Запись ещё не подготовлена"
-                  )}
+                  <RecordingStatus recording={r} />
                 </TableCell>
               </TableRow>
             ))}

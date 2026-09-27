@@ -3,8 +3,16 @@ import { RecordingPicker, RecordingSummary } from "@/entities/recording";
 import { ValidationField } from "@/shared/ui/form-validation";
 import type { CardAudioProps } from "../types/CardAudio";
 import { CrewVoicePicker } from "./CrewVoicePicker";
+import { useState } from "react";
+import { SpeechDialog } from "./SpeechDialog";
 
-export function CardAudio({ value, onChange, kind }: CardAudioProps) {
+export function CardAudio({
+  value,
+  onChange,
+  kind,
+  initialText,
+}: CardAudioProps) {
+  const [speechOpen, setSpeechOpen] = useState(false);
   const count =
     kind === "caller" ? value.caller_ids.length : value.crew_variants.length;
   return (
@@ -72,6 +80,42 @@ export function CardAudio({ value, onChange, kind }: CardAudioProps) {
         )}
         {onChange && count < 10 && (
           <>
+            <Button variant="outlined" onClick={() => setSpeechOpen(true)}>
+              {kind === "caller"
+                ? "Озвучить текст заявителя"
+                : "Создать голос бригады из текста"}
+            </Button>
+            {speechOpen && (
+              <SpeechDialog
+                kind={kind}
+                initialText={initialText}
+                onClose={() => setSpeechOpen(false)}
+                onAdd={(recordings) => {
+                  if (kind === "caller")
+                    onChange({
+                      ...value,
+                      caller_ids: [
+                        ...new Set([...value.caller_ids, recordings[0].id]),
+                      ],
+                    });
+                  else
+                    onChange({
+                      ...value,
+                      crew_variants: [
+                        ...value.crew_variants,
+                        {
+                          greeting_id: recordings.find(
+                            (r) => r.purpose === "greeting",
+                          )!.id,
+                          acknowledgment_id: recordings.find(
+                            (r) => r.purpose === "acknowledgment",
+                          )!.id,
+                        },
+                      ],
+                    });
+                }}
+              />
+            )}
             <Typography variant="body2">
               WAV, моно, 8000 Гц, 16 бит; до 1 МБ на файл.
               {kind === "crew"

@@ -1,7 +1,22 @@
 import { backendApi } from "@/shared/api";
-import type { Recording, RecordingPurpose } from "../types/recording";
+import type {
+  Recording,
+  RecordingPurpose,
+  SpeechInput,
+  SpeechVoice,
+} from "../types/recording";
 
 export const recordingApi = {
+  voices: (signal?: AbortSignal) =>
+    backendApi
+      .get("telephony/recordings/voices", { signal })
+      .json<SpeechVoice[]>(),
+  synthesize: (json: SpeechInput) =>
+    backendApi
+      .post("telephony/recordings/synthesize", { json })
+      .json<Recording[]>(),
+  retry: (id: string) =>
+    backendApi.post(`telephony/recordings/${id}/retry`).json<Recording>(),
   list: (
     params: {
       query?: string;

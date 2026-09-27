@@ -1,6 +1,6 @@
 import { Alert, Stack, Typography } from "@mui/material";
 import { useRecording } from "../model/useRecording";
-import { RecordingPreview } from "./RecordingPreview";
+import { RecordingStatus } from "./RecordingStatus";
 
 export function RecordingSummary({ id }: { id: string }) {
   const recording = useRecording(id);
@@ -10,12 +10,7 @@ export function RecordingSummary({ id }: { id: string }) {
       {recording.error && (
         <Alert severity="error">Не удалось загрузить запись</Alert>
       )}
-      {recording.data?.status === "ready" && (
-        <RecordingPreview
-          id={id}
-          label={`Прослушать «${recording.data.title}»`}
-        />
-      )}
+      {recording.data && <RecordingStatus recording={recording.data} />}
     </Stack>
   );
 }

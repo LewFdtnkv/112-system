@@ -1,12 +1,19 @@
 import { useEffect } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { recordingApi } from "../api/recordingApi";
+import { recordingQueryOptions } from "./recordingQueries";
 
 export function useRecording(id: string | null) {
-  return useQuery({
-    queryKey: ["recording", id],
-    enabled: !!id,
-    queryFn: ({ signal }) => recordingApi.detail(id!, signal),
+  return useQuery(recordingQueryOptions(id));
+}
+export function useRetryRecording(id: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: () => recordingApi.retry(id),
+    onSuccess: (recording) => {
+      client.setQueryData(["recording", id], recording);
+      void client.invalidateQueries({ queryKey: ["recordings"] });
+    },
   });
 }
 export function useRecordingPreview(id: string) {

@@ -14,6 +14,12 @@ export function useRecordingLibrary() {
         { query: searchQuery, offset: page * 20, limit: 20 },
         signal,
       ),
+    refetchInterval: (query) =>
+      query.state.data?.items.some((r) =>
+        ["queued", "preparing"].includes(r.status),
+      )
+        ? 2000
+        : false,
   });
   return {
     page,

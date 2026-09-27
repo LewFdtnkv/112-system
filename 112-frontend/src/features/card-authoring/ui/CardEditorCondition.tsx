@@ -20,6 +20,7 @@ export function CardEditorCondition({
       </p>
       <CardAudio
         kind="caller"
+        initialText={editor.form.caller_message}
         value={editor.audio}
         onChange={editor.setAudio}
       />

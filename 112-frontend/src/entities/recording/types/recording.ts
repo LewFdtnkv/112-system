@@ -7,6 +7,25 @@ export interface Recording {
   duration_seconds: number | null;
   created_at: string;
   usages: { kind: "card" | "scenario"; id: string; title: string }[];
+  text?: string | null;
+  voice?: string | null;
+  error?: string | null;
+}
+export interface SpeechVoice {
+  id: string;
+  label: string;
+}
+export interface RecordingStatusProps {
+  recording: Recording;
+}
+export interface SpeechInput {
+  request_id: string;
+  title: string;
+  voice: string;
+  kind: "caller" | "crew";
+  text?: string;
+  greeting?: string;
+  acknowledgment?: string;
 }
 export interface CardAudio {
   caller_ids: string[];
