@@ -24,4 +24,4 @@ Production build в отдельном Nginx, API-фикстуры. Четыре
 
 Build/lint/FSD и 10 регрессионных unit-тестов маршрутизации/сеанса прошли. Рабочая БД, backend, пароли и API-контракты не менялись.
 
-Повтор браузерных проверок: сначала собрать фронтенд, раздать `dist` через Nginx с `nginx.conf`; задать `ASSET_RECOVERY_CHECK=1`, `PLAYWRIGHT_BASE_URL` и запустить `e2e/asset-recovery.spec.ts` в Docker. Для Firefox дополнительно `ASSET_BROWSER=firefox`, `ASSET_BROWSER_PATH`.
+Повтор браузерных проверок: сначала собрать фронтенд, раздать `dist` через Nginx с `nginx.conf`; задать `ASSET_RECOVERY_CHECK=1`, `PLAYWRIGHT_BASE_URL` и запустить `e2e/asset-recovery.spec.ts` через `npm run test:e2e`. Для Firefox дополнительно `ASSET_BROWSER=firefox`, `ASSET_BROWSER_PATH`.
