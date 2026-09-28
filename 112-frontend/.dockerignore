@@ -14,3 +14,9 @@ tmp
 .browser-work
 
 .refactor-work
+
+# Local verification artifacts
+test-results*
+playwright-report*
+.telephony-check
+docs/screenshots

@@ -34,3 +34,11 @@ test-results
 
 # Generated browser screenshots; curated documentation images live in docs/images.
 docs/screenshots/
+
+# Local screenshots and verification runs
+/.tmp*
+/tmp/
+/test-results*/
+/playwright-report*/
+/.telephony-check/
+/.browser-work/
