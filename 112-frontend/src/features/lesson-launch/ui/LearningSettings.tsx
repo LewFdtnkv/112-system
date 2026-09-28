@@ -43,7 +43,6 @@ export function LearningSettings({
           <button
             key={kind}
             type="button"
-            disabled={kind === "worked_example"}
             aria-pressed={value.kind === kind}
             onClick={() =>
               onChange({

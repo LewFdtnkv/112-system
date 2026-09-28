@@ -1,6 +1,5 @@
 export type LessonKind =
   | "introduction"
-  | "worked_example"
   | "skill_practice"
   | "practice"
   | "assessment"

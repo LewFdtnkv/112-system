@@ -7,7 +7,6 @@ import type {
 
 export const lessonKindLabels: Record<LessonKind, string> = {
   introduction: "Освоение интерфейса",
-  worked_example: "Разбор примера",
   skill_practice: "Отработка навыка",
   practice: "Полная учебная ситуация",
   assessment: "Контрольное занятие",
@@ -16,7 +15,6 @@ export const lessonKindLabels: Record<LessonKind, string> = {
 export const lessonKindDescriptions: Record<LessonKind, string> = {
   introduction:
     "Пошаговое выполнение с подсветкой и объяснением каждого действия.",
-  worked_example: "Пошаговый разбор решения. Появится позже.",
   skill_practice: "Сосредоточиться на выбранных навыках.",
   practice: "Пройти все карточки сценария целиком.",
   assessment: "Проверить знания без учебных подсказок.",
