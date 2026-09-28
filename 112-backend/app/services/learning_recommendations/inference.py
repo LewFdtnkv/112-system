@@ -1,9 +1,9 @@
 """The small model selects authored study strategies, never invents learner claims."""
 
 import json
-import urllib.request
 
 from app.core.config import settings
+from app.core.ollama import chat, require_complete
 
 PROMPT_VERSION = "study-advice-v1"
 SYSTEM = """Ты методист тренажёра 112/ДДС. Выбери следующий способ обучения по сводке результатов.
@@ -72,22 +72,9 @@ def select_ids(data, invoke=None):
     if invoke:
         raw = invoke(body)
     else:
-        request = urllib.request.Request(
-            settings.llm_base_url.rstrip("/") + "/api/chat",
-            data=json.dumps(body).encode(),
-            headers={"Content-Type": "application/json"},
-        )
-        opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
-        with opener.open(request, timeout=settings.llm_timeout_seconds) as response:
-            payload = response.read(32769)
-        if len(payload) > 32768:
-            raise ValueError("Oversized recommendation")
-        raw = json.loads(payload)
-    if (
-        not raw.get("done")
-        or raw.get("done_reason") == "length"
-        or raw.get("prompt_eval_count", 0) > 3500
-    ):
+        raw = chat(body, timeout=settings.llm_timeout_seconds, max_response_bytes=32768)
+    require_complete(raw)
+    if raw.get("prompt_eval_count", 0) > 3500:
         raise ValueError("Incomplete recommendation")
     choice = json.loads(raw["message"]["content"])
     selected = validate(choice, materials)

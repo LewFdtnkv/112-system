@@ -11,6 +11,7 @@ from sqlalchemy import func, select
 from app.core.config import settings
 from app.models import AIJob, CardTemplateRecipient, ScenarioCard, User
 from app.models.enums import AIPurpose, JobStatus
+from app.services.ai_jobs.lease import valid_lease
 from app.services.authoring.cards import owned_card
 from app.services.dds.exercise import validate_profile
 from app.services.dds_generation import PROMPT_VERSION
@@ -101,12 +102,7 @@ async def enqueue(session, teacher_id, card_id, request):
 
 async def finish(session, job_id, token, exercise, metadata):
     job = await session.scalar(select(AIJob).where(AIJob.id == job_id).with_for_update())
-    if (
-        not job
-        or job.status != JobStatus.RUNNING
-        or job.worker_id != token
-        or job.lease_expires_at <= datetime.now(UTC)
-    ):
+    if not valid_lease(job, token):
         await session.rollback()
         return False
     owner = await session.get(User, job.created_by_id)

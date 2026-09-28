@@ -18,6 +18,7 @@ from app.models import (
     User,
 )
 from app.models.enums import AIPurpose, JobStatus
+from app.services.ai_jobs.lease import valid_lease
 from app.services.learning_recommendations.inference import PROMPT_VERSION, validate
 from app.services.learning_recommendations.materials import retrieve
 from app.services.learning_recommendations.profile import build_profile
@@ -105,15 +106,6 @@ async def prepare(job):
         row.context = row.context | {"materials": bundle}
         await session.commit()
         job.context = row.context
-
-
-def valid_lease(job, token):
-    return bool(
-        job
-        and job.status == JobStatus.RUNNING
-        and job.worker_id == token
-        and job.lease_expires_at > datetime.now(UTC)
-    )
 
 
 async def available_lessons(session, student_id, role):

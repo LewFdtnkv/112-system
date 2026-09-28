@@ -1,10 +1,9 @@
 """Write actual prose, check it independently, retry once, otherwise disclose fallback."""
 
-import json
 import time
-import urllib.request
 
 from app.core.config import settings
+from app.core.ollama import chat, require_complete
 from app.services.generation.examples import builtins
 from app.services.generation.narration import fallback
 from app.services.generation.prose import (
@@ -28,40 +27,30 @@ def request(
     if len(prompt) > 10000:
         raise ValueError("Too many facts for the small model context")
     instructions, _, data = prompt.partition("\n")
-    req = urllib.request.Request(
-        settings.llm_base_url.rstrip("/") + "/api/chat",
-        data=json.dumps(
-            {
-                "model": model,
-                "stream": False,
-                "think": False,
-                "keep_alive": "5m",
-                "format": schema_json or schema.model_json_schema(),
-                "messages": [
-                    {"role": "system", "content": instructions},
-                    {"role": "user", "content": data},
-                ],
-                "options": {
-                    "num_ctx": 4096,
-                    "num_predict": max_tokens or (400 if schema is Review else 650),
-                    "num_thread": settings.llm_threads,
-                    "temperature": temperature,
-                    "top_p": 0.8,
-                    "seed": seed,
-                },
-            }
-        ).encode(),
-        headers={"Content-Type": "application/json"},
-        method="POST",
+    result = chat(
+        {
+            "model": model,
+            "stream": False,
+            "think": False,
+            "keep_alive": "5m",
+            "format": schema_json or schema.model_json_schema(),
+            "messages": [
+                {"role": "system", "content": instructions},
+                {"role": "user", "content": data},
+            ],
+            "options": {
+                "num_ctx": 4096,
+                "num_predict": max_tokens or (400 if schema is Review else 650),
+                "num_thread": settings.llm_threads,
+                "temperature": temperature,
+                "top_p": 0.8,
+                "seed": seed,
+            },
+        },
+        timeout=max(1, timeout),
+        max_response_bytes=65536,
     )
-    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
-    with opener.open(req, timeout=max(1, timeout)) as response:
-        raw = response.read(65537)
-    if len(raw) > 65536:
-        raise ValueError("Oversized response")
-    result = json.loads(raw)
-    if not result.get("done") or result.get("done_reason") == "length":
-        raise ValueError("Incomplete result")
+    require_complete(result)
     value = schema.model_validate_json(result["message"]["content"])
     metrics = {
         key: result.get(key)

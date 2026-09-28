@@ -3,9 +3,9 @@
 import hashlib
 import json
 import time
-import urllib.request
 
 from app.core.config import settings
+from app.core.ollama import chat, require_complete
 from app.schemas.semantic_assessment import SemanticDecision, SemanticFinding
 from app.services.semantic_assessment.evidence import explicitly_conflicting, response_schema
 from app.services.semantic_assessment.prompts import messages
@@ -21,36 +21,26 @@ def call(criterion, facts, model, verification=False):
     # Do not silently truncate a condition/evidence or allow the runtime to discard it.
     if sum(len(m["content"]) for m in prompt) > 8000:
         raise ValueError("Semantic context exceeds the tested context budget")
-    request = urllib.request.Request(
-        settings.llm_base_url.rstrip("/") + "/api/chat",
-        data=json.dumps(
-            {
-                "model": model,
-                "stream": False,
-                "think": False,
-                "keep_alive": "60s",
-                "format": response_schema(criterion),
-                "messages": prompt,
-                "options": {
-                    "num_ctx": 4096,
-                    "num_thread": settings.llm_threads,
-                    "num_predict": 650,
-                    "temperature": 0.1,
-                    "seed": 113 if verification else 112,
-                },
-            }
-        ).encode(),
-        headers={"Content-Type": "application/json"},
-        method="POST",
+    result = chat(
+        {
+            "model": model,
+            "stream": False,
+            "think": False,
+            "keep_alive": "60s",
+            "format": response_schema(criterion),
+            "messages": prompt,
+            "options": {
+                "num_ctx": 4096,
+                "num_thread": settings.llm_threads,
+                "num_predict": 650,
+                "temperature": 0.1,
+                "seed": 113 if verification else 112,
+            },
+        },
+        timeout=settings.llm_timeout_seconds,
+        max_response_bytes=32768,
     )
-    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
-    with opener.open(request, timeout=settings.llm_timeout_seconds) as response:
-        raw = response.read(32769)
-    if len(raw) > 32768:
-        raise ValueError("Oversized semantic response")
-    result = json.loads(raw)
-    if not result.get("done") or result.get("done_reason") == "length":
-        raise ValueError("Incomplete semantic response")
+    require_complete(result)
     if result.get("prompt_eval_count", 0) > 3400:
         raise ValueError("Insufficient context reserve for semantic evidence")
     decision = SemanticDecision.model_validate_json(result["message"]["content"])

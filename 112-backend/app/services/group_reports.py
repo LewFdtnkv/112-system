@@ -11,8 +11,8 @@ from app.core.config import settings
 from app.core.fingerprints import context_hash
 from app.models import AIJob, Lesson, ScenarioVersion, User
 from app.models.enums import AIPurpose, JobStatus
+from app.services.ai_jobs.lease import valid_lease
 from app.services.groups import owned_group
-from app.services.learning_recommendations.jobs import valid_lease
 from app.services.learning_recommendations.profile import LABELS
 from app.services.report_data import card_results
 from app.services.views import lesson_rows_query

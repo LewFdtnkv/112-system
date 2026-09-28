@@ -10,6 +10,7 @@ from app.core.config import settings
 from app.core.fingerprints import context_hash
 from app.models import AIJob, Assignment, Attempt, Evaluation, Lesson
 from app.models.enums import AIPurpose, EvaluationMethod, EvaluationStatus, JobStatus
+from app.services.ai_jobs.lease import valid_lease
 from app.services.audit import append_event
 from app.services.semantic_assessment.context import PROMPT_VERSION, build_context
 from app.services.semantic_assessment.results import publish_result, review
@@ -86,11 +87,7 @@ async def finish(session, job_id, token, output):
         select(Lesson).where(Lesson.id == target.lesson_id).with_for_update()
     )
     job = await session.scalar(select(AIJob).where(AIJob.id == job_id).with_for_update())
-    if (
-        job.status != JobStatus.RUNNING
-        or job.worker_id != token
-        or job.lease_expires_at <= datetime.now(UTC)
-    ):
+    if not valid_lease(job, token):
         await session.rollback()
         return False
     original = await session.get(Evaluation, UUID(job.input["evaluation_id"]))
