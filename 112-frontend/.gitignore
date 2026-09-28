@@ -31,3 +31,6 @@ test-results
 
 # Local decomposition and verification workspace
 .refactor-work/
+
+# Generated browser screenshots; curated documentation images live in docs/images.
+docs/screenshots/
