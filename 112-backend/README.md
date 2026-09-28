@@ -39,7 +39,7 @@ Compose применяет миграции и запускает интерфе
 docker compose exec -T api python scripts/seed_demo.py --database --full-demo --prefix demo --state-file /home/appuser/telephony/.demo-seed.json
 ```
 
-Логины: `demo-teacher`, `demo-student`; пароли — логин с окончанием `-123`. Повторный запуск восстанавливает эти тестовые пароли. Сохраняйте тот же файл состояния. [Состав демонабора и остальные аккаунты](docs/FULL_DEMO.md).
+Логины: `demo-teacher`, `demo-student`; пароли — логин с окончанием `-123`. Повторный запуск восстанавливает эти тестовые пароли. Сохраняйте тот же файл состояния. [Режимы наполнения](docs/SEED.md) · [Состав демонабора и остальные аккаунты](docs/FULL_DEMO.md).
 
 ## Разработка
 
@@ -87,3 +87,5 @@ performance/ Нагрузочные проверки
 ```
 
 Подробнее: [архитектура](docs/BACKEND_ARCHITECTURE.md), [оценивание](docs/ASSESSMENT_ARCHITECTURE.md), [генерация карточек](docs/CARD_GENERATION.md), [память ИИ](docs/ASSESSMENT_MEMORY.md).
+
+[Все инструкции](docs/README.md) · [Как устроено обучение](docs/WORKFLOWS.md)

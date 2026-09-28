@@ -10,10 +10,7 @@
 Из каталога `112-backend`, после применения миграций:
 
 ```bash
-docker compose run --rm --no-deps \
-  -v "$PWD:/workspace:ro" -w /workspace api \
-  python scripts/seed_demo.py --database --full-demo --prefix full \
-  --state-file /home/appuser/telephony/.full-demo-state.json
+docker compose run --rm --no-deps -v "$PWD:/workspace:ro" -w /workspace api python scripts/seed_demo.py --database --full-demo --prefix full --state-file /home/appuser/telephony/.full-demo-state.json
 ```
 
 Эта команда читает текущие исходники, использует настроенную `DATABASE_URL` и общий
