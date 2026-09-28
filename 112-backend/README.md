@@ -39,7 +39,7 @@ Compose применяет миграции и запускает интерфе
 docker compose exec -T api python scripts/seed_demo.py --database --full-demo --prefix demo --state-file /home/appuser/telephony/.demo-seed.json
 ```
 
-Логины: `demo-teacher`, `demo-student`; пароли — логин с окончанием `-123`. Повторный запуск восстанавливает эти тестовые пароли. Сохраняйте тот же файл состояния. [Режимы наполнения](docs/SEED.md) · [Состав демонабора и остальные аккаунты](docs/FULL_DEMO.md).
+Логины: `demo-teacher`, `demo-student`; пароли — логин с окончанием `-123`. Повторный запуск восстанавливает эти тестовые пароли. Сохраняйте тот же файл состояния. [Режимы наполнения, учётные записи и повторный запуск](docs/SEED.md).
 
 ## Разработка
 
@@ -68,7 +68,7 @@ flowchart LR
     Calls <-->|ARI| PBX["Asterisk"]
 ```
 
-Piper сохраняет готовые записи в общий том; Asterisk воспроизводит их во время звонка. Телефония включается отдельно профилем `telephony` — [настройка](docs/TELEPHONY.md). [Голоса и озвучка](docs/speech/README.md).
+Piper сохраняет готовые записи в общий том; Asterisk воспроизводит их во время звонка. Телефония включается отдельно профилем `telephony` — [настройка](docs/TELEPHONY.md). [Голоса и озвучка](docs/AUDIO.md).
 
 ## Структура
 
@@ -86,6 +86,6 @@ tests/       Тесты
 performance/ Нагрузочные проверки
 ```
 
-Подробнее: [архитектура](docs/BACKEND_ARCHITECTURE.md), [оценивание](docs/ASSESSMENT_ARCHITECTURE.md), [генерация карточек](docs/CARD_GENERATION.md), [память ИИ](docs/ASSESSMENT_MEMORY.md).
+Подробнее: [архитектура](docs/BACKEND_ARCHITECTURE.md), [оценивание](docs/ASSESSMENT_ARCHITECTURE.md), [генерация карточек](docs/GENERATION.md), [память ИИ](docs/AI.md).
 
-[Все инструкции](docs/README.md) · [Как устроено обучение](docs/WORKFLOWS.md)
+[Все инструкции](docs/README.md) · [Как устроено обучение](docs/TRAINING.md)

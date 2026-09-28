@@ -33,6 +33,6 @@ flowchart LR
 - [alembic/versions](../alembic/versions) — изменения схемы и преобразования данных.
 - [app/schemas](../app/schemas) — публичные контракты и проверка JSON-полей.
 
-[DATABASE_SCHEMA.md](DATABASE_SCHEMA.md) и [DATABASE_TABLES.md](DATABASE_TABLES.md) — ранние проектные снимки. Не используйте их для создания текущей БД. Миграции применяются командой `uv run alembic upgrade head` или при запуске Compose.
+Миграции применяются командой `uv run alembic upgrade head` или при запуске Compose. Создавайте новую миграцию при изменении хранения; не используйте вручную составленный список таблиц вместо актуальных моделей.
 
 [Транзакции и границы модулей](BACKEND_ARCHITECTURE.md) · [Проверки на отдельной БД](DEVELOPMENT.md) · [Оглавление](README.md)

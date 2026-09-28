@@ -10,7 +10,7 @@ docker compose exec -T api python scripts/seed_demo.py --database --full-demo --
 
 Скрипт создаст справочник, пользователей, группы, карточки, сценарии, занятия разных форматов и готовые результаты. Демонстрационные ИИ-разборы подготовлены заранее: это не результат нового запуска модели. Работающий воркер при этом может отдельно обрабатывать появившиеся задачи.
 
-Основные аккаунты: `demo-teacher` / `demo-teacher-123` и `demo-student` / `demo-student-123`. Остальные перечислены в итоговом выводе и [описании демонабора](FULL_DEMO.md). Пароль администратора в режиме `--database` не меняется.
+Основные аккаунты: `demo-teacher` / `demo-teacher-123` и `demo-student` / `demo-student-123`. Дополнительно создаются `demo-student-good` (успешные результаты), `demo-student-help` (ошибки и помощь), `demo-student-new` (нетронутые задания). Их пароль также равен логину с окончанием `-123`. Пароль администратора в режиме `--database` не меняется.
 
 ## Другие режимы
 
@@ -53,7 +53,7 @@ docker compose exec -T api python scripts/seed_demo.py --database --with-trainin
 uv run python scripts/seed_demo.py --database --with-training --prefix demo --state-file .demo-seed.json
 ```
 
-Для генерации и хранения готовых аудиозаписей нужен доступный для записи `TELEPHONY_MEDIA_DIRECTORY`. HTTP-вариант и происхождение исходного справочника описаны в [подробной инструкции](DEMO.md). Полный список параметров:
+Для генерации и хранения готовых аудиозаписей нужен доступный для записи `TELEPHONY_MEDIA_DIRECTORY`. Также поддерживается HTTP-режим: `python scripts/seed_demo.py --base-url http://localhost:8000 --state-file .demo-seed.json`. На новой БД он меняет стартовый пароль администратора и сохраняет новый в файле состояния; для существующего аккаунта используется `DEMO_ADMIN_PASSWORD`. Полный список параметров:
 
 ```sh
 uv run python scripts/seed_demo.py --help

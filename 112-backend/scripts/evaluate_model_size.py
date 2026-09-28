@@ -25,10 +25,7 @@ def main():
     if args.top_p is not None and not 0 < args.top_p <= 1:
         parser.error("--top-p must be greater than 0 and at most 1")
     fixture = json.loads(
-        (
-            Path(__file__).resolve().parents[1]
-            / "docs/generation-evaluation/model-comparison-inputs.json"
-        ).read_text()
+        (Path(__file__).resolve().parent / "fixtures/model-comparison-inputs.json").read_text()
     )
     if args.top_p is not None:
         fixture["options"]["top_p"] = args.top_p
