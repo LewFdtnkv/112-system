@@ -1,2 +1,16 @@
 artifacts/*
 !artifacts/.gitkeep
+
+# Keep only the selected benchmark evidence. New runs belong in artifacts/.
+/results/*
+!/results/2026-09-27-optimized/
+/results/2026-09-27-optimized/*
+!/results/2026-09-27-optimized/images.txt
+!/results/2026-09-27-optimized/optimized-saturation100-run.json
+!/results/2026-09-27-optimized/optimized-saturation100.json
+!/results/2026-09-27-optimized/optimized-saturation20-run.json
+!/results/2026-09-27-optimized/optimized-saturation20.json
+!/results/2026-09-27-optimized/optimized-sessions100-run.json
+!/results/2026-09-27-optimized/optimized-sessions100.json
+!/results/2026-09-27-optimized/optimized-sessions20-run.json
+!/results/2026-09-27-optimized/optimized-sessions20.json

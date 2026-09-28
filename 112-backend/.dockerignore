@@ -26,3 +26,10 @@ performance/artifacts
 .performance-*.log
 
 .tts-check
+
+# Local verification artifacts
+.tmp*
+tmp
+test-results*
+playwright-report*
+*.log

@@ -1,9 +1,0 @@
-{
-  "image": "system112-performance-api",
-  "workers": 4,
-  "profile": "reads",
-  "exit_code": 1,
-  "dds_interval": 60,
-  "students": 100,
-  "cards_per_role": 20
-}

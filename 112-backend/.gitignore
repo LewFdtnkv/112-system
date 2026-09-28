@@ -19,3 +19,13 @@ build/
 
 .backups/
 .recommendation-check/
+
+# Local verification output and development state
+/.tmp*
+/tmp/
+/.*-check/
+/.generation-review/
+/test-results*/
+/playwright-report*/
+/state.json
+*.log
