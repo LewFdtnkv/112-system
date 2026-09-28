@@ -1,109 +1,65 @@
-# DDS/112 Frontend
+# Тренажёр 112/ДДС · Frontend
 
-React, TypeScript, Vite, React Router, MUI, Zustand, ky and TanStack Query.
-The frontend uses the current FastAPI backend for authentication and training.
+Учебные рабочие места операторов 112 и ДДС, кабинет ученика и инструменты преподавателя: карточки, сценарии, результаты и аналитика ошибок.
 
-## Run and verify in Docker
+React · TypeScript · Vite · MUI · TanStack Query · Zustand.
 
-The backend Compose includes this frontend, built from `../112-frontend` using
-the Dockerfile here. It serves the production build at `http://localhost:8080`
-(`FRONTEND_PORT` in backend Compose overrides the port). Nginx supports browser
-history routes and proxies `/api/` to the `api:8000` service without changing
-the request path. Local `.env` files and browser test workspaces are excluded from the image build.
+## Запуск в Docker
 
-From the `112-backend` directory, run:
+Разместите репозитории `112-frontend` и `112-backend` рядом. Настройте `.env` по [инструкции бэкенда](../112-backend/README.md), затем из `112-backend`:
 
 ```sh
 docker compose up --build -d --wait
 ```
 
+Откройте **http://localhost:8080**. Nginx раздаёт интерфейс и направляет `/api/` в бэкенд. Тестовые пользователи и занятия создаются [seed-скриптом](../112-backend/docs/FULL_DEMO.md).
+
+## Разработка
+
+Нужны Docker и API на порту `8000`, запущенный [в режиме разработки](../112-backend/README.md#разработка). Команды ниже выполняются из `112-frontend`; Node работает в контейнере.
+
 ```sh
-docker run --rm -p 5174:5173 -v "$PWD":/app -v system112-design-node-modules:/app/node_modules -w /app node:24-bullseye-slim sh -c 'npm ci && npm run dev -- --host 0.0.0.0'
-docker run --rm -v "$PWD":/app -v system112-design-node-modules:/app/node_modules -w /app node:24-bullseye-slim npm run build
-docker run --rm -v "$PWD":/app -v system112-design-node-modules:/app/node_modules -w /app node:24-bullseye-slim npm run lint
-docker run --rm -v "$PWD":/app -v system112-design-node-modules:/app/node_modules -w /app node:24-bullseye-slim npm test -- --maxWorkers=2
-docker run --rm -v "$PWD":/app -v system112-design-node-modules:/app/node_modules -w /app -e PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/ms-playwright/chromium-1234/chrome-linux/chrome mcr.microsoft.com/playwright:v1.62.1-noble npm run test:e2e -- --workers=2 --grep-invert 'real API:'
+docker run --rm -it --name system112-frontend-dev -p 127.0.0.1:5174:5173 --add-host=host.docker.internal:host-gateway -v "$PWD:/app" -v system112-frontend-node-modules:/app/node_modules -w /app node:24-bookworm-slim sh -c 'npm ci && npm run dev -- --host 0.0.0.0'
 ```
 
-Run these commands in the frontend directory. Node runs in Docker only.
-The development proxy defaults to `http://host.docker.internal:8000`;
-`API_PROXY_TARGET` overrides it. `VITE_API_URL` defaults to `/api/v1`.
-Local `.env` files are ignored. No secret belongs in a `VITE_*` variable.
-Apply backend migration `0006_frontend_scenarios` before using this integration.
+Интерфейс с автоматическим обновлением: **http://localhost:5174**. Для другого адреса API добавьте к `docker run` параметр `-e API_PROXY_TARGET=http://адрес:порт`. По умолчанию запросы идут через `host.docker.internal:8000`.
 
-## Structure
+Пока dev-контейнер запущен, в другом терминале:
 
-**FSD is mandatory.** See [frontend architecture rules](docs/FRONTEND_ARCHITECTURE.md)
-for layers, type/style segments, clickable rows and required interaction states.
-`npm run lint` also checks these architecture boundaries.
+```sh
+docker exec system112-frontend-dev npm run lint
+docker exec system112-frontend-dev npm test -- --maxWorkers=2
+docker exec system112-frontend-dev npm run build
+```
+
+`lint` также проверяет границы FSD. Браузерные сценарии находятся в `e2e/`; проверки с реальным API требуют отдельной тестовой БД.
+
+## Структура
 
 ```text
 src/
-  app/        Providers, layouts, routes, theme and global styles
-  pages/      Route-level screens
-  widgets/    Composite UI blocks and lesson tables
-  features/   Authentication, lesson launch, review and incident editing
-  entities/   Domain types, real training DTOs and API requests
-  shared/     HTTP transport, configuration and reusable ARM controls
+  app/       Провайдеры, маршруты, тема
+  pages/     Страницы
+  widgets/   Составные блоки интерфейса
+  features/  Действия пользователя и формы
+  entities/  Предметные данные, типы и API
+  shared/    Общие компоненты и инфраструктура
 ```
 
-Dependencies point down: `app -> pages -> widgets -> features -> entities -> shared`.
-Import another slice through its `index.ts`. Shared code does not import domains.
-The current frontend uses MUI and `shared/ui/arm`; it does not depend on `112-ui`.
+Соблюдаем FSD, SOLID, DRY и KISS. Типы — в `types`, стили — в `styles`, логика — в `model`. TanStack Query используется для серверных данных, Zustand — для общего локального состояния и черновиков. Подробнее: [архитектура](docs/FRONTEND_ARCHITECTURE.md), [состояние и API](docs/STATE_AND_API.md).
 
-## Implemented routes
+## Примеры интерфейса
 
-- `/login`, `/change-password`: backend authentication and mandatory replacement.
-- `/student`: the account's own assigned lessons and results.
-- `/student/sessions/:sessionId`: operator 112 workspace with server drafts,
-  classifier search, calculated recipients and sequential card submission.
-- `/teacher`, `/sessions`: own lessons, progress and latest teacher scores.
-- `/groups`, `/cards`: group membership and the teacher's card library.
-- `/scenarios`, `/scenarios/new`, `/scenarios/:scenarioId/edit`: composed scenarios;
-  editing creates a new version and preserves assigned versions.
-- `/training`, `/training/:sessionId`: group/single-student launch and monitoring.
-- `/results`, `/results/:sessionId`: own student results or teacher review and grading.
-- `/analytics`: aggregates from real submitted work and latest teacher evaluations.
-- `/admin`, `/users`, `/catalogs`: account administration, services and JSON EKP publication.
-  Account roles are selected at creation and are read-only afterwards; another role requires a new account.
-- `/403`, `/404`, `/500`: service pages. Unknown paths show 404.
+<details>
+<summary>Освоение интерфейса: подсветка нужной области и пошаговые объяснения</summary>
 
-Teacher and administrator rights are independent. All business requests use the
-real backend; there is no fake API switch. Server-side ownership is authoritative.
-Legacy demonstration models remain only for isolated examples/tests and are not
-used by the training pages. Old browser drafts are not imported into real accounts.
+![Обучение заполнению адреса](docs/screenshots/guide-address/firefox-address.png)
 
-The backend currently supports operator 112 execution and manual teacher grading.
-DDS execution, SIP, AI grading, conditional EKP routing, automated hints and timeout
-completion remain unavailable. Scores are never generated locally. Work without
-an evaluation shows “Ожидает проверки”. Training notifications do not call real services.
+</details>
 
-See [the API integration](docs/API.md), [authentication](docs/AUTH.md), and
-[backend page contracts](../112-backend/docs/FRONTEND_API.md).
+<details>
+<summary>Аналитика преподавателя: частые ошибки и проблемные навыки</summary>
 
-The card library also supports **«Сгенерировать нейросетью»**: teachers choose
-1–10 cards and shared fixed/random parameters. Queued/running/failed rows are
-shown in the library; generated cards remain editable until used in a scenario.
-This requires backend migration `0015_card_generation`, the worker and a downloaded
-local model. See [setup and CPU resource settings](../112-backend/docs/CARD_GENERATION.md)
-and the reviewed [generation screenshots](docs/screenshots/card-generation/).
+![Аналитика ошибок учеников](docs/screenshots/error-analytics/desktop.png)
 
-## Browser integration checks
-
-`e2e/integration-real.spec.ts` requires `AUTH_ISOLATED_API=true` and a disposable,
-migrated backend reached through `API_PROXY_TARGET`. It creates users and teaching
-objects and changes the bootstrap password if necessary. Never point it at user
-data. The ordinary browser suite uses explicit HTTP fixtures. The real integration
-and backend pytest must use separate test databases.
-
-The ARM journal/card layout follows the provided system screenshots. Reviewed
-images of the real flow are in `docs/screenshots/api-*.png`. Static card elements
-are not selectable; input text remains selectable. Navigation uses full-block links.
-
-Новые занятия ДДС поддерживают независимое поступление карточек и интервалы
-в редакторе сценария. [Контракт и запуск](../112-backend/docs/DDS_STREAM.md),
-[проверенные экраны](docs/screenshots/dds-stream/).
-
-Во вкладке преподавателя «Память ИИ» можно просматривать, отключать и удалять
-разборы для будущих смысловых проверок. Свой разбор сохраняется из результата
-занятия отдельно от ручного изменения оценки. [Скриншоты](docs/screenshots/assessment-memory/README.md).
+</details>
