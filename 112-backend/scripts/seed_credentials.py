@@ -40,8 +40,6 @@ async def prepare_admin(session, admin, state):
             )
         )
     await session.commit()
-    state.data.setdefault("accounts", {})["admin"] = {
-        "username": admin.username,
-        "password": password,
-    }
+    # Keep one authoritative password field, including states from older seed versions.
+    state.data.get("accounts", {}).pop("admin", None)
     state.save()

@@ -43,21 +43,21 @@ docker compose --profile telephony up --build -d --wait
 
 ### Тестовые данные
 
-На демонстрационном стенде загрузите справочник, пользователей и занятия:
+Наполнить демонстрационный стенд:
 
 ```sh
-docker compose exec -T api python scripts/seed_demo.py --database --full-demo --prefix demo --state-file /home/appuser/telephony/.demo-seed.json
+docker compose run --rm --build --no-deps api python scripts/seed_demo.py --database --full-demo --prefix demo --state-file /home/appuser/telephony/.demo-seed.json
 ```
 
-Логины: `demo-teacher`, `demo-student`; пароли — логин с окончанием `-123`. Новый пароль `admin` сохранится в `accounts.admin.password` файла состояния. Сохраняйте этот файл для повторных запусков. ИИ-разборы и рекомендации готовит `worker`, записи — `speech-worker`. [Все демо-аккаунты и пароли](docs/SEED.md#учётные-записи) · [Режимы наполнения и повторный запуск](docs/SEED.md).
+[Демо-аккаунты и пароли](docs/SEED.md#учётные-записи). Сохраняйте файл состояния для повторного запуска.
 
 Прочитать новый пароль администратора после выполнения seed:
 
 ```sh
-docker compose exec -T api python -c 'import json; from pathlib import Path; print(json.loads(Path("/home/appuser/telephony/.demo-seed.json").read_text())["accounts"]["admin"]["password"])'
+docker compose exec -T api python -c 'import json; from pathlib import Path; print(json.loads(Path("/home/appuser/telephony/.demo-seed.json").read_text())["admin_new_password"])'
 ```
 
-Если при наполнении указали другой `--state-file`, подставьте его путь.
+Для другого `--state-file` замените путь. [Восстановление пароля](docs/SEED.md#восстановление-пароля-администратора).
 
 ## Разработка
 

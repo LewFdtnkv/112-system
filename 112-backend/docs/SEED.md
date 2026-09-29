@@ -5,7 +5,7 @@
 ## Полный демонстрационный стенд
 
 ```sh
-docker compose exec -T api python scripts/seed_demo.py --database --full-demo --prefix demo --state-file /home/appuser/telephony/.demo-seed.json
+docker compose run --rm --build --no-deps api python scripts/seed_demo.py --database --full-demo --prefix demo --state-file /home/appuser/telephony/.demo-seed.json
 ```
 
 Скрипт создаст справочник, пользователей, группы, карточки, сценарии и решения учеников. Оценки по правилам появятся сразу. Смысловые оценки, новые карточки и рекомендации создаёт настоящий ИИ-воркер; seed не записывает за него ответы, успешные задания или ошибки.
@@ -18,7 +18,7 @@ docker compose exec -T api python scripts/seed_demo.py --database --full-demo --
 
 | Логин | Пароль | Для чего использовать |
 | --- | --- | --- |
-| `admin` | Из файла состояния: `accounts.admin.password` | Пользователи, справочники, телефоны и ИИ-задачи |
+| `admin` | Из файла состояния: `admin_new_password` | Пользователи, справочники, телефоны и ИИ-задачи |
 | `demo-teacher` | `demo-teacher-123` | Сценарии, занятия, результаты, сообщения и аналитика |
 | `demo-student` | `demo-student-123` | Основной тестовый ученик: все форматы занятий, ошибки для рекомендаций и звонок ДДС |
 | `demo-student-good` | `demo-student-good-123` | Успешные работы для сравнения результатов |
@@ -27,7 +27,7 @@ docker compose exec -T api python scripts/seed_demo.py --database --full-demo --
 
 При другом `--prefix` замените `demo` в логинах и паролях. В обычном `--with-training` создаются только преподаватель и основной ученик; три дополнительных ученика появляются в `--full-demo`.
 
-Пароль `admin` заменяется на случайный и сохраняется в `accounts.admin.password` (также `admin_new_password`) файла `--state-file`. [Команда чтения пароля](../README.md#тестовые-данные). Скрипт сохраняет пароль до изменения БД, поэтому он не теряется при прерывании запуска. Пароли остальных аккаунтов также есть в разделе `accounts` этого файла. Если тестировщик потом сменит свой пароль через интерфейс, файл seed сам не обновится.
+Пароль `admin` заменяется на случайный и сохраняется в `admin_new_password` файла `--state-file`. [Команда чтения пароля](../README.md#тестовые-данные). Скрипт сохраняет пароль до изменения БД, поэтому он не теряется при прерывании запуска. Пароли преподавателя и учеников находятся в разделе `accounts` этого файла. Если тестировщик потом сменит свой пароль через интерфейс, файл seed сам не обновится.
 
 ## Что проверить в полном демо
 
@@ -62,16 +62,34 @@ docker compose exec -T api python scripts/seed_demo.py --database --full-demo --
 Только справочник:
 
 ```sh
-docker compose exec -T api python scripts/seed_demo.py --database --state-file /home/appuser/telephony/.catalog-seed.json
+docker compose run --rm --build --no-deps api python scripts/seed_demo.py --database --state-file /home/appuser/telephony/.catalog-seed.json
 ```
 
 Для меньшего набора решений с настоящими ИИ-рекомендациями используйте обычный учебный режим:
 
 ```sh
-docker compose exec -T api python scripts/seed_demo.py --database --with-training --recommendation-cards 6 --prefix demo --state-file /home/appuser/telephony/.training-seed.json
+docker compose run --rm --build --no-deps api python scripts/seed_demo.py --database --with-training --recommendation-cards 6 --prefix demo --state-file /home/appuser/telephony/.training-seed.json
 ```
 
 Выберите один режим и постоянный файл состояния для своего набора. Команды выше — альтернативы, а не обязательные последовательные шаги.
+
+## Восстановление пароля администратора
+
+Администратор `admin` уже создаётся миграцией. Seed меняет пароль этой записи, не создавая второго администратора. Для отдельной смены пароля используйте:
+
+```sh
+docker compose run --rm --build --no-deps api python scripts/seed_demo.py --database --admin-only --prefix demo --state-file /home/appuser/telephony/.demo-seed.json
+```
+
+Команда работает и со старым файлом состояния, где есть только `admin_new_password`, без `accounts.admin`. Она не заполняет ЕКП, не создаёт занятия и не заменяет оценки. Старый пароль знать не требуется. БД должна быть запущена и мигрирована. Используйте префикс и путь своего набора; если файл относится к другой БД, укажите новый файл состояния.
+
+Прочитать установленный пароль:
+
+```sh
+docker compose exec -T api python -c 'import json; from pathlib import Path; print(json.loads(Path("/home/appuser/telephony/.demo-seed.json").read_text())["admin_new_password"])'
+```
+
+В старой версии `--database` только записывал сгенерированный пароль в файл, но не устанавливал его администратору. Само наличие `admin_new_password` в старом файле ещё не означает, что этот пароль действует. Режим `--admin-only` устанавливает его и снимает требование смены стартового пароля.
 
 ## Повторный запуск
 

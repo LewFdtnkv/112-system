@@ -169,10 +169,7 @@ def run(
         "БД была заменена; используйте новый файл состояния для нового набора данных",
     )
     state.remember("admin", me["id"])
-    state.data.setdefault("accounts", {})["admin"] = {
-        "username": "admin",
-        "password": state.data["admin_new_password"],
-    }
+    state.data.get("accounts", {}).pop("admin", None)
     state.save()
 
     import asyncio
@@ -243,6 +240,12 @@ def main():
         help="Наполнение через DATABASE_URL; пароль администратора сохраняется в --state-file",
     )
     parser.add_argument(
+        "--admin-only",
+        action="store_true",
+        help="С --database: только установить admin_new_password администратору; "
+        "не менять справочники, пользователей и занятия",
+    )
+    parser.add_argument(
         "--full-demo",
         action="store_true",
         help="С --database: полный демонабор с решениями учеников и настоящими ИИ-задачами",
@@ -271,6 +274,14 @@ def main():
         help="С --with-training: отдельное занятие ДДС с обязательным звонком бригаде",
     )
     args = parser.parse_args()
+    if args.admin_only and (
+        not args.database
+        or args.full_demo
+        or args.profiles_only
+        or args.with_training
+        or args.with_crew_calls
+    ):
+        parser.error("--admin-only требует --database и несовместим с другими режимами наполнения")
     if args.full_demo:
         if not args.database or args.profiles_only:
             parser.error("--full-demo требует --database и несовместим с --profiles-only")
@@ -319,6 +330,12 @@ def main():
 
                         validate_full_demo(state)
                     await prepare_admin(session, admin, state)
+                    if args.admin_only:
+                        return {
+                            "admin_username": admin.username,
+                            "credentials_file": str(state.path.resolve()),
+                            "password_field": "admin_new_password",
+                        }
                     result = {} if args.profiles_only else await populate_database(session)
                     result["credentials_file"] = str(state.path.resolve())
                     if args.with_training:

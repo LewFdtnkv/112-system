@@ -13,15 +13,24 @@ from scripts.seed_demo import State
 
 @pytest.mark.anyio
 async def test_database_seed_stores_final_admin_password_and_revokes_sessions(
-    db_session, tmp_path, auth_settings
+    db_session, tmp_path, auth_settings, db_client
 ):
     state = State(tmp_path / "seed.json", "http://isolated", "demo")
     pair = await auth.login(db_session, "admin", "admin")
     identity = await auth.authenticate(db_session, pair.access_token)
     await prepare_admin(db_session, identity.user, state)
     saved = json.loads(state.path.read_text())
-    password = saved["accounts"]["admin"]["password"]
-    assert saved["admin_new_password"] == password != "admin"
+    password = saved["admin_new_password"]
+    assert password != "admin"
+    assert "admin" not in saved.get("accounts", {})
+    response = await db_client.post(
+        "/api/v1/auth/login", json={"username": "admin", "password": password}
+    )
+    assert response.status_code == 200
+    assert response.json()["must_change_password"] is False
+    assert (
+        await db_client.post("/api/v1/auth/login", json={"username": "admin", "password": "admin"})
+    ).status_code == 401
     assert verify_password(password, identity.user.password_hash)
     assert not identity.user.must_change_password
     assert stat.S_IMODE(state.path.stat().st_mode) == 0o600
@@ -68,4 +77,24 @@ async def test_database_seed_recovers_after_state_write_failure(db_session, tmp_
     recovered = State(state.path, "http://isolated", "demo")
     assert verify_password(recovered.data["admin_new_password"], admin.password_hash)
     await prepare_admin(db_session, admin, recovered)
-    assert recovered.data["accounts"]["admin"]["password"] == recovered.data["admin_new_password"]
+    assert verify_password(recovered.data["admin_new_password"], admin.password_hash)
+
+
+@pytest.mark.parametrize(
+    "flags",
+    [
+        [],
+        ["--database", "--full-demo"],
+        ["--database", "--profiles-only"],
+        ["--database", "--with-training"],
+        ["--database", "--with-crew-calls"],
+    ],
+)
+def test_admin_only_requires_database_and_no_population_flags(monkeypatch, flags, capsys):
+    from scripts import seed_demo
+
+    monkeypatch.setattr("sys.argv", ["seed_demo.py", "--admin-only", *flags])
+    with pytest.raises(SystemExit) as exc:
+        seed_demo.main()
+    assert exc.value.code == 2
+    assert "--admin-only требует --database" in capsys.readouterr().err
