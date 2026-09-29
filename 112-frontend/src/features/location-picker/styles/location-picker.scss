@@ -1,0 +1,77 @@
+.arm-location-picker {
+  font:
+    13px Arial,
+    sans-serif;
+  color: #333;
+}
+
+.arm-location-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.arm-location-toolbar input {
+  width: 125px;
+  padding: 5px 8px;
+  border: 1px solid #999;
+}
+
+.arm-location-search {
+  display: flex;
+  flex: 1 1 380px;
+  gap: 8px;
+}
+
+.arm-location-search input {
+  width: 100%;
+  min-width: 180px;
+}
+
+.arm-location-results {
+  max-height: 190px;
+  margin: 0 0 8px;
+  padding: 0;
+  overflow: auto;
+  border: 1px solid #b7c2cc;
+  border-radius: 3px;
+  list-style: none;
+}
+
+.arm-location-results li + li {
+  border-top: 1px solid #d8e0e7;
+}
+
+.arm-location-results button {
+  width: 100%;
+  border: 0;
+  border-radius: 0;
+  text-align: left;
+}
+
+.arm-location-toolbar button,
+.arm-location-picker button {
+  padding: 5px 12px;
+  cursor: pointer;
+  background: #fff;
+  border: 1px solid #aaa;
+  border-radius: 2px;
+}
+
+.arm-location-picker button:hover:not(:disabled) {
+  background: #e7eef6;
+}
+
+.arm-location-picker button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.arm-location-canvas {
+  height: min(65vh, 680px);
+  min-height: 300px;
+  width: 100%;
+  background: #eef0ed;
+}

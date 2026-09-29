@@ -1,0 +1,76 @@
+import { cardKeys, generationApi } from "@/entities/training";
+import { getApiError } from "@/shared/api";
+import { Alert, Button, Chip, TableCell, TableRow } from "@mui/material";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import type { GenerationRowsProps } from "../types/GenerationRows";
+
+export function GenerationRows({ jobs, onOpenCard }: GenerationRowsProps) {
+  const client = useQueryClient();
+  const retry = useMutation({
+    mutationFn: generationApi.retry,
+    onSuccess: () =>
+      client.invalidateQueries({ queryKey: cardKeys.generations }),
+  });
+  return (
+    <>
+      {jobs.map((job) => (
+        <TableRow className="generation-pending" key={job.id}>
+          <TableCell>
+            <strong>
+              {job.kind === "dds_generation" ? "ДДС · " : ""}
+              {job.title}
+            </strong>
+            <small>
+              <Chip
+                size="small"
+                color={job.status === "failed" ? "error" : "info"}
+                label={
+                  job.status === "running"
+                    ? "Генерируется"
+                    : job.status === "failed"
+                      ? "Ошибка генерации"
+                      : "В очереди"
+                }
+              />
+            </small>
+            {job.error && <small>{job.error}</small>}
+          </TableCell>
+          <TableCell>{job.incident_name}</TableCell>
+          <TableCell>{job.address_text}</TableCell>
+          <TableCell>{job.services.join(", ") || "Без оповещения"}</TableCell>
+          <TableCell align="center">—</TableCell>
+          <TableCell>
+            {new Date(job.created_at).toLocaleString("ru-RU", {
+              timeZone: "Europe/Moscow",
+              dateStyle: "short",
+              timeStyle: "short",
+            })}
+          </TableCell>
+          <TableCell align="center">
+            {job.status === "failed" && job.kind !== "dds_generation" ? (
+              <Button
+                disabled={retry.isPending}
+                onClick={() => retry.mutate(job.id)}
+              >
+                Повторить
+              </Button>
+            ) : job.kind === "dds_generation" && job.card_template_id ? (
+              <Button onClick={() => onOpenCard(job.card_template_id!)}>
+                Открыть карточку
+              </Button>
+            ) : (
+              "Подготовка"
+            )}
+          </TableCell>
+        </TableRow>
+      ))}
+      {retry.error && (
+        <TableRow>
+          <TableCell colSpan={7}>
+            <Alert severity="error">{getApiError(retry.error).message}</Alert>
+          </TableCell>
+        </TableRow>
+      )}
+    </>
+  );
+}

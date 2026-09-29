@@ -1,0 +1,27 @@
+.service-dialog {
+  .MuiDialogTitle-root + &.MuiDialogContent-root {
+    padding-top: 20px;
+  }
+  &__fields {
+    margin: 0;
+    display: grid;
+    gap: 16px;
+    div {
+      padding-bottom: 12px;
+      border-bottom: 1px solid #e0e7eb;
+    }
+    dt {
+      color: #526773;
+      font-size: 13px;
+    }
+    dd {
+      margin: 6px 0 0;
+      overflow-wrap: anywhere;
+    }
+  }
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}

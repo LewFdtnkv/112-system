@@ -1,0 +1,12 @@
+.semantic-feedback {
+  min-width: 0;
+  overflow-wrap: anywhere;
+
+  .MuiAlert-message {
+    min-width: 0;
+  }
+
+  &__quote {
+    white-space: pre-wrap;
+  }
+}

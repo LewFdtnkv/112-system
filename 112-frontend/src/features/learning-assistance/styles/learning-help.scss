@@ -1,0 +1,39 @@
+.learning-help {
+  background: #edf4fb;
+  border-top: 1px solid #d5e2e9;
+  padding: 6px 10px;
+  font-size: 13px;
+  color: #263f4b;
+  p {
+    margin: 4px 0;
+  }
+  &__controls,
+  &__message {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  &__message {
+    border-left: 3px solid #d7a322;
+    margin-top: 8px;
+    padding: 5px 10px;
+    background: #fffbe8;
+    p {
+      flex: 1;
+    }
+  }
+  &__scope {
+    font-size: 13px;
+  }
+}
+@each $target in address, caller, classification, description, notification,
+  submit, dds_crews, dds_response
+{
+  [data-learning-highlight="#{$target}"] [data-learning-target="#{$target}"] {
+    outline: 3px solid #e0aa26;
+    outline-offset: -3px;
+    background-color: #fffbed;
+    transition: background-color 150ms ease;
+  }
+}

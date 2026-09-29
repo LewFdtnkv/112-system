@@ -1,0 +1,40 @@
+import { backendApi } from "@/shared/api";
+import type {
+  Attempt,
+  LessonPage,
+  LessonStart,
+  StudentLesson,
+} from "../model/types";
+import type { Params } from "@/shared/types/query";
+import { apiGet as get, apiId as id } from "@/shared/api/apiClient";
+
+/** Lesson lifecycle: lists, assignment start, and the student's lesson view. */
+export const lessonApi = {
+  list: (student: boolean, params: Params, signal?: AbortSignal) =>
+    get<LessonPage>(
+      student ? "views/student/lessons" : "views/lessons",
+      params,
+      signal,
+    ),
+  start: (body: LessonStart) =>
+    backendApi.post("lessons/start", { json: body }).json<{ id: string }>(),
+  studentLesson: (lessonId: string, signal?: AbortSignal) =>
+    get<StudentLesson>(`student/lessons/${id(lessonId)}`, {}, signal),
+  startExecution: (lessonId: string) =>
+    backendApi
+      .post(`student/lessons/${id(lessonId)}/start`)
+      .json<StudentLesson>(),
+  presence: (lessonId: string, sessionId: string) =>
+    backendApi.post(`student/lessons/${id(lessonId)}/presence`, {
+      json: { session_id: sessionId },
+    }),
+  leave: (lessonId: string, sessionId: string) =>
+    backendApi.post(`student/lessons/${id(lessonId)}/leave`, {
+      json: { session_id: sessionId },
+      keepalive: true,
+    }),
+  startAttempt: (assignmentId: string) =>
+    backendApi
+      .post(`student/assignments/${id(assignmentId)}/start`)
+      .json<Attempt>(),
+};

@@ -1,0 +1,62 @@
+{
+  "format": "system112-ekp-v1",
+  "label": "Учебный пример ЕКП — замените название",
+  "services": [
+    {
+      "code": "example_fire",
+      "name": "Учебная пожарная служба",
+      "short_name": "Служба 101"
+    },
+    {
+      "code": "example_medical",
+      "name": "Учебная скорая помощь",
+      "short_name": "Служба 103"
+    }
+  ],
+  "entries": [
+    {
+      "code": "TRAIN.001",
+      "section": "Учебный пожар",
+      "name": "Пожар в учебном доме",
+      "response_scenario": "Искусственный пример. Не использовать для реального реагирования.",
+      "features": [
+        {
+          "key": "victims",
+          "label": "Есть пострадавшие"
+        },
+        {
+          "key": "place",
+          "label": "Где произошло",
+          "type": "choice",
+          "required": true,
+          "options": ["Дом", "Улица", "Транспорт"]
+        },
+        {
+          "key": "signs",
+          "label": "Признаки",
+          "type": "array",
+          "required": false,
+          "options": ["Дым", "Пламя", "Запах гари"]
+        }
+      ],
+      "routes": [
+        {
+          "service_code": "example_fire",
+          "is_main": true,
+          "when": {}
+        },
+        {
+          "service_code": "example_medical",
+          "is_main": false,
+          "when": {
+            "victims": true
+          }
+        }
+      ],
+      "display_name": "Пожар",
+      "is_popular": true,
+      "popular_order": 0,
+      "notification_required": true
+    }
+  ]
+}

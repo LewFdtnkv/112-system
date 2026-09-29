@@ -1,0 +1,58 @@
+.card-library-table {
+  min-width: 1080px;
+  table-layout: fixed;
+}
+
+.card-library-table .MuiTableCell-root {
+  padding: 14px 12px;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.card-library-table .MuiTableCell-head {
+  vertical-align: middle;
+}
+
+.card-library-table .card-library-title {
+  padding: 0;
+  min-width: 0;
+  width: 100%;
+  justify-content: flex-start;
+  text-align: left;
+  line-height: 1.5;
+}
+
+// Строка подсвечивается целиком (MuiTableRow:hover), поэтому у самой кнопки
+// собственный фон убираем — остаётся только подчёркивание названия.
+.card-library-table .card-library-title:hover {
+  background: transparent;
+  text-decoration: underline;
+}
+
+.card-library-table small {
+  display: block;
+  margin-top: 5px;
+  font-size: 12px;
+  color: #647986;
+}
+
+.card-library-clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card-library-services {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.card-library-services .MuiChip-root {
+  max-width: 100%;
+}
+
+.card-library-table time {
+  white-space: nowrap;
+}

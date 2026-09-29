@@ -1,0 +1,65 @@
+.telephony-page {
+  &__recording-label {
+    font-weight: 600;
+  }
+  &__form {
+    display: flex;
+    align-items: start;
+    flex-wrap: wrap;
+    gap: 16px;
+    padding: 12px 0;
+  }
+  &__form > .MuiFormControl-root {
+    min-width: 220px;
+    flex: 1 1 220px;
+  }
+  &__recording {
+    padding: 16px;
+    border: 1px solid #cbd6dc;
+    background: white;
+    border-radius: 4px;
+  }
+  &__recording-title {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  &__table {
+    overflow: auto;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+  }
+  th,
+  td {
+    text-align: left;
+    padding: 12px;
+    border-bottom: 1px solid #d7e0e5;
+    vertical-align: middle;
+  }
+  th {
+    background: #edf3f7;
+  }
+  &__password {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    .MuiIconButton-root {
+      flex-shrink: 0;
+    }
+  }
+  &__secret {
+    user-select: text;
+    overflow-wrap: anywhere;
+  }
+}
+
+.telephony-page .recordings-table th {
+  background: #26363e;
+  color: #fff;
+}

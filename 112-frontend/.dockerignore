@@ -1,0 +1,22 @@
+.git
+node_modules
+dist
+dist-ssr
+.env
+.env.*
+coverage
+playwright-report
+test-results
+tmp
+.tmp*
+*.log
+.DS_Store
+.browser-work
+
+.refactor-work
+
+# Local verification artifacts
+test-results*
+playwright-report*
+.telephony-check
+docs/screenshots

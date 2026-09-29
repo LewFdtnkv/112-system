@@ -1,0 +1,108 @@
+import { ValidatedTextField as TextField } from "@/shared/ui/form-validation";
+import { ValidatedForm } from "@/shared/ui/form-validation";
+import { reviewApi } from "@/entities/training";
+import { randomUUID } from "@/shared/lib/uuid";
+import { Alert, Button, Stack, Typography } from "@mui/material";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import type { GradeFormProps } from "../types/LessonReview";
+
+export function GradeForm({ data, reload, onSaved }: GradeFormProps) {
+  const client = useQueryClient();
+  const latest = data.evaluations.at(-1);
+  const [score, setScore] = useState(latest?.score ?? "");
+  const [max, setMax] = useState(latest?.max_score ?? "100");
+  const [comment, setComment] = useState("");
+  const [requestId, setRequestId] = useState(() => randomUUID());
+  const save = useMutation({
+    mutationFn: () =>
+      reviewApi.grade(data.lesson_id, data.student_id, {
+        request_id: requestId,
+        expected_revision: latest?.revision ?? 0,
+        score: Number(score),
+        max_score: Number(max),
+        comment,
+      }),
+    onSuccess: () => {
+      onSaved?.();
+      void client.invalidateQueries({
+        queryKey: ["work-review", data.lesson_id, data.student_id],
+      });
+      void client.invalidateQueries({ queryKey: ["lessons"] });
+      void client.invalidateQueries({ queryKey: ["analytics"] });
+      void client.invalidateQueries({ queryKey: ["student-overview"] });
+      void client.invalidateQueries({ queryKey: ["attempt-audit"] });
+      void client.invalidateQueries({
+        queryKey: ["evaluation", data.lesson_id],
+      });
+    },
+  });
+  return (
+    <ValidatedForm
+      error={save.error}
+      spacing={2}
+      onSubmit={(event) => {
+        event.preventDefault();
+        save.mutate();
+      }}
+    >
+      <Typography variant="h6" component="h2">
+        Пересмотр преподавателем
+      </Typography>
+      {!data.submitted && (
+        <Alert severity="info">
+          Выставить оценку можно после сдачи всех карточек.
+        </Alert>
+      )}
+      <Alert severity="info">
+        Эта оценка станет итоговой. Чтобы ИИ учитывал исправление в будущих
+        проверках, откройте «Исправить вывод ИИ» у нужного критерия карточки.
+      </Alert>
+      <Stack direction="row" spacing={2}>
+        <TextField
+          required
+          type="number"
+          name="score"
+          label="Балл"
+          value={score}
+          slotProps={{ htmlInput: { min: 0, max: Number(max), step: "0.01" } }}
+          onChange={(event) => {
+            setScore(event.target.value);
+            setRequestId(randomUUID());
+          }}
+        />
+        <TextField
+          required
+          type="number"
+          name="max_score"
+          label="Максимальный балл"
+          value={max}
+          slotProps={{ htmlInput: { min: 0.01, step: "0.01" } }}
+          onChange={(event) => {
+            setMax(event.target.value);
+            setRequestId(randomUUID());
+          }}
+        />
+      </Stack>
+      <TextField
+        required
+        name="comment"
+        label="Комментарий преподавателя"
+        multiline
+        minRows={3}
+        value={comment}
+        onChange={(event) => {
+          setComment(event.target.value);
+          setRequestId(randomUUID());
+        }}
+      />
+      {save.error && (
+        <Button onClick={reload}>Загрузить актуальную оценку</Button>
+      )}
+      {save.isSuccess && <Alert severity="success">Оценка сохранена</Alert>}
+      <Button type="submit" disabled={!data.submitted || save.isPending}>
+        Сохранить оценку
+      </Button>
+    </ValidatedForm>
+  );
+}

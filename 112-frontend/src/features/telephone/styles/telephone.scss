@@ -1,0 +1,138 @@
+.training-telephone {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  padding: 6px 10px;
+  border-top: 1px solid #d5e2e9;
+  font-size: 13px;
+  p {
+    margin: 0;
+  }
+  > *,
+  &__active > *,
+  &__incoming > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .arm-small-button {
+    white-space: normal;
+    height: auto;
+    min-height: 28px;
+  }
+  > details {
+    flex-basis: 100%;
+  }
+  &__heading,
+  &__active,
+  &__incoming {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 0;
+  }
+  &__heading > span,
+  small {
+    color: #536977;
+  }
+  &__incoming {
+    padding: 8px;
+    border: 1px solid #418ac3;
+    background: #e6f1fa;
+  }
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  &__contacts {
+    display: flex;
+    flex: 1 1 400px;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-width: 0;
+    max-width: 100%;
+    .training-telephone__contact-select {
+      max-width: 100%;
+      width: 420px;
+      min-height: 28px;
+      border: 1px solid #b6c6cf;
+      background: white;
+      color: inherit;
+      font: inherit;
+      .MuiSelect-select {
+        white-space: normal;
+        overflow-wrap: anywhere;
+        padding: 5px 28px 5px 8px;
+        min-height: 0;
+      }
+      fieldset {
+        border: 0;
+      }
+    }
+    .training-telephone__contact-name {
+      flex: 0 1 auto;
+      min-width: 0;
+      max-width: 420px;
+    }
+    button {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    svg {
+      width: 14px;
+      height: 14px;
+    }
+  }
+  small {
+    display: block;
+  }
+  button,
+  summary {
+    cursor: pointer;
+    transition:
+      background-color 120ms ease,
+      box-shadow 120ms ease;
+    user-select: none;
+  }
+  button:hover:not(:disabled),
+  summary:hover {
+    background: #dfeef7;
+  }
+  button:active:not(:disabled) {
+    background: #c5dfef;
+  }
+  button:disabled {
+    cursor: default;
+  }
+  [role="alert"] {
+    color: #9d382e;
+  }
+}
+
+.training-telephone__contact-option.MuiMenuItem-root {
+  max-width: min(480px, 90vw);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.training-telephone__progress {
+  flex-basis: 100%;
+  font-size: 12px;
+  color: #536977;
+  ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+  }
+  p {
+    margin: 0 0 3px;
+  }
+}

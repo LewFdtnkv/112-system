@@ -1,0 +1,30 @@
+.scenario-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  > * {
+    flex: 1 1 220px;
+    min-width: 0;
+  }
+}
+.scenario-table {
+  min-width: 900px;
+  td {
+    white-space: normal;
+    overflow-wrap: normal;
+  }
+  td:not(:first-child) {
+    white-space: nowrap;
+  }
+  td:first-child {
+    min-width: 260px;
+    width: 36%;
+    overflow-wrap: anywhere;
+  }
+  td:last-child {
+    min-width: 170px;
+  }
+  .table-block-link {
+    white-space: normal;
+  }
+}

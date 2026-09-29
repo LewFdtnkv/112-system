@@ -1,0 +1,46 @@
+.student-notifications__bell.MuiIconButton-root {
+  color: #fff;
+  width: 40px;
+  height: 40px;
+  border: 1px solid transparent;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease;
+  &:hover {
+    background: #ffffff20;
+  }
+  &:active {
+    background: #ffffff35;
+  }
+  &:focus-visible {
+    border-color: #75c8ea;
+  }
+}
+.student-notifications__panel.MuiPaper-root {
+  width: min(480px, calc(100vw - 32px));
+  max-height: min(70vh, 650px);
+  margin-top: 8px;
+  > section {
+    border: 0;
+  }
+  .MuiTypography-h6 {
+    padding-right: 30px;
+    font-size: 18px;
+  }
+  .MuiAlert-message {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .student-notifications__close {
+    position: absolute;
+    right: 6px;
+    top: 6px;
+    width: 32px;
+    height: 32px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .student-notifications__bell.MuiIconButton-root {
+    transition: none;
+  }
+}

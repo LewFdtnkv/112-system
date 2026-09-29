@@ -1,0 +1,428 @@
+.dds-footer {
+  gap: 0;
+  .dds-service-list {
+    display: flex;
+    align-items: stretch;
+    min-width: 0;
+    flex: 1;
+  }
+  .dds-service-list > strong {
+    align-self: center;
+    padding: 0 9px;
+    font-size: 12px;
+  }
+  .dds-service-grid {
+    display: flex;
+    min-width: 0;
+    overflow-x: auto;
+  }
+  .arm-service-tile {
+    width: 104px;
+    flex: 0 0 104px;
+    padding: 5px;
+    height: 64px;
+    gap: 3px;
+    small {
+      display: block;
+      width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 10px;
+    }
+    time {
+      font-variant-numeric: tabular-nums;
+    }
+    transition:
+      background-color 150ms ease,
+      box-shadow 150ms ease;
+    strong {
+      width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    &:focus-visible {
+      outline: 2px solid white;
+      outline-offset: -3px;
+    }
+    &:active {
+      box-shadow: inset 0 0 0 2px #ffffff80;
+    }
+  }
+  .dds-service-active,
+  .dds-service-active[aria-expanded="true"] {
+    background: #898d90;
+  }
+  .dds-crew-active,
+  .dds-crew-active[aria-expanded="true"] {
+    background: #187eb6;
+  }
+  .dds-tile-shell {
+    position: relative;
+    width: 104px;
+    flex: 0 0 104px;
+  }
+  .dds-tile-edit {
+    position: absolute;
+    top: 2px;
+    right: 3px;
+    width: 22px;
+    min-width: 22px;
+    height: 22px;
+    padding: 2px;
+    border: 0;
+    color: white;
+    font-size: 15px;
+    &:hover:not(:disabled),
+    &:focus-visible {
+      background: #ffffff30;
+    }
+    &:disabled {
+      opacity: 0.45;
+    }
+  }
+  .dds-footer-control,
+  .arm-footer-tools > .dds-footer-control:last-child {
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+    padding: 5px;
+    border: 1px solid #fff;
+    border-radius: 0;
+    color: #fff;
+    transition:
+      background-color 150ms ease,
+      box-shadow 150ms ease;
+    &:hover:not(:disabled) {
+      background: #ffffff25;
+    }
+    &:focus-visible {
+      outline: 2px solid #fff;
+      outline-offset: 2px;
+    }
+    &:active:not(:disabled) {
+      box-shadow: inset 0 0 0 2px #ffffff80;
+    }
+    &:disabled {
+      opacity: 0.45;
+    }
+  }
+  .dds-expand {
+    margin: 8px;
+    align-self: center;
+    width: 40px;
+    min-width: 40px;
+    padding: 2px;
+    line-height: 13px;
+  }
+  .arm-footer-tools {
+    flex-shrink: 0;
+  }
+  .arm-save {
+    font-size: 14px;
+  }
+  .arm-small-button {
+    color: #fff;
+    border-color: #ffffffa0;
+    &:hover:not(:disabled) {
+      background: #ffffff25;
+    }
+    &:disabled {
+      opacity: 0.45;
+    }
+  }
+  .dds-extra-services {
+    position: absolute;
+    bottom: 100%;
+    left: 72px;
+    display: flex;
+    max-width: calc(100vw - 96px);
+    height: 64px;
+    overflow-x: auto;
+    background: #46545e;
+    z-index: 4;
+  }
+  &--expanded .dds-crew-strip {
+    bottom: calc(100% + 64px);
+  }
+  &--expanded .dds-response-panel {
+    bottom: calc(100% + 128px);
+  }
+}
+.dds-response-panel {
+  position: absolute;
+  bottom: calc(100% + 64px);
+  left: 72px;
+  z-index: 3;
+  width: min(600px, calc(100vw - 96px));
+  max-height: min(55vh, 450px);
+  overflow: auto;
+  background: #177fb8;
+  color: #fff;
+  box-shadow: 0 0 0 1px #ffffff60;
+  font:
+    12px Arial,
+    sans-serif;
+  > header,
+  .dds-history > header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5px 8px;
+    gap: 8px;
+  }
+  .dds-history-tools {
+    display: flex;
+  }
+  p {
+    margin: 6px 8px;
+  }
+  .dds-history {
+    max-height: 240px;
+    padding: 0 8px 8px;
+    overflow: auto;
+  }
+  .dds-history-row {
+    display: grid;
+    grid-template-columns: 36px 12px minmax(235px, max-content) 12px minmax(
+        0,
+        1fr
+      );
+    gap: 4px;
+    align-items: baseline;
+    padding: 4px 0;
+    font-size: 11px;
+    .dds-history-arrow {
+      font-size: 22px;
+      line-height: 12px;
+      align-self: center;
+    }
+    .dds-history-event {
+      white-space: nowrap;
+    }
+    .dds-history-comment {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+  }
+  .dds-panel-note {
+    opacity: 0.9;
+  }
+}
+.dds-crew-strip {
+  position: absolute;
+  bottom: 100%;
+  left: 72px;
+  z-index: 4;
+  display: flex;
+  align-items: stretch;
+  overflow-x: auto;
+  height: 64px;
+  max-width: calc(100vw - 96px);
+  background: #46545e;
+  .arm-small-button {
+    margin: 8px;
+    align-self: center;
+    flex-shrink: 0;
+  }
+  .arm-service-tile,
+  .dds-tile-shell {
+    width: 136px;
+    flex-basis: 136px;
+  }
+  .dds-empty-crews {
+    align-self: center;
+    padding: 0 10px;
+    font:
+      12px Arial,
+      sans-serif;
+  }
+}
+// The source ARM uses a single white row just above the service tiles.
+.dds-status-dialog {
+  .MuiDialog-container {
+    align-items: flex-end;
+    justify-content: flex-start;
+    padding: 0 24px 92px 116px;
+  }
+  .MuiDialog-paper {
+    width: 1048px;
+    max-width: 100%;
+    margin: 0;
+    border: 1px solid #74838c;
+    border-radius: 0;
+    background: #fff;
+    overflow: visible;
+  }
+  .dds-status-title,
+  .arm-field > span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  .MuiDialogContent-root {
+    padding: 0;
+    overflow: visible;
+  }
+  form {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    padding: 0;
+    min-height: 28px;
+  }
+  .arm-field {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    padding: 0 10px;
+    background: white;
+    justify-content: center;
+  }
+  .arm-field:first-child {
+    padding-left: 8px;
+  }
+  .arm-field input,
+  .arm-field select {
+    width: 100%;
+    height: 26px;
+    min-height: 26px;
+    padding: 2px 0;
+    border: 0;
+    border-bottom: 1px solid #aaa;
+    border-radius: 0;
+    background: white;
+    color: #17252d;
+    font:
+      12px Arial,
+      sans-serif;
+  }
+  .arm-field input:focus,
+  .arm-field select:focus {
+    outline: none;
+    border-bottom-color: #187eb6;
+    box-shadow: inset 0 -1px #187eb6;
+  }
+  form > .arm-icon-button {
+    flex: 0 0 28px;
+    width: 28px;
+    min-width: 28px;
+    height: 28px;
+    padding: 3px;
+    border: 0;
+    border-left: 1px solid #74838c;
+    border-radius: 0;
+    color: #74838c;
+    background: white;
+    font-size: 20px;
+    &:hover:not(:disabled),
+    &:focus-visible {
+      background: #e5f0f6;
+    }
+    &:disabled {
+      opacity: 0.45;
+    }
+  }
+  [role="alert"] {
+    margin: 0;
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+}
+@media (max-width: 800px) {
+  .dds-footer {
+    flex-direction: column;
+    flex-basis: auto;
+  }
+  .dds-footer .arm-footer-tools {
+    max-width: none;
+    flex: 0 0 auto;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    padding: 4px;
+  }
+  .dds-response-panel {
+    left: 8px;
+    width: calc(100vw - 32px);
+  }
+  .dds-status-dialog .MuiDialog-container {
+    padding: 0 12px 100px;
+  }
+}
+@media (max-width: 600px) {
+  .dds-status-dialog form {
+    flex-wrap: wrap;
+  }
+  .dds-status-dialog .arm-field {
+    flex-basis: 42%;
+  }
+  .dds-status-dialog .arm-field:last-of-type {
+    flex-basis: calc(100% - 76px);
+  }
+
+  .dds-footer .dds-tile-shell:has(.dds-tile-edit) .arm-service-tile {
+    padding-top: 24px;
+  }
+  .dds-crew-strip .arm-service-tile small {
+    display: block;
+  }
+  .dds-response-panel .dds-history-row {
+    grid-template-columns: 36px 12px minmax(0, 1fr);
+    font-size: 11px;
+    .dds-history-event {
+      white-space: normal;
+    }
+    > .dds-history-arrow:nth-child(4) {
+      grid-column: 2;
+    }
+  }
+  .dds-footer .dds-extra-services,
+  .dds-footer .dds-crew-strip {
+    left: 8px;
+    max-width: calc(100vw - 32px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dds-footer .arm-service-tile,
+  .dds-footer .dds-footer-control {
+    transition: none;
+  }
+}
+
+.dds-crew-messages {
+  grid-column: 1 / -1;
+  padding: 8px 12px;
+  background: #fff8e8;
+  border: 1px solid #d9bc79;
+  color: #202020;
+  max-height: 180px;
+  overflow: auto;
+  text-align: left;
+  white-space: normal;
+
+  p {
+    margin: 4px 0 8px;
+    white-space: pre-wrap;
+  }
+  small {
+    color: #5c5140;
+  }
+}
+
+.dds-crew-messages--unassigned {
+  position: absolute;
+  bottom: calc(100% + 64px);
+  left: 72px;
+  z-index: 3;
+  width: min(600px, calc(100vw - 96px));
+}
+.dds-footer--expanded .dds-crew-messages--unassigned {
+  bottom: calc(100% + 128px);
+}

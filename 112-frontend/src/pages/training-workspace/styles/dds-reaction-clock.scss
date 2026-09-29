@@ -1,0 +1,52 @@
+.dds-reaction-clock {
+  flex: 0 0 175px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin: 8px;
+  padding: 10px;
+  background: var(--arm-dark, #263238);
+  color: #fff;
+  text-align: center;
+  font-size: 11px;
+  strong {
+    font-size: 36px;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+  &.is-overdue {
+    background: #fa0709;
+  }
+}
+.dds-reference-text {
+  white-space: pre-wrap;
+}
+@media (max-width: 600px) {
+  .training-panel__heading {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .dds-reaction-clock {
+    flex: none;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    strong {
+      grid-column: 2;
+      grid-row: 1 / span 3;
+      align-self: center;
+    }
+  }
+}
+
+.dds-timing-clocks {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: repeat(2, 191px);
+  align-items: start;
+}
+@media (max-width: 600px) {
+  .dds-timing-clocks {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,69 @@
+.training-panel {
+  flex: 0 0 auto;
+  min-width: 0;
+  border: 1px solid #b6cbd7;
+  border-left: 3px solid #187eb6;
+  background: #f3f8fb;
+  color: #263f4b;
+  font:
+    13px/1.4 Arial,
+    sans-serif;
+  &__heading {
+    display: flex;
+    align-items: flex-start;
+  }
+  &__source {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 10px;
+  }
+  &__row {
+    display: grid;
+    grid-template-columns: 90px minmax(0, 1fr);
+    gap: 10px;
+    & + & {
+      margin-top: 5px;
+    }
+    > strong {
+      color: #526b7b;
+    }
+    > div {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+  }
+  details {
+    margin-top: 5px;
+  }
+  summary {
+    cursor: pointer;
+    padding: 3px 0;
+    transition: background-color 120ms ease;
+    &:hover {
+      background: #dfeef7;
+    }
+    &:active {
+      background: #c5dfef;
+    }
+  }
+  p {
+    margin: 5px 0;
+  }
+}
+@media (max-width: 600px) {
+  .training-panel__row {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+}
+
+.lesson-session-tools {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  padding: 4px 10px 8px;
+  strong {
+    font-variant-numeric: tabular-nums;
+  }
+}
