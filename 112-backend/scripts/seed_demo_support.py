@@ -1,9 +1,7 @@
-"""Profiles, messages, editable examples, retrieval memory and offline call history."""
+"""Profiles, messages, editable examples and retrieval memory for the demo."""
 
-import secrets
-from datetime import UTC, datetime, timedelta
 from io import BytesIO
-from uuid import NAMESPACE_URL, UUID, uuid5
+from uuid import UUID
 
 from PIL import Image, ImageDraw
 from sqlalchemy import select
@@ -13,9 +11,6 @@ from app.models import (
     AssessmentMemoryPreference,
     CardTemplateRecipient,
     TeachingMessage,
-    TelephonyEvent,
-    TelephonyStation,
-    TrainingCall,
     UserPhoto,
 )
 from app.schemas.activity import MessageCreate
@@ -24,9 +19,10 @@ from app.services import messages
 from app.services.assessment_memory import library
 from app.services.authoring.cards import set_generation_example
 from scripts.seed_demo_ai import populate_ai
+from scripts.seed_demo_media import populate_media
 
 
-async def populate_support(gateway, state, create, students, group_id, source, attempts, training):
+async def populate_support(gateway, state, create, students, group_id, source, training):
     session = gateway.session
     teacher_id = gateway.teacher.id
     prefix = state.data["prefix"]
@@ -160,117 +156,27 @@ async def populate_support(gateway, state, create, students, group_id, source, a
         )
         state.remember(marker, editable)
 
-    calls = await call_history(session, teacher_id, students[0], attempts[0], prefix)
-    audio = await phone_audio(session, state)
-    ai = await populate_ai(gateway, state, source, students, training)
+    dds_card = await create(
+        "dds-generation-card",
+        "cards",
+        {
+            "title": f"{prefix}: новая ситуация ДДС от ИИ",
+            "classifier_version_id": str(source.classifier_version_id),
+            "classifier_entry_id": str(source.classifier_entry_id),
+            "caller_message": source.caller_message,
+            "instructions": source.instructions,
+            "data": source.data,
+            "recipient_service_ids": [str(r) for r in recipients],
+        },
+    )
+    media = await populate_media(gateway, state, students[0], training, source)
+    ai = await populate_ai(gateway, state, source, dds_card, training)
     return {
         "message_ids": message_ids,
         "extra_group_id": extra_group,
         "archived_group_id": archived_group,
         "editable_card_id": editable,
         "assessment_example_id": str(example.id),
-        "call_ids": calls,
-        "audio_ids": audio,
+        **media,
         **ai,
     }
-
-
-async def phone_audio(session, state):
-    from app.models import CallCue, ScenarioCard
-    from app.services.telephony.media import asset_for, complete
-    from app.services.telephony.voice_pack import greeting_bytes
-
-    scenario_id = state.data["ids"].get("source-training-dds-phone-scenario-v2")
-    if not scenario_id:
-        return []
-    text, data = greeting_bytes()
-    asset = await asset_for(session, text, "crew-voice-pack", "crew-dialogue-v1")
-    if asset.status == "queued" and asset.file_key is None:
-        complete(asset, data)
-    source_id = await session.scalar(
-        select(ScenarioCard.id).where(ScenarioCard.scenario_version_id == UUID(scenario_id))
-    )
-    cue = await session.scalar(
-        select(CallCue).where(
-            CallCue.scenario_card_id == source_id, CallCue.contact_key == "fire-chief"
-        )
-    )
-    if cue is None:
-        session.add(
-            CallCue(
-                scenario_card_id=source_id,
-                contact_key="fire-chief",
-                contact_name="Руководитель учебного расчёта",
-                audio_id=asset.id,
-            )
-        )
-    failed = await asset_for(
-        session,
-        "Демонстрационная ошибка подготовки аудио.",
-        "demo-fixture",
-        f"demo-{state.data['prefix']}-v1",
-    )
-    if failed.status == "queued":
-        failed.status, failed.attempts = "failed", 3
-        failed.error = "Демонстрационный сбой. Можно загрузить WAV вручную."
-    await session.commit()
-    return [str(asset.id), str(failed.id)]
-
-
-async def call_history(session, teacher_id, student_id, attempt_id, prefix):
-    """Explicit demo transport: never provider-confirmed, never eligible for dispatch."""
-    station_id = uuid5(NAMESPACE_URL, f"full-demo/{teacher_id}/station")
-    if await session.get(TelephonyStation, station_id) is None:
-        session.add(
-            TelephonyStation(
-                id=station_id,
-                name=f"{prefix}: демо-станция (отключена)",
-                mode="external",
-                provider="demo-fixture",
-                endpoint=f"{prefix}-demo",
-                sip_password=secrets.token_urlsafe(24),
-                enabled=False,
-                provisioned=False,
-            )
-        )
-        await session.flush()
-    result = []
-    for status in ("ended", "busy", "no_answer", "failed"):
-        call_id = uuid5(NAMESPACE_URL, f"full-demo/{teacher_id}/call/{status}")
-        result.append(str(call_id))
-        if await session.get(TrainingCall, call_id):
-            continue
-        now = datetime.now(UTC)
-        session.add(
-            TrainingCall(
-                id=call_id,
-                attempt_id=UUID(attempt_id),
-                command_id=call_id,
-                initiated_by_id=UUID(student_id),
-                station_id=station_id,
-                contact_name="Демонстрационный собеседник",
-                target_service_name="Учебная служба",
-                endpoint_key="demo-fixture",
-                provider="demo-fixture",
-                transport="manual",
-                status=status,
-                started_at=now - timedelta(seconds=30),
-                connected_at=now - timedelta(seconds=20) if status == "ended" else None,
-                ended_at=now,
-                dispatched_at=now,
-                result="Демонстрационная история. Реального соединения и записи нет.",
-            )
-        )
-        await session.flush()
-        session.add(
-            TelephonyEvent(
-                call_id=call_id,
-                provider="demo-fixture",
-                event_id=str(call_id),
-                kind=status,
-                occurred_at=now,
-                payload={"demo_fixture": True, "provider_confirmed": False},
-            )
-        )
-    await session.commit()
-    return result

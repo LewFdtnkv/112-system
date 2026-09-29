@@ -1,4 +1,4 @@
-"""Real learner commands and clearly labelled, offline semantic review fixtures."""
+"""Sample learner actions; assessments are produced by the normal rules and AI workers."""
 
 from copy import deepcopy
 from datetime import UTC, datetime, timedelta
@@ -7,10 +7,8 @@ from uuid import NAMESPACE_URL, UUID, uuid5
 from sqlalchemy import select
 
 from app.models import (
-    AIJob,
     Assignment,
     Attempt,
-    Evaluation,
     Lesson,
     LessonEvaluation,
     ScenarioCard,
@@ -79,7 +77,11 @@ async def complete_lesson(gateway, state, lesson_id, student_id, role, kind, var
             if role == "dds":
                 dds = gateway.dds()
                 dds.student_id = student_id
-                await complete_attempt(dds, read.model_dump(mode="json"))
+                await complete_attempt(
+                    dds,
+                    read.model_dump(mode="json"),
+                    comment_override="123" if variant == 2 else None,
+                )
             else:
                 source = await session.get(ScenarioCard, assignment.scenario_card_id)
                 data = deepcopy(source.snapshot["data"])
@@ -100,78 +102,7 @@ async def complete_lesson(gateway, state, lesson_id, student_id, role, kind, var
                     session, attempt_id, student_id, CardSubmit(revision=saved.card.revision)
                 )
         completed.append(str(attempt_id))
-        await semantic_fixture(session, attempt_id, variant)
     return completed
-
-
-async def semantic_fixture(session, attempt_id, variant):
-    """Publish with normal fencing/arithmetic; no claimed model inference or network call."""
-    from app.services.dds_assessment import check_dds
-    from app.services.field_evaluation import check_fields
-    from app.services.learning_scope import scoped_check
-    from app.services.semantic_assessment.jobs import enqueue, finish
-    from app.services.student.reads import attempt_read
-
-    if await session.scalar(
-        select(AIJob.id).where(AIJob.attempt_id == attempt_id, AIJob.purpose == "evaluation")
-    ):
-        return
-    attempt = await session.get(Attempt, attempt_id)
-    evaluation = await session.scalar(
-        select(Evaluation).where(Evaluation.attempt_id == attempt_id, Evaluation.method == "rules")
-    )
-    read = await attempt_read(session, attempt, preview=False)
-    assignment = await session.get(Assignment, attempt.assignment_id)
-    source = await session.get(ScenarioCard, assignment.scenario_card_id)
-    check = (
-        check_dds(attempt.settings_snapshot["dds_policy"], read)
-        if read.role == "dds"
-        else scoped_check(check_fields(source.snapshot, read), read)
-    )
-    attempt.settings_snapshot = attempt.settings_snapshot | {"semantic_assessment": True}
-    await enqueue(session, evaluation, check)
-    job = await session.scalar(
-        select(AIJob).where(AIJob.attempt_id == attempt_id, AIJob.purpose == "evaluation")
-    )
-    if job is None:
-        await session.commit()
-        return
-    job.model_version = "demo-fixture/no-model"
-    job.context = job.context | {"demo_fixture": True}
-    job.status, job.worker_id = "running", "demo-seed"
-    job.lease_expires_at = datetime.now(UTC) + timedelta(minutes=5)
-    findings = []
-    for criterion in job.input["criteria"]:
-        # Uncertain examples illustrate the review queue without inventing deductions.
-        uncertain = variant == 2
-        credit = criterion.get("rule_check", {}).get("credit", 1)
-        findings.append(
-            {
-                "code": criterion["code"],
-                "label": criterion["label"],
-                "verdict": "uncertain" if uncertain else "correct" if credit else "incorrect",
-                "credit": None if uncertain else credit,
-                "applied": not uncertain,
-                "reason": "Демонстрационный разбор, модель не вызывалась. "
-                + (
-                    "Неполный ответ оставлен преподавателю для проверки."
-                    if uncertain
-                    else "Сохранён балл формальной проверки поля."
-                    if "rule_check" in criterion
-                    else "В учебном примере сохранены существенные факты условия."
-                ),
-                "recommendation": "Сравните ответ с условием и разбором преподавателя.",
-                "reference_quote": criterion["reference"][:250],
-                "answer_quote": criterion["answer"][:250],
-            }
-        )
-    await session.flush()
-    await finish(
-        session,
-        job.id,
-        "demo-seed",
-        {"findings": findings, "process": job.input["process"], "demo_fixture": True},
-    )
 
 
 async def paused_lesson(session, state, lesson_id, student_id):

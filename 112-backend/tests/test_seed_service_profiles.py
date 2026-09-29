@@ -105,7 +105,10 @@ async def test_http_profiles_only_does_not_load_catalog_or_change_training(
         profiles_only=True,
     )
     first = await anyio.to_thread.run_sync(run)
-    assert first == {"service_profiles": {"service_count": 2, "published_count": 2}}
+    assert first == {
+        "service_profiles": {"service_count": 2, "published_count": 2},
+        "credentials_file": str((tmp_path / "profiles.json").resolve()),
+    }
     assert await anyio.to_thread.run_sync(run) == first
     for model, expected in [(ServiceProfile, 2), (ClassifierVersion, 0), (Lesson, 0), (User, 1)]:
         assert await db_session.scalar(select(func.count()).select_from(model)) == expected

@@ -29,7 +29,7 @@ Compose применяет миграции и запускает интерфе
 - **Swagger:** http://localhost:8000/docs
 - **Первый вход:** `admin` / `admin`; система потребует сменить пароль.
 
-По умолчанию порты доступны только на этом компьютере. Для доступа к серверу настройте HTTPS-прокси на порт `8080`.
+По умолчанию порты доступны только на этом компьютере. Для доступа к серверу настройте HTTPS-прокси на порт `8080`: [пример Nginx, маршруты API и WebSocket для звонков](docs/HTTPS.md).
 
 ### SIP-сервер и учебные звонки
 
@@ -49,7 +49,15 @@ docker compose --profile telephony up --build -d --wait
 docker compose exec -T api python scripts/seed_demo.py --database --full-demo --prefix demo --state-file /home/appuser/telephony/.demo-seed.json
 ```
 
-Логины: `demo-teacher`, `demo-student`; пароли — логин с окончанием `-123`. Повторный запуск восстанавливает эти тестовые пароли. Сохраняйте тот же файл состояния. [Режимы наполнения, учётные записи и повторный запуск](docs/SEED.md).
+Логины: `demo-teacher`, `demo-student`; пароли — логин с окончанием `-123`. Новый пароль `admin` сохранится в `accounts.admin.password` файла состояния. Сохраняйте этот файл для повторных запусков. ИИ-разборы и рекомендации готовит `worker`, записи — `speech-worker`. [Все демо-аккаунты и пароли](docs/SEED.md#учётные-записи) · [Режимы наполнения и повторный запуск](docs/SEED.md).
+
+Прочитать новый пароль администратора после выполнения seed:
+
+```sh
+docker compose exec -T api python -c 'import json; from pathlib import Path; print(json.loads(Path("/home/appuser/telephony/.demo-seed.json").read_text())["accounts"]["admin"]["password"])'
+```
+
+Если при наполнении указали другой `--state-file`, подставьте его путь.
 
 ## Разработка
 

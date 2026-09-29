@@ -8,11 +8,16 @@ from app.models import (
     AIJob,
     Attempt,
     AttemptEvent,
+    CallCue,
+    Evaluation,
     LessonEvaluation,
     LessonExecution,
     MessageRecipient,
     ProctoringEvent,
+    Recording,
+    SpeechAsset,
     TeachingMessage,
+    TelephonyStation,
     TrainingCall,
     User,
 )
@@ -43,8 +48,8 @@ async def test_full_demo_results_and_repeat(db_session, tmp_path, auth_settings,
     full = result["full_demo"]
     assert len(full["student_ids"]) == 4
     assert len(full["completed_attempt_ids"]) == 30
-    assert len(full["generation_job_ids"]) == 4
-    assert full["advice_message_ids"]
+    assert len(full["generation_job_ids"]) == 3
+    assert full["recommendations"] == "worker_after_assessment"
     assert len(full["lessons"]) == 14
     assert await db_session.scalar(select(Attempt.id).where(Attempt.status == "interrupted"))
     assert await db_session.scalar(select(func.count()).select_from(ProctoringEvent)) == 120
@@ -64,11 +69,32 @@ async def test_full_demo_results_and_repeat(db_session, tmp_path, auth_settings,
         await db_session.scalar(
             select(func.count()).select_from(AIJob).where(AIJob.status.in_(["queued", "running"]))
         )
-        == 0
+        > 30
     )
+    assert not await db_session.scalar(select(Evaluation.id).where(Evaluation.method == "ai"))
+    assert not await db_session.scalar(
+        select(TeachingMessage.id).where(TeachingMessage.source == "learning_advice")
+    )
+    jobs = list(await db_session.scalars(select(AIJob)))
+    assert all(job.status == "queued" and job.output is None for job in jobs)
+    assert all(job.model_version != "demo-fixture/no-model" for job in jobs)
+    assert {job.purpose for job in jobs} == {"generation", "dds_generation", "evaluation"}
+    assert await db_session.scalar(select(CallCue.id).limit(1))
+    assert await db_session.scalar(select(func.count()).select_from(Recording)) == 9
+    assert (
+        await db_session.scalar(
+            select(func.count())
+            .select_from(Recording)
+            .join(SpeechAsset)
+            .where(SpeechAsset.status == "queued")
+        )
+        == 9
+    )
+    station = await db_session.get(TelephonyStation, UUID(full["station_id"]))
+    assert station.enabled and not station.provisioned and station.mode == "browser"
+    assert station.student_id == UUID(full["student_ids"][0])
     calls = list(await db_session.scalars(select(TrainingCall)))
-    assert {c.status.value for c in calls} == {"ended", "busy", "no_answer", "failed"}
-    assert all(not c.provider_confirmed for c in calls)
+    assert calls == []
 
     # Exercise the same readers as the student and teacher screens, not only row counts.
     from app.models import Lesson
@@ -104,10 +130,10 @@ async def test_full_demo_results_and_repeat(db_session, tmp_path, auth_settings,
     )
     counts = [await db_session.scalar(select(func.count()).select_from(m)) for m in models]
     # Simulate a lost final checkpoint and a few committed creates whose IDs were not saved.
-    state.data.pop("full-demo-v1")
+    state.data.pop("full-demo-v2")
     for marker in (
-        "full-demo-v1-scenario-operator_112",
-        "full-demo-v1-editable-card",
+        "full-demo-v2-scenario-operator_112",
+        "full-demo-v2-editable-card",
         "full-demo-message-welcome",
     ):
         state.data["ids"].pop(marker)
@@ -128,18 +154,19 @@ async def test_full_demo_results_and_repeat(db_session, tmp_path, auth_settings,
 
 
 @pytest.mark.anyio
-async def test_full_demo_restores_process_settings_on_failure(monkeypatch):
-    from scripts import seed_full_demo
-
-    async def fail(*args):
-        assert settings.semantic_assessment_enabled is False
-        raise RuntimeError("interrupted")
-
-    monkeypatch.setattr(settings, "semantic_assessment_enabled", True)
-    monkeypatch.setattr(seed_full_demo, "_populate", fail)
-    with pytest.raises(RuntimeError, match="interrupted"):
+async def test_full_demo_requires_real_ai(monkeypatch):
+    monkeypatch.setattr(settings, "semantic_assessment_enabled", False)
+    with pytest.raises(RuntimeError, match="SEMANTIC_ASSESSMENT_ENABLED"):
         await populate_full_demo(None, None, None, None)
-    assert settings.semantic_assessment_enabled is True
+    assert settings.semantic_assessment_enabled is False
+
+
+@pytest.mark.anyio
+async def test_full_demo_rejects_legacy_fabricated_results(tmp_path):
+    state = State(tmp_path / "state.json", "http://isolated", "old")
+    state.data["full-demo-v1"] = {}
+    with pytest.raises(RuntimeError, match="старые готовые ИИ-разборы"):
+        await populate_full_demo(None, state, None, None)
 
 
 @pytest.mark.parametrize("flags", [[], ["--database", "--profiles-only"]])

@@ -259,7 +259,7 @@ async def populate_crew_call_lesson(
     )
 
 
-async def complete_attempt(gateway, attempt):
+async def complete_attempt(gateway, attempt, *, comment_override=None):
     async def command(kind, status, comment):
         nonlocal attempt
         payload = {
@@ -268,7 +268,7 @@ async def complete_attempt(gateway, attempt):
             "information_event_id": attempt["dds"]["information"]["id"],
             "status": status,
             "crew_number": "УЧ-101",
-            "comment": comment,
+            "comment": comment if comment_override is None else comment_override,
         }
         if kind == "crews":
             payload["crew_code"] = "fire-1"

@@ -90,6 +90,10 @@ def ensure(condition: bool, message: str):
 
 class State:
     def __init__(self, path: Path, base_url: str, prefix: str):
+        ensure(
+            bool(re.fullmatch(r"[a-z0-9][a-z0-9_-]{0,19}", prefix)),
+            "Префикс: 1–20 строчных латинских букв, цифр, _ или -; начало — буква/цифра",
+        )
         self.path = path
         if path.exists():
             self.data = json.loads(path.read_text())
@@ -104,9 +108,14 @@ class State:
                 "format": 1,
                 "base_url": base_url,
                 "prefix": prefix,
-                "admin_new_password": secrets.token_urlsafe(24),
+                "admin_new_password": "admin-" + secrets.token_urlsafe(12),
                 "ids": {},
             }
+        if (
+            not self.data.get("admin_new_password", "").strip()
+            or self.data["admin_new_password"] == "admin"
+        ):
+            self.data["admin_new_password"] = "admin-" + secrets.token_urlsafe(12)
         self.save()
 
     def save(self):
@@ -160,6 +169,11 @@ def run(
         "БД была заменена; используйте новый файл состояния для нового набора данных",
     )
     state.remember("admin", me["id"])
+    state.data.setdefault("accounts", {})["admin"] = {
+        "username": "admin",
+        "password": state.data["admin_new_password"],
+    }
+    state.save()
 
     import asyncio
 
@@ -169,7 +183,8 @@ def run(
         from seed_service_profiles import HTTPProfilesGateway, populate_service_profiles
     if profiles_only:
         return {
-            "service_profiles": asyncio.run(populate_service_profiles(HTTPProfilesGateway(admin)))
+            "service_profiles": asyncio.run(populate_service_profiles(HTTPProfilesGateway(admin))),
+            "credentials_file": str(state.path.resolve()),
         }
 
     if __package__:
@@ -225,12 +240,12 @@ def main():
     parser.add_argument(
         "--database",
         action="store_true",
-        help="Наполнение через DATABASE_URL; пароль администратора не меняется",
+        help="Наполнение через DATABASE_URL; пароль администратора сохраняется в --state-file",
     )
     parser.add_argument(
         "--full-demo",
         action="store_true",
-        help="С --database: полный автономный демонабор с результатами всех учебных форматов",
+        help="С --database: полный демонабор с решениями учеников и настоящими ИИ-задачами",
     )
     parser.add_argument(
         "--profiles-only",
@@ -288,22 +303,28 @@ def main():
                 async with session_factory() as session:
                     admin = await session.scalar(
                         select(User)
-                        .where(User.is_admin.is_(True), User.is_active.is_(True))
+                        .where(
+                            User.username == "admin",
+                            User.is_admin.is_(True),
+                            User.is_active.is_(True),
+                        )
                         .order_by(User.id)
                     )
                     ensure(admin is not None, "Нужна активная учётная запись администратора")
+                    from scripts.seed_credentials import prepare_admin
+
+                    state = State(args.state_file, args.base_url.rstrip("/"), args.prefix)
+                    if args.full_demo:
+                        from scripts.seed_full_demo import validate_full_demo
+
+                        validate_full_demo(state)
+                    await prepare_admin(session, admin, state)
                     result = {} if args.profiles_only else await populate_database(session)
+                    result["credentials_file"] = str(state.path.resolve())
                     if args.with_training:
                         from scripts.seed_training import DatabaseGateway, populate_training
                         from scripts.source_catalog import load_catalog
 
-                        state = State(args.state_file, args.base_url.rstrip("/"), args.prefix)
-                        previous_admin = state.data["ids"].get("admin")
-                        ensure(
-                            previous_admin is None or previous_admin == str(admin.id),
-                            "БД заменена: укажите новый файл состояния",
-                        )
-                        state.remember("admin", str(admin.id))
                         if args.full_demo:
                             from scripts.seed_full_demo import populate_full_demo
 

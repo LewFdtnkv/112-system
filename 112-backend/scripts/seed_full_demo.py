@@ -1,4 +1,4 @@
-"""Additive, offline acceptance dataset. Never run external AI or PBX providers."""
+"""Demo learning evidence and genuine background jobs; no fabricated AI results."""
 
 import secrets
 from datetime import UTC, datetime, timedelta
@@ -14,33 +14,43 @@ from scripts.seed_training import populate_training
 
 
 def key(state, name):
-    return uuid5(NAMESPACE_URL, f"full-demo-v1/{state.data['prefix']}/{name}")
+    return uuid5(NAMESPACE_URL, f"full-demo-v2/{state.data['prefix']}/{name}")
+
+
+def validate_full_demo(state):
+    if not settings.semantic_assessment_enabled or not settings.learning_recommendations_enabled:
+        raise RuntimeError(
+            "Для --full-demo включите SEMANTIC_ASSESSMENT_ENABLED и "
+            "LEARNING_RECOMMENDATIONS_ENABLED: разборы должны выполнять воркеры."
+        )
+    if "full-demo-v1" in state.data or any(
+        key.startswith("full-demo-v1-") for key in state.data["ids"]
+    ):
+        raise RuntimeError(
+            "Этот демонабор содержит старые готовые ИИ-разборы. "
+            "Для нового демо используйте отдельную БД и новый файл состояния."
+        )
 
 
 async def populate_full_demo(
     gateway, state, catalog_id, document, recommendation_cards=6, with_crew_calls=True
 ):
-    """Local settings apply only inside this CLI process and are always restored."""
-    previous = settings.semantic_assessment_enabled
-    settings.semantic_assessment_enabled = False
-    try:
-        return await _populate(
-            gateway, state, catalog_id, document, max(6, recommendation_cards), with_crew_calls
-        )
-    finally:
-        settings.semantic_assessment_enabled = previous
+    validate_full_demo(state)
+    return await _populate(
+        gateway, state, catalog_id, document, max(6, recommendation_cards), with_crew_calls
+    )
 
 
 async def _populate(gateway, state, catalog_id, document, count, with_crew_calls):
     session = gateway.session
     prefix = state.data["prefix"]
     # A finished run is a snapshot, not a command to reset a tester's subsequent work.
-    if "full-demo-v1" in state.data:
-        return state.data["full-demo-v1"]
+    if "full-demo-v2" in state.data:
+        return state.data["full-demo-v2"]
     result = await populate_training(gateway, state, catalog_id, document, count, with_crew_calls)
 
     async def create(name, resource, payload):
-        marker = f"full-demo-v1-{name}"
+        marker = f"full-demo-v2-{name}"
         if marker not in state.data["ids"]:
             # Recover a committed create if writing the local checkpoint was interrupted.
             model, clause = {
@@ -152,7 +162,7 @@ async def _populate(gateway, state, catalog_id, document, count, with_crew_calls
                 "lessons/start",
                 {
                     "request_id": str(key(state, name)),
-                    "student_ids": student_ids,
+                    "group_id": group_id,
                     "scenario_version_id": scenario_id,
                     "learning": learning,
                     "title": f"{prefix}: результаты {role} — {label}",
@@ -163,7 +173,9 @@ async def _populate(gateway, state, catalog_id, document, count, with_crew_calls
             # demonstrate strong, incomplete and assisted work in the same class report.
             for index, student_id in enumerate(student_ids[:3]):
                 completed.extend(
-                    await complete_lesson(gateway, state, lesson_id, student_id, role, kind, index)
+                    await complete_lesson(
+                        gateway, state, lesson_id, student_id, role, kind, (2, 0, 2)[index]
+                    )
                 )
 
     for mode, title in (
@@ -208,17 +220,15 @@ async def _populate(gateway, state, catalog_id, document, count, with_crew_calls
     )
 
     source = await session.get(CardTemplate, UUID(result["learning"]["card_ids"][0]))
-    support = await populate_support(
-        gateway, state, create, student_ids, group_id, source, completed, result
-    )
+    support = await populate_support(gateway, state, create, student_ids, group_id, source, result)
     result["full_demo"] = {
-        "version": 1,
+        "version": 2,
         "student_ids": student_ids,
         "lessons": lessons,
         "completed_attempt_ids": completed,
         **support,
     }
     # Do not change the semantics of the legacy card_count (training plan only).
-    state.data["full-demo-v1"] = result
+    state.data["full-demo-v2"] = result
     state.save()
     return result
