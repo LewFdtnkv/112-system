@@ -10,10 +10,10 @@
 
 ## Запуск Asterisk
 
-В `.env` задайте `TELEPHONY_ENABLED=true` и случайный `ARI_PASSWORD` не короче 24 символов:
+В `.env` задайте `TELEPHONY_ENABLED=true` и случайный `ARI_PASSWORD` не короче 24 символов (`openssl rand -hex 32`). Остальные параметры и их назначение перечислены в [шаблоне окружения](../.env.example):
 
 ```sh
-docker compose --profile telephony up -d --build
+docker compose --profile telephony up -d --build --wait
 ```
 
 Профиль добавляет `asterisk` и `telephony-worker`. ARI доступен внутри Docker-сети; наружу проксируется только SIP WebSocket `/sip-ws`. Dialplan разрешает учебный номер `9000` после авторизации станции. Транков и выхода в город нет.

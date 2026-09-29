@@ -7,24 +7,35 @@ x-backend: &backend
     DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-trainer}:${POSTGRES_PASSWORD:-trainer}@db:5432/${POSTGRES_DB:-trainer}
     SQL_ECHO: ${SQL_ECHO:-false}
     JWT_SECRET_KEY: ${JWT_SECRET_KEY:?Set JWT_SECRET_KEY in .env}
+    JWT_ISSUER: ${JWT_ISSUER:-system112}
+    JWT_AUDIENCE: ${JWT_AUDIENCE:-system112-api}
     ACCESS_TOKEN_MINUTES: ${ACCESS_TOKEN_MINUTES:-15}
     REFRESH_TOKEN_DAYS: ${REFRESH_TOKEN_DAYS:-7}
     LLM_MODEL: ${LLM_MODEL:-qwen3:4b-instruct-2507-q4_K_M}
-    LLM_BASE_URL: http://llm:11434
+    LLM_BASE_URL: ${LLM_BASE_URL:-http://llm:11434}
     TELEPHONY_ENABLED: ${TELEPHONY_ENABLED:-false}
+    ARI_URL: ${ARI_URL:-http://asterisk:8088/ari}
+    ARI_USERNAME: ${ARI_USERNAME:-trainer}
     ARI_PASSWORD: ${ARI_PASSWORD:-}
     TELEPHONY_ADAPTER_TOKEN: ${TELEPHONY_ADAPTER_TOKEN:-}
     SPEECH_GENERATOR_TOKEN: ${SPEECH_GENERATOR_TOKEN:-}
-    TELEPHONY_SIP_DOMAIN: ${SIP_PUBLIC_ADDRESS:-localhost}
+    TELEPHONY_SIP_DOMAIN: ${TELEPHONY_SIP_DOMAIN:-${SIP_PUBLIC_ADDRESS:-localhost}}
     TELEPHONY_WS_URL: ${TELEPHONY_WS_URL:-/sip-ws}
+    TELEPHONY_MEDIA_DIRECTORY: ${TELEPHONY_MEDIA_DIRECTORY:-/home/appuser/telephony}
+    TELEPHONY_MAX_CALL_SECONDS: ${TELEPHONY_MAX_CALL_SECONDS:-600}
+    SPEECH_VOICE: ${SPEECH_VOICE:-denis}
+    SPEECH_GENERATOR_VERSION: ${SPEECH_GENERATOR_VERSION:-piper-1.8.0-v1:caller}
+    SPEECH_MODELS_DIRECTORY: ${SPEECH_MODELS_DIRECTORY:-/opt/voices}
     LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-300}
     LLM_THREADS: ${LLM_THREADS:-2}
+    GENERATION_POLL_SECONDS: ${GENERATION_POLL_SECONDS:-2}
+    EMBEDDING_TIMEOUT_SECONDS: ${EMBEDDING_TIMEOUT_SECONDS:-120}
     SEMANTIC_ASSESSMENT_ENABLED: ${SEMANTIC_ASSESSMENT_ENABLED:-true}
     ASSESSMENT_RAG_ENABLED: ${ASSESSMENT_RAG_ENABLED:-true}
     EMBEDDING_MODEL: ${EMBEDDING_MODEL:-qwen3-embedding:0.6b}
-    ASSESSMENT_MODEL: ${ASSESSMENT_MODEL:-qwen3:4b-instruct-2507-q4_K_M}
+    ASSESSMENT_MODEL: ${ASSESSMENT_MODEL-qwen3:4b-instruct-2507-q4_K_M}
     LEARNING_RECOMMENDATIONS_ENABLED: ${LEARNING_RECOMMENDATIONS_ENABLED:-true}
-    RECOMMENDATION_MODEL: ${RECOMMENDATION_MODEL:-qwen3:4b-instruct-2507-q4_K_M}
+    RECOMMENDATION_MODEL: ${RECOMMENDATION_MODEL-qwen3:4b-instruct-2507-q4_K_M}
 
 services:
   speech-worker:
@@ -34,7 +45,7 @@ services:
       target: speech-worker
     command: ["python", "-m", "app.services.speech.worker"]
     volumes:
-      - telephony_media:/home/appuser/telephony
+      - telephony_media:${TELEPHONY_MEDIA_DIRECTORY:-/home/appuser/telephony}
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -50,6 +61,7 @@ services:
       ARI_PASSWORD: ${ARI_PASSWORD:-}
       SIP_PUBLIC_ADDRESS: ${SIP_PUBLIC_ADDRESS:-127.0.0.1}
       SIP_LOCAL_NET: ${SIP_LOCAL_NET:-auto}
+      SIP_ICE_ADDRESS: ${SIP_ICE_ADDRESS:-}
     ports:
       - "${SIP_BIND_ADDRESS:-127.0.0.1}:5060:5060/udp"
       - "${SIP_BIND_ADDRESS:-127.0.0.1}:10000-10100:10000-10100/udp"
@@ -70,7 +82,7 @@ services:
     profiles: [telephony]
     command: ["python", "-m", "app.services.telephony.worker"]
     volumes:
-      - telephony_media:/home/appuser/telephony
+      - telephony_media:${TELEPHONY_MEDIA_DIRECTORY:-/home/appuser/telephony}
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -87,10 +99,10 @@ services:
       # Keep the current request's KV cache, but disable the cross-request cache.
       LLAMA_ARG_CACHE_RAM: ${LLM_PROMPT_CACHE_MB:-0}
       OLLAMA_NUM_PARALLEL: ${LLM_PARALLEL_REQUESTS:-1}
-      OLLAMA_MAX_LOADED_MODELS: "1"
-      OLLAMA_CONTEXT_LENGTH: "4096"
-      OLLAMA_KEEP_ALIVE: "60s"
-      OLLAMA_NO_CLOUD: "1"
+      OLLAMA_MAX_LOADED_MODELS: ${OLLAMA_MAX_LOADED_MODELS:-1}
+      OLLAMA_CONTEXT_LENGTH: ${OLLAMA_CONTEXT_LENGTH:-4096}
+      OLLAMA_KEEP_ALIVE: ${OLLAMA_KEEP_ALIVE:-60s}
+      OLLAMA_NO_CLOUD: ${OLLAMA_NO_CLOUD:-1}
     mem_limit: ${LLM_MEMORY_LIMIT:-4g}
     cpus: ${LLM_CPUS:-2}
     volumes:
@@ -160,13 +172,14 @@ services:
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "${API_WORKERS:-4}"]
     environment:
       <<: *backend-environment
+      SYSTEM_LOG_DIRECTORY: ${SYSTEM_LOG_DIRECTORY:-/home/appuser/logs}
       DADATA_API_KEY: ${DADATA_API_KEY:-}
       YANDEX_TRANSLATE_API_KEY: ${YANDEX_TRANSLATE_API_KEY:-}
       YANDEX_CLOUD_FOLDER_ID: ${YANDEX_CLOUD_FOLDER_ID:-}
       EXTERNAL_SERVICES_TIMEOUT_SECONDS: ${EXTERNAL_SERVICES_TIMEOUT_SECONDS:-8}
     volumes:
-      - request_logs:/home/appuser/logs
-      - telephony_media:/home/appuser/telephony
+      - request_logs:${SYSTEM_LOG_DIRECTORY:-/home/appuser/logs}
+      - telephony_media:${TELEPHONY_MEDIA_DIRECTORY:-/home/appuser/telephony}
     ports:
       - "127.0.0.1:${API_PORT:-8000}:8000"
     depends_on:

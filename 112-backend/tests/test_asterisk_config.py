@@ -9,10 +9,14 @@ import pytest
 
 
 @pytest.mark.parametrize("configured", [None, "", "auto"])
-def test_default_nat_excludes_docker_gateway(monkeypatch, configured):
+@pytest.mark.parametrize("configured_ice", [None, "", "172.18.0.8"])
+def test_default_nat_excludes_docker_gateway(monkeypatch, configured, configured_ice):
     monkeypatch.setenv("ARI_PASSWORD", "test-only-asterisk-password-123")
     monkeypatch.setenv("SIP_PUBLIC_ADDRESS", "127.0.0.1")
-    monkeypatch.delenv("SIP_ICE_ADDRESS", raising=False)
+    if configured_ice is None:
+        monkeypatch.delenv("SIP_ICE_ADDRESS", raising=False)
+    else:
+        monkeypatch.setenv("SIP_ICE_ADDRESS", configured_ice)
     if configured is None:
         monkeypatch.delenv("SIP_LOCAL_NET", raising=False)
     else:
@@ -29,3 +33,5 @@ def test_default_nat_excludes_docker_gateway(monkeypatch, configured):
     assert ip_address("172.18.0.1") not in network  # Published-port client must be external.
     assert "external_signaling_address=127.0.0.1" in result["configs"]["pjsip.conf"]
     assert "external_media_address=127.0.0.1" in result["configs"]["pjsip.conf"]
+    expected_ice = configured_ice or "172.18.0.4"
+    assert f"{expected_ice} => 127.0.0.1" in result["configs"]["rtp.conf"]

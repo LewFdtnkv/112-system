@@ -16,7 +16,7 @@ local_net = os.environ.get("SIP_LOCAL_NET", "auto") or "auto"
 if local_net == "auto":
     local_net = f"{container_address}/{container_address.max_prefixlen}"
 ip_network(local_net)
-ice_address = str(ip_address(os.environ.get("SIP_ICE_ADDRESS", str(container_address))))
+ice_address = str(ip_address(os.environ.get("SIP_ICE_ADDRESS") or str(container_address)))
 for value in (password, address, local_net):
     if any(char in value for char in "\r\n;[]"):
         raise ValueError("Invalid configuration value")
